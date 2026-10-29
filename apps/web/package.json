@@ -1,0 +1,36 @@
+{
+  "name": "@system-design/web",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "typecheck": "tsc --noEmit --pretty false",
+    "format": "oxfmt",
+    "lint": "oxlint --quiet src && effect-tsgo patch --no-typescript --oxlint && oxlint --quiet --config .oxlintrc.effect.json --deny-warnings src"
+  },
+  "dependencies": {
+    "@effect/platform-browser": "4.1.0",
+    "@foldkit/ui": "0.169.0",
+    "effect": "4.1.0",
+    "foldkit": "0.169.0"
+  },
+  "devDependencies": {
+    "@effect/tsgo": "0.50.0",
+    "@foldkit/devtools": "0.169.0",
+    "@foldkit/devtools-mcp": "0.25.0",
+    "@foldkit/oxlint-plugin": "0.15.3",
+    "@foldkit/vite-plugin": "0.28.0",
+    "@tailwindcss/vite": "4.3.3",
+    "happy-dom": "20.14.6",
+    "oxfmt": "0.66.0",
+    "oxlint": "1.85.0",
+    "oxlint-tsgolint": "7.0.2003",
+    "tailwindcss": "4.3.3",
+    "typescript": "7.0.2",
+    "vite": "8.3.5",
+    "vitest": "5.0.5"
+  }
+}

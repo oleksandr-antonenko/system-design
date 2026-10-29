@@ -1,0 +1,36 @@
+diff --git a/dist/index.js b/dist/index.js
+index 2ea77b1694f0f0a7cd02b1ca3b50546627cc8893..f115ee97d9a46f9ec290a2cc36e393961480970f 100644
+--- a/dist/index.js
++++ b/dist/index.js
+@@ -1,4 +1,5 @@
+-import { Array, Clock, ConfigProvider, Console, Crypto, Data, Duration, Effect, Exit, Fiber, HashMap, Layer, Match, Number, Option, Order, Predicate, Queue, Ref, Schedule, Schema, Stream, pipe, } from 'effect';
++import { randomBytes as nodeRandomBytes, randomUUID as nodeRandomUUID } from 'node:crypto';
++import { Array, Clock, ConfigProvider, Console, Data, Duration, Effect, Exit, Fiber, HashMap, Layer, Match, Number, Option, Order, Predicate, Queue, Ref, Schedule, Schema, Stream, pipe, } from 'effect';
+ import { Event as DevToolsEvent, EventFrame, RELAY_RECORD_VERSION, RequestFrame, Response, ResponseFrame, } from 'foldkit/devtools-protocol';
+ import { PreserveModelMessage, RequestModelMessage, RestoreModelMessage, } from 'foldkit/model-preservation';
+ import { createHmac, timingSafeEqual } from 'node:crypto';
+@@ -286,10 +287,7 @@ const REFUSED_UPGRADE_REASONS = {
+ class RelayBindFailed extends Data.TaggedError('RelayBindFailed') {
+ }
+ const isPortInUse = (error) => Predicate.hasProperty(error, 'code') && error.code === 'EADDRINUSE';
+-const relayId = Effect.gen(function* () {
+-    const crypto = yield* Crypto.Crypto;
+-    return yield* crypto.randomUUIDv4.pipe(Effect.orDie);
+-});
++const relayId = Effect.sync(() => nodeRandomUUID());
+ const attachRelayHandlers = (wss, enqueue) => {
+     wss.on('connection', client => {
+         enqueue(Event.McpClientConnected({ client }));
+@@ -305,11 +303,7 @@ const boundPort = (address) => address === null || Predicate.isString(address)
+     ? Option.none()
+     : Option.some(address.port);
+ const relayHasNoBoundPort = () => new Error('[foldkit:devTools] the MCP relay listener has no bound port');
+-const relayToken = Effect.gen(function* () {
+-    const crypto = yield* Crypto.Crypto;
+-    const bytes = yield* crypto.randomBytes(RELAY_TOKEN_BYTES).pipe(Effect.orDie);
+-    return Buffer.from(bytes).toString('hex');
+-});
++const relayToken = Effect.sync(() => nodeRandomBytes(RELAY_TOKEN_BYTES).toString('hex'));
+ const relayUrlForLog = (url) => {
+     const parsed = new URL(url);
+     parsed.search = '';

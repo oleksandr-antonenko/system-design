@@ -1,10 +1,10 @@
 ## 1. Workspace и совместимость Effect 4.1
 
-- [ ] 1.1 Создать корень pnpm-workspace: `package.json` с `engines.node >= 24`, `pnpm-workspace.yaml` (`apps/*`, `packages/*`), `.gitignore`, `.nvmrc`. Задать `pnpm.overrides` и `peerDependencyRules` для `effect`, `@effect/platform-browser`, `@effect/platform-node` = `4.1.0`. Проверка: `pnpm install` проходит, `pnpm why effect` показывает одну версию 4.1.0.
-- [ ] 1.2 Сгенерировать шаблон `create-foldkit-app@0.40.0` (`--rendering spa --example routing --package-manager pnpm`) во временном каталоге и перенести в `apps/web` конфиги (vite, vitest, oxlint, oxfmt, tsconfig, `FOLDKIT.md`, `AGENTS.md`, `.mcp.json`) и пример маршрутов. Версии без `^`. Проверка: файлы на месте, `pnpm --filter web exec tsc --noEmit --pretty false` без ошибок.
-- [ ] 1.3 Смоук-проверка Foldkit на `effect@4.1.0`: Story- и Scene-тесты примера проходят, `pnpm --filter web dev` открывает пример, переходы по маршрутам работают без ошибок в консоли. Проверка: тесты зелёные, ручной прогон в браузере. При поломке остановиться и доложить владельцу (design D0).
-- [ ] 1.4 Создать `apps/server` (`effect@4.1.0`, `@effect/platform-node@4.1.0`, tsconfig под node, точка входа `src/main.ts`) и корневые скрипты `dev`, `build`, `check`, `test`, `lint`, `format`. Проверка: `pnpm check` проходит на пустых пакетах.
-- [ ] 1.5 Настроить vitest-workspace с проектами `web` (happy-dom) и `server` (node) и тихим режимом по умолчанию. Проверка: `pnpm test` запускает оба проекта, в выводе только точки и итог.
+- [x] 1.1 Создать корень pnpm-workspace: `package.json` с `engines.node >= 24`, `pnpm-workspace.yaml` (`apps/*`, `packages/*`), `.gitignore`, `.nvmrc`. Задать `pnpm.overrides` и `peerDependencyRules` для `effect`, `@effect/platform-browser`, `@effect/platform-node` = `4.1.0`. Проверка: `pnpm install` проходит, `pnpm why effect` показывает одну версию 4.1.0.
+- [x] 1.2 Сгенерировать шаблон `create-foldkit-app@0.40.0` (`--rendering spa --example routing --package-manager pnpm`) во временном каталоге и перенести в `apps/web` конфиги (vite, vitest, oxlint, oxfmt, tsconfig, `FOLDKIT.md`, `AGENTS.md`, `.mcp.json`) и пример маршрутов. Версии без `^`. Проверка: файлы на месте, `pnpm --filter web exec tsc --noEmit --pretty false` без ошибок.
+- [x] 1.3 Смоук-проверка Foldkit на `effect@4.1.0`: Story- и Scene-тесты примера проходят, `pnpm --filter web dev` открывает пример, переходы по маршрутам работают без ошибок в консоли. Проверка: тесты зелёные, ручной прогон в браузере. При поломке остановиться и доложить владельцу (design D0).
+- [x] 1.4 Создать `apps/server` (`effect@4.1.0`, `@effect/platform-node@4.1.0`, tsconfig под node, точка входа `src/main.ts`) и корневые скрипты `dev`, `build`, `check`, `test`, `lint`, `format`. Проверка: `pnpm check` проходит на пустых пакетах.
+- [x] 1.5 Настроить vitest-workspace с проектами `web` (happy-dom) и `server` (node) и тихим режимом по умолчанию. Проверка: `pnpm test` запускает оба проекта, в выводе только точки и итог.
 
 ## 2. Ядро локализации (`apps/web/src/i18n`)
 

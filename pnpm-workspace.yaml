@@ -1,0 +1,22 @@
+packages:
+  - apps/*
+  - packages/*
+
+allowBuilds:
+  msgpackr-extract: false
+
+overrides:
+  '@effect/platform-browser': 4.1.0
+  '@effect/platform-node': 4.1.0
+  '@effect/platform-node-shared': 4.1.0
+  effect: 4.1.0
+
+patchedDependencies:
+  '@foldkit/vite-plugin@0.28.0': patches/@foldkit__vite-plugin@0.28.0.patch
+
+peerDependencyRules:
+  allowedVersions:
+    '@effect/platform-browser': 4.1.0
+    '@effect/platform-node': 4.1.0
+    '@effect/platform-node-shared': 4.1.0
+    effect: 4.1.0

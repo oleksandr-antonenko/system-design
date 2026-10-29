@@ -1,0 +1,25 @@
+{
+  "name": "system-design",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Interactive System Design course: theory with a live board and hands-on tasks.",
+  "license": "MIT",
+  "packageManager": "pnpm@10.20.0",
+  "engines": {
+    "node": ">=24"
+  },
+  "scripts": {
+    "dev": "pnpm --parallel --filter ./apps/* dev",
+    "build": "pnpm --filter @system-design/web build && pnpm --filter @system-design/server build",
+    "start": "pnpm --filter @system-design/server start",
+    "typecheck": "pnpm -r typecheck",
+    "lint": "pnpm -r lint",
+    "test": "vitest run --silent --reporter=dot",
+    "check": "pnpm typecheck && pnpm lint && pnpm test",
+    "format": "pnpm -r format"
+  },
+  "devDependencies": {
+    "vitest": "5.0.5"
+  }
+}

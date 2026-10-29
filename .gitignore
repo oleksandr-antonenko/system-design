@@ -10,3 +10,8 @@ data/
 .DS_Store
 .playwright-mcp/
 coverage/
+.data/
+repos/
+.claude/worktrees/
+.vscode/
+.idea/
