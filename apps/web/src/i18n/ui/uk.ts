@@ -9,6 +9,16 @@ const inLanguage: UiStrings['inLanguage'] = {
   lt: 'литовською',
 }
 
+const kindName: UiStrings['kindName'] = {
+  client: 'Користувачі',
+  lb: 'Балансувальник',
+  server: 'Сервер',
+  db: 'База даних',
+}
+
+const n = (value: number) => formatNumber('uk', Math.round(value))
+const percent = (ratio: number) => `${n(ratio * 100)}%`
+
 export const uk = {
   courseTitle: 'System Design',
   courseTagline:
@@ -16,6 +26,7 @@ export const uk = {
   documentTitle: pageTitle => `${pageTitle} · System Design`,
   languageSwitcherLabel: 'Мова',
   inLanguage,
+  kindName,
   home: {
     heading: 'Програма курсу',
     lessonCount: count =>
@@ -40,8 +51,88 @@ export const uk = {
     instrumentsRegion: 'Прилади',
     theoryPlaceholder: 'Урок ще готується. Тут з’являться кроки теорії.',
     boardPlaceholder: 'Тут буде дошка зі схемою системи.',
-    instrumentsPlaceholder:
-      'Тут будуть навантаження, помилки та час відповіді.',
+    instrumentsPlaceholder: 'Тут будуть навантаження, помилки та час відповіді.',
+  },
+  board: {
+    label: 'Схема системи',
+    paletteTitle: 'Палітра',
+    laterTitle: 'Пізніше в курсі',
+    paletteClosed: 'Відкриється в задачі',
+    lockedUntilLesson: order => `урок ${order}`,
+    newBadge: 'нове',
+    capacityTag: rps => `до ${n(rps)} rps`,
+    modeView: 'Дошка йде за текстом',
+    modeEdit: 'Задача · дошка ваша',
+    modeReplay: 'Показую розв’язок…',
+    deleteEdge: 'Видалити зв’язок',
+    deleteNode: 'Видалити блок',
+    connectHint: 'Потягніть, щоб з’єднати',
+    nodeLoad: (rps, utilization) => `${n(rps)} rps · ${percent(utilization)}`,
+    clientsLoad: rps => `${n(rps)} rps →`,
+    nodeDown: 'недоступний',
+    edgeFlow: rps => `${n(rps)} rps`,
+    ghost: kind => `сюди: ${kindName[kind]}`,
+  },
+  hud: {
+    load: 'Навантаження',
+    errors: 'Помилки',
+    p95: 'p95 відповіді',
+    database: 'Запити до бази',
+    cost: 'Ціна',
+    rps: value => `${n(value)} rps`,
+    ms: value => `${n(value)} мс`,
+    percent,
+    perHour: dollars => `${dollars.toFixed(2).replace('.', ',')} $/год`,
+    pause: 'Пауза',
+    play: 'Трафік',
+    speed: 'Швидкість',
+    undo: 'Скасувати',
+    redo: 'Повторити',
+    reset: 'Скинути дошку',
+    journal: 'Журнал операцій',
+    legendOk: 'запит оброблено',
+    legendHot: 'блок майже на межі',
+    legendLost: 'запит втрачено',
+    modelNote: 'Модель, цифри умовні',
+  },
+  player: {
+    stepOf: (step, total) => `Крок ${step} з ${total}`,
+    step: step => `Крок ${step}`,
+    task: 'Задача',
+    prev: '← Назад',
+    next: 'Далі →',
+    navHint: 'Стрілки ← → теж працюють',
+    solveFirst: 'Розв’яжіть задачу на дошці, щоб продовжити',
+    lessonEnd: 'Кінець уроку',
+    revisit: 'Повернутися до цього кроку',
+    journalScript: stepTitle => `Сценарій кроку «${stepTitle}»`,
+    journalMine: 'Ваші ходи в задачі',
+    journalScriptEmpty: 'На цьому кроці дошка не змінюється.',
+    journalMineEmpty: 'Поки порожньо. Ходи з’являться, коли почнете задачу.',
+    journalNote:
+      'Дошка на будь-якому кроці — це результат застосування цих операцій від початку уроку. Демонстрації та ходи учня записуються однією мовою, тому працюють перемотування, скасування і «Показати розв’язок».',
+    finishedTitle: 'Урок пройдено',
+    finishedBody: 'Наступні уроки з’являться в програмі курсу.',
+  },
+  task: {
+    heading: 'Задача на дошці',
+    solved: 'Розв’язано',
+    solvedWithHint: 'Розв’язано з підказкою',
+    attempts: count => `спроб: ${n(count)}`,
+    howTo:
+      'Перетягніть блок із палітри на дошку. Зв’язок тягнеться з кружечка на правому краї блока. Щоб видалити зв’язок, натисніть на нього, потім на червоний хрестик.',
+    hiddenGoal: 'Ще один критерій перевіряється прогоном навантаження',
+    metricGoal: load => `Витримує ${n(load)} rps з помилками менше 1%`,
+    metricGoalPassed: (load, errorRate) =>
+      `Витримує ${n(load)} rps, помилок ${percent(errorRate)}`,
+    check: 'Перевірити',
+    hint: (shown, total) => `Підказка · ${shown} з ${total}`,
+    showSolution: 'Показати розв’язок',
+    resultErrors: 'Помилки',
+    resultP95: 'p95 відповіді',
+    resultServers: 'Завантаження серверів',
+    resultCost: 'Ціна',
+    continueLesson: 'Далі →',
   },
   notFound: {
     title: 'Сторінку не знайдено',
@@ -52,5 +143,31 @@ export const uk = {
     UnknownLesson: ({ slug }) => `Уроку «${slug}» немає в курсі.`,
     LessonNotTranslated: ({ shownIn }) =>
       `Цей урок ще не перекладено українською, тому показуємо його ${inLanguage[shownIn]}.`,
+    ConnectSelf: () => 'Блок не можна з’єднати із самим собою.',
+    ConnectDuplicate: () => 'Такий зв’язок уже є.',
+    ConnectIntoClients: () =>
+      'У користувачів запити не входять: вони джерело трафіку.',
+    ConnectClientsToDatabase: () =>
+      'Користувачі не ходять у базу напряму. Між ними має стояти сервер.',
+    ConnectServerToServer: () =>
+      'Сервери не передають запити один одному. Розподіляти навантаження має балансувальник.',
+    ConnectBalancerToDatabase: () =>
+      'Балансувальник роздає запити серверам, а не базі.',
+    ConnectWrongDirection: () =>
+      'Запити йдуть зліва направо: користувачі, балансувальник, сервери, база.',
+    NodeIsPartOfTask: ({ id }) =>
+      `Блок ${id} входить в умову задачі, його не можна видалити.`,
+    UnknownNode: ({ id }) => `Блока ${id} немає на дошці.`,
+    DuplicateNodeId: ({ id }) => `Блок з іменем ${id} уже є.`,
+    GoalMissingKind: ({ kind }) =>
+      `На дошці поки немає блока «${kindName[kind]}». Він у палітрі зліва.`,
+    GoalTooFewTargets: ({ from, to, have, need }) =>
+      `Зв’язків від «${kindName[from]}» до блоків «${kindName[to]}»: ${n(have)} з ${n(need)}. Протягніть відсутні.`,
+    GoalDirectPath: ({ from, via, targets }) =>
+      `«${kindName[from]}» ходять на ${targets.join(', ')} напряму, повз блок «${kindName[via]}». Натисніть на підсвічений зв’язок і видаліть його.`,
+    GoalNotConnected: ({ from, via }) =>
+      `Немає зв’язку від «${kindName[from]}» до блока «${kindName[via]}»: запитам нікуди йти.`,
+    GoalTooManyErrors: ({ load, errorRate, overloaded }) =>
+      `При ${n(load)} rps втрачається ${percent(errorRate)} запитів. Перевантажені: ${overloaded.join(', ')}.`,
   },
 } satisfies UiStrings

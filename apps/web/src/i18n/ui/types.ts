@@ -1,3 +1,4 @@
+import type { ComponentKind } from '../../domain/catalog'
 import type { ModuleId } from '../../lessons/model'
 import type { DomainMessageTexts } from '../domainMessage'
 import type { Locale } from '../locale'
@@ -8,6 +9,7 @@ export type UiStrings = Readonly<{
   documentTitle: (pageTitle: string) => string
   languageSwitcherLabel: string
   inLanguage: Readonly<Record<Locale, string>>
+  kindName: Readonly<Record<ComponentKind, string>>
   home: Readonly<{
     heading: string
     lessonCount: (count: number) => string
@@ -23,6 +25,84 @@ export type UiStrings = Readonly<{
     theoryPlaceholder: string
     boardPlaceholder: string
     instrumentsPlaceholder: string
+  }>
+  board: Readonly<{
+    label: string
+    paletteTitle: string
+    laterTitle: string
+    paletteClosed: string
+    lockedUntilLesson: (order: number) => string
+    newBadge: string
+    capacityTag: (rps: number) => string
+    modeView: string
+    modeEdit: string
+    modeReplay: string
+    deleteEdge: string
+    deleteNode: string
+    connectHint: string
+    nodeLoad: (rps: number, utilization: number) => string
+    clientsLoad: (rps: number) => string
+    nodeDown: string
+    edgeFlow: (rps: number) => string
+    ghost: (kind: ComponentKind) => string
+  }>
+  hud: Readonly<{
+    load: string
+    errors: string
+    p95: string
+    database: string
+    cost: string
+    rps: (value: number) => string
+    ms: (value: number) => string
+    percent: (ratio: number) => string
+    perHour: (dollars: number) => string
+    pause: string
+    play: string
+    speed: string
+    undo: string
+    redo: string
+    reset: string
+    journal: string
+    legendOk: string
+    legendHot: string
+    legendLost: string
+    modelNote: string
+  }>
+  player: Readonly<{
+    stepOf: (step: number, total: number) => string
+    step: (step: number) => string
+    task: string
+    prev: string
+    next: string
+    navHint: string
+    solveFirst: string
+    lessonEnd: string
+    revisit: string
+    journalScript: (stepTitle: string) => string
+    journalMine: string
+    journalScriptEmpty: string
+    journalMineEmpty: string
+    journalNote: string
+    finishedTitle: string
+    finishedBody: string
+  }>
+  task: Readonly<{
+    heading: string
+    solved: string
+    solvedWithHint: string
+    attempts: (count: number) => string
+    howTo: string
+    hiddenGoal: string
+    metricGoal: (load: number) => string
+    metricGoalPassed: (load: number, errorRate: number) => string
+    check: string
+    hint: (shown: number, total: number) => string
+    showSolution: string
+    resultErrors: string
+    resultP95: string
+    resultServers: string
+    resultCost: string
+    continueLesson: string
   }>
   notFound: Readonly<{
     title: string

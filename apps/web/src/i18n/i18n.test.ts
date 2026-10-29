@@ -183,3 +183,35 @@ describe('domain messages', () => {
     )
   })
 })
+
+describe('every domain message', () => {
+  const samples: ReadonlyArray<DomainMessage> = [
+    DomainMessage.UnknownLesson({ slug: 'x' }),
+    DomainMessage.LessonNotTranslated({ shownIn: 'en' }),
+    DomainMessage.ConnectSelf(),
+    DomainMessage.ConnectDuplicate(),
+    DomainMessage.ConnectIntoClients(),
+    DomainMessage.ConnectClientsToDatabase(),
+    DomainMessage.ConnectServerToServer(),
+    DomainMessage.ConnectBalancerToDatabase(),
+    DomainMessage.ConnectWrongDirection(),
+    DomainMessage.NodeIsPartOfTask({ id: 'app1' }),
+    DomainMessage.UnknownNode({ id: 'app9' }),
+    DomainMessage.DuplicateNodeId({ id: 'lb-1' }),
+    DomainMessage.GoalMissingKind({ kind: 'lb' }),
+    DomainMessage.GoalTooFewTargets({ from: 'lb', to: 'server', have: 1, need: 3 }),
+    DomainMessage.GoalDirectPath({ from: 'client', via: 'lb', targets: ['app1'] }),
+    DomainMessage.GoalNotConnected({ from: 'client', via: 'lb' }),
+    DomainMessage.GoalTooManyErrors({ load: 900, errorRate: 0.11, overloaded: ['app1'] }),
+  ]
+
+  test('covers every tag', () => {
+    expect(new Set(samples.map(sample => sample._tag)).size).toBe(17)
+  })
+
+  test.each(locales)('renders non-empty text in %s', locale => {
+    samples.forEach(sample => {
+      expect(renderDomainMessage(uiFor(locale).domain, sample).trim()).not.toBe('')
+    })
+  })
+})
