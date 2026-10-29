@@ -41,4 +41,4 @@
 
 ## 8. Завершение
 
-- [ ] 8.1 `pnpm check` и `pnpm build` зелёные. Выкатка через `main`, урок проходится на `https://system-design.oleksandr-antonenko.com/ru/lessons/load-balancer` на всех четырёх языках. Обновлены `docs/roadmap.md` и `CONTRIBUTING.md` (формат `lesson.ts`).
+- [x] 8.1 `pnpm check` и `pnpm build` зелёные. Выкатка через `main`, урок проходится на `https://system-design.oleksandr-antonenko.com/ru/lessons/load-balancer` на всех четырёх языках. Обновлены `docs/roadmap.md` и `CONTRIBUTING.md` (формат `lesson.ts`).
