@@ -13,7 +13,11 @@ import { Locale, isLocale } from './i18n/locale'
 
 export const AppRoute = defineRouteUnion({
   Home: { locale: Locale },
-  Lesson: { locale: Locale, slug: Schema.String },
+  Lesson: {
+    locale: Locale,
+    slug: Schema.String,
+    step: Schema.Option(Schema.Number),
+  },
   NotFound: { locale: Locale, path: Schema.String },
   Unlocalized: { path: Schema.String },
 })
@@ -27,6 +31,9 @@ export const lessonRouter = pipe(
   localeSegment,
   slash(literal('lessons')),
   slash(string('slug')),
+  Route.query(
+    Schema.Struct({ step: Schema.OptionFromOptional(Schema.NumberFromString) }),
+  ),
   Route.mapTo(AppRoute.Lesson),
 )
 
@@ -77,7 +84,7 @@ export const localizedPath = (locale: Locale, path: string): string =>
 export const urlForRoute = (route: AppRoute): string =>
   AppRoute.match(route, {
     Home: ({ locale }) => homeUrl(locale),
-    Lesson: ({ locale, slug }) => lessonRouter({ locale, slug }),
+    Lesson: ({ locale, slug, step }) => lessonRouter({ locale, slug, step }),
     NotFound: ({ path }) => path,
     Unlocalized: ({ path }) => path,
   })
@@ -85,7 +92,7 @@ export const urlForRoute = (route: AppRoute): string =>
 export const routeInLocale = (route: AppRoute, locale: Locale): AppRoute =>
   AppRoute.match(route, {
     Home: () => AppRoute.Home({ locale }),
-    Lesson: ({ slug }) => AppRoute.Lesson({ locale, slug }),
+    Lesson: ({ slug, step }) => AppRoute.Lesson({ locale, slug, step }),
     NotFound: ({ path }) =>
       AppRoute.NotFound({
         locale,

@@ -1,4 +1,4 @@
-import { Array, Number as Num, Option, Schema, pipe } from 'effect'
+import { Array, Number, Option, Schema, pipe } from 'effect'
 import { defineTaggedUnion } from 'foldkit/schema'
 
 import { DomainMessage } from '../i18n/domainMessage'
@@ -53,7 +53,8 @@ const targetsOfKind = (
     Option.exists(kindOf(doc, target), targetKind => targetKind === kind),
   )
 
-export const isHiddenGoal = (goal: Goal): boolean => goal._tag === 'MaxErrorRate'
+export const isHiddenGoal = (goal: Goal): boolean =>
+  goal._tag === 'MaxErrorRate'
 
 export const checkGoal = (doc: BoardDoc, goal: Goal): GoalCheck =>
   Goal.match(goal, {
@@ -66,18 +67,31 @@ export const checkGoal = (doc: BoardDoc, goal: Goal): GoalCheck =>
       const sources = nodesOfKind(doc, from)
       const best = Math.max(
         0,
-        ...Array.map(sources, source => targetsOfKind(doc, source.id, to).length),
+        ...Array.map(
+          sources,
+          source => targetsOfKind(doc, source.id, to).length,
+        ),
       )
-      const fed = Array.flatMap(sources, source => targetsOfKind(doc, source.id, to))
+      const fed = Array.flatMap(sources, source =>
+        targetsOfKind(doc, source.id, to),
+      )
       return best >= min
         ? met
-        : failed(DomainMessage.GoalTooFewTargets({ from, to, have: best, need: min }), {
-            focusNodes: pipe(
-              nodesOfKind(doc, to),
-              Array.filter(node => !Array.contains(fed, node.id)),
-              Array.map(node => node.id),
-            ),
-          })
+        : failed(
+            DomainMessage.GoalTooFewTargets({
+              from,
+              to,
+              have: best,
+              need: min,
+            }),
+            {
+              focusNodes: pipe(
+                nodesOfKind(doc, to),
+                Array.filter(node => !Array.contains(fed, node.id)),
+                Array.map(node => node.id),
+              ),
+            },
+          )
     },
 
     OnlyThrough: ({ from, to, via }) => {
@@ -134,8 +148,10 @@ export const firstFailedGoal = (
     Array.findFirst(({ check }) => !check.met),
   )
 
-export const allGoalsMet = (doc: BoardDoc, goals: ReadonlyArray<Goal>): boolean =>
-  Option.isNone(firstFailedGoal(doc, goals))
+export const allGoalsMet = (
+  doc: BoardDoc,
+  goals: ReadonlyArray<Goal>,
+): boolean => Option.isNone(firstFailedGoal(doc, goals))
 
 export const countMet = (doc: BoardDoc, goals: ReadonlyArray<Goal>): number =>
-  Num.sumAll(Array.map(goals, goal => (checkGoal(doc, goal).met ? 1 : 0)))
+  Number.sumAll(Array.map(goals, goal => (checkGoal(doc, goal).met ? 1 : 0)))

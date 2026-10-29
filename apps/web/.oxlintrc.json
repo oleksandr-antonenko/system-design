@@ -1,7 +1,11 @@
 {
   "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "extends": ["./node_modules/@foldkit/oxlint-plugin/recommended.json"],
-  "plugins": ["typescript"],
+  "extends": [
+    "./node_modules/@foldkit/oxlint-plugin/recommended.json"
+  ],
+  "plugins": [
+    "typescript"
+  ],
   "categories": {
     "correctness": "off"
   },
@@ -18,11 +22,16 @@
     "typescript/no-explicit-any": "error",
     "typescript/consistent-type-assertions": [
       "error",
-      { "assertionStyle": "never" }
+      {
+        "assertionStyle": "never"
+      }
     ],
     "sort-imports": [
       "error",
-      { "ignoreDeclarationSort": true, "ignoreCase": false }
+      {
+        "ignoreDeclarationSort": true,
+        "ignoreCase": false
+      }
     ]
   },
   "ignorePatterns": [
@@ -34,5 +43,15 @@
     "vitest.config.ts",
     "**/*.config.js",
     "**/*.config.mjs"
+  ],
+  "overrides": [
+    {
+      "files": [
+        "**/*.test.ts"
+      ],
+      "rules": {
+        "foldkit/no-child-message-construction-in-root": "off"
+      }
+    }
   ]
 }

@@ -199,10 +199,23 @@ describe('every domain message', () => {
     DomainMessage.UnknownNode({ id: 'app9' }),
     DomainMessage.DuplicateNodeId({ id: 'lb-1' }),
     DomainMessage.GoalMissingKind({ kind: 'lb' }),
-    DomainMessage.GoalTooFewTargets({ from: 'lb', to: 'server', have: 1, need: 3 }),
-    DomainMessage.GoalDirectPath({ from: 'client', via: 'lb', targets: ['app1'] }),
+    DomainMessage.GoalTooFewTargets({
+      from: 'lb',
+      to: 'server',
+      have: 1,
+      need: 3,
+    }),
+    DomainMessage.GoalDirectPath({
+      from: 'client',
+      via: 'lb',
+      targets: ['app1'],
+    }),
     DomainMessage.GoalNotConnected({ from: 'client', via: 'lb' }),
-    DomainMessage.GoalTooManyErrors({ load: 900, errorRate: 0.11, overloaded: ['app1'] }),
+    DomainMessage.GoalTooManyErrors({
+      load: 900,
+      errorRate: 0.11,
+      overloaded: ['app1'],
+    }),
   ]
 
   test('covers every tag', () => {
@@ -211,7 +224,9 @@ describe('every domain message', () => {
 
   test.each(locales)('renders non-empty text in %s', locale => {
     samples.forEach(sample => {
-      expect(renderDomainMessage(uiFor(locale).domain, sample).trim()).not.toBe('')
+      expect(renderDomainMessage(uiFor(locale).domain, sample).trim()).not.toBe(
+        '',
+      )
     })
   })
 })

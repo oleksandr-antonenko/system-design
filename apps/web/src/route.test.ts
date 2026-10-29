@@ -17,7 +17,7 @@ describe('routes', () => {
   test.each(locales)('parse → print → parse is stable for %s', locale => {
     const routes = [
       AppRoute.Home({ locale }),
-      AppRoute.Lesson({ locale, slug: 'load-balancer' }),
+      AppRoute.Lesson({ locale, slug: 'load-balancer', step: Option.none() }),
       AppRoute.NotFound({ locale, path: `/${locale}/unknown/path` }),
     ]
 
@@ -51,7 +51,11 @@ describe('routes', () => {
     expect(
       urlForRoute(
         routeInLocale(
-          AppRoute.Lesson({ locale: 'ru', slug: 'load-balancer' }),
+          AppRoute.Lesson({
+            locale: 'ru',
+            slug: 'load-balancer',
+            step: Option.none(),
+          }),
           'en',
         ),
       ),

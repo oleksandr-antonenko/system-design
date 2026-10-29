@@ -1,6 +1,7 @@
 import { Schema } from 'effect'
 
 import { Locale } from '../i18n/locale'
+import type { LooseLessonTexts } from '../lesson/dsl'
 
 export const ModuleId = Schema.Literals([
   'foundations',
@@ -20,9 +21,6 @@ export const LessonMeta = Schema.Struct({
 })
 export type LessonMeta = typeof LessonMeta.Type
 
-export type LessonText = Readonly<{
-  title: string
-  summary: string
-}>
+export type LessonText = LooseLessonTexts
 
 export const defineLessonMeta = (meta: LessonMeta): LessonMeta => meta

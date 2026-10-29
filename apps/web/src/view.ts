@@ -4,10 +4,11 @@ import type { Document, Html, HtmlBuilder } from 'foldkit/html'
 import { DomainMessage, renderDomainMessage } from './i18n/domainMessage'
 import { type Locale, localeEndonym, locales } from './i18n/locale'
 import { type UiStrings, uiFor } from './i18n/ui'
+import * as Player from './lesson/view'
 import { type Lesson, lessonTextFor } from './lessons/assemble'
 import { moduleOrder } from './lessons/model'
 import { findLesson, lessons } from './lessons/registry'
-import type { Message, Model } from './main'
+import { Message, type Model, currentSession } from './main'
 import {
   AppRoute,
   homeUrl,
@@ -90,7 +91,13 @@ const lessonCardView = (
   const title = lesson.meta.available
     ? h.a(
         [
-          h.Href(lessonRouter({ locale, slug: lesson.meta.slug })),
+          h.Href(
+            lessonRouter({
+              locale,
+              slug: lesson.meta.slug,
+              step: Option.none(),
+            }),
+          ),
           h.Class('text-accent underline-offset-4 hover:underline'),
         ],
         [text.title],
@@ -379,7 +386,19 @@ export const view = (model: Model, h: HtmlBuilder<Message>): Document => {
             ),
             h,
           ),
-        onSome: lesson => lessonView(lesson, locale, ui, h),
+        onSome: lesson =>
+          Option.match(currentSession(model), {
+            onNone: () => lessonView(lesson, locale, ui, h),
+            onSome: session =>
+              h.submodel({
+                slotId: 'lesson-player',
+                model: session,
+                view: Player.view,
+                toParentMessage: message =>
+                  Message.GotPlayerMessage({ message }),
+                viewInputs: { locale, prefersDark: model.prefersDark },
+              }),
+          }),
       }),
     NotFound: ({ path }) => notFoundView(locale, ui, ui.notFound.body(path), h),
     Unlocalized: () => h.main([]),
@@ -389,7 +408,13 @@ export const view = (model: Model, h: HtmlBuilder<Message>): Document => {
     title: ui.documentTitle(pageTitle(model.route, locale, ui)),
     lang: locale,
     body: h.div(
-      [h.Class('flex min-h-screen flex-col bg-bg text-ink')],
+      [
+        h.Class(
+          Option.isSome(currentSession(model))
+            ? 'app-lesson flex flex-col bg-bg text-ink'
+            : 'flex min-h-screen flex-col bg-bg text-ink',
+        ),
+      ],
       [headerView(model.route, locale, ui, h), content],
     ),
   }

@@ -51,7 +51,8 @@ export const uk = {
     instrumentsRegion: 'Прилади',
     theoryPlaceholder: 'Урок ще готується. Тут з’являться кроки теорії.',
     boardPlaceholder: 'Тут буде дошка зі схемою системи.',
-    instrumentsPlaceholder: 'Тут будуть навантаження, помилки та час відповіді.',
+    instrumentsPlaceholder:
+      'Тут будуть навантаження, помилки та час відповіді.',
   },
   board: {
     label: 'Схема системи',
@@ -98,7 +99,6 @@ export const uk = {
   player: {
     stepOf: (step, total) => `Крок ${step} з ${total}`,
     step: step => `Крок ${step}`,
-    task: 'Задача',
     prev: '← Назад',
     next: 'Далі →',
     navHint: 'Стрілки ← → теж працюють',

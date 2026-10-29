@@ -59,7 +59,8 @@ export const renderDomainMessage = (
     ConnectIntoClients: params => texts.ConnectIntoClients(params),
     ConnectClientsToDatabase: params => texts.ConnectClientsToDatabase(params),
     ConnectServerToServer: params => texts.ConnectServerToServer(params),
-    ConnectBalancerToDatabase: params => texts.ConnectBalancerToDatabase(params),
+    ConnectBalancerToDatabase: params =>
+      texts.ConnectBalancerToDatabase(params),
     ConnectWrongDirection: params => texts.ConnectWrongDirection(params),
     NodeIsPartOfTask: params => texts.NodeIsPartOfTask(params),
     UnknownNode: params => texts.UnknownNode(params),

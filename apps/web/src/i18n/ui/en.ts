@@ -97,7 +97,6 @@ export const en = {
   player: {
     stepOf: (step, total) => `Step ${step} of ${total}`,
     step: step => `Step ${step}`,
-    task: 'Task',
     prev: '← Back',
     next: 'Next →',
     navHint: 'The ← → keys work too',

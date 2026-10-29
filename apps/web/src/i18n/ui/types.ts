@@ -71,7 +71,6 @@ export type UiStrings = Readonly<{
   player: Readonly<{
     stepOf: (step: number, total: number) => string
     step: (step: number) => string
-    task: string
     prev: string
     next: string
     navHint: string

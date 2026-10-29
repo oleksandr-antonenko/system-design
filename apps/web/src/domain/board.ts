@@ -26,7 +26,12 @@ export const BoardDoc = Schema.Struct({
 })
 export type BoardDoc = typeof BoardDoc.Type
 
-export const emptyBoard: BoardDoc = { nodes: [], edges: [], load: 0, failed: [] }
+export const emptyBoard: BoardDoc = {
+  nodes: [],
+  edges: [],
+  load: 0,
+  failed: [],
+}
 
 export const edgeKey = (edge: Edge): string => `${edge.from}>${edge.to}`
 
@@ -66,7 +71,9 @@ const connectRefusal = (
   if (from.id === to.id) {
     return Option.some(DomainMessage.ConnectSelf())
   }
-  if (Array.some(doc.edges, edge => edge.from === from.id && edge.to === to.id)) {
+  if (
+    Array.some(doc.edges, edge => edge.from === from.id && edge.to === to.id)
+  ) {
     return Option.some(DomainMessage.ConnectDuplicate())
   }
   if (canConnect(from.kind, to.kind)) {
@@ -152,7 +159,9 @@ export const applyOp = (doc: BoardDoc, op: BoardOp): BoardResult =>
       withNode(doc, id, () =>
         Result.succeed({
           ...doc,
-          failed: Array.contains(doc.failed, id) ? doc.failed : [...doc.failed, id],
+          failed: Array.contains(doc.failed, id)
+            ? doc.failed
+            : [...doc.failed, id],
         }),
       ),
     RecoverNode: ({ id }) =>
@@ -170,7 +179,8 @@ export const foldOps = (doc: BoardDoc, ops: ReadonlyArray<BoardOp>): BoardDoc =>
 export const nodesOfKind = (
   doc: BoardDoc,
   kind: ComponentKind,
-): ReadonlyArray<BoardNode> => Array.filter(doc.nodes, node => node.kind === kind)
+): ReadonlyArray<BoardNode> =>
+  Array.filter(doc.nodes, node => node.kind === kind)
 
 export const targetsOf = (doc: BoardDoc, id: string): ReadonlyArray<string> =>
   pipe(
@@ -179,11 +189,7 @@ export const targetsOf = (doc: BoardDoc, id: string): ReadonlyArray<string> =>
     Array.map(edge => edge.to),
   )
 
-const nextFreeId = (
-  doc: BoardDoc,
-  prefix: string,
-  start: number,
-): string =>
+const nextFreeId = (doc: BoardDoc, prefix: string, start: number): string =>
   pipe(
     Array.range(start, start + doc.nodes.length + 1),
     Array.map(index => `${prefix}${index}`),

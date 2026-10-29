@@ -1,7 +1,15 @@
 import { Effect, Option } from 'effect'
 import { Runtime } from 'foldkit'
 
-import { Flags, LOCALE_STORAGE_KEY, Message, Model, init, update } from './main'
+import {
+  Flags,
+  LOCALE_STORAGE_KEY,
+  Message,
+  Model,
+  init,
+  subscriptions,
+  update,
+} from './main'
 import { view } from './view'
 
 const readSavedLocale = Effect.try(() =>
@@ -17,7 +25,11 @@ const readFlags = Effect.gen(function* () {
     navigator.languages.length > 0 ? navigator.languages : [navigator.language],
   )
 
-  return Flags.make({ maybeSavedLocale, browserLanguages })
+  const prefersDark = yield* Effect.sync(
+    () => window.matchMedia('(prefers-color-scheme: dark)').matches,
+  )
+
+  return Flags.make({ maybeSavedLocale, browserLanguages, prefersDark })
 })
 
 const application = Runtime.makeApplication({
@@ -31,8 +43,10 @@ const application = Runtime.makeApplication({
     onUrlRequest: request => Message.ClickedLink({ request }),
     onUrlChange: url => Message.ChangedUrl({ url }),
   },
+  subscriptions,
   devTools: {
     Message,
+    excludeFromHistory: ['TickedAnimationFrame'],
   },
 })
 

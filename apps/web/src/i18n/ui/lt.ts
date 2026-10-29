@@ -98,7 +98,6 @@ export const lt = {
   player: {
     stepOf: (step, total) => `${step} žingsnis iš ${total}`,
     step: step => `${step} žingsnis`,
-    task: 'Užduotis',
     prev: '← Atgal',
     next: 'Toliau →',
     navHint: 'Veikia ir klavišai ← →',

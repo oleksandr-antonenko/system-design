@@ -98,7 +98,6 @@ export const ru = {
   player: {
     stepOf: (step, total) => `Шаг ${step} из ${total}`,
     step: step => `Шаг ${step}`,
-    task: 'Задача',
     prev: '← Назад',
     next: 'Далее →',
     navHint: 'Стрелки ← → тоже работают',

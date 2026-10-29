@@ -1,6 +1,12 @@
-import { Array, Number as Num, Option, Order, pipe } from 'effect'
+import { Array, Number, Option, Order, pipe } from 'effect'
 
-import { type BoardDoc, type BoardNode, edgeKey, rankOf, targetsOf } from './board'
+import {
+  type BoardDoc,
+  type BoardNode,
+  edgeKey,
+  rankOf,
+  targetsOf,
+} from './board'
 import { catalog } from './catalog'
 
 export type NodeFlow = Readonly<{
@@ -61,48 +67,65 @@ const servedBy = (
   return Math.min(incoming, catalog[node.kind].capacity)
 }
 
-const flowThrough = (doc: BoardDoc) => (flow: Flow, node: BoardNode): Flow => {
-  const incoming = flow.inflow[node.id] ?? 0
-  const isDown = Array.contains(doc.failed, node.id)
-  const targets = activeTargets(doc, node, isDown)
-  const served = servedBy(node, incoming, isDown, targets.length)
-  const share = Array.isReadonlyArrayNonEmpty(targets) ? served / targets.length : 0
-  const capacity = catalog[node.kind].capacity
+const flowThrough =
+  (doc: BoardDoc) =>
+  (flow: Flow, node: BoardNode): Flow => {
+    const incoming = flow.inflow[node.id] ?? 0
+    const isDown = Array.contains(doc.failed, node.id)
+    const targets = activeTargets(doc, node, isDown)
+    const served = servedBy(node, incoming, isDown, targets.length)
+    const share = Array.isReadonlyArrayNonEmpty(targets)
+      ? served / targets.length
+      : 0
+    const capacity = catalog[node.kind].capacity
 
-  return {
-    inflow: Array.reduce(targets, flow.inflow, (inflow, target) => ({
-      ...inflow,
-      [target]: (inflow[target] ?? 0) + share,
-    })),
-    edges: Array.reduce(targetsOf(doc, node.id), flow.edges, (edges, target) => ({
-      ...edges,
-      [edgeKey({ from: node.id, to: target })]: Array.contains(targets, target)
-        ? share
-        : 0,
-    })),
-    nodes: {
-      ...flow.nodes,
-      [node.id]: {
-        incoming,
-        served,
-        dropped: incoming - served,
-        utilization: Number.isFinite(capacity) ? incoming / capacity : 0,
-        isDown,
+    return {
+      inflow: Array.reduce(targets, flow.inflow, (inflow, target) => ({
+        ...inflow,
+        [target]: (inflow[target] ?? 0) + share,
+      })),
+      edges: Array.reduce(
+        targetsOf(doc, node.id),
+        flow.edges,
+        (edges, target) => ({
+          ...edges,
+          [edgeKey({ from: node.id, to: target })]: Array.contains(
+            targets,
+            target,
+          )
+            ? share
+            : 0,
+        }),
+      ),
+      nodes: {
+        ...flow.nodes,
+        [node.id]: {
+          incoming,
+          served,
+          dropped: incoming - served,
+          utilization: globalThis.Number.isFinite(capacity)
+            ? incoming / capacity
+            : 0,
+          isDown,
+        },
       },
-    },
-    viaBalancer:
-      node.kind === 'lb' ? [...flow.viaBalancer, ...targets] : flow.viaBalancer,
+      viaBalancer:
+        node.kind === 'lb'
+          ? [...flow.viaBalancer, ...targets]
+          : flow.viaBalancer,
+    }
   }
-}
 
 type LatencySample = Readonly<{ latency: number; weight: number }>
 
-const weightedP95 = (samples: ReadonlyArray<LatencySample>): Option.Option<number> => {
+const weightedP95 = (
+  samples: ReadonlyArray<LatencySample>,
+): Option.Option<number> => {
   const sorted = Array.sort(
     samples,
     Order.mapInput(Order.Number, (sample: LatencySample) => sample.latency),
   )
-  const total = Num.sumAll(Array.map(sorted, sample => sample.weight))
+  const total = Number.sumAll(Array.map(sorted, sample => sample.weight))
   const cumulative = Array.scan(sorted, 0, (sum, sample) => sum + sample.weight)
 
   return pipe(
@@ -116,7 +139,10 @@ export const simulate = (doc: BoardDoc, load: number): SimResult => {
   const clients = Array.filter(doc.nodes, node => node.kind === 'client')
   const start: Flow = {
     inflow: Object.fromEntries(
-      Array.map(clients, client => [client.id, load / Math.max(clients.length, 1)]),
+      Array.map(clients, client => [
+        client.id,
+        load / Math.max(clients.length, 1),
+      ]),
     ),
     nodes: {},
     edges: {},
@@ -149,7 +175,9 @@ export const simulate = (doc: BoardDoc, load: number): SimResult => {
       weight: flowOf(node).served,
     })),
   )
-  const dropped = Num.sumAll(Array.map(doc.nodes, node => flowOf(node).dropped))
+  const dropped = Number.sumAll(
+    Array.map(doc.nodes, node => flowOf(node).dropped),
+  )
 
   return {
     load,
@@ -157,8 +185,12 @@ export const simulate = (doc: BoardDoc, load: number): SimResult => {
     edges: flow.edges,
     errorRate: load > 0 ? dropped / load : 0,
     p95: weightedP95(samples),
-    databaseLoad: Num.sumAll(Array.map(databases, node => flowOf(node).incoming)),
-    costPerHour: Num.sumAll(Array.map(doc.nodes, node => catalog[node.kind].costPerHour)),
+    databaseLoad: Number.sumAll(
+      Array.map(databases, node => flowOf(node).incoming),
+    ),
+    costPerHour: Number.sumAll(
+      Array.map(doc.nodes, node => catalog[node.kind].costPerHour),
+    ),
   }
 }
 
