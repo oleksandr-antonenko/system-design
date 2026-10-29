@@ -1,0 +1,1398 @@
+<title>Макет урока System Design</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Literata:opsz,wght@7..72,400;7..72,600&family=Unbounded:wght@500&display=swap">
+<style>
+/* Layout: учебник слева, маркерная доска справа, тонкая лента шагов сверху, приборы под доской */
+:root {
+  --bg: #EDF0EF;
+  --page: #FAFBF9;
+  --board: #F4F7F8;
+  --grid: #E0E7EA;
+  --ink: #17202A;
+  --muted: #5A6774;
+  --line: #D2DAE0;
+  --node: #FFFFFF;
+  --node-line: #8D9BA8;
+  --accent: #2B4BD4;
+  --accent-soft: #E2E7FB;
+  --ok: #148A55;
+  --warn: #C27C05;
+  --bad: #CF3F36;
+  --bad-soft: #FBE6E4;
+  --ok-soft: #E0F3E9;
+  --on-warn: #1A1406;
+  --f-display: "Unbounded", "Arial Black", system-ui, sans-serif;
+  --f-prose: "Literata", "PT Serif", Georgia, serif;
+  --f-ui: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0E1318; --page: #131A21; --board: #0F151B; --grid: #1A232C; --ink: #E3E9EF; --muted: #93A0AD;
+    --line: #27323C; --node: #18202A; --node-line: #536475; --accent: #8EA3FF; --accent-soft: #1E2850;
+    --ok: #3DC48B; --warn: #E8AA3C; --bad: #F2675C; --bad-soft: #3A1715; --ok-soft: #12301F;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0E1318; --page: #131A21; --board: #0F151B; --grid: #1A232C; --ink: #E3E9EF; --muted: #93A0AD;
+  --line: #27323C; --node: #18202A; --node-line: #536475; --accent: #8EA3FF; --accent-soft: #1E2850;
+  --ok: #3DC48B; --warn: #E8AA3C; --bad: #F2675C; --bad-soft: #3A1715; --ok-soft: #12301F;
+  color-scheme: dark;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+html, body { height: 100%; }
+body { background: var(--bg); color: var(--ink); font-family: var(--f-ui); font-size: 13px; line-height: 1.45; -webkit-font-smoothing: antialiased; }
+button { font: inherit; color: inherit; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+.app { height: 100%; display: grid; grid-template-rows: auto minmax(0, 1fr); }
+
+/* ---------- верхняя лента ---------- */
+.top {
+  display: flex; align-items: center; flex-wrap: wrap; gap: 8px 24px;
+  padding-block: 8px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  background: var(--page); border-bottom: 1px solid var(--line);
+}
+.crumb { font-size: 12px; color: var(--muted); white-space: nowrap; display: flex; gap: 10px; align-items: baseline; }
+.crumb .brand { font-family: var(--f-display); font-weight: 500; font-size: 12.5px; color: var(--ink); }
+.crumb b { color: var(--ink); font-weight: 600; }
+.timeline { flex: 1 1 340px; display: flex; align-items: center; justify-content: center; gap: 14px; min-width: 0; }
+.tl-steps { display: flex; align-items: center; gap: 4px; }
+.tl { appearance: none; border: 0; background: none; padding: 9px 0; cursor: pointer; display: grid; place-items: center; }
+.tl .bar { display: block; width: 34px; height: 5px; border-radius: 3px; background: var(--line); transition: background .2s, height .2s; }
+.tl.done .bar { background: var(--accent); opacity: .5; }
+.tl.current .bar { background: var(--accent); height: 8px; }
+.tl.task .bar { width: 11px; height: 11px; border-radius: 2px; transform: rotate(45deg); margin-inline: 5px; }
+.tl.task.current .bar { height: 11px; }
+.tl:disabled { cursor: not-allowed; }
+.tl-label { font-size: 12px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+.tl-label b { color: var(--ink); font-weight: 600; }
+.top-note { font-size: 10.5px; color: var(--muted); letter-spacing: .08em; text-transform: uppercase; white-space: nowrap; }
+
+/* ---------- раскладка ---------- */
+.main { display: grid; grid-template-columns: minmax(340px, 38%) minmax(0, 1fr); min-height: 0; }
+
+.theory { display: flex; flex-direction: column; min-height: 0; min-width: 0; background: var(--page); border-right: 1px solid var(--line); }
+.theory-scroll {
+  position: relative; flex: 1; overflow-y: auto;
+  padding-block: 26px 32px;
+  padding-left: max(28px, env(safe-area-inset-left, 0px));
+  padding-right: 28px;
+}
+.eyebrow { font-size: 10.5px; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
+h1 { font-family: var(--f-display); font-weight: 500; font-size: 23px; line-height: 1.22; margin: 8px 0 6px; text-wrap: balance; letter-spacing: -.01em; }
+.meta { font-size: 12px; color: var(--muted); }
+.lesson-head { padding-bottom: 18px; }
+
+.beat { padding-block: 18px; border-top: 1px solid var(--line); }
+.beat h2 { margin: 0 0 10px; font-size: 11px; font-weight: 600; letter-spacing: .09em; text-transform: uppercase; color: var(--muted); display: flex; gap: 10px; align-items: baseline; }
+.beat h2 .n { color: var(--accent); font-variant-numeric: tabular-nums; }
+.beat.past { opacity: .5; cursor: pointer; transition: opacity .15s; }
+.beat.past:hover { opacity: .8; }
+.beat.past .prose { font-size: 15px; }
+.prose { font-family: var(--f-prose); font-size: 16.5px; line-height: 1.62; max-width: 62ch; }
+.prose p { margin: 0; }
+.prose p + p { margin-top: .75em; }
+.prose strong { font-weight: 600; }
+.ref { font-weight: 600; border-bottom: 1.5px dashed var(--accent); cursor: help; border-radius: 2px; }
+.ref:hover, .ref:focus-visible { background: var(--accent-soft); }
+.task-done { margin: 12px 0 0; font-size: 12px; color: var(--ok); font-weight: 600; }
+.finish { margin-top: 6px; padding-top: 18px; border-top: 1px solid var(--line); display: grid; gap: 6px; }
+.finish p { margin: 0; font-family: var(--f-prose); font-size: 15.5px; }
+
+/* ---------- карточка задачи ---------- */
+.task { margin-top: 16px; border: 1.5px solid var(--accent); border-radius: 12px; background: var(--node); padding: 16px; display: grid; gap: 12px; }
+.task.solved { border-color: var(--ok); }
+.task-head { display: flex; align-items: center; gap: 9px; font-size: 11px; font-weight: 700; letter-spacing: .09em; text-transform: uppercase; color: var(--accent); }
+.task.solved .task-head { color: var(--ok); }
+.task-head .dia { width: 9px; height: 9px; background: currentColor; transform: rotate(45deg); border-radius: 1px; flex: none; }
+.task-head .att { margin-left: auto; font-weight: 500; color: var(--muted); letter-spacing: .04em; text-transform: none; }
+.task-goal { font-family: var(--f-prose); font-size: 16px; line-height: 1.5; font-weight: 600; margin: 0; }
+.task-how { font-size: 12px; color: var(--muted); margin: 0; }
+.checks { list-style: none; margin: 0; padding: 0; display: grid; gap: 7px; }
+.checks li { display: grid; grid-template-columns: 18px 1fr; gap: 8px; font-size: 12.5px; align-items: start; }
+.checks .mk { width: 16px; height: 16px; border-radius: 50%; border: 1.5px solid var(--node-line); display: grid; place-items: center; font-size: 10px; line-height: 1; margin-top: 1px; font-weight: 700; }
+.checks li.ok .mk { background: var(--ok); border-color: var(--ok); color: var(--page); }
+.checks li.fail .mk { background: var(--bad); border-color: var(--bad); color: var(--page); }
+.checks li.hidden-goal { color: var(--muted); }
+.checks li.hidden-goal .mk { border-style: dashed; }
+.fb { border-radius: 8px; padding: 10px 12px; font-size: 12.5px; }
+.fb.fail { background: var(--bad-soft); border: 1px solid var(--bad); }
+.fb.ok { background: var(--ok-soft); border: 1px solid var(--ok); }
+.hints { margin: 0; padding-left: 20px; font-size: 12.5px; display: grid; gap: 4px; }
+.hints li::marker { color: var(--accent); }
+.task-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.result { display: grid; grid-template-columns: auto 1fr; gap: 4px 14px; margin: 0; font-size: 12.5px; font-variant-numeric: tabular-nums; }
+.result dt { color: var(--muted); }
+.result dd { margin: 0; font-weight: 600; }
+.result .was { color: var(--bad); font-weight: 500; }
+.result .now { color: var(--ok); }
+
+/* ---------- кнопки ---------- */
+.btn { appearance: none; border: 1px solid var(--line); background: var(--node); color: var(--ink); border-radius: 8px; padding: 7px 11px; font-size: 12px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
+.btn:hover:not(:disabled) { border-color: var(--node-line); }
+.btn:disabled { opacity: .42; cursor: not-allowed; }
+.btn.primary { background: var(--accent); border-color: var(--accent); color: var(--page); font-weight: 600; }
+.btn.link { border-color: transparent; background: transparent; color: var(--accent); padding-inline: 4px; }
+
+.theory-nav {
+  display: flex; justify-content: space-between; align-items: center; gap: 10px;
+  padding-block: 12px;
+  padding-left: max(28px, env(safe-area-inset-left, 0px)); padding-right: 28px;
+  border-top: 1px solid var(--line); background: var(--page);
+}
+.theory-nav .nav-text { font-size: 11.5px; color: var(--muted); text-align: center; flex: 1; min-width: 0; }
+
+/* ---------- доска ---------- */
+.boardside { display: flex; flex-direction: column; min-width: 0; min-height: 0; }
+.board-wrap { flex: 1; min-height: 0; display: grid; grid-template-columns: 156px minmax(0, 1fr); }
+.palette { background: var(--page); border-right: 1px solid var(--line); padding: 14px 10px; display: flex; flex-direction: column; gap: 6px; overflow-y: auto; }
+.pal-title { font-size: 10px; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); padding: 6px 4px 2px; }
+.pal-item {
+  appearance: none; border: 1px solid var(--line); background: var(--node); border-radius: 10px; padding: 8px;
+  display: grid; grid-template-columns: 24px 1fr; gap: 9px; align-items: center; text-align: left;
+  cursor: grab; touch-action: none; font-size: 12px;
+}
+.pal-item:hover:not(:disabled) { border-color: var(--accent); }
+.pal-item svg { width: 22px; height: 22px; stroke: var(--ink); fill: none; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+.pal-item .nm { font-weight: 600; display: block; }
+.pal-item .tag { font-size: 10px; color: var(--muted); letter-spacing: .04em; }
+.pal-item .tag.new { color: var(--accent); text-transform: uppercase; letter-spacing: .08em; font-weight: 600; }
+.pal-item:disabled { cursor: not-allowed; }
+.palette.off .pal-item:not(.locked) { opacity: .5; }
+.pal-item.locked { background: transparent; border-style: dashed; opacity: .6; }
+.pal-note { margin: 0; font-size: 11px; color: var(--muted); padding: 0 4px; }
+
+.stage {
+  position: relative; min-height: 0; overflow: hidden;
+  background-color: var(--board);
+  background-image: linear-gradient(var(--grid) 1px, transparent 1px), linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+  background-size: 24px 24px;
+  touch-action: none; user-select: none; -webkit-user-select: none;
+}
+.stage svg, .stage canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+.stage canvas { pointer-events: none; }
+.stage.flash { animation: flash 1.3s ease-out; }
+@keyframes flash { 0% { box-shadow: inset 0 0 0 5px var(--ok); } 100% { box-shadow: inset 0 0 0 0 var(--ok); } }
+.mode-chip { position: absolute; top: 12px; left: 12px; font-size: 11px; padding: 5px 10px; border-radius: 999px; background: var(--page); border: 1px solid var(--line); color: var(--muted); pointer-events: none; }
+.mode-chip.edit { color: var(--accent); border-color: var(--accent); font-weight: 600; }
+.toast { position: absolute; bottom: 14px; left: 50%; transform: translateX(-50%); width: max-content; max-width: min(460px, calc(100% - 24px)); background: var(--ink); color: var(--page); border-radius: 10px; padding: 9px 14px; font-size: 12.5px; z-index: 5; }
+.drag-ghost { position: fixed; z-index: 50; pointer-events: none; transform: translate(-50%, -50%); padding: 10px 14px; border: 1.5px dashed var(--accent); background: var(--page); border-radius: 10px; font: 600 12px var(--f-ui); color: var(--accent); }
+
+#board .node .body { fill: var(--node); stroke: var(--node-line); stroke-width: 1.5; }
+#board .node.edit { cursor: grab; }
+#board .node.sel .body, #board .node.ref-hover .body, #board .node.drop-ok .body { stroke: var(--accent); stroke-width: 2.5; }
+#board .node.drop-no { opacity: .35; }
+#board .node.failed .body { stroke: var(--bad); stroke-dasharray: 5 4; }
+#board .node.failed .icon, #board .node.failed .title { opacity: .45; }
+#board .icon { fill: none; stroke: var(--ink); stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+#board .title { font: 600 12.5px var(--f-ui); fill: var(--ink); }
+#board .sub { font: 400 11px var(--f-ui); fill: var(--muted); font-variant-numeric: tabular-nums; }
+#board .track { fill: var(--grid); }
+#board .util { fill: var(--ok); }
+#board .util.warn { fill: var(--warn); }
+#board .util.bad { fill: var(--bad); }
+#board .xmark { stroke: var(--bad); stroke-width: 2.2; stroke-linecap: round; }
+#board .port { fill: var(--page); stroke: var(--accent); stroke-width: 2; cursor: crosshair; }
+#board .port:hover { fill: var(--accent); }
+#board .edge { fill: none; stroke: var(--node-line); stroke-width: 1.8; }
+#board .edge.sel { stroke: var(--accent); stroke-width: 2.6; }
+#board .edge.bad, #board .edge.to-remove { stroke: var(--bad); stroke-width: 2.4; stroke-dasharray: 6 5; animation: dash 1s linear infinite; }
+@keyframes dash { to { stroke-dashoffset: -22; } }
+#board .edge-hit { fill: none; stroke: transparent; stroke-width: 18; cursor: pointer; pointer-events: stroke; }
+#board .arrow-head { fill: var(--node-line); }
+#board .arrow-head.acc { fill: var(--accent); }
+#board .elabel, #board .ann, #board .halo, #board .ghost, #board .ghost-edge { pointer-events: none; }
+#board .elabel rect { fill: var(--page); stroke: var(--line); }
+#board .elabel text { font: 500 10px var(--f-ui); fill: var(--muted); font-variant-numeric: tabular-nums; }
+#board .ann rect { fill: var(--ink); }
+#board .ann text { font: 600 11px var(--f-ui); fill: var(--page); }
+#board .ann .stem { stroke: var(--ink); stroke-width: 1.5; }
+#board .ann.bad rect { fill: var(--bad); }
+#board .ann.bad .stem { stroke: var(--bad); }
+#board .ann.warn rect { fill: var(--warn); }
+#board .ann.warn text { fill: var(--on-warn); }
+#board .ann.warn .stem { stroke: var(--warn); }
+#board .ann.ok rect { fill: var(--ok); }
+#board .ann.ok .stem { stroke: var(--ok); }
+#board .ann.info rect { fill: var(--accent); }
+#board .ann.info .stem { stroke: var(--accent); }
+#board .halo { fill: none; stroke-width: 3; animation: pulse 1.4s ease-in-out infinite; }
+#board .halo.bad { stroke: var(--bad); }
+#board .halo.warn { stroke: var(--warn); }
+#board .halo.info { stroke: var(--accent); }
+@keyframes pulse { 0%, 100% { stroke-opacity: .2; } 50% { stroke-opacity: 1; } }
+#board .ghost rect { fill: var(--accent-soft); stroke: var(--accent); stroke-width: 1.8; stroke-dasharray: 6 5; }
+#board .ghost text { font: 600 11.5px var(--f-ui); fill: var(--accent); }
+#board .ghost-edge { fill: none; stroke: var(--accent); stroke-width: 1.8; stroke-dasharray: 6 5; }
+#board .rubber { fill: none; stroke: var(--accent); stroke-width: 2; stroke-dasharray: 5 4; pointer-events: none; }
+#board .del { cursor: pointer; }
+#board .del circle { fill: var(--bad); }
+#board .del path { stroke: var(--page); stroke-width: 2; stroke-linecap: round; }
+
+/* ---------- приборы ---------- */
+.hud {
+  background: var(--page); border-top: 1px solid var(--line);
+  padding-block: 10px 12px;
+  padding-left: 16px; padding-right: max(16px, env(safe-area-inset-right, 0px));
+  display: grid; gap: 10px;
+}
+.metrics { display: flex; flex-wrap: wrap; gap: 8px 26px; }
+.metric { display: grid; grid-template-columns: auto auto; column-gap: 10px; align-items: end; }
+.m-label { grid-column: 1 / -1; font-size: 10px; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
+.m-val { font-size: 17px; font-weight: 600; font-variant-numeric: tabular-nums; min-width: 6ch; }
+.m-val.warn { color: var(--warn); }
+.m-val.bad { color: var(--bad); }
+.spark { width: 76px; height: 22px; overflow: visible; }
+.spark polyline { fill: none; stroke-width: 1.6; stroke-linejoin: round; stroke-linecap: round; }
+#sp-err { stroke: var(--bad); }
+#sp-p95 { stroke: var(--accent); }
+.controls { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.controls .sep { width: 1px; height: 22px; background: var(--line); margin-inline: 4px; }
+.seg { display: inline-flex; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
+.seg button { appearance: none; border: 0; background: var(--node); padding: 7px 9px; font-size: 12px; cursor: pointer; font-variant-numeric: tabular-nums; }
+.seg button[aria-pressed="true"] { background: var(--accent); color: var(--page); font-weight: 600; }
+.legend { display: flex; flex-wrap: wrap; gap: 4px 16px; font-size: 11px; color: var(--muted); }
+.legend i { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 6px; vertical-align: 0; }
+.journal {
+  border-top: 1px solid var(--line); background: var(--page);
+  padding-block: 12px;
+  padding-left: 16px; padding-right: max(16px, env(safe-area-inset-right, 0px));
+  max-height: 210px; overflow: auto;
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 12px 28px; font-size: 11.5px;
+}
+.journal h3 { margin: 0 0 6px; font-size: 10px; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); font-weight: 600; }
+.journal ol { margin: 0; padding-left: 22px; display: grid; gap: 2px; }
+.journal li::marker { color: var(--muted); }
+.journal .op { color: var(--accent); font-weight: 600; }
+.journal .empty, .journal .note { margin: 0; color: var(--muted); }
+.journal .note { grid-column: 1 / -1; font-family: var(--f-prose); font-size: 13.5px; max-width: 80ch; }
+
+/* ---------- узкий экран ---------- */
+@media (max-width: 880px) {
+  html, body { height: auto; }
+  .app { height: auto; display: block; }
+  .main { display: flex; flex-direction: column; }
+  .boardside { order: -1; }
+  .theory { border-right: 0; border-top: 1px solid var(--line); }
+  .theory-scroll { overflow: visible; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+  .theory-nav { position: sticky; bottom: 0; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+  .board-wrap { display: flex; flex-direction: column; }
+  .palette { flex-direction: row; flex-wrap: wrap; overflow: visible; border-right: 0; border-bottom: 1px solid var(--line); padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+  .pal-title { width: 100%; padding-top: 0; }
+  .pal-item { flex: 1 1 130px; }
+  .pal-note { width: 100%; }
+  .stage { aspect-ratio: 900 / 560; width: 100%; flex: none; }
+  .hud, .journal { padding-left: max(16px, env(safe-area-inset-left, 0px)); }
+  .top-note { display: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  #board .halo, #board .edge.bad, #board .edge.to-remove { animation: none; }
+  .stage.flash { animation: none; }
+}
+</style>
+
+<div class="app">
+  <header class="top">
+    <div class="crumb"><span class="brand">System Design</span><span>Урок <b>3</b> из 13</span></div>
+    <nav class="timeline" id="timeline" aria-label="Шаги урока"></nav>
+    <div class="top-note">Макет · цифры условные</div>
+  </header>
+
+  <main class="main">
+    <section class="theory" aria-label="Теория">
+      <div class="theory-scroll" id="theory-scroll">
+        <div class="lesson-head">
+          <div class="eyebrow">Модуль 1 · Масштабирование</div>
+          <h1>Балансировщик нагрузки</h1>
+          <div class="meta">≈ 12 минут · в палитре появится балансировщик</div>
+        </div>
+        <div id="beats"></div>
+      </div>
+      <div class="theory-nav" id="theory-nav"></div>
+    </section>
+
+    <section class="boardside" aria-label="Доска">
+      <div class="board-wrap">
+        <aside class="palette" id="palette" aria-label="Палитра компонентов"></aside>
+        <div class="stage" id="stage">
+          <svg id="board" viewBox="0 0 900 560" preserveAspectRatio="xMidYMid meet" aria-label="Схема системы">
+            <defs>
+              <marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="10" markerHeight="10" markerUnits="userSpaceOnUse" orient="auto"><path class="arrow-head" d="M0,1 L10,5 L0,9 z"/></marker>
+              <marker id="arr-acc" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="10" markerHeight="10" markerUnits="userSpaceOnUse" orient="auto"><path class="arrow-head acc" d="M0,1 L10,5 L0,9 z"/></marker>
+            </defs>
+            <g id="g-main"></g>
+            <path id="rubber" class="rubber" d=""/>
+          </svg>
+          <canvas id="particles" aria-hidden="true"></canvas>
+          <div class="mode-chip" id="mode-chip"></div>
+          <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+        </div>
+      </div>
+
+      <div class="hud">
+        <div class="metrics">
+          <div class="metric"><span class="m-label">Нагрузка</span><span class="m-val" id="m-load">0 rps</span></div>
+          <div class="metric"><span class="m-label">Ошибки</span><span class="m-val" id="m-err">0%</span><svg class="spark" viewBox="0 0 76 22" aria-hidden="true"><polyline id="sp-err" points=""/></svg></div>
+          <div class="metric"><span class="m-label">p95 ответа</span><span class="m-val" id="m-p95">—</span><svg class="spark" viewBox="0 0 76 22" aria-hidden="true"><polyline id="sp-p95" points=""/></svg></div>
+          <div class="metric"><span class="m-label">Запросы к базе</span><span class="m-val" id="m-db">0 rps</span></div>
+          <div class="metric"><span class="m-label">Цена</span><span class="m-val" id="m-cost">0 $/ч</span></div>
+        </div>
+        <div class="controls">
+          <button class="btn" id="btn-play" type="button">❚❚ Пауза</button>
+          <div class="seg" role="group" aria-label="Скорость трафика">
+            <button type="button" data-speed="1" aria-pressed="true">×1</button>
+            <button type="button" data-speed="2" aria-pressed="false">×2</button>
+            <button type="button" data-speed="4" aria-pressed="false">×4</button>
+          </div>
+          <span class="sep" aria-hidden="true"></span>
+          <button class="btn" id="btn-undo" type="button">↶ Отменить</button>
+          <button class="btn" id="btn-redo" type="button">↷ Повторить</button>
+          <button class="btn" id="btn-reset" type="button">Сбросить доску</button>
+          <span class="sep" aria-hidden="true"></span>
+          <button class="btn" id="btn-log" type="button" aria-expanded="false" aria-controls="journal">Журнал операций</button>
+        </div>
+        <div class="legend">
+          <span><i style="background: var(--ok)"></i>запрос обработан</span>
+          <span><i style="background: var(--warn)"></i>сервер почти на пределе</span>
+          <span><i style="background: var(--bad)"></i>запрос потерян</span>
+        </div>
+      </div>
+      <div class="journal" id="journal" hidden></div>
+    </section>
+  </main>
+</div>
+<div class="drag-ghost" id="drag-ghost" hidden></div>
+
+<script>
+(() => {
+'use strict';
+
+const VBW = 900, VBH = 560, NW = 148, NH = 60, TASK = 3, TASK_LOAD = 900;
+const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+const nf = new Intl.NumberFormat('ru-RU');
+const fmt = v => nf.format(Math.round(v));
+const pct = v => `${Math.round(v * 100)}%`;
+const money = v => v.toFixed(2).replace('.', ',');
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+const snap = v => Math.round(v / 10) * 10;
+const lerp = (a, b, k) => (a == null || Number.isNaN(a) ? 0 : a) + (b - (a == null || Number.isNaN(a) ? 0 : a)) * k;
+const $ = id => document.getElementById(id);
+
+// ---------- каталог компонентов ----------
+const KIND = {
+  client: { name: 'Пользователи', sub: 'клиенты', rank: 0, cap: Infinity, cost: 0 },
+  lb: { name: 'Балансировщик', sub: 'балансировщик', rank: 1, cap: 5000, cost: 0.10 },
+  server: { name: 'Сервер', sub: 'сервер M', rank: 2, cap: 400, cost: 0.40 },
+  db: { name: 'База данных', sub: 'PostgreSQL', rank: 3, cap: 1500, cost: 1.00 },
+};
+const CAN = { client: ['lb', 'server'], lb: ['server'], server: ['db'], db: [] };
+const ICON = {
+  client: '<circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c0-4 2.9-6.5 6.5-6.5s6.5 2.5 6.5 6.5"/><circle cx="17.5" cy="9" r="2.6"/><path d="M16 13.7c3.3-.3 5.6 1.9 5.6 5.3"/>',
+  server: '<rect x="3" y="3.5" width="18" height="7" rx="1.6"/><rect x="3" y="13.5" width="18" height="7" rx="1.6"/><path d="M7 7h.01M7 17h.01M11 7h6M11 17h6"/>',
+  db: '<ellipse cx="12" cy="5.5" rx="8" ry="3"/><path d="M4 5.5v13c0 1.7 3.6 3 8 3s8-1.3 8-3v-13"/><path d="M4 12c0 1.7 3.6 3 8 3s8-1.3 8-3"/>',
+  lb: '<circle cx="5" cy="12" r="2.6"/><path d="M7.6 12h3.4M11 12l8.5-7M11 12h8.5M11 12l8.5 7"/><path d="M16.8 4.6l2.7.4-.4 2.7M16.8 19.4l2.7-.4-.4-2.7M17.3 9.8l2.2 2.2-2.2 2.2"/>',
+  cache: '<path d="M13 2.5 4.5 13.5h7l-1 8 8.5-11h-7z"/>',
+  cdn: '<circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c3 3.2 3 14.8 0 18M12 3c-3 3.2-3 14.8 0 18"/>',
+  queue: '<rect x="2.5" y="7" width="5" height="10" rx="1"/><rect x="9.5" y="7" width="5" height="10" rx="1"/><rect x="16.5" y="7" width="5" height="10" rx="1"/>',
+  shard: '<rect x="3" y="3" width="8" height="8" rx="1.5"/><rect x="13" y="3" width="8" height="8" rx="1.5"/><rect x="3" y="13" width="8" height="8" rx="1.5"/><rect x="13" y="13" width="8" height="8" rx="1.5"/>',
+};
+const PAL = [
+  { kind: 'lb', name: 'Балансировщик', tag: 'новое', isNew: true },
+  { kind: 'server', name: 'Сервер', tag: 'M · 400 rps' },
+];
+const LOCKED = [['Кеш', 4, 'cache'], ['CDN', 5, 'cdn'], ['Очередь', 7, 'queue'], ['Шарды', 9, 'shard']];
+const SPOTS = {
+  lb: [[300, 280], [300, 130], [300, 430]],
+  server: [[520, 515], [300, 515], [740, 515]],
+};
+
+// ---------- BoardOp: один язык для автора и ученика ----------
+const Op = {
+  AddNode: (id, kind, label, x, y, locked = false) => ({ t: 'AddNode', id, kind, label, x, y, locked }),
+  RemoveNode: id => ({ t: 'RemoveNode', id }),
+  MoveNode: (id, x, y) => ({ t: 'MoveNode', id, x, y }),
+  Connect: (from, to) => ({ t: 'Connect', from, to }),
+  Disconnect: (from, to) => ({ t: 'Disconnect', from, to }),
+  SetLoad: rps => ({ t: 'SetLoad', rps }),
+  FailNode: id => ({ t: 'FailNode', id }),
+  RecoverNode: id => ({ t: 'RecoverNode', id }),
+};
+
+const emptyDoc = () => ({ nodes: {}, order: [], edges: [], load: 0, failed: [] });
+
+function denyConnect(d, from, to) {
+  if (!d.nodes[from] || !d.nodes[to]) return 'Нет такого блока.';
+  if (from === to) return 'Блок нельзя соединить с самим собой.';
+  if (d.edges.some(e => e.from === from && e.to === to)) return 'Такая связь уже есть.';
+  const a = d.nodes[from].kind, b = d.nodes[to].kind;
+  if (CAN[a].includes(b)) return null;
+  if (b === 'client') return 'В пользователей запросы не входят: они источник трафика.';
+  if (a === 'client' && b === 'db') return 'Пользователи не ходят в базу напрямую. Между ними должен стоять сервер.';
+  if (a === 'server' && b === 'server') return 'Серверы не передают запросы друг другу. Распределять нагрузку должен балансировщик.';
+  if (a === 'lb' && b === 'db') return 'Балансировщик раздаёт запросы серверам, а не базе.';
+  if (a === 'lb' && b === 'lb') return 'Второй балансировщик в цепочке здесь не нужен.';
+  return 'Запросы идут слева направо: пользователи, балансировщик, серверы, база.';
+}
+
+function applyOp(d, op) {
+  const n = { nodes: { ...d.nodes }, order: d.order.slice(), edges: d.edges.slice(), load: d.load, failed: d.failed.slice() };
+  switch (op.t) {
+    case 'AddNode':
+      if (n.nodes[op.id]) return { error: 'Блок с таким именем уже есть.' };
+      n.nodes[op.id] = { id: op.id, kind: op.kind, label: op.label, x: op.x, y: op.y, locked: op.locked };
+      n.order.push(op.id);
+      break;
+    case 'RemoveNode': {
+      const node = n.nodes[op.id];
+      if (!node) return { error: 'Нет такого блока.' };
+      if (node.locked) return { error: 'Этот блок входит в условие задачи, его нельзя удалить.' };
+      delete n.nodes[op.id];
+      n.order = n.order.filter(i => i !== op.id);
+      n.edges = n.edges.filter(e => e.from !== op.id && e.to !== op.id);
+      break;
+    }
+    case 'MoveNode':
+      if (!n.nodes[op.id]) return { error: 'Нет такого блока.' };
+      n.nodes[op.id] = { ...n.nodes[op.id], x: op.x, y: op.y };
+      break;
+    case 'Connect': {
+      const why = denyConnect(n, op.from, op.to);
+      if (why) return { error: why };
+      n.edges.push({ from: op.from, to: op.to });
+      break;
+    }
+    case 'Disconnect':
+      n.edges = n.edges.filter(e => !(e.from === op.from && e.to === op.to));
+      break;
+    case 'SetLoad': n.load = op.rps; break;
+    case 'FailNode': if (!n.failed.includes(op.id)) n.failed.push(op.id); break;
+    case 'RecoverNode': n.failed = n.failed.filter(i => i !== op.id); break;
+  }
+  return { doc: n };
+}
+
+// ---------- сценарий урока ----------
+const R = (id, text) => `<span class="ref" data-ref="${id}" tabindex="0">${text}</span>`;
+
+const BEATS = [
+  {
+    title: 'Один сервер',
+    ops: [
+      Op.AddNode('users', 'client', 'Пользователи', 100, 280, true),
+      Op.AddNode('app1', 'server', 'app1', 520, 280, true),
+      Op.AddNode('db', 'db', 'db', 790, 280, true),
+      Op.Connect('users', 'app1'), Op.Connect('app1', 'db'), Op.SetLoad(300),
+    ],
+    stage: [{ t: 'Annotate', target: 'app1', tone: 'ink', text: s => `${fmt(s.stat.app1.lam)} rps из 400 возможных` }],
+    html: () => `<p>Интернет-магазин устроен просто. ${R('users', 'Пользователи')} отправляют запросы на один ${R('app1', 'сервер приложения')}, а он читает и записывает данные в ${R('db', 'базу')}.</p>
+      <p>Сервер размера M обрабатывает около <strong>400 запросов в секунду</strong>, сокращённо rps. Сейчас приходит 300. Полоска загрузки под сервером зелёная, и все точки доходят до цели.</p>`,
+  },
+  {
+    title: 'Распродажа',
+    ops: [Op.SetLoad(900)],
+    stage: [
+      { t: 'Highlight', target: 'app1', tone: 'bad' },
+      { t: 'Annotate', target: 'app1', tone: 'bad', text: s => `загрузка ${pct(s.stat.app1.util)} · ошибки ${pct(s.errors)}` },
+    ],
+    html: () => `<p>Началась распродажа, и нагрузка выросла до <strong>900 rps</strong>. ${R('app1', 'Сервер')} успевает обработать свои 400 запросов, а остальные отбрасывает. Красные точки показывают пользователей, которые получили ошибку 503.</p>
+      <p>Время ответа портится раньше, чем загрузка доходит до 100%. Уже после 80% запросы ждут в очереди, и показатель p95 (время, за которое отвечают 95% запросов) растёт быстрее загрузки.</p>`,
+  },
+  {
+    title: 'Вверх или вширь',
+    ops: [
+      Op.AddNode('app2', 'server', 'app2', 520, 130, true),
+      Op.AddNode('app3', 'server', 'app3', 520, 430, true),
+      Op.Connect('app2', 'db'), Op.Connect('app3', 'db'),
+    ],
+    stage: [
+      { t: 'Highlight', target: 'app2', tone: 'warn' },
+      { t: 'Highlight', target: 'app3', tone: 'warn' },
+      { t: 'Annotate', target: 'app2', tone: 'warn', text: () => '0 rps · простаивает' },
+      { t: 'Annotate', target: 'app3', tone: 'warn', text: () => '0 rps · простаивает' },
+    ],
+    html: () => `<p>Можно купить сервер мощнее. Это <strong>вертикальное масштабирование</strong>. Оно простое, но у него есть потолок, цена растёт быстрее мощности, а сервер остаётся единственной точкой отказа.</p>
+      <p>Другой путь называется <strong>горизонтальным масштабированием</strong>: поставить несколько одинаковых серверов. Мы добавили ${R('app2', 'app2')} и ${R('app3', 'app3')}. Они подключены к базе, но простаивают, потому что пользователи знают только адрес ${R('app1', 'app1')}.</p>`,
+  },
+  {
+    title: 'Задача: балансировщик',
+    task: true,
+    ops: [],
+    stage: [],
+    html: () => `<p>Нужен посредник с одним адресом. Он принимает все запросы и раздаёт их серверам. Это <strong>балансировщик нагрузки</strong>, и он уже появился в палитре слева от доски.</p>`,
+  },
+  {
+    title: 'Если сервер упал',
+    ops: [Op.FailNode('app2')],
+    stage: [
+      { t: 'Highlight', target: 'app2', tone: 'bad' },
+      { t: 'Annotate', target: 'kind:lb', tone: 'info', text: () => 'app2 не отвечает → исключён' },
+      { t: 'Annotate', target: 'app1', tone: s => (s.stat.app1.util > 1 ? 'bad' : 'ok'), text: s => `${fmt(s.stat.app1.lam)} rps · ${pct(s.stat.app1.util)}` },
+    ],
+    html: ({ d, s }) => {
+      const live = d.order.filter(id => d.nodes[id].kind === 'server' && !d.failed.includes(id) && s.stat[id].lam > 0);
+      const share = live.length ? live.reduce((a, id) => a + s.stat[id].lam, 0) / live.length : 0;
+      const over = share > 400;
+      return `<p>Балансировщик раздаёт запросы <strong>по кругу</strong> (round-robin): первый запрос уходит на один сервер, второй на следующий, и так далее.</p>
+        <p>Теперь ${R('app2', 'app2')} упал. Балансировщик каждые несколько секунд опрашивает серверы. Это <strong>health check</strong>: сервер, который не ответил, исключается из раздачи. Его долю забирают оставшиеся серверы, и теперь каждый получает ${fmt(share)} rps. ${over ? 'Это больше их 400 rps, поэтому часть запросов снова теряется.' : 'Они справляются, потому что у вас есть запасной сервер.'}</p>
+        <p>Отсюда правило <strong>N+1</strong>: серверов должно хватать на пиковую нагрузку даже без одного из них.</p>`;
+    },
+  },
+  {
+    title: 'Итог',
+    ops: [Op.RecoverNode('app2')],
+    stage: [
+      { t: 'Highlight', target: 'db', tone: 'warn' },
+      { t: 'Annotate', target: 'db', tone: 'warn', text: s => `${fmt(s.stat.db.lam)} rps от всех серверов` },
+    ],
+    html: () => `<p>Серверы без состояния вместе с балансировщиком дают горизонтальное масштабирование. Чтобы выдержать больше нагрузки, достаточно добавить ещё один сервер за балансировщиком.</p>
+      <p>Но все серверы ходят в одну ${R('db', 'базу')}, и она станет следующим узким местом. В уроке 4 поставим перед ней <strong>кеш</strong>.</p>`,
+  },
+];
+
+const SOLUTION = [
+  Op.AddNode('lb-1', 'lb', 'lb-1', 300, 280),
+  Op.Connect('lb-1', 'app1'), Op.Connect('lb-1', 'app2'), Op.Connect('lb-1', 'app3'),
+  Op.Connect('users', 'lb-1'), Op.Disconnect('users', 'app1'),
+];
+const HINTS = [
+  'Пользователи должны обращаться не к серверу, а к одному «входу» в систему.',
+  'Поставьте балансировщик между пользователями и серверами. Старая связь «Пользователи → app1» должна исчезнуть.',
+  'На доске появился пунктирный контур. Поставьте балансировщик туда и проведите отмеченные связи. Красным отмечена связь, которую нужно удалить.',
+];
+const GOAL_LABELS = ['На доске есть балансировщик', 'Балансировщик ведёт к трём серверам', 'Пользователи ходят только через балансировщик'];
+
+// ---------- состояние ----------
+const S = {
+  beat: 0, maxBeat: 0,
+  log: [], redo: [],
+  solved: false, help: false, attempts: 0, hint: 0, failIdx: -1,
+  feedback: null, focus: null, result: null,
+  sel: null, gesture: null, placedAt: 0,
+  running: true, speed: 1, clock: 0, loadCur: 0,
+  playing: false, showLog: false, palEdit: null,
+  doc: null, steady: null, geo: {},
+  dLam: {}, dUtil: {}, dEdge: {}, hud: {}, spark: { err: [], p95: [] }, lastSample: 0,
+};
+
+const isEdit = () => S.beat === TASK && !S.solved && !S.playing;
+
+function buildDoc(n, withLog = true) {
+  let d = emptyDoc();
+  for (let i = 0; i <= n; i++) {
+    for (const op of BEATS[i].ops) d = applyOp(d, op).doc || d;
+    if (i === TASK && withLog) for (const op of S.log) d = applyOp(d, op).doc || d;
+  }
+  return d;
+}
+
+// ---------- симуляция потоков ----------
+const srvLat = u => 18 + 26 / (1 - Math.min(u, 0.98));
+const dbLat = u => 4 + 9 / (1 - Math.min(u, 0.98));
+
+function simulate(d, load) {
+  const ids = d.order, out = {}, inflow = {};
+  ids.forEach(id => { out[id] = []; inflow[id] = 0; });
+  d.edges.forEach(e => { if (out[e.from] && d.nodes[e.to]) out[e.from].push(e.to); });
+  const failed = new Set(d.failed);
+  const clients = ids.filter(id => d.nodes[id].kind === 'client');
+  clients.forEach(id => { inflow[id] = load / clients.length; });
+  const sorted = ids.slice().sort((a, b) => KIND[d.nodes[a].kind].rank - KIND[d.nodes[b].kind].rank);
+  const stat = {}, edgeFlow = {}, viaLb = new Set();
+  let dropped = 0;
+  for (const id of sorted) {
+    const n = d.nodes[id], k = KIND[n.kind], lam = inflow[id];
+    let targets = out[id], served;
+    if (failed.has(id)) { served = 0; targets = []; }
+    else if (n.kind === 'client') served = targets.length ? lam : 0;
+    else {
+      if (n.kind === 'lb') targets = targets.filter(t => !failed.has(t));
+      served = Math.min(lam, k.cap);
+      if (n.kind === 'lb' && !targets.length) served = 0;
+    }
+    const drop = lam - served;
+    dropped += drop;
+    const share = targets.length ? served / targets.length : 0;
+    out[id].forEach(t => { edgeFlow[id + '>' + t] = targets.includes(t) ? share : 0; });
+    targets.forEach(t => { inflow[t] += share; if (n.kind === 'lb') viaLb.add(t); });
+    stat[id] = { lam, served, drop, util: k.cap === Infinity ? 0 : lam / k.cap, failed: failed.has(id) };
+  }
+  const dbIds = ids.filter(id => d.nodes[id].kind === 'db');
+  const dbUtil = Math.max(0, ...dbIds.map(id => stat[id].util));
+  const samples = [];
+  ids.forEach(id => {
+    if (d.nodes[id].kind !== 'server' || !stat[id].served) return;
+    samples.push([srvLat(stat[id].util) + dbLat(dbUtil) + (viaLb.has(id) ? 6 : 0), stat[id].served]);
+  });
+  samples.sort((a, b) => a[0] - b[0]);
+  const total = samples.reduce((s, x) => s + x[1], 0);
+  let p95 = null, acc = 0;
+  for (const [lat, w] of samples) { acc += w; if (acc >= total * 0.95) { p95 = lat; break; } }
+  return {
+    stat, edgeFlow, load,
+    errors: load > 0 ? dropped / load : 0,
+    p95,
+    dbLoad: dbIds.reduce((s, id) => s + stat[id].lam, 0),
+    cost: ids.reduce((s, id) => s + KIND[d.nodes[id].kind].cost, 0),
+  };
+}
+
+// ---------- цели задачи ----------
+function evaluate(d) {
+  const all = d.order.map(id => d.nodes[id]);
+  const lbs = all.filter(n => n.kind === 'lb'), servers = all.filter(n => n.kind === 'server'), clients = all.filter(n => n.kind === 'client');
+  const outs = id => d.edges.filter(e => e.from === id).map(e => e.to).filter(t => d.nodes[t]);
+  const ok = { ok: true };
+  const fail = (msg, focus) => ({ ok: false, msg, focus: { nodes: [], edges: [], ...focus } });
+  const goals = [];
+  goals.push(lbs.length ? ok : fail('На доске пока нет балансировщика. Он в палитре слева.', {}));
+  let best = 0;
+  lbs.forEach(l => { best = Math.max(best, outs(l.id).filter(t => d.nodes[t].kind === 'server').length); });
+  const fed = new Set(lbs.flatMap(l => outs(l.id)));
+  goals.push(best >= 3 ? ok : fail(
+    lbs.length ? `Балансировщик ведёт к ${best} из 3 серверов. Протяните связи ко всем.` : 'Сначала поставьте балансировщик.',
+    { nodes: servers.filter(s => !fed.has(s.id)).map(s => s.id) }));
+  const direct = [];
+  let reachLb = true;
+  clients.forEach(c => {
+    const o = outs(c.id);
+    o.forEach(t => { if (d.nodes[t].kind === 'server') direct.push(c.id + '>' + t); });
+    if (!o.some(t => d.nodes[t].kind === 'lb')) reachLb = false;
+  });
+  if (direct.length) {
+    const names = direct.map(id => id.split('>')[1]).join(', ');
+    goals.push(fail(`Пользователи всё ещё ходят на ${names} напрямую, мимо балансировщика. Нажмите на эту связь и удалите её.`, { edges: direct }));
+  } else if (!reachLb) {
+    goals.push(fail('Пользователи не соединены с балансировщиком, и запросам некуда идти.', { nodes: clients.map(c => c.id) }));
+  } else goals.push(ok);
+  return goals;
+}
+
+// ---------- геометрия ----------
+function bez(P, t) {
+  const u = 1 - t, a = u * u * u, b = 3 * u * u * t, c = 3 * u * t * t, e = t * t * t;
+  return [a * P[0] + b * P[2] + c * P[4] + e * P[6], a * P[1] + b * P[3] + c * P[5] + e * P[7]];
+}
+function edgePath(a, b) {
+  const x0 = a.x + NW / 2, y0 = a.y, x3 = b.x - NW / 2 - 3, y3 = b.y;
+  const c = Math.max(30, Math.abs(x3 - x0) * 0.5);
+  const P = [x0, y0, x0 + c, y0, x3 - c, y3, x3, y3];
+  const [mx, my] = bez(P, 0.5);
+  return { d: `M${x0},${y0} C${x0 + c},${y0} ${x3 - c},${y3} ${x3},${y3}`, P, mx, my, len: Math.hypot(x3 - x0, y3 - y0) };
+}
+
+// ---------- рендер доски ----------
+const svg = $('board');
+let refs = { util: {}, sub: {}, elabel: {} };
+
+function viewDoc() {
+  const g = S.gesture;
+  if (g && g.type === 'drag' && g.moved) {
+    const d = { ...S.doc, nodes: { ...S.doc.nodes } };
+    d.nodes[g.id] = { ...d.nodes[g.id], x: g.x, y: g.y };
+    return d;
+  }
+  return S.doc;
+}
+
+function resolveTarget(d, t) {
+  if (t.startsWith('kind:')) return d.order.find(id => d.nodes[id].kind === t.slice(5)) || null;
+  return d.nodes[t] ? t : null;
+}
+
+function nodeSvg(n, o) {
+  const x0 = n.x - NW / 2, y0 = n.y - NH / 2;
+  const hasCap = KIND[n.kind].cap !== Infinity;
+  const cls = `node ${n.kind}${o.edit ? ' edit' : ''}${o.sel ? ' sel' : ''}${o.failed ? ' failed' : ''}${o.extra}`;
+  return `<g class="${cls}" data-node="${n.id}" transform="translate(${x0},${y0})">
+    <rect class="body" width="${NW}" height="${NH}" rx="10"/>
+    <g class="icon" transform="translate(12,${hasCap ? 14 : 18})">${ICON[n.kind]}</g>
+    <text class="title" x="46" y="${hasCap ? 24 : 27}">${esc(n.label)}</text>
+    <text class="sub" x="46" y="${hasCap ? 40 : 44}" data-sub="${n.id}"></text>
+    ${hasCap ? `<rect class="track" x="12" y="${NH - 11}" width="${NW - 24}" height="4" rx="2"/><rect class="util" x="12" y="${NH - 11}" width="0" height="4" rx="2" data-util="${n.id}"/>` : ''}
+    ${o.failed ? `<path class="xmark" d="M${NW - 24},10 l12,12 m0,-12 l-12,12"/>` : ''}
+    ${o.edit && CAN[n.kind].length ? `<circle class="port" cx="${NW}" cy="${NH / 2}" r="7.5" data-port="${n.id}"><title>Потяните, чтобы соединить</title></circle>` : ''}
+  </g>`;
+}
+
+const delBtn = (x, y, key, label) =>
+  `<g class="del" data-del="${key}" transform="translate(${x},${y})"><title>${label}</title><circle r="10"/><path d="M-3.5,-3.5 L3.5,3.5 M3.5,-3.5 L-3.5,3.5"/></g>`;
+
+function ghostPlan(d) {
+  const lb = d.order.find(id => d.nodes[id].kind === 'lb');
+  const L = lb ? d.nodes[lb] : { x: 300, y: 280 };
+  const has = (f, t) => d.edges.some(e => e.from === f && e.to === t);
+  let out = '';
+  if (!lb) out += `<g class="ghost"><rect x="${L.x - NW / 2}" y="${L.y - NH / 2}" width="${NW}" height="${NH}" rx="10"/><text x="${L.x}" y="${L.y + 4}" text-anchor="middle">балансировщик сюда</text></g>`;
+  const lines = [];
+  if (d.nodes.users && (!lb || !has('users', lb))) lines.push(edgePath(d.nodes.users, L));
+  ['app1', 'app2', 'app3'].forEach(s => { if (d.nodes[s] && (!lb || !has(lb, s))) lines.push(edgePath(L, d.nodes[s])); });
+  out = lines.map(p => `<path class="ghost-edge" d="${p.d}"/>`).join('') + out;
+  const remove = d.edges.filter(e => d.nodes[e.from] && d.nodes[e.to] && d.nodes[e.from].kind === 'client' && d.nodes[e.to].kind === 'server').map(e => e.from + '>' + e.to);
+  return { svg: out, remove };
+}
+
+function renderBoard() {
+  const d = viewDoc(), edit = isEdit();
+  const stage = BEATS[S.beat].stage;
+  const halos = {}, anns = [];
+  stage.forEach(it => {
+    const id = resolveTarget(d, it.target);
+    if (!id) return;
+    if (it.t === 'Highlight') halos[id] = it.tone;
+    else anns.push({ id, text: it.text(S.steady), tone: typeof it.tone === 'function' ? it.tone(S.steady) : it.tone });
+  });
+  if (S.focus) S.focus.nodes.forEach(id => { if (d.nodes[id]) halos[id] = 'bad'; });
+  const focusEdges = new Set(S.focus ? S.focus.edges : []);
+  const ghost = edit && S.hint >= 3 ? ghostPlan(d) : null;
+  const toRemove = new Set(ghost ? ghost.remove : []);
+  const g = S.gesture;
+  let h = '';
+
+  for (const id in halos) {
+    const n = d.nodes[id];
+    h += `<rect class="halo ${halos[id]}" x="${n.x - NW / 2 - 7}" y="${n.y - NH / 2 - 7}" width="${NW + 14}" height="${NH + 14}" rx="15"/>`;
+  }
+  if (ghost) h += ghost.svg;
+
+  S.geo = {};
+  let labels = '';
+  for (const e of d.edges) {
+    const a = d.nodes[e.from], b = d.nodes[e.to];
+    if (!a || !b) continue;
+    const id = e.from + '>' + e.to, p = edgePath(a, b);
+    S.geo[id] = { P: p.P, len: p.len };
+    const sel = S.sel && S.sel.type === 'edge' && S.sel.id === id;
+    const cls = 'edge' + (sel ? ' sel' : '') + (focusEdges.has(id) ? ' bad' : '') + (toRemove.has(id) ? ' to-remove' : '');
+    h += `<path class="${cls}" d="${p.d}" marker-end="url(#${sel ? 'arr-acc' : 'arr'})"/>`;
+    if (edit) h += `<path class="edge-hit" d="${p.d}" data-edge="${id}"><title>Нажмите, чтобы выбрать связь</title></path>`;
+    labels += `<g class="elabel" data-elabel="${id}" transform="translate(${p.mx},${p.my})" visibility="hidden"><rect x="-26" y="-9" width="52" height="18" rx="9"/><text text-anchor="middle" y="3.5"></text></g>`;
+  }
+  h += labels;
+
+  for (const id of d.order) {
+    const n = d.nodes[id];
+    let extra = '';
+    if (g && g.type === 'connect' && id !== g.from) extra = CAN[d.nodes[g.from].kind].includes(n.kind) ? ' drop-ok' : ' drop-no';
+    h += nodeSvg(n, { edit, sel: S.sel && S.sel.type === 'node' && S.sel.id === id, failed: d.failed.includes(id), extra });
+  }
+
+  anns.forEach(a => {
+    const n = d.nodes[a.id], w = a.text.length * 6.75 + 20, x = clamp(n.x - w / 2, 6, VBW - w - 6), y = n.y - NH / 2 - 34;
+    h += `<g class="ann ${a.tone}"><path class="stem" d="M${n.x},${y + 22} V${n.y - NH / 2 - 1}"/><rect x="${x}" y="${y}" width="${w}" height="22" rx="6"/><text x="${x + w / 2}" y="${y + 15}" text-anchor="middle">${esc(a.text)}</text></g>`;
+  });
+
+  if (edit && S.sel) {
+    if (S.sel.type === 'edge') {
+      const [f, t] = S.sel.id.split('>');
+      if (d.nodes[f] && d.nodes[t]) { const p = edgePath(d.nodes[f], d.nodes[t]); h += delBtn(p.mx, p.my - 22, 'edge:' + S.sel.id, 'Удалить связь'); }
+    } else {
+      const n = d.nodes[S.sel.id];
+      if (n && !n.locked) h += delBtn(n.x + NW / 2 - 2, n.y - NH / 2 + 2, 'node:' + n.id, 'Удалить блок');
+    }
+  }
+
+  $('g-main').innerHTML = h;
+  refs = { util: {}, sub: {}, elabel: {} };
+  $('g-main').querySelectorAll('[data-util]').forEach(el => { refs.util[el.dataset.util] = el; });
+  $('g-main').querySelectorAll('[data-sub]').forEach(el => { refs.sub[el.dataset.sub] = el; });
+  $('g-main').querySelectorAll('[data-elabel]').forEach(el => {
+    refs.elabel[el.dataset.elabel] = { g: el, rect: el.querySelector('rect'), text: el.querySelector('text'), last: '' };
+  });
+}
+
+// ---------- рендер боковых панелей ----------
+function canGo(i) {
+  if (i < 0 || i >= BEATS.length) return false;
+  if (i > TASK && !S.solved) return false;
+  return i <= S.maxBeat + 1;
+}
+
+function renderTimeline() {
+  const steps = BEATS.map((b, i) => {
+    const cls = ['tl', i < S.beat ? 'done' : '', i === S.beat ? 'current' : '', b.task ? 'task' : ''].filter(Boolean).join(' ');
+    return `<button type="button" class="${cls}" data-goto="${i}" ${canGo(i) ? '' : 'disabled'} title="${esc(b.title)}" aria-label="Шаг ${i + 1}: ${esc(b.title)}" ${i === S.beat ? 'aria-current="step"' : ''}><span class="bar"></span></button>`;
+  }).join('');
+  $('timeline').innerHTML = `<div class="tl-steps">${steps}</div><div class="tl-label">Шаг ${S.beat + 1} из ${BEATS.length} · <b>${esc(BEATS[S.beat].title)}</b></div>`;
+}
+
+function renderTheory() {
+  const parts = [];
+  for (let i = 0; i <= S.beat; i++) {
+    const b = BEATS[i], past = i < S.beat;
+    const d = buildDoc(i), s = simulate(d, d.load);
+    const label = b.task ? '◆ Задача' : `Шаг ${i + 1}`;
+    let tail = '';
+    if (b.task) tail = past ? `<p class="task-done">✓ Задача решена${S.help ? ' с подсказкой' : ''}</p>` : '<div id="task-card"></div>';
+    parts.push(`<article class="beat ${past ? 'past' : 'current'}" id="beat-${i}" ${past ? `data-goto="${i}" title="Вернуться к этому шагу"` : ''}>
+      <h2><span class="n">${label}</span>${esc(b.title.replace('Задача: ', ''))}</h2>
+      <div class="prose">${b.html({ d, s })}</div>${tail}</article>`);
+  }
+  if (S.beat === BEATS.length - 1) {
+    parts.push(`<div class="finish"><div class="eyebrow">Урок 3 пройден</div><p>Дальше урок 4 про кеширование, и в палитре появится кеш. В этом макете его нет.</p></div>`);
+  }
+  $('beats').innerHTML = parts.join('');
+  const sc = $('theory-scroll'), cur = $('beat-' + S.beat);
+  if (cur && getComputedStyle(sc).overflowY === 'auto') {
+    sc.scrollTo({ top: Math.max(0, cur.offsetTop - 16), behavior: reduce ? 'auto' : 'smooth' });
+  }
+}
+
+function renderTask() {
+  const el = $('task-card');
+  if (!el) return;
+  const fid = document.activeElement && document.activeElement.id;
+  const goals = evaluate(S.doc);
+  const items = goals.map((g, i) => {
+    const state = g.ok ? 'ok' : (S.failIdx === i ? 'fail' : '');
+    return `<li class="${state}"><span class="mk" aria-hidden="true">${g.ok ? '✓' : state === 'fail' ? '✕' : ''}</span><span>${GOAL_LABELS[i]}</span></li>`;
+  });
+  if (S.solved) items.push(`<li class="ok"><span class="mk" aria-hidden="true">✓</span><span>Держит ${fmt(TASK_LOAD)} rps, ошибок ${pct(S.result.after.errors)}</span></li>`);
+  else if (S.failIdx === 3) items.push(`<li class="fail"><span class="mk" aria-hidden="true">✕</span><span>Держит ${fmt(TASK_LOAD)} rps с ошибками меньше 1%</span></li>`);
+  else items.push(`<li class="hidden-goal"><span class="mk" aria-hidden="true"></span><span>Ещё один критерий проверяется прогоном нагрузки</span></li>`);
+
+  let body;
+  if (S.solved) {
+    const b = S.result.before, a = S.result.after;
+    const loads = S.doc.order.filter(id => S.doc.nodes[id].kind === 'server').map(id => pct(a.stat[id].util)).join(' / ');
+    body = `<div class="fb ok">Все запросы идут через балансировщик, ни один сервер не перегружен.</div>
+      <dl class="result">
+        <dt>Ошибки</dt><dd><span class="was">${pct(b.errors)}</span> → <span class="now">${pct(a.errors)}</span></dd>
+        <dt>p95 ответа</dt><dd><span class="was">${fmt(b.p95)} мс</span> → <span class="now">${fmt(a.p95)} мс</span></dd>
+        <dt>Загрузка серверов</dt><dd>${loads}</dd>
+        <dt>Цена</dt><dd>${money(b.cost)} → ${money(a.cost)} $/ч</dd>
+      </dl>
+      <div class="task-actions"><button class="btn primary" type="button" data-action="next" id="task-next">Дальше: если сервер упадёт →</button></div>`;
+  } else {
+    const hints = S.hint ? `<ol class="hints">${HINTS.slice(0, S.hint).map(t => `<li>${t}</li>`).join('')}</ol>` : '';
+    const fb = S.feedback && S.feedback.type === 'fail' ? `<div class="fb fail" role="alert">${S.feedback.msg}</div>` : '';
+    const showSol = S.attempts >= 2 || S.hint >= 3;
+    body = `${fb}${hints}
+      <div class="task-actions">
+        <button class="btn primary" type="button" data-action="check" id="task-check" ${S.playing ? 'disabled' : ''}>Проверить</button>
+        <button class="btn" type="button" data-action="hint" id="task-hint" ${S.hint >= 3 || S.playing ? 'disabled' : ''}>Подсказка · ${S.hint} из 3</button>
+        ${showSol ? `<button class="btn link" type="button" data-action="solution" id="task-solution" ${S.playing ? 'disabled' : ''}>Показать решение</button>` : ''}
+      </div>`;
+  }
+  el.innerHTML = `<div class="task${S.solved ? ' solved' : ''}">
+    <div class="task-head"><span class="dia" aria-hidden="true"></span>${S.solved ? `Решено${S.help ? ' с подсказкой' : ''}` : 'Задача на доске'}${S.attempts ? `<span class="att">попыток: ${S.attempts}</span>` : ''}</div>
+    <p class="task-goal">Сделайте так, чтобы все запросы пользователей распределялись между тремя серверами.</p>
+    ${S.solved ? '' : '<p class="task-how">Перетащите блок из палитры на доску. Связь тянется из кружка на правом краю блока. Чтобы удалить связь, нажмите на неё и затем на красный крестик.</p>'}
+    <ul class="checks">${items.join('')}</ul>
+    ${body}
+  </div>`;
+  if (fid) { const f = document.getElementById(fid); if (f && !f.disabled) f.focus(); }
+}
+
+function renderNav() {
+  const fid = document.activeElement && document.activeElement.id;
+  const atTask = S.beat === TASK && !S.solved, last = S.beat === BEATS.length - 1;
+  const text = atTask ? 'Решите задачу на доске, чтобы продолжить' : last ? 'Конец урока' : 'Стрелки ← → тоже работают';
+  $('theory-nav').innerHTML = `<button class="btn" type="button" id="nav-prev" ${S.beat === 0 ? 'disabled' : ''}>← Назад</button>
+    <span class="nav-text">${text}</span>
+    <button class="btn primary" type="button" id="nav-next" ${atTask || last ? 'disabled' : ''}>Далее →</button>`;
+  if (fid === 'nav-prev' || fid === 'nav-next') { const f = $(fid); if (f && !f.disabled) f.focus(); }
+}
+
+function renderPalette() {
+  const edit = isEdit();
+  if (S.palEdit === edit) return;
+  S.palEdit = edit;
+  const items = PAL.map(p => `<button type="button" class="pal-item" data-kind="${p.kind}" ${edit ? '' : 'disabled'} title="${edit ? 'Перетащите на доску или нажмите' : 'Палитра откроется в задаче'}">
+      <svg viewBox="0 0 24 24" aria-hidden="true">${ICON[p.kind]}</svg><span><span class="nm">${p.name}</span><span class="tag${p.isNew ? ' new' : ''}">${p.tag}</span></span></button>`).join('');
+  const locked = LOCKED.map(([name, lesson, icon]) => `<button type="button" class="pal-item locked" disabled title="Откроется в уроке ${lesson}">
+      <svg viewBox="0 0 24 24" aria-hidden="true">${ICON[icon]}</svg><span><span class="nm">${name}</span><span class="tag">урок ${lesson}</span></span></button>`).join('');
+  const pal = $('palette');
+  pal.className = 'palette' + (edit ? '' : ' off');
+  pal.innerHTML = `<div class="pal-title">Палитра</div>${items}${edit ? '' : '<p class="pal-note">Откроется в задаче</p>'}<div class="pal-title">Позже в курсе</div>${locked}`;
+}
+
+function renderControls() {
+  const edit = isEdit();
+  $('btn-undo').disabled = !edit || !S.log.length;
+  $('btn-redo').disabled = !edit || !S.redo.length;
+  $('btn-reset').disabled = !edit || !S.log.length;
+  $('btn-play').textContent = S.running ? '❚❚ Пауза' : '▶ Трафик';
+  document.querySelectorAll('[data-speed]').forEach(b => b.setAttribute('aria-pressed', String(+b.dataset.speed === S.speed)));
+  const chip = $('mode-chip');
+  chip.className = 'mode-chip' + (edit ? ' edit' : '');
+  chip.textContent = edit ? 'Задача · доска ваша' : S.playing ? 'Показываю решение…' : 'Доска следует за текстом';
+}
+
+function opText(op) {
+  const o = `<span class="op">${op.t}</span>`;
+  switch (op.t) {
+    case 'AddNode': return `${o} ${op.id} · ${KIND[op.kind].sub}`;
+    case 'RemoveNode': return `${o} ${op.id}`;
+    case 'MoveNode': return `${o} ${op.id} → (${op.x}, ${op.y})`;
+    case 'Connect': case 'Disconnect': return `${o} ${op.from} → ${op.to}`;
+    case 'SetLoad': return `${o} ${op.rps} rps`;
+    case 'FailNode': case 'RecoverNode': return `${o} ${op.id}`;
+    case 'Highlight': return `${o} ${op.target} · ${op.tone}`;
+    case 'Annotate': return `${o} ${op.target}`;
+    default: return o;
+  }
+}
+
+function renderJournal() {
+  const el = $('journal');
+  el.hidden = !S.showLog;
+  $('btn-log').setAttribute('aria-expanded', String(S.showLog));
+  if (!S.showLog) return;
+  const b = BEATS[S.beat];
+  const script = [...b.ops, ...b.stage];
+  const mine = S.log;
+  el.innerHTML = `<div><h3>Сценарий шага «${esc(b.title)}»</h3>${script.length ? `<ol>${script.map(op => `<li>${opText(op)}</li>`).join('')}</ol>` : '<p class="empty">Автор ничего не меняет, доска ваша.</p>'}</div>
+    <div><h3>Ваши ходы в задаче</h3>${mine.length ? `<ol>${mine.map(op => `<li>${opText(op)}</li>`).join('')}</ol>` : '<p class="empty">Пока пусто. Ходы появятся, когда начнёте задачу.</p>'}</div>
+    <p class="note">Доска на любом шаге получается применением этих операций с начала урока. Демонстрации автора и ходы ученика записываются одним языком, поэтому работают перемотка, отмена, «Показать решение» и проверка решения.</p>`;
+}
+
+function commit() {
+  S.doc = buildDoc(S.beat);
+  S.steady = simulate(S.doc, S.doc.load);
+  renderBoard();
+  renderTask();
+  renderNav();
+  renderTimeline();
+  renderPalette();
+  renderControls();
+  renderJournal();
+}
+
+// ---------- действия ----------
+let toastTimer;
+function toast(msg) {
+  const el = $('toast');
+  el.textContent = msg;
+  el.hidden = false;
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => { el.hidden = true; }, 2800);
+}
+
+function act(op) {
+  if (!isEdit()) return false;
+  const r = applyOp(S.doc, op);
+  if (r.error) { toast(r.error); renderBoard(); return false; }
+  S.log.push(op);
+  S.redo = [];
+  S.focus = null;
+  S.failIdx = -1;
+  if (S.feedback && S.feedback.type === 'fail') S.feedback = null;
+  commit();
+  return true;
+}
+
+function goTo(n) {
+  if (n === S.beat || !canGo(n)) return;
+  S.beat = n;
+  S.maxBeat = Math.max(S.maxBeat, n);
+  S.sel = null; S.focus = null; S.gesture = null;
+  $('rubber').setAttribute('d', '');
+  renderTheory();
+  commit();
+}
+
+function nextId(kind, d) {
+  const base = kind === 'lb' ? 'lb-' : 'app';
+  let i = kind === 'lb' ? 1 : 4;
+  while (d.nodes[base + i]) i++;
+  return base + i;
+}
+
+function addNodeAt(kind, x, y) {
+  if (!isEdit()) return;
+  const d = S.doc;
+  if (x == null) {
+    const spot = SPOTS[kind].find(([sx, sy]) => !d.order.some(i => Math.abs(d.nodes[i].x - sx) < NW && Math.abs(d.nodes[i].y - sy) < NH)) || SPOTS[kind][0];
+    [x, y] = spot;
+  }
+  const id = nextId(kind, d);
+  S.sel = { type: 'node', id };
+  act(Op.AddNode(id, kind, id, clamp(snap(x), NW / 2 + 6, VBW - NW / 2 - 6), clamp(snap(y), NH / 2 + 44, VBH - NH / 2 - 6)));
+}
+
+function deleteSel() {
+  if (!isEdit() || !S.sel) return;
+  const sel = S.sel;
+  S.sel = null;
+  if (sel.type === 'edge') { const [f, t] = sel.id.split('>'); act(Op.Disconnect(f, t)); }
+  else act(Op.RemoveNode(sel.id));
+}
+
+function undo() { if (!isEdit() || !S.log.length) return; S.redo.push(S.log.pop()); S.sel = null; S.focus = null; S.failIdx = -1; commit(); }
+function redo() { if (!isEdit() || !S.redo.length) return; S.log.push(S.redo.pop()); S.sel = null; commit(); }
+function resetBoard() { if (!isEdit()) return; S.log = []; S.redo = []; S.sel = null; S.focus = null; S.failIdx = -1; S.feedback = null; commit(); }
+
+function flash() {
+  const st = $('stage');
+  st.classList.remove('flash');
+  void st.getBoundingClientRect();
+  st.classList.add('flash');
+}
+
+function solve(help) {
+  S.solved = true;
+  S.help = help;
+  S.failIdx = -1; S.focus = null; S.sel = null;
+  S.feedback = { type: 'ok' };
+  S.result = { before: simulate(buildDoc(TASK - 1), TASK_LOAD), after: simulate(buildDoc(TASK), TASK_LOAD) };
+  commit();
+  flash();
+}
+
+function check() {
+  if (!isEdit()) return;
+  const goals = evaluate(S.doc);
+  const i = goals.findIndex(g => !g.ok);
+  if (i >= 0) {
+    S.attempts++; S.failIdx = i; S.feedback = { type: 'fail', msg: goals[i].msg }; S.focus = goals[i].focus;
+    commit();
+    return;
+  }
+  const s = simulate(S.doc, TASK_LOAD);
+  if (s.errors >= 0.01) {
+    const over = S.doc.order.filter(id => s.stat[id].drop > 1);
+    S.attempts++; S.failIdx = 3;
+    S.feedback = { type: 'fail', msg: `При ${fmt(TASK_LOAD)} rps теряется ${pct(s.errors)} запросов. Перегружены: ${over.join(', ')}.` };
+    S.focus = { nodes: over, edges: [] };
+    commit();
+    return;
+  }
+  solve(false);
+}
+
+function showSolution() {
+  if (!isEdit()) return;
+  S.playing = true;
+  S.log = []; S.redo = []; S.sel = null; S.focus = null; S.failIdx = -1; S.feedback = null;
+  commit();
+  const steps = SOLUTION.slice();
+  const tick = () => {
+    const op = steps.shift();
+    if (!op) { S.playing = false; solve(true); return; }
+    S.log.push(op);
+    commit();
+    setTimeout(tick, reduce ? 150 : 650);
+  };
+  setTimeout(tick, 400);
+}
+
+// ---------- указатель ----------
+const ghostEl = $('drag-ghost');
+
+function svgPt(e) {
+  const m = svg.getScreenCTM();
+  if (!m) return { x: 0, y: 0 };
+  const p = svg.createSVGPoint();
+  p.x = e.clientX; p.y = e.clientY;
+  return p.matrixTransform(m.inverse());
+}
+
+function updateRubber(p) {
+  const g = S.gesture, a = S.doc.nodes[g.from];
+  const x0 = a.x + NW / 2, y0 = a.y, c = Math.max(30, Math.abs(p.x - x0) * 0.5);
+  $('rubber').setAttribute('d', `M${x0},${y0} C${x0 + c},${y0} ${p.x - c},${p.y} ${p.x},${p.y}`);
+}
+
+svg.addEventListener('pointerdown', e => {
+  if (e.button !== 0 || !isEdit()) return;
+  const t = e.target;
+  const del = t.closest('[data-del]');
+  if (del) {
+    e.preventDefault();
+    const key = del.dataset.del, cut = key.indexOf(':');
+    S.sel = { type: key.slice(0, cut), id: key.slice(cut + 1) };
+    deleteSel();
+    return;
+  }
+  const port = t.closest('[data-port]');
+  if (port) {
+    e.preventDefault();
+    S.gesture = { type: 'connect', from: port.dataset.port };
+    S.sel = null;
+    renderBoard();
+    updateRubber(svgPt(e));
+    return;
+  }
+  const edge = t.closest('[data-edge]');
+  if (edge) { S.sel = { type: 'edge', id: edge.dataset.edge }; renderBoard(); return; }
+  const node = t.closest('[data-node]');
+  if (node) {
+    e.preventDefault();
+    const id = node.dataset.node, n = S.doc.nodes[id], p = svgPt(e);
+    S.gesture = { type: 'drag', id, sx: p.x, sy: p.y, ox: n.x, oy: n.y, x: n.x, y: n.y, moved: false };
+    return;
+  }
+  if (S.sel) { S.sel = null; renderBoard(); }
+});
+
+$('palette').addEventListener('pointerdown', e => {
+  const b = e.target.closest('[data-kind]');
+  if (!b || b.disabled || !isEdit() || e.button !== 0) return;
+  S.gesture = { type: 'place', kind: b.dataset.kind, sx: e.clientX, sy: e.clientY, moved: false };
+  ghostEl.textContent = KIND[b.dataset.kind].name;
+});
+
+$('palette').addEventListener('click', e => {
+  const b = e.target.closest('[data-kind]');
+  if (!b || b.disabled) return;
+  if (performance.now() - S.placedAt < 500) return;
+  addNodeAt(b.dataset.kind);
+});
+
+document.addEventListener('pointermove', e => {
+  const g = S.gesture;
+  if (!g) return;
+  if (g.type === 'drag') {
+    const p = svgPt(e), dx = p.x - g.sx, dy = p.y - g.sy;
+    if (!g.moved && Math.hypot(dx, dy) < 4) return;
+    g.moved = true;
+    g.x = clamp(snap(g.ox + dx), NW / 2 + 6, VBW - NW / 2 - 6);
+    g.y = clamp(snap(g.oy + dy), NH / 2 + 44, VBH - NH / 2 - 6);
+    renderBoard();
+  } else if (g.type === 'connect') {
+    updateRubber(svgPt(e));
+  } else if (g.type === 'place') {
+    if (!g.moved && Math.hypot(e.clientX - g.sx, e.clientY - g.sy) < 6) return;
+    g.moved = true;
+    ghostEl.hidden = false;
+    ghostEl.style.left = e.clientX + 'px';
+    ghostEl.style.top = e.clientY + 'px';
+  }
+});
+
+document.addEventListener('pointerup', e => {
+  const g = S.gesture;
+  if (!g) return;
+  S.gesture = null;
+  if (g.type === 'drag') {
+    if (g.moved) act(Op.MoveNode(g.id, g.x, g.y));
+    else { S.sel = { type: 'node', id: g.id }; renderBoard(); }
+  } else if (g.type === 'connect') {
+    $('rubber').setAttribute('d', '');
+    const el = document.elementFromPoint(e.clientX, e.clientY);
+    const nd = el && el.closest ? el.closest('[data-node]') : null;
+    if (nd && nd.dataset.node !== g.from) act(Op.Connect(g.from, nd.dataset.node));
+    else renderBoard();
+  } else if (g.type === 'place') {
+    ghostEl.hidden = true;
+    if (!g.moved) return;
+    S.placedAt = performance.now();
+    const r = $('stage').getBoundingClientRect();
+    if (e.clientX >= r.left && e.clientX <= r.right && e.clientY >= r.top && e.clientY <= r.bottom) {
+      const p = svgPt(e);
+      addNodeAt(g.kind, p.x, p.y);
+    }
+  }
+});
+
+document.addEventListener('pointercancel', () => {
+  S.gesture = null;
+  ghostEl.hidden = true;
+  $('rubber').setAttribute('d', '');
+  renderBoard();
+});
+
+// ---------- клавиатура и кнопки ----------
+document.addEventListener('keydown', e => {
+  if (e.target.closest && e.target.closest('input, textarea, select')) return;
+  const mod = e.metaKey || e.ctrlKey;
+  if (mod && e.key.toLowerCase() === 'z') { e.preventDefault(); if (e.shiftKey) redo(); else undo(); return; }
+  if ((e.key === 'Delete' || e.key === 'Backspace') && isEdit() && S.sel) { e.preventDefault(); deleteSel(); return; }
+  if (e.key === 'Escape') { S.sel = null; S.gesture = null; ghostEl.hidden = true; $('rubber').setAttribute('d', ''); renderBoard(); return; }
+  if (mod || e.altKey) return;
+  if (e.key === 'ArrowRight') goTo(S.beat + 1);
+  if (e.key === 'ArrowLeft') goTo(S.beat - 1);
+});
+
+$('beats').addEventListener('click', e => {
+  const a = e.target.closest('[data-action]');
+  if (a) {
+    const k = a.dataset.action;
+    if (k === 'check') check();
+    else if (k === 'hint') { S.hint = Math.min(3, S.hint + 1); commit(); }
+    else if (k === 'solution') showSolution();
+    else if (k === 'next') goTo(S.beat + 1);
+    return;
+  }
+  const past = e.target.closest('.beat.past');
+  if (past) goTo(+past.dataset.goto);
+});
+
+function hoverRef(e, on) {
+  const r = e.target.closest && e.target.closest('.ref');
+  if (!r) return;
+  const el = $('g-main').querySelector(`[data-node="${r.dataset.ref}"]`);
+  if (el) el.classList.toggle('ref-hover', on);
+}
+$('beats').addEventListener('pointerover', e => hoverRef(e, true));
+$('beats').addEventListener('pointerout', e => hoverRef(e, false));
+$('beats').addEventListener('focusin', e => hoverRef(e, true));
+$('beats').addEventListener('focusout', e => hoverRef(e, false));
+
+$('timeline').addEventListener('click', e => {
+  const b = e.target.closest('[data-goto]');
+  if (b && !b.disabled) goTo(+b.dataset.goto);
+});
+$('theory-nav').addEventListener('click', e => {
+  if (e.target.closest('#nav-prev')) goTo(S.beat - 1);
+  if (e.target.closest('#nav-next')) goTo(S.beat + 1);
+});
+$('btn-play').addEventListener('click', () => { S.running = !S.running; renderControls(); });
+document.querySelectorAll('[data-speed]').forEach(b => b.addEventListener('click', () => { S.speed = +b.dataset.speed; renderControls(); }));
+$('btn-undo').addEventListener('click', undo);
+$('btn-redo').addEventListener('click', redo);
+$('btn-reset').addEventListener('click', resetBoard);
+$('btn-log').addEventListener('click', () => { S.showLog = !S.showLog; renderJournal(); });
+
+// ---------- кадр: сглаживание, приборы, частицы ----------
+let C = { ok: '#148A55', warn: '#C27C05', bad: '#CF3F36' };
+function readColors() {
+  const cs = getComputedStyle(document.documentElement);
+  C = { ok: cs.getPropertyValue('--ok').trim() || C.ok, warn: cs.getPropertyValue('--warn').trim() || C.warn, bad: cs.getPropertyValue('--bad').trim() || C.bad };
+}
+
+function smooth(sim, k) {
+  for (const id in sim.stat) {
+    S.dLam[id] = lerp(S.dLam[id], sim.stat[id].lam, k);
+    S.dUtil[id] = lerp(S.dUtil[id], sim.stat[id].util, k);
+  }
+  for (const id in sim.edgeFlow) S.dEdge[id] = lerp(S.dEdge[id], sim.edgeFlow[id], k);
+  for (const id in S.dEdge) if (!(id in sim.edgeFlow)) delete S.dEdge[id];
+  const h = S.hud;
+  h.load = lerp(h.load, sim.load, k);
+  h.err = lerp(h.err, sim.errors, k);
+  h.db = lerp(h.db, sim.dbLoad, k);
+  h.cost = sim.cost;
+  h.p95 = sim.p95 == null ? null : h.p95 == null ? sim.p95 : lerp(h.p95, sim.p95, k);
+}
+
+function updateVisuals(sim) {
+  for (const id in refs.util) {
+    const st = sim.stat[id];
+    if (!st) continue;
+    const u = S.dUtil[id] || 0, el = refs.util[id];
+    el.setAttribute('width', ((NW - 24) * Math.min(u, 1)).toFixed(1));
+    el.setAttribute('class', 'util' + (st.failed || u > 1 ? ' bad' : u > 0.8 ? ' warn' : ''));
+  }
+  for (const id in refs.sub) {
+    const st = sim.stat[id], n = S.doc.nodes[id];
+    if (!st || !n) continue;
+    const lam = S.dLam[id] || 0;
+    const text = st.failed ? 'недоступен' : n.kind === 'client' ? `${fmt(lam)} rps →` : `${fmt(lam)} rps · ${pct(S.dUtil[id] || 0)}`;
+    if (refs.sub[id].textContent !== text) refs.sub[id].textContent = text;
+  }
+  for (const id in refs.elabel) {
+    const r = refs.elabel[id], f = S.dEdge[id] || 0, geo = S.geo[id];
+    const show = f >= 1 && geo && geo.len > 110;
+    r.g.setAttribute('visibility', show ? 'visible' : 'hidden');
+    if (!show) continue;
+    const text = `${fmt(f)} rps`;
+    if (r.last !== text) {
+      r.last = text;
+      r.text.textContent = text;
+      const w = text.length * 6.1 + 14;
+      r.rect.setAttribute('x', (-w / 2).toFixed(1));
+      r.rect.setAttribute('width', w.toFixed(1));
+    }
+  }
+}
+
+function updateHud() {
+  const h = S.hud;
+  $('m-load').textContent = `${fmt(h.load || 0)} rps`;
+  const err = $('m-err');
+  err.textContent = pct(h.err || 0);
+  err.className = 'm-val' + (h.err > 0.05 ? ' bad' : h.err > 0.01 ? ' warn' : '');
+  const p = $('m-p95');
+  p.textContent = h.p95 == null ? '—' : `${fmt(h.p95)} мс`;
+  p.className = 'm-val' + (h.p95 > 600 ? ' bad' : h.p95 > 250 ? ' warn' : '');
+  $('m-db').textContent = `${fmt(h.db || 0)} rps`;
+  $('m-cost').textContent = `${money(h.cost || 0)} $/ч`;
+}
+
+function sampleSpark(now) {
+  if (now - S.lastSample < 150) return;
+  S.lastSample = now;
+  const sp = S.spark;
+  sp.err.push(S.hud.err || 0);
+  sp.p95.push(S.hud.p95 || 0);
+  if (sp.err.length > 90) { sp.err.shift(); sp.p95.shift(); }
+  const pts = (arr, max) => arr.map((v, i) => `${(i / 89 * 76).toFixed(1)},${(21 - Math.min(v / max, 1) * 19).toFixed(1)}`).join(' ');
+  $('sp-err').setAttribute('points', pts(sp.err, 0.6));
+  $('sp-p95').setAttribute('points', pts(sp.p95, 1400));
+}
+
+const cv = $('particles'), ctx = cv.getContext('2d');
+function drawParticles(sim) {
+  const r = cv.getBoundingClientRect(), dpr = Math.min(window.devicePixelRatio || 1, 2);
+  const W = Math.round(r.width * dpr), H = Math.round(r.height * dpr);
+  if (cv.width !== W || cv.height !== H) { cv.width = W; cv.height = H; }
+  ctx.clearRect(0, 0, W, H);
+  if (reduce) return;
+  const m = svg.getScreenCTM();
+  if (!m) return;
+  const sx = m.a * dpr, sy = m.d * dpr, ox = (m.e - r.left) * dpr, oy = (m.f - r.top) * dpr;
+  const rad = Math.max(2, 3.4 * m.a) * dpr;
+  const dot = (x, y, rr) => { ctx.beginPath(); ctx.arc(x * sx + ox, y * sy + oy, rr, 0, Math.PI * 2); ctx.fill(); };
+  for (const id in S.geo) {
+    const f = S.dEdge[id] || 0;
+    if (f < 1) continue;
+    const st = sim.stat[id.split('>')[1]];
+    const n = Math.max(1, Math.min(14, Math.round(Math.sqrt(f) / 2.1)));
+    const ratio = st ? (st.failed ? 1 : st.lam > 0 ? st.drop / st.lam : 0) : 0;
+    const hot = st && !st.failed && st.util > 0.85;
+    const P = S.geo[id].P;
+    for (let i = 0; i < n; i++) {
+      const t = (S.clock * 0.42 + i / n) % 1;
+      const [x, y] = bez(P, t);
+      ctx.fillStyle = ((i * 0.618) % 1) < ratio ? C.bad : hot ? C.warn : C.ok;
+      dot(x, y, rad);
+    }
+  }
+  const d = viewDoc();
+  ctx.fillStyle = C.bad;
+  for (const id in sim.stat) {
+    const st = sim.stat[id], nd = d.nodes[id];
+    if (!nd || st.drop < 5) continue;
+    const k = Math.max(2, Math.min(12, Math.round(st.drop / 45)));
+    for (let j = 0; j < k; j++) {
+      const t = (S.clock * 0.7 + j / k) % 1;
+      ctx.globalAlpha = 1 - t;
+      dot(nd.x - NW / 2 + 14 + ((j * 0.618) % 1) * (NW - 28), nd.y + NH / 2 + 5 + t * 38, rad * 0.9);
+    }
+  }
+  ctx.globalAlpha = 1;
+}
+
+let last = performance.now(), frameN = 0;
+function frame(now) {
+  const dt = Math.min(now - last, 64);
+  last = now;
+  if (frameN++ % 30 === 0) readColors();
+  if (S.running) {
+    S.clock += dt / 1000 * S.speed;
+    const target = S.doc.load;
+    S.loadCur = reduce ? target : S.loadCur + (target - S.loadCur) * (1 - Math.exp(-dt * S.speed / 700));
+  }
+  const sim = simulate(S.doc, S.loadCur);
+  const k = reduce || !S.running ? 1 : 1 - Math.exp(-dt * S.speed / 260);
+  smooth(sim, k);
+  updateVisuals(sim);
+  updateHud();
+  drawParticles(sim);
+  if (S.running) sampleSpark(now);
+  requestAnimationFrame(frame);
+}
+
+renderTheory();
+commit();
+requestAnimationFrame(frame);
+})();
+</script>
