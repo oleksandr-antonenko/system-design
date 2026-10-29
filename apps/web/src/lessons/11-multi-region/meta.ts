@@ -4,6 +4,6 @@ export default defineLessonMeta({
   slug: 'multi-region',
   module: 'distributed',
   order: 11,
-  available: false,
+  available: true,
   locales: ['uk', 'ru', 'en', 'lt'],
 })

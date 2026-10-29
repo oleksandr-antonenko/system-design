@@ -4,6 +4,6 @@ export default defineLessonMeta({
   slug: 'queues',
   module: 'scaling',
   order: 7,
-  available: false,
+  available: true,
   locales: ['uk', 'ru', 'en', 'lt'],
 })

@@ -24,6 +24,33 @@ const addedNodes = (solution: ReadonlyArray<BoardOp>) =>
     ),
   )
 
+// Блоки эталона, которых нет на доске, сопоставляются блокам ученика того же
+// вида один к одному и по порядку: второй обработчик эталона — второму
+// обработчику ученика. Иначе после первого поставленного блока призрак
+// переставал бы рисовать остальные.
+const studentStandIn = (
+  doc: BoardDoc,
+  solution: ReadonlyArray<BoardOp>,
+  added: Readonly<{ id: string; kind: BoardDoc['nodes'][number]['kind'] }>,
+): Option.Option<BoardDoc['nodes'][number]> => {
+  const solutionIds = Array.map(addedNodes(solution), node => node.id)
+  const missing = Array.filter(
+    addedNodes(solution),
+    node => node.kind === added.kind && Option.isNone(findNode(doc, node.id)),
+  )
+  const spare = Array.filter(
+    doc.nodes,
+    node =>
+      node.kind === added.kind &&
+      !node.locked &&
+      !Array.contains(solutionIds, node.id),
+  )
+  return pipe(
+    Array.findFirstIndex(missing, node => node.id === added.id),
+    Option.flatMap(index => Array.get(spare, index)),
+  )
+}
+
 const resolveNode = (
   doc: BoardDoc,
   solution: ReadonlyArray<BoardOp>,
@@ -41,10 +68,7 @@ const resolveNode = (
         Array.findFirst(added => added.id === id),
         Option.map(added =>
           pipe(
-            Array.findFirst(
-              doc.nodes,
-              node => node.kind === added.kind && !node.locked,
-            ),
+            studentStandIn(doc, solution, added),
             Option.match({
               onSome: node => ({
                 point: { x: node.x, y: node.y },

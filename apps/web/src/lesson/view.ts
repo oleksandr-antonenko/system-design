@@ -171,6 +171,11 @@ const timelineView = (
 
 // TASK
 
+// «Было → стало» красится по направлению: меньше ошибок и быстрее ответ —
+// зелёным, хуже — красным. Ограничитель, например, честно добавляет отказов.
+const trend = (before: number, after: number): string =>
+  after < before - 1e-9 ? 'better' : after > before + 1e-9 ? 'worse' : 'same'
+
 const percentList = (values: ReadonlyArray<number>, ui: UiStrings): string =>
   Array.map(values, ui.hud.percent).join(' / ')
 
@@ -242,7 +247,14 @@ const taskCardView = (
                     [ui.hud.percent(before.errorRate)],
                   ),
                   ' → ',
-                  h.span([h.Class('after')], [ui.hud.percent(after.errorRate)]),
+                  h.span(
+                    [
+                      h.Class(
+                        `after ${trend(before.errorRate, after.errorRate)}`,
+                      ),
+                    ],
+                    [ui.hud.percent(after.errorRate)],
+                  ),
                 ],
               ),
               h.dt([], [ui.task.resultP95]),
@@ -260,7 +272,17 @@ const taskCardView = (
                   ),
                   ' → ',
                   h.span(
-                    [h.Class('after')],
+                    [
+                      h.Class(
+                        `after ${Option.match(
+                          Option.all([before.p95, after.p95]),
+                          {
+                            onNone: () => 'same',
+                            onSome: ([was, now]) => trend(was, now),
+                          },
+                        )}`,
+                      ),
+                    ],
                     [
                       Option.match(after.p95, {
                         onNone: () => '—',

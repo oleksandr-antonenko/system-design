@@ -89,7 +89,9 @@ export default defineLesson({
 })
 ```
 
-Operations: `addNode`, `connect`, `disconnect`, `setLoad`, `failNode`, `recoverNode`. Stage: `highlight(target, tone)` and `annotate(target, key, tone)`, where the target is a block id or `{ kind: 'lb' }` and the tone is `ink`, `info`, `ok`, `warn` or `bad` (or a function of the simulation). Goals: `HasKind`, `FansOut`, `OnlyThrough`, `MaxErrorRate`. A student cannot move past a task until it is solved.
+Blocks: `client`, `cdn`, `limiter`, `lb`, `server`, `cache`, `queue`, `events`, `worker`, `db`, `replica`, `search`. Their capacities, prices, allowed connections and behaviour in the flow (servers send 20 % writes to databases and 80 % reads to caches or databases and replicas; a queue splits jobs between workers, an event bus copies them to every subscriber; and so on) are fixed in [openspec/specs/traffic-simulation](openspec/specs/traffic-simulation/spec.md) and `apps/web/src/domain/catalog.ts`.
+
+Operations: `addNode(id, kind, x, y, { locked?, capacity?, region? })`, `connect`, `disconnect`, `setLoad`, `failNode`, `recoverNode`, `failRegion`, `recoverRegion`. Stage: `highlight(target, tone)` and `annotate(target, key, tone)`, where the target is a block id or `{ kind: 'lb' }` and the tone is `ink`, `info`, `ok`, `warn` or `bad` (or a function of the simulation). Goals: `HasKind`, `FansOut`, `OnlyThrough`, and the ones checked by running the simulation — `MaxErrorRate`, `MaxP95`, `MaxUtilization`, `MaxBacklog`, `SurvivesFailure`, `SurvivesRegionFailure` — plus `MaxCost`. A student cannot move past a task until it is solved. Lessons 1–13 in `apps/web/src/lessons/` are working examples of every block and goal.
 
 `text.en.ts` holds every text of the lesson. Its type is derived from `lesson.ts`, so a missing step, annotation, goal or hint is a type error:
 

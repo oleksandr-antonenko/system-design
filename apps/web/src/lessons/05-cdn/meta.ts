@@ -4,6 +4,6 @@ export default defineLessonMeta({
   slug: 'cdn',
   module: 'scaling',
   order: 5,
-  available: false,
+  available: true,
   locales: ['uk', 'ru', 'en', 'lt'],
 })

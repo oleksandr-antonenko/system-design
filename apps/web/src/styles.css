@@ -496,11 +496,14 @@ h3 {
   font-weight: 600;
 }
 .result .before {
-  color: var(--bad);
+  color: var(--muted);
   font-weight: 500;
 }
-.result .after {
+.result .after.better {
   color: var(--ok);
+}
+.result .after.worse {
+  color: var(--bad);
 }
 
 /* ---------- доска ---------- */

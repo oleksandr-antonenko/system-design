@@ -3,6 +3,7 @@ import { describe, expect, test } from 'vitest'
 
 import { foldOps } from '../domain/board'
 import lesson from '../lessons/03-load-balancer/lesson'
+import queuesLesson from '../lessons/07-queues/lesson'
 import { addNode, boardAt, connect, disconnect, taskOf } from './dsl'
 import { ghostPlan } from './ghost'
 
@@ -76,5 +77,30 @@ describe('ghost plan', () => {
       ],
       removeEdges: [],
     })
+  })
+
+  test('several blocks of one kind keep their outlines once the student placed one', () => {
+    const queues = Option.getOrThrow(
+      Option.flatMap(Array.get(queuesLesson.steps, 3), taskOf),
+    ).solution
+    const start = boardAt(queuesLesson, 3, {})
+    const placedOne = foldOps(start, [
+      addNode('queue-1', 'queue', 550, 400, { locked: false }),
+      addNode('worker-9', 'worker', 700, 200, { locked: false }),
+    ])
+    const plan = ghostPlan(placedOne, queues)
+    const queue = { x: 550, y: 400 }
+
+    expect(plan.nodes).toEqual([
+      { kind: 'worker', x: 790, y: 400 },
+      { kind: 'worker', x: 790, y: 500 },
+    ])
+    expect(plan.edges).toEqual(
+      expect.arrayContaining([
+        { from: queue, to: { x: 700, y: 200 } },
+        { from: queue, to: { x: 790, y: 400 } },
+        { from: queue, to: { x: 790, y: 500 } },
+      ]),
+    )
   })
 })

@@ -125,6 +125,7 @@ describe('number formatting', () => {
     '%s groups thousands with a space',
     locale => {
       expect(formatNumber(locale, 12500)).toMatch(/^12\s500$/u)
+      expect(formatNumber(locale, 1600)).toBe('1600')
     },
   )
 })

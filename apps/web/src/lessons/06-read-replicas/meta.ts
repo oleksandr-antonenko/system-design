@@ -4,6 +4,6 @@ export default defineLessonMeta({
   slug: 'read-replicas',
   module: 'scaling',
   order: 6,
-  available: false,
+  available: true,
   locales: ['uk', 'ru', 'en', 'lt'],
 })

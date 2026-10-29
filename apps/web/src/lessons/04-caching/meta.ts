@@ -4,6 +4,6 @@ export default defineLessonMeta({
   slug: 'caching',
   module: 'foundations',
   order: 4,
-  available: false,
+  available: true,
   locales: ['uk', 'ru', 'en', 'lt'],
 })

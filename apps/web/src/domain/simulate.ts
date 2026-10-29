@@ -720,8 +720,12 @@ export const simulate = (doc: BoardDoc, load: number): SimResult => {
           dropped: result.dropped,
           rejected: result.rejected,
           backlog: result.backlog,
+          // Ограничитель загружен тем, что пропускает: отклонять лишнее —
+          // его работа, а не перегрузка.
           utilization: globalThis.Number.isFinite(capacity)
-            ? arrivalOf(node).total / capacity
+            ? (node.kind === 'limiter'
+                ? arrivalOf(node).total - result.rejected
+                : arrivalOf(node).total) / capacity
             : 0,
           isDown: isDown(context, node.id),
         },

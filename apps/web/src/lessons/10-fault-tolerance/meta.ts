@@ -4,6 +4,6 @@ export default defineLessonMeta({
   slug: 'fault-tolerance',
   module: 'distributed',
   order: 10,
-  available: false,
+  available: true,
   locales: ['uk', 'ru', 'en', 'lt'],
 })

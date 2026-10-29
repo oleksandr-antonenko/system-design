@@ -4,6 +4,6 @@ export default defineLessonMeta({
   slug: 'sharding',
   module: 'scaling',
   order: 9,
-  available: false,
+  available: true,
   locales: ['uk', 'ru', 'en', 'lt'],
 })

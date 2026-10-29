@@ -508,6 +508,11 @@ describe('CDN and rate limiter (D1, D4)', () => {
   test('rejected requests are errors but take no part in p95', () => {
     expect(p95Of(limited, 2000)).toBeCloseTo(p95Of(plain, 1100))
   })
+
+  test('a limiter is loaded by what it lets through, not by what it turns away', () => {
+    expect(simulate(limited, 2000).nodes['limiter']?.utilization).toBe(1)
+    expect(simulate(limited, 550).nodes['limiter']?.utilization).toBe(0.5)
+  })
 })
 
 describe('failures (D5)', () => {

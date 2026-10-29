@@ -4,6 +4,6 @@ export default defineLessonMeta({
   slug: 'url-shortener',
   module: 'distributed',
   order: 13,
-  available: false,
+  available: true,
   locales: ['uk', 'ru', 'en', 'lt'],
 })

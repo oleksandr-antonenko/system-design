@@ -4,6 +4,6 @@ export default defineLessonMeta({
   slug: 'rate-limiting',
   module: 'scaling',
   order: 8,
-  available: false,
+  available: true,
   locales: ['uk', 'ru', 'en', 'lt'],
 })
