@@ -5,6 +5,7 @@ export default defineConfig({
     name: 'web',
     include: ['src/**/*.{test,spec}.ts'],
     environment: 'happy-dom',
+    fsModuleCache: false,
     setupFiles: ['./src/vitest-setup.ts'],
     server: {
       deps: {
