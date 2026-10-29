@@ -158,6 +158,18 @@ export const lt = {
     resultServers: 'Serverių apkrova',
     resultCost: 'Kaina',
     continueLesson: 'Toliau →',
+    surfaces: 'Kur spręsti užduotį',
+  },
+  network: {
+    boardLabel: 'Tinklo schema',
+    placeholder: 'Tinklo lenta dar kuriama: kol kas čia tik įrenginių sąrašas.',
+    run: 'Paleisti',
+    wifiTab: device => `Wi-Fi: ${device}`,
+    wifiNetworks: 'Netoliese esantys tinklai',
+    wifiNone: 'Netoliese nėra Wi-Fi tinklų.',
+    wifiPassword: 'Slaptažodis',
+    wifiJoin: 'Prisijungti',
+    wifiJoined: ssid => `Prisijungta prie „${ssid}“`,
   },
   notFound: {
     title: 'Puslapis nerastas',

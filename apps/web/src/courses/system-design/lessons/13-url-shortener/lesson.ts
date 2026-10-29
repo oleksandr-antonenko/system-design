@@ -3,9 +3,10 @@ import {
   addNode,
   annotate,
   connect,
-  defineLesson,
+  flow,
   setLoad,
-} from '../../../../lesson/dsl'
+} from '../../../../kinds/flow/dsl'
+import { defineLesson } from '../../../../lesson/dsl'
 import { budget } from './review'
 
 // Итоговый проект: на доске только пользователи и база, остальное ученик
@@ -13,7 +14,7 @@ import { budget } from './review'
 // реплика: 3,20 $ в час при бюджете 4 $. Без CDN серверов нужно шесть, и
 // бюджет не сходится. Шаги после задачи ссылаются только на `users` и `db`:
 // схемы учеников различаются.
-export default defineLesson({
+export default defineLesson(flow, {
   slug: 'url-shortener',
   steps: [
     {

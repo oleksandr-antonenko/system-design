@@ -3,15 +3,16 @@ import {
   addNode,
   annotate,
   connect,
-  defineLesson,
   disconnect,
   failNode,
+  flow,
   highlight,
   recoverNode,
   setLoad,
-} from '../../../../lesson/dsl'
+} from '../../../../kinds/flow/dsl'
+import { defineLesson } from '../../../../lesson/dsl'
 
-export default defineLesson({
+export default defineLesson(flow, {
   slug: 'load-balancer',
   steps: [
     {

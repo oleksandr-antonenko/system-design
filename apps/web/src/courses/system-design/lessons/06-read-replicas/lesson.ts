@@ -3,12 +3,13 @@ import {
   addNode,
   annotate,
   connect,
-  defineLesson,
   failNode,
+  flow,
   highlight,
   recoverNode,
   setLoad,
-} from '../../../../lesson/dsl'
+} from '../../../../kinds/flow/dsl'
+import { defineLesson } from '../../../../lesson/dsl'
 
 // Реплики ставит ученик, а доска называет их `replica-1` и `replica-2`.
 // Эталон использует те же id, чтобы шаги после задачи (лаг, повышение
@@ -16,7 +17,7 @@ import {
 
 const servers = ['app1', 'app2', 'app3', 'app4', 'app5'] as const
 
-export default defineLesson({
+export default defineLesson(flow, {
   slug: 'read-replicas',
   steps: [
     {

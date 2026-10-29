@@ -1,150 +1,101 @@
-import { Array, Option, pipe } from 'effect'
+import { Array, Option, Result } from 'effect'
 
-import {
-  type BoardDoc,
-  BoardOp,
-  emptyBoard,
-  findNode,
-  foldOps,
-} from '../domain/board'
-import type { ComponentKind, Region } from '../domain/catalog'
-import type { Goal } from '../domain/goals'
-import type { SimResult } from '../domain/simulate'
+import type { BoardKindId } from '../courses/model'
+import type { BoardKind, EntityLabel, KindTypes } from '../kinds/contract'
+import type { KindTypesById } from '../kinds/types'
 
-// STAGE
-
-export type Tone = 'ink' | 'info' | 'warn' | 'bad' | 'ok'
-
-export type Target = string | Readonly<{ kind: ComponentKind }>
-
-export type Highlight = Readonly<{
-  _tag: 'Highlight'
-  target: Target
-  tone: Tone
-}>
-
-export type Annotate<Key extends string = string> = Readonly<{
-  _tag: 'Annotate'
-  target: Target
-  key: Key
-  tone: Tone | ((sim: SimResult) => Tone)
-}>
-
-export type StageItem = Highlight | Annotate
-
-export const highlight = (target: Target, tone: Tone): Highlight => ({
-  _tag: 'Highlight',
-  target,
-  tone,
-})
-
-export const annotate = <const Key extends string>(
-  target: Target,
-  key: Key,
-  tone: Tone | ((sim: SimResult) => Tone),
-): Annotate<Key> => ({ _tag: 'Annotate', target, key, tone })
-
-// OPERATIONS
-
-export type NodeOptions = Readonly<{
-  /** Блок задачи нельзя удалить. По умолчанию `true`; решение задачи
-      добавляет блоки с `locked: false`. */
-  locked?: boolean
-  /** Своя ёмкость в rps вместо каталожной, например лимит ограничителя. */
-  capacity?: number
-  /** Регион блока: доска рисует под блоками региона подписанную зону. */
-  region?: Region
-}>
-
-export const addNode = (
-  id: string,
-  kind: ComponentKind,
-  x: number,
-  y: number,
-  options: NodeOptions = {},
-): BoardOp =>
-  BoardOp.AddNode({
-    id,
-    kind,
-    x,
-    y,
-    locked: options.locked ?? true,
-    maybeCapacity: Option.fromNullishOr(options.capacity),
-    maybeRegion: Option.fromNullishOr(options.region),
-  })
-
-export const connect = (from: string, to: string): BoardOp =>
-  BoardOp.Connect({ from, to })
-
-export const disconnect = (from: string, to: string): BoardOp =>
-  BoardOp.Disconnect({ from, to })
-
-export const setLoad = (rps: number): BoardOp => BoardOp.SetLoad({ rps })
-
-export const failNode = (id: string): BoardOp => BoardOp.FailNode({ id })
-
-export const recoverNode = (id: string): BoardOp => BoardOp.RecoverNode({ id })
-
-/** Роняет все блоки региона, кроме пользователей. */
-export const failRegion = (region: Region): BoardOp =>
-  BoardOp.FailRegion({ region })
-
-export const recoverRegion = (region: Region): BoardOp =>
-  BoardOp.RecoverRegion({ region })
+// Урок — сценарий шагов на доске своего вида (design D1, D3). Тип урока
+// выводится из вида: операции, цели, сцена и тексты-функции у `flow` и
+// `packet` разные, а плеер и тесты контента работают с любым видом.
 
 // LESSON
 
-export type TaskGoal<GoalId extends string = string> = Readonly<{
+export type TaskGoal<Goal, GoalId extends string = string> = Readonly<{
   id: GoalId
   goal: Goal
 }>
 
 export type TaskSpec<
+  T extends KindTypes,
   TaskId extends string = string,
   GoalId extends string = string,
 > = Readonly<{
   id: TaskId
-  palette: ReadonlyArray<ComponentKind>
-  goals: ReadonlyArray<TaskGoal<GoalId>>
-  solution: ReadonlyArray<BoardOp>
+  palette: ReadonlyArray<T['Palette']>
+  goals: ReadonlyArray<TaskGoal<T['Goal'], GoalId>>
+  solution: ReadonlyArray<T['Op']>
+  /** Где ученик решает задачу: `'board'` и поверхности вида, например
+      `'wifi:phone'`, `'terminal:laptop'`. По умолчанию только доска. */
+  surfaces?: ReadonlyArray<T['Surface']>
 }>
 
-export type LessonStep = Readonly<{
+export type LessonStep<T extends KindTypes> = Readonly<{
   id: string
-  ops: ReadonlyArray<BoardOp>
-  stage: ReadonlyArray<StageItem>
-  task?: TaskSpec
+  ops: ReadonlyArray<T['Op']>
+  stage: ReadonlyArray<T['Stage']>
+  task?: TaskSpec<T>
 }>
 
-export type LessonDefinition = Readonly<{
+export type LessonDefinition<T extends KindTypes> = Readonly<{
+  board: T['Id']
+  kind: BoardKind<T>
   slug: string
-  steps: Array.NonEmptyReadonlyArray<LessonStep>
+  steps: Array.NonEmptyReadonlyArray<LessonStep<T>>
+  /** Сущности доски, которым тексты урока дают подписи (`labels`). */
+  labels: ReadonlyArray<string>
 }>
 
-export const defineLesson = <const Lesson extends LessonDefinition>(
-  lesson: Lesson,
-): Lesson => lesson
+/** Урок любого вида доски. */
+export type AnyLesson = {
+  readonly [Id in BoardKindId]: LessonDefinition<KindTypesById[Id]>
+}[BoardKindId]
+
+/** Урок, тип которого сохранил литералы id шагов, задач, целей и подписей:
+    по нему `LessonTexts` проверяет полноту текстов. */
+export type DefinedLesson<
+  T extends KindTypes,
+  Steps extends Array.NonEmptyReadonlyArray<LessonStep<T>>,
+  Label extends string,
+> = Readonly<{
+  board: T['Id']
+  kind: BoardKind<T>
+  slug: string
+  steps: Steps
+  labels: ReadonlyArray<Label>
+}>
+
+/** `defineLesson(flow, { slug, steps })`: вид доски — первым аргументом. */
+export const defineLesson = <
+  T extends KindTypes,
+  const Steps extends Array.NonEmptyReadonlyArray<LessonStep<T>>,
+  const Labels extends ReadonlyArray<string> = readonly [],
+>(
+  kind: BoardKind<T>,
+  lesson: Readonly<{ slug: string; steps: Steps; labels?: Labels }>,
+): DefinedLesson<T, Steps, Labels[number]> => ({
+  board: kind.id,
+  kind,
+  slug: lesson.slug,
+  steps: lesson.steps,
+  labels: lesson.labels ?? [],
+})
+
+export type LessonRunner<R> = <T extends KindTypes>(
+  lesson: LessonDefinition<T>,
+) => R
+
+/** Запускает код, общий для всех видов, с уроком его собственного вида. */
+export const withLesson = <R>(lesson: AnyLesson, run: LessonRunner<R>): R =>
+  lesson.board === 'flow' ? run(lesson) : run(lesson)
 
 // TEXTS
 
-export type StepContext = Readonly<{ sim: SimResult; doc: BoardDoc }>
+export type Prose<Context> = string | ((context: Context) => string)
 
-export type Prose = string | ((context: StepContext) => string)
-
-type StepOf<Lesson extends LessonDefinition> = Lesson['steps'][number]
-// Шаги без задачи не имеют поля `task`, поэтому индексировать объединение
-// шагов по `task` нельзя: тип схлопнется в ошибку и проверка текстов задач
-// молча отключится. Условный тип перебирает шаги по одному.
-type TaskOf<Lesson extends LessonDefinition> =
-  StepOf<Lesson> extends infer LessonStepOf
-    ? LessonStepOf extends Readonly<{ task: infer Task extends TaskSpec }>
-      ? Task
-      : never
-    : never
-type AnnotationKeyOf<Lesson extends LessonDefinition> = Extract<
-  StepOf<Lesson>['stage'][number],
-  { _tag: 'Annotate' }
->['key']
+export type StepTexts<Context> = Readonly<{
+  title: string
+  body: Prose<Context>
+}>
 
 export type TaskTexts<GoalId extends string> = Readonly<{
   prompt: string
@@ -153,63 +104,140 @@ export type TaskTexts<GoalId extends string> = Readonly<{
   solvedNote: string
 }>
 
-export type LessonTexts<Lesson extends LessonDefinition> = Readonly<{
+/** Свой текст урока вместо общего текста кода сообщения: в задаче урока
+    типичная ошибка объясняется его словами. */
+export type FeedbackTexts<Message extends Readonly<{ _tag: string }>> = {
+  readonly [Tag in Message['_tag']]?:
+    | string
+    | ((message: Extract<Message, Readonly<{ _tag: Tag }>>) => string)
+}
+
+type LessonShape = Readonly<{
+  board: BoardKindId
+  steps: ReadonlyArray<
+    Readonly<{ id: string; stage: ReadonlyArray<Readonly<{ _tag: string }>> }>
+  >
+  labels: ReadonlyArray<string>
+}>
+
+type TypesOf<Lesson extends LessonShape> = KindTypesById[Lesson['board']]
+
+type StepOf<Lesson extends LessonShape> = Lesson['steps'][number]
+
+type TaskShape = Readonly<{
+  id: string
+  goals: ReadonlyArray<Readonly<{ id: string }>>
+}>
+
+// Шаги без задачи не имеют поля `task`, поэтому индексировать объединение
+// шагов по `task` нельзя: тип схлопнется в ошибку и проверка текстов задач
+// молча отключится. Условный тип перебирает шаги по одному.
+type TaskOf<Lesson extends LessonShape> =
+  StepOf<Lesson> extends infer LessonStepOf
+    ? LessonStepOf extends Readonly<{ task: infer Task extends TaskShape }>
+      ? Task
+      : never
+    : never
+
+type AnnotationKeyOf<Lesson extends LessonShape> = Extract<
+  StepOf<Lesson>['stage'][number],
+  Readonly<{ _tag: 'Annotate'; key: string }>
+>['key']
+
+type LabelTexts<Label extends string> = [Label] extends [never]
+  ? Readonly<{ labels?: never }>
+  : Readonly<{ labels: Readonly<Record<Label, EntityLabel>> }>
+
+/** Тексты урока на одном языке: `text.<язык>.ts` с
+    `satisfies LessonTexts<typeof lesson>`. Пропущенный ключ не компилируется. */
+export type LessonTexts<Lesson extends LessonShape> = Readonly<{
   title: string
   summary: string
   steps: Readonly<
-    Record<StepOf<Lesson>['id'], Readonly<{ title: string; body: Prose }>>
+    Record<StepOf<Lesson>['id'], StepTexts<TypesOf<Lesson>['Prose']>>
   >
   annotations: Readonly<
-    Record<AnnotationKeyOf<Lesson>, (sim: SimResult) => string>
+    Record<
+      AnnotationKeyOf<Lesson>,
+      (input: TypesOf<Lesson>['Annotation']) => string
+    >
   >
   tasks: Readonly<{
     [Task in TaskOf<Lesson> as Task['id']]: TaskTexts<
       Task['goals'][number]['id']
     >
   }>
-}>
+  feedback?: FeedbackTexts<TypesOf<Lesson>['Message']>
+}> &
+  LabelTexts<Lesson['labels'][number]>
 
-export type LooseLessonTexts = Readonly<{
+/** Тексты урока без проверки ключей. Так их видит реестр: функции-тексты
+    принимают что угодно, плеер зовёт их с данными вида урока. */
+export type LooseLessonTexts<
+  Context = unknown,
+  Annotation = unknown,
+  Message = unknown,
+> = Readonly<{
   title: string
   summary: string
-  steps?: Readonly<Record<string, Readonly<{ title: string; body: Prose }>>>
-  annotations?: Readonly<Record<string, (sim: SimResult) => string>>
+  steps?: Readonly<Record<string, StepTexts<Context>>>
+  annotations?: Readonly<Record<string, (input: Annotation) => string>>
   tasks?: Readonly<Record<string, TaskTexts<string>>>
+  labels?: Readonly<Record<string, EntityLabel>>
+  feedback?: Readonly<Record<string, string | ((message: Message) => string)>>
 }>
+
+export type TextsOf<T extends KindTypes> = LooseLessonTexts<
+  T['Prose'],
+  T['Annotation'],
+  T['Message']
+>
 
 // FOLDING
 
-export const taskOf = (step: LessonStep): Option.Option<TaskSpec> =>
-  Option.fromNullishOr(step.task)
+export const taskOf = <T extends KindTypes>(
+  step: LessonStep<T>,
+): Option.Option<TaskSpec<T>> => Option.fromNullishOr(step.task)
 
-export type TaskLogs = Readonly<Record<string, ReadonlyArray<BoardOp>>>
+export type TaskLogs<Op> = Readonly<Record<string, ReadonlyArray<Op>>>
 
-export const stepOps = (
-  step: LessonStep,
-  logs: TaskLogs,
-): ReadonlyArray<BoardOp> =>
+export const stepOps = <T extends KindTypes>(
+  step: LessonStep<T>,
+  logs: TaskLogs<T['Op']>,
+): ReadonlyArray<T['Op']> =>
   Option.match(taskOf(step), {
     onNone: () => step.ops,
     onSome: task => [...step.ops, ...(logs[task.id] ?? [])],
   })
 
-export const boardAt = (
-  lesson: LessonDefinition,
-  step: number,
-  logs: TaskLogs,
-): BoardDoc =>
-  Array.reduce(
-    Array.take(lesson.steps, step + 1),
-    emptyBoard,
-    (doc, lessonStep) => foldOps(doc, stepOps(lessonStep, logs)),
+/** Свёртка операций: отказанная операция пропускается. */
+export const foldDoc = <T extends KindTypes>(
+  kind: BoardKind<T>,
+  doc: T['Doc'],
+  ops: ReadonlyArray<T['Op']>,
+): T['Doc'] =>
+  Array.reduce(ops, doc, (current, op) =>
+    Result.getOrElse(kind.apply(current, op), () => current),
   )
 
-export const taskStartBoard = (
-  lesson: LessonDefinition,
+export const boardAt = <T extends KindTypes>(
+  lesson: LessonDefinition<T>,
   step: number,
-  logs: TaskLogs,
-): BoardDoc =>
-  foldOps(
+  logs: TaskLogs<T['Op']>,
+): T['Doc'] =>
+  Array.reduce(
+    Array.take(lesson.steps, step + 1),
+    lesson.kind.empty,
+    (doc, lessonStep) => foldDoc(lesson.kind, doc, stepOps(lessonStep, logs)),
+  )
+
+export const taskStartBoard = <T extends KindTypes>(
+  lesson: LessonDefinition<T>,
+  step: number,
+  logs: TaskLogs<T['Op']>,
+): T['Doc'] =>
+  foldDoc(
+    lesson.kind,
     boardAt(lesson, step - 1, logs),
     Option.match(Array.get(lesson.steps, step), {
       onNone: () => [],
@@ -217,20 +245,29 @@ export const taskStartBoard = (
     }),
   )
 
-export const resolveTarget = (
-  doc: BoardDoc,
-  target: Target,
-): Option.Option<string> =>
-  typeof target === 'string'
-    ? Option.map(findNode(doc, target), node => node.id)
-    : pipe(
-        Array.findFirst(doc.nodes, node => node.kind === target.kind),
-        Option.map(node => node.id),
-      )
-
-export const taskSteps = (lesson: LessonDefinition): ReadonlyArray<number> =>
+export const taskSteps = <T extends KindTypes>(
+  lesson: LessonDefinition<T>,
+): ReadonlyArray<number> =>
   Array.getSomes(
     Array.map(lesson.steps, (lessonStep, index) =>
       Option.map(taskOf(lessonStep), () => index),
+    ),
+  )
+
+/** Поверхности задачи: доска всегда первой. */
+export const taskSurfaces = <T extends KindTypes>(
+  task: TaskSpec<T>,
+): ReadonlyArray<string> => Array.dedupe(['board', ...(task.surfaces ?? [])])
+
+/** Все виды из палитр задач урока, в порядке палитр. */
+export const lessonPalette = <T extends KindTypes>(
+  lesson: LessonDefinition<T>,
+): ReadonlyArray<T['Palette']> =>
+  Array.dedupe(
+    Array.flatMap(lesson.steps, lessonStep =>
+      Option.match(taskOf(lessonStep), {
+        onNone: () => [],
+        onSome: task => task.palette,
+      }),
     ),
   )

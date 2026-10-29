@@ -3,12 +3,13 @@ import {
   addNode,
   annotate,
   connect,
-  defineLesson,
   failRegion,
+  flow,
   highlight,
   recoverRegion,
   setLoad,
-} from '../../../../lesson/dsl'
+} from '../../../../kinds/flow/dsl'
+import { defineLesson } from '../../../../lesson/dsl'
 
 // Европа сверху, США снизу. Зона США охватывает пользователей (y 340) и
 // реплику (y 480), поэтому места палитры по умолчанию для балансировщика
@@ -16,7 +17,7 @@ import {
 // тоже получает регион США. Блоки ученика получают id `lb-2`, `app3`,
 // `app4`, как и в эталоне, но шаги после задачи ссылаются только на блоки
 // урока.
-export default defineLesson({
+export default defineLesson(flow, {
   slug: 'multi-region',
   steps: [
     {

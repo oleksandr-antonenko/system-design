@@ -3,12 +3,13 @@ import {
   addNode,
   annotate,
   connect,
-  defineLesson,
   failNode,
+  flow,
   highlight,
   recoverNode,
   setLoad,
-} from '../../../../lesson/dsl'
+} from '../../../../kinds/flow/dsl'
+import { defineLesson } from '../../../../lesson/dsl'
 
 // Поисковый индекс стоит на доске с самого начала: он есть, но получает
 // изменения только ночной перестройкой, и это видно (0 rps). Шину и
@@ -17,7 +18,7 @@ import {
 // ученика. Индекс в палитру не входит: второй индекс рядом с готовым только
 // запутал бы шаги об отставании и отказе индекса.
 
-export default defineLesson({
+export default defineLesson(flow, {
   slug: 'search-and-events',
   steps: [
     {

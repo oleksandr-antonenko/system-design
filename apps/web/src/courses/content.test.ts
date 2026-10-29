@@ -1,31 +1,42 @@
 import { Array, Option, Record, Result } from 'effect'
 import { describe, expect, test } from 'vitest'
 
-import { type BoardDoc, type BoardOp, applyOp, foldOps } from '../domain/board'
-import { checkGoal } from '../domain/goals'
-import { simulate } from '../domain/simulate'
+import type { KindTypes } from '../kinds/contract'
 import {
+  type AnyLesson,
   type LessonDefinition,
-  type LooseLessonTexts,
   type TaskLogs,
+  type TextsOf,
   boardAt,
-  resolveTarget,
+  foldDoc,
   taskOf,
   taskStartBoard,
+  taskSurfaces,
+  withLesson,
 } from '../lesson/dsl'
 import { referencedIds } from '../lesson/markup'
-import { findLesson, lessonDefinitions } from './registry'
+import { surfaceOf } from '../lesson/player'
+import {
+  findCourse,
+  findLesson,
+  lessonDefinitions,
+  unlockedFeatures,
+} from './registry'
+import { isSurfaceOpen } from './unlocks'
 
-// Тесты контента (design D10): каждый урок с lesson.ts проверяется здесь
-// без отдельного кода. Сообщение об ошибке называет урок, шаг и язык.
+// Тесты контента (design D10 add-lesson-core, D7 extract-board-kind): каждый
+// урок с lesson.ts проверяется здесь через контракт своего вида доски, без
+// отдельного кода. Сообщение об ошибке называет урок, шаг и язык.
 
-const solutionLogs = (lesson: LessonDefinition): TaskLogs =>
+const solutionLogs = <T extends KindTypes>(
+  lesson: LessonDefinition<T>,
+): TaskLogs<T['Op']> =>
   Record.fromEntries(
     Array.getSomes(
       Array.map(lesson.steps, lessonStep =>
         Option.map(
           taskOf(lessonStep),
-          (task): readonly [string, ReadonlyArray<BoardOp>] => [
+          (task): readonly [string, ReadonlyArray<T['Op']>] => [
             task.id,
             task.solution,
           ],
@@ -34,62 +45,82 @@ const solutionLogs = (lesson: LessonDefinition): TaskLogs =>
     ),
   )
 
-const shownBoard = (lesson: LessonDefinition, index: number): BoardDoc =>
+const shownBoard = <T extends KindTypes>(
+  lesson: LessonDefinition<T>,
+  index: number,
+): T['Doc'] =>
   Option.match(Option.flatMap(Array.get(lesson.steps, index), taskOf), {
     onNone: () => boardAt(lesson, index, solutionLogs(lesson)),
     onSome: () => taskStartBoard(lesson, index, solutionLogs(lesson)),
   })
 
-const refusalsOf = (start: BoardDoc, ops: ReadonlyArray<BoardOp>) =>
+const refusalsOf = <T extends KindTypes>(
+  lesson: LessonDefinition<T>,
+  start: T['Doc'],
+  ops: ReadonlyArray<T['Op']>,
+) =>
   Array.reduce(
     ops,
     { doc: start, refusals: Array.empty<string>() },
     (state, op) =>
-      Result.match(applyOp(state.doc, op), {
+      Result.match(lesson.kind.apply(state.doc, op), {
         onSuccess: doc => ({ doc, refusals: state.refusals }),
         onFailure: refusal => ({
           doc: state.doc,
-          refusals: [...state.refusals, `${op._tag}: ${refusal._tag}`],
+          refusals: [
+            ...state.refusals,
+            `${lesson.kind.describeOp(op)}: ${refusal._tag}`,
+          ],
         }),
       }),
   ).refusals
 
-const textsOf = (
+const textsOf = <T extends KindTypes>(
   course: string,
-  lesson: LessonDefinition,
-): ReadonlyArray<readonly [string, LooseLessonTexts]> =>
+  lesson: LessonDefinition<T>,
+): ReadonlyArray<readonly [string, TextsOf<T>]> =>
   Option.match(findLesson(course, lesson.slug), {
     onNone: () => [],
     onSome: found =>
-      Array.map(found.texts, (entry): readonly [string, LooseLessonTexts] => [
+      Array.map(found.texts, (entry): readonly [string, TextsOf<T>] => [
         entry.locale,
         entry.text,
       ]),
   })
 
-const proseOf = (
-  texts: LooseLessonTexts,
+const proseOf = <T extends KindTypes>(
+  lesson: LessonDefinition<T>,
+  texts: TextsOf<T>,
   stepId: string,
-  doc: BoardDoc,
+  doc: T['Doc'],
 ): string => {
   const body = texts.steps?.[stepId]?.body ?? ''
   return typeof body === 'string'
     ? body
-    : body({ sim: simulate(doc, doc.load), doc })
+    : body(lesson.kind.proseContext(doc, lesson.kind.run(doc)))
 }
 
-const cases = Array.map(
-  lessonDefinitions,
-  ({ course, definition }): readonly [string, string, LessonDefinition] => [
-    `${course}/${definition.slug}`,
-    course,
-    definition,
-  ],
-)
+const unlockedAt = (course: string, slug: string): ReadonlyArray<string> =>
+  Option.match(Option.all([findCourse(course), findLesson(course, slug)]), {
+    onNone: () => [],
+    onSome: ([found, lesson]) =>
+      unlockedFeatures(found.definition, lesson.meta.order),
+  })
 
-describe.each(cases)('lesson %s', (_name, course, lesson) => {
+const lessonChecks = <T extends KindTypes>(
+  course: string,
+  lesson: LessonDefinition<T>,
+) => {
+  const kind = lesson.kind
+
   test('has a course entry with texts', () => {
     expect(textsOf(course, lesson).length).toBeGreaterThan(0)
+  })
+
+  test('uses the board kind of its course', () => {
+    expect(
+      Option.map(findCourse(course), found => found.definition.board),
+    ).toEqual(Option.some(lesson.board))
   })
 
   test('every authored operation applies without a refusal', () => {
@@ -97,13 +128,13 @@ describe.each(cases)('lesson %s', (_name, course, lesson) => {
     lesson.steps.forEach((lessonStep, index) => {
       const before = boardAt(lesson, index - 1, logs)
       expect(
-        refusalsOf(before, lessonStep.ops),
+        refusalsOf(lesson, before, lessonStep.ops),
         `step ${lessonStep.id}`,
       ).toEqual([])
       Option.map(taskOf(lessonStep), task => {
-        const start = foldOps(before, lessonStep.ops)
+        const start = foldDoc(kind, before, lessonStep.ops)
         expect(
-          refusalsOf(start, task.solution),
+          refusalsOf(lesson, start, task.solution),
           `solution of task ${task.id}`,
         ).toEqual([])
       })
@@ -114,45 +145,83 @@ describe.each(cases)('lesson %s', (_name, course, lesson) => {
     lesson.steps.forEach((lessonStep, index) =>
       Option.map(taskOf(lessonStep), task => {
         const start = taskStartBoard(lesson, index, solutionLogs(lesson))
-        const solved = foldOps(start, task.solution)
-        const goals = Array.map(task.goals, ({ goal }) => goal)
+        const solved = foldDoc(kind, start, task.solution)
+        const startRun = kind.run(start)
+        const solvedRun = kind.run(solved)
 
         expect(
-          goals.every(goal => checkGoal(start, goal).met),
+          task.goals.every(
+            ({ goal }) => kind.checkGoal(start, startRun, goal).met,
+          ),
           `task ${task.id} is already solved at its start`,
         ).toBe(false)
         task.goals.forEach(({ id, goal }) => {
-          expect(checkGoal(solved, goal).met, `goal ${task.id}.${id}`).toBe(
-            true,
-          )
+          expect(
+            kind.checkGoal(solved, solvedRun, goal).met,
+            `goal ${task.id}.${id}`,
+          ).toBe(true)
         })
       }),
     )
   })
 
-  test('highlights and annotations point at blocks on their board', () => {
+  test('task surfaces exist and are open by this lesson', () => {
+    const unlocked = unlockedAt(course, lesson.slug)
+    lesson.steps.forEach(lessonStep =>
+      Option.map(taskOf(lessonStep), task =>
+        Array.filter(taskSurfaces(task), id => id !== 'board').forEach(id => {
+          const surface = surfaceOf(kind, id)
+          expect(Option.isSome(surface), `surface ${id}`).toBe(true)
+          Option.map(surface, ({ definition }) =>
+            expect(
+              isSurfaceOpen(unlocked, definition.feature),
+              `surface ${id} is not unlocked by lesson ${lesson.slug}`,
+            ).toBe(true),
+          )
+        }),
+      ),
+    )
+  })
+
+  test('stage targets point at things on their board', () => {
     lesson.steps.forEach((lessonStep, index) => {
       const doc = shownBoard(lesson, index)
       lessonStep.stage.forEach(item => {
-        expect(
-          Option.isSome(resolveTarget(doc, item.target)),
-          `step ${lessonStep.id}: ${JSON.stringify(item.target)}`,
-        ).toBe(true)
+        kind.stage.targets(item).forEach(target => {
+          expect(
+            Option.isSome(kind.resolveTarget(doc, target)),
+            `step ${lessonStep.id}: ${target}`,
+          ).toBe(true)
+        })
       })
     })
   })
 
+  test('labelled entities appear on the board', () => {
+    const docs = Array.map(lesson.steps, (_lessonStep, index) =>
+      shownBoard(lesson, index),
+    )
+    lesson.labels.forEach(id => {
+      expect(
+        Array.some(docs, doc => Option.isSome(kind.resolveTarget(doc, id))),
+        `label ${id}`,
+      ).toBe(true)
+    })
+  })
+
   test.each(textsOf(course, lesson))(
-    '%s: references point at blocks on their board',
+    '%s: references point at things on their board',
     (_locale, texts) => {
       lesson.steps.forEach((lessonStep, index) => {
         const doc = shownBoard(lesson, index)
-        referencedIds(proseOf(texts, lessonStep.id, doc)).forEach(id => {
-          expect(
-            Option.isSome(resolveTarget(doc, id)),
-            `step ${lessonStep.id}: [[${id}|…]]`,
-          ).toBe(true)
-        })
+        referencedIds(proseOf(lesson, texts, lessonStep.id, doc)).forEach(
+          id => {
+            expect(
+              Option.isSome(kind.resolveTarget(doc, id)),
+              `step ${lessonStep.id}: [[${id}|…]]`,
+            ).toBe(true)
+          },
+        )
       })
     },
   )
@@ -165,18 +234,25 @@ describe.each(cases)('lesson %s', (_name, course, lesson) => {
 
       filled(texts.title, 'title')
       filled(texts.summary, 'summary')
+      lesson.labels.forEach(id =>
+        filled(texts.labels?.[id]?.name, `labels.${id}.name`),
+      )
       lesson.steps.forEach((lessonStep, index) => {
         const doc = shownBoard(lesson, index)
+        const run = kind.run(doc)
         filled(texts.steps?.[lessonStep.id]?.title, `${lessonStep.id}.title`)
-        filled(proseOf(texts, lessonStep.id, doc), `${lessonStep.id}.body`)
-        lessonStep.stage.forEach(item => {
-          if (item._tag === 'Annotate') {
+        filled(
+          proseOf(lesson, texts, lessonStep.id, doc),
+          `${lessonStep.id}.body`,
+        )
+        lessonStep.stage.forEach(item =>
+          Option.map(kind.stage.annotationKey(item), key =>
             filled(
-              texts.annotations?.[item.key]?.(simulate(doc, doc.load)),
-              `annotation ${item.key}`,
-            )
-          }
-        })
+              texts.annotations?.[key]?.(kind.annotationInput(doc, run)),
+              `annotation ${key}`,
+            ),
+          ),
+        )
         Option.map(taskOf(lessonStep), task => {
           const taskTexts = texts.tasks?.[task.id]
           filled(taskTexts?.prompt, `${task.id}.prompt`)
@@ -191,5 +267,20 @@ describe.each(cases)('lesson %s', (_name, course, lesson) => {
         })
       })
     },
+  )
+}
+
+const cases = Array.map(
+  lessonDefinitions,
+  ({ course, definition }): readonly [string, string, AnyLesson] => [
+    `${course}/${definition.slug}`,
+    course,
+    definition,
+  ],
+)
+
+describe.each(cases)('lesson %s', (_name, course, lesson) => {
+  withLesson(lesson, <T extends KindTypes>(script: LessonDefinition<T>) =>
+    lessonChecks(course, script),
   )
 })

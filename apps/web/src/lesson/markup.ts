@@ -7,7 +7,7 @@ export type Inline =
 
 export type Paragraph = ReadonlyArray<Inline>
 
-const TOKEN = /\*\*([^*]+)\*\*|\[\[([A-Za-z0-9_-]+)\|([^\]]+)\]\]/g
+const TOKEN = /\*\*([^*]+)\*\*|\[\[([A-Za-z0-9_.:-]+)\|([^\]]+)\]\]/g
 
 const parseInline = (source: string): Paragraph => {
   const matches = [...source.matchAll(TOKEN)]

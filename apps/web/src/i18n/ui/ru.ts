@@ -158,6 +158,18 @@ export const ru = {
     resultServers: 'Загрузка серверов',
     resultCost: 'Цена',
     continueLesson: 'Дальше →',
+    surfaces: 'Где решать задачу',
+  },
+  network: {
+    boardLabel: 'Схема сети',
+    placeholder: 'Доска сети в разработке: пока здесь только список устройств.',
+    run: 'Пуск',
+    wifiTab: device => `Wi-Fi: ${device}`,
+    wifiNetworks: 'Сети рядом',
+    wifiNone: 'Рядом нет сетей Wi-Fi.',
+    wifiPassword: 'Пароль',
+    wifiJoin: 'Подключиться',
+    wifiJoined: ssid => `Подключено к сети «${ssid}»`,
   },
   notFound: {
     title: 'Страница не найдена',

@@ -20,7 +20,7 @@ import {
   isSpotFree,
 } from '../domain/geometry'
 import { simulate } from '../domain/simulate'
-import { addNode, connect, setLoad } from '../lesson/dsl'
+import { addNode, connect, setLoad } from '../kinds/flow/dsl'
 import * as Board from './board'
 import { type BoardViewInputs, particleColors, particleShapes } from './view'
 

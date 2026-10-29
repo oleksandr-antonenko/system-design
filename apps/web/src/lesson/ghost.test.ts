@@ -1,16 +1,23 @@
 import { Array, Option } from 'effect'
 import { describe, expect, test } from 'vitest'
 
-import lesson from '../courses/system-design/lessons/03-load-balancer/lesson'
-import queuesLesson from '../courses/system-design/lessons/07-queues/lesson'
+import loadBalancer from '../courses/system-design/lessons/03-load-balancer/lesson'
+import queues from '../courses/system-design/lessons/07-queues/lesson'
 import { foldOps } from '../domain/board'
-import { addNode, boardAt, connect, disconnect, taskOf } from './dsl'
+import { addNode, connect, disconnect } from '../kinds/flow/dsl'
+import type { FlowTypes } from '../kinds/types'
+import { type LessonDefinition, boardAt, taskOf } from './dsl'
 import { ghostPlan } from './ghost'
+
+const lesson: LessonDefinition<FlowTypes> = loadBalancer
+const queuesLesson: LessonDefinition<FlowTypes> = queues
 
 const TASK_STEP = 3
 
 const solution = Option.getOrThrow(
-  Option.flatMap(Array.get(lesson.steps, TASK_STEP), taskOf),
+  Option.flatMap(Array.get(lesson.steps, TASK_STEP), step =>
+    taskOf<FlowTypes>(step),
+  ),
 ).solution
 
 const taskStart = boardAt(lesson, TASK_STEP, {})
@@ -81,7 +88,9 @@ describe('ghost plan', () => {
 
   test('several blocks of one kind keep their outlines once the student placed one', () => {
     const queues = Option.getOrThrow(
-      Option.flatMap(Array.get(queuesLesson.steps, 3), taskOf),
+      Option.flatMap(Array.get(queuesLesson.steps, 3), step =>
+        taskOf<FlowTypes>(step),
+      ),
     ).solution
     const start = boardAt(queuesLesson, 3, {})
     const placedOne = foldOps(start, [

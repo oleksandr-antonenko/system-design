@@ -27,7 +27,8 @@ import { lessonTextFor } from './courses/assemble'
 import { lessonsOf } from './courses/registry'
 import type { BoardOp } from './domain/board'
 import type { Locale } from './i18n/locale'
-import { addNode, connect } from './lesson/dsl'
+import { addNode, connect } from './kinds/flow/dsl'
+import { KindOp } from './kinds/state'
 import * as Player from './lesson/player'
 import {
   AppRoute,
@@ -382,7 +383,7 @@ const withTaskLog = (model: Model, log: ReadonlyArray<BoardOp>): Model => {
         ...session,
         tasks: {
           'place-lb': {
-            log,
+            log: log.map(op => KindOp.FlowOp({ op })),
             redo: [],
             attempts: 0,
             hintsShown: 0,

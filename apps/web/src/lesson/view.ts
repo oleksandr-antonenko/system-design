@@ -1,47 +1,87 @@
-import { Array, Option, pipe } from 'effect'
+import { Array, Option, Record, pipe } from 'effect'
 import { Submodel } from 'foldkit'
 import type { Html, HtmlBuilder } from 'foldkit/html'
 
-import { type BoardViewInputs, view as boardView } from '../board/view'
-import { lessonTextFor } from '../courses/assemble'
+import { type Lesson, lessonTextFor } from '../courses/assemble'
 import { courseLessons, findDefinition, findLesson } from '../courses/registry'
-import { type BoardDoc, BoardOp } from '../domain/board'
-import type { ComponentKind } from '../domain/catalog'
-import { checkGoal, isHiddenGoal } from '../domain/goals'
-import { simulate } from '../domain/simulate'
 import { renderDomainMessage } from '../i18n/domainMessage'
 import type { Locale } from '../i18n/locale'
 import { type UiStrings, uiFor } from '../i18n/ui'
+import type {
+  BoardContext,
+  BoardSlot,
+  EntityLabel,
+  KindTypes,
+} from '../kinds/contract'
+import type { KindMessage } from '../kinds/state'
 import { courseUrl } from '../route'
-import { type Anim, shownSimulation } from './anim'
-import { laterInCourse, lessonPalette, newInLesson } from './course'
+import { laterInCourse, newInLesson } from './course'
 import {
   type LessonDefinition,
-  type LooseLessonTexts,
-  type StageItem,
-  type Tone,
-  resolveTarget,
+  type TextsOf,
+  lessonPalette,
   taskOf,
+  withLesson,
 } from './dsl'
-import { ghostPlan } from './ghost'
 import { type Paragraph, parseProse } from './markup'
 import {
   CheckState,
   type CurrentTask,
   Message,
   type Model,
+  activeSurface,
+  boardMode,
+  boardModelOf,
   currentDoc,
   currentTask,
   docAt,
   isEditable,
   isReplaying,
   maxAllowedStep,
+  opsOf,
+  surfaceContext,
+  taskStartDoc,
+  unlocksOf,
+  visibleSurfaces,
 } from './player'
 
 export type PlayerViewInputs = Readonly<{
   locale: Locale
   prefersDark: boolean
 }>
+
+/** Урок, его тексты и язык страницы: то, что нужно каждой части вида. */
+type Page<T extends KindTypes> = Readonly<{
+  lesson: LessonDefinition<T>
+  model: Model
+  texts: TextsOf<T>
+  locale: Locale
+  ui: UiStrings
+}>
+
+// TEXT
+
+const labelOf =
+  <T extends KindTypes>(texts: TextsOf<T>) =>
+  (id: string): Option.Option<EntityLabel> =>
+    Option.fromNullishOr(texts.labels?.[id])
+
+/** Текст кода сообщения: свой текст урока (`feedback`), иначе текст вида. */
+const messageText = <T extends KindTypes>(
+  page: Page<T>,
+  stored: KindMessage,
+): string =>
+  Option.match(page.lesson.kind.message.unwrap(stored), {
+    onNone: () => '',
+    onSome: message => {
+      const override = page.texts.feedback?.[message._tag]
+      return override === undefined
+        ? page.lesson.kind.renderMessage(page.ui, message)
+        : typeof override === 'string'
+          ? override
+          : override(message)
+    },
+  })
 
 // PROSE
 
@@ -77,22 +117,25 @@ const proseView = (source: string, h: HtmlBuilder<Message>): Html =>
 
 // STEPS
 
-const stepTitle = (texts: LooseLessonTexts, id: string): string =>
-  texts.steps?.[id]?.title ?? id
-
-const stepBody = (
-  texts: LooseLessonTexts,
+const stepTitle = <T extends KindTypes>(
+  texts: TextsOf<T>,
   id: string,
-  doc: BoardDoc,
+): string => texts.steps?.[id]?.title ?? id
+
+const stepBody = <T extends KindTypes>(
+  lesson: LessonDefinition<T>,
+  texts: TextsOf<T>,
+  id: string,
+  doc: T['Doc'],
 ): string => {
   const body = texts.steps?.[id]?.body ?? ''
   return typeof body === 'string'
     ? body
-    : body({ sim: simulate(doc, doc.load), doc })
+    : body(lesson.kind.proseContext(doc, lesson.kind.run(doc)))
 }
 
-const stepLabel = (
-  lesson: LessonDefinition,
+const stepLabel = <T extends KindTypes>(
+  lesson: LessonDefinition<T>,
   index: number,
   ui: UiStrings,
 ): string =>
@@ -100,11 +143,8 @@ const stepLabel = (
     ? `◆ ${ui.player.step(index + 1)}`
     : ui.player.step(index + 1)
 
-const timelineView = (
-  lesson: LessonDefinition,
-  model: Model,
-  texts: LooseLessonTexts,
-  ui: UiStrings,
+const timelineView = <T extends KindTypes>(
+  { lesson, model, texts, ui }: Page<T>,
   h: HtmlBuilder<Message>,
 ): Html => {
   const maxStep = maxAllowedStep(lesson, model)
@@ -171,40 +211,65 @@ const timelineView = (
 
 // TASK
 
-// «Было → стало» красится по направлению: меньше ошибок и быстрее ответ —
-// зелёным, хуже — красным. Ограничитель, например, честно добавляет отказов.
-const trend = (before: number, after: number): string =>
-  after < before - 1e-9 ? 'better' : after > before + 1e-9 ? 'worse' : 'same'
+const solvedSummaryView = <T extends KindTypes>(
+  page: Page<T>,
+  h: HtmlBuilder<Message>,
+): ReadonlyArray<Html> =>
+  Array.match(
+    page.lesson.kind.outcome(
+      taskStartDoc(page.lesson, page.model),
+      currentDoc(page.lesson, page.model),
+      page.ui,
+    ),
+    {
+      onEmpty: () => [],
+      onNonEmpty: rows => [
+        h.dl(
+          [h.Class('result')],
+          Array.flatMap(rows, row => [
+            h.dt([], [row.label]),
+            row._tag === 'Compared'
+              ? h.dd(
+                  [],
+                  [
+                    h.span([h.Class('before')], [row.before]),
+                    ' → ',
+                    h.span([h.Class(`after ${row.trend}`)], [row.after]),
+                  ],
+                )
+              : h.dd([], [row.value]),
+          ]),
+        ),
+      ],
+    },
+  )
 
-const percentList = (values: ReadonlyArray<number>, ui: UiStrings): string =>
-  Array.map(values, ui.hud.percent).join(' / ')
-
-const taskCardView = (
-  lesson: LessonDefinition,
-  model: Model,
-  task: CurrentTask,
-  texts: LooseLessonTexts,
-  doc: BoardDoc,
-  ui: UiStrings,
+const taskCardView = <T extends KindTypes>(
+  page: Page<T>,
+  task: CurrentTask<T>,
+  doc: T['Doc'],
   h: HtmlBuilder<Message>,
 ): Html => {
+  const { lesson, model, texts, ui } = page
+  const kind = lesson.kind
   const taskTexts = texts.tasks?.[task.spec.id]
   const isSolved = task.state.check._tag === 'Solved'
   const canEdit = isEditable(lesson, model)
   const replaying = isReplaying(lesson, model)
   const failedIndex =
     task.state.check._tag === 'Failed' ? task.state.check.goalIndex : -1
+  const run = kind.run(doc)
 
   const goalItems = Array.map(task.spec.goals, ({ id, goal }, index) => {
     const label = taskTexts?.goals[id] ?? id
-    const isHidden = isHiddenGoal(goal)
-    const isMet = isSolved || (!isHidden && checkGoal(doc, goal).met)
+    const isHidden = kind.isHiddenGoal(goal)
+    const isMet = isSolved || (!isHidden && kind.checkGoal(doc, run, goal).met)
     const isFailed = index === failedIndex
     const text =
       isHidden && !isMet && !isFailed
         ? ui.task.hiddenGoal
-        : goal._tag === 'MaxErrorRate' && task.state.check._tag === 'Solved'
-          ? ui.task.metricGoalPassed(doc.load, task.state.check.after.errorRate)
+        : isSolved
+          ? Option.getOrElse(kind.solvedGoalText(goal, doc, ui), () => label)
           : label
     return h.keyed('li')(
       id,
@@ -228,81 +293,14 @@ const taskCardView = (
     Failed: ({ failure }) =>
       h.div(
         [h.Class('feedback failed'), h.Role('alert')],
-        [renderDomainMessage(ui.domain, failure)],
+        [messageText(page, failure)],
       ),
-    Solved: ({ before, after }) =>
+    Solved: () =>
       h.div(
         [h.Class('solved-summary')],
         [
           h.div([h.Class('feedback solved')], [taskTexts?.solvedNote ?? '']),
-          h.dl(
-            [h.Class('result')],
-            [
-              h.dt([], [ui.task.resultErrors]),
-              h.dd(
-                [],
-                [
-                  h.span(
-                    [h.Class('before')],
-                    [ui.hud.percent(before.errorRate)],
-                  ),
-                  ' → ',
-                  h.span(
-                    [
-                      h.Class(
-                        `after ${trend(before.errorRate, after.errorRate)}`,
-                      ),
-                    ],
-                    [ui.hud.percent(after.errorRate)],
-                  ),
-                ],
-              ),
-              h.dt([], [ui.task.resultP95]),
-              h.dd(
-                [],
-                [
-                  h.span(
-                    [h.Class('before')],
-                    [
-                      Option.match(before.p95, {
-                        onNone: () => '—',
-                        onSome: ui.hud.ms,
-                      }),
-                    ],
-                  ),
-                  ' → ',
-                  h.span(
-                    [
-                      h.Class(
-                        `after ${Option.match(
-                          Option.all([before.p95, after.p95]),
-                          {
-                            onNone: () => 'same',
-                            onSome: ([was, now]) => trend(was, now),
-                          },
-                        )}`,
-                      ),
-                    ],
-                    [
-                      Option.match(after.p95, {
-                        onNone: () => '—',
-                        onSome: ui.hud.ms,
-                      }),
-                    ],
-                  ),
-                ],
-              ),
-              h.dt([], [ui.task.resultServers]),
-              h.dd([], [percentList(after.serverUtilization, ui)]),
-              h.dt([], [ui.task.resultCost]),
-              h.dd(
-                [],
-                [
-                  `${ui.hud.perHour(before.costPerHour)} → ${ui.hud.perHour(after.costPerHour)}`,
-                ],
-              ),
-            ],
-          ),
+          ...solvedSummaryView(page, h),
           h.div(
             [h.Class('task-actions')],
             [
@@ -410,11 +408,8 @@ const taskCardView = (
 // Кнопка «Далее» сразу под текстом шага: на высоком мониторе нижняя панель
 // далеко от того места, где ученик дочитал. На шаге задачи её роль играет
 // кнопка в карточке решённой задачи.
-const inlineNextView = (
-  lesson: LessonDefinition,
-  model: Model,
-  texts: LooseLessonTexts,
-  ui: UiStrings,
+const inlineNextView = <T extends KindTypes>(
+  { lesson, model, texts, ui }: Page<T>,
   h: HtmlBuilder<Message>,
 ): ReadonlyArray<Html> =>
   Option.match(Array.get(lesson.steps, model.step + 1), {
@@ -436,18 +431,14 @@ const inlineNextView = (
     ],
   })
 
-const theoryView = (
-  lesson: LessonDefinition,
-  model: Model,
-  texts: LooseLessonTexts,
+const theoryView = <T extends KindTypes>(
+  page: Page<T>,
   isFallback: boolean,
   shownIn: Locale,
-  locale: Locale,
-  ui: UiStrings,
   h: HtmlBuilder<Message>,
 ): Html => {
-  const lessonMeta = findLesson(model.course, lesson.slug)
-  const order = Option.match(lessonMeta, {
+  const { lesson, model, texts, locale, ui } = page
+  const order = Option.match(findLesson(model.course, lesson.slug), {
     onNone: () => 0,
     onSome: found => found.meta.order,
   })
@@ -511,14 +502,11 @@ const theoryView = (
                       stepTitle(texts, lessonStep.id),
                     ],
                   ),
-                  proseView(stepBody(texts, lessonStep.id, doc), h),
+                  proseView(stepBody(lesson, texts, lessonStep.id, doc), h),
                   ...(index === model.step
                     ? Option.match(currentTask(lesson, model), {
-                        onNone: () =>
-                          inlineNextView(lesson, model, texts, ui, h),
-                        onSome: task => [
-                          taskCardView(lesson, model, task, texts, doc, ui, h),
-                        ],
+                        onNone: () => inlineNextView(page, h),
+                        onSome: task => [taskCardView(page, task, doc, h)],
                       })
                     : []),
                 ],
@@ -577,59 +565,13 @@ const theoryView = (
   )
 }
 
-// HUD
+// CONTROLS
 
-const sparkView = (
-  values: ReadonlyArray<number>,
-  max: number,
-  className: string,
+/** Кнопки плеера под доской: вид доски ставит их в свои приборы. */
+const controlsView = <T extends KindTypes>(
+  { lesson, model, ui }: Page<T>,
   h: HtmlBuilder<Message>,
-): Html =>
-  h.svg(
-    [h.ViewBox('0 0 76 22'), h.Class('spark'), h.AriaHidden(true)],
-    [
-      h.polyline([
-        h.Class(className),
-        h.Points(
-          Array.map(
-            values,
-            (value, index) =>
-              `${((index / 89) * 76).toFixed(1)},${(21 - Math.min(value / max, 1) * 19).toFixed(1)}`,
-          ).join(' '),
-        ),
-      ]),
-    ],
-  )
-
-const hasAnyKind = (
-  doc: BoardDoc,
-  kinds: ReadonlyArray<ComponentKind>,
-): boolean => Array.some(doc.nodes, node => Array.contains(kinds, node.kind))
-
-export type ExtraMetric = Readonly<{ label: string; value: string }>
-
-/** Приборы, которые есть не на каждой доске: «отклонено» — когда стоит
-    ограничитель, «очередь растёт» — когда есть очередь или шина (D4, D3). */
-export const extraMetrics = (
-  doc: BoardDoc,
-  anim: Anim,
-  ui: UiStrings,
-): ReadonlyArray<ExtraMetric> => [
-  ...(hasAnyKind(doc, ['limiter'])
-    ? [{ label: ui.hud.rejected, value: ui.hud.rps(anim.hudRejected) }]
-    : []),
-  ...(hasAnyKind(doc, ['queue', 'events'])
-    ? [{ label: ui.hud.backlog, value: ui.hud.growth(anim.hudBacklog) }]
-    : []),
-]
-
-const hudView = (
-  lesson: LessonDefinition,
-  model: Model,
-  ui: UiStrings,
-  h: HtmlBuilder<Message>,
-): Html => {
-  const anim = model.anim
+): ReadonlyArray<Html> => {
   const editable = isEditable(lesson, model)
   const log = Option.match(currentTask(lesson, model), {
     onNone: () => [],
@@ -639,215 +581,68 @@ const hudView = (
     onNone: () => [],
     onSome: task => task.state.redo,
   })
-  const errorClass =
-    anim.hudErrorRate > 0.05
-      ? 'value bad'
-      : anim.hudErrorRate > 0.01
-        ? 'value warn'
-        : 'value'
-  const p95 = Option.getOrElse(anim.hudP95, () => 0)
-  const p95Class = p95 > 600 ? 'value bad' : p95 > 250 ? 'value warn' : 'value'
-
-  return h.section(
-    [h.AriaLabel(ui.lesson.instrumentsRegion), h.Class('hud')],
-    [
-      h.div(
-        [h.Class('metrics')],
-        [
-          h.div(
-            [h.Class('metric')],
-            [
-              h.span([h.Class('label')], [ui.hud.load]),
-              h.span([h.Class('value')], [ui.hud.rps(anim.hudLoad)]),
-            ],
-          ),
-          h.div(
-            [h.Class('metric')],
-            [
-              h.span([h.Class('label')], [ui.hud.errors]),
-              h.span(
-                [h.Class(errorClass)],
-                [ui.hud.percent(anim.hudErrorRate)],
-              ),
-              sparkView(anim.sparkErrors, 0.6, 'spark-errors', h),
-            ],
-          ),
-          h.div(
-            [h.Class('metric')],
-            [
-              h.span([h.Class('label')], [ui.hud.p95]),
-              h.span(
-                [h.Class(p95Class)],
-                [
-                  Option.match(anim.hudP95, {
-                    onNone: () => '—',
-                    onSome: ui.hud.ms,
-                  }),
-                ],
-              ),
-              sparkView(anim.sparkP95, 1400, 'spark-p95', h),
-            ],
-          ),
-          h.div(
-            [h.Class('metric')],
-            [
-              h.span([h.Class('label')], [ui.hud.database]),
-              h.span([h.Class('value')], [ui.hud.rps(anim.hudDatabase)]),
-            ],
-          ),
-          ...Array.map(
-            extraMetrics(currentDoc(lesson, model), anim, ui),
-            ({ label, value }) =>
-              h.keyed('div')(
-                label,
-                [h.Class('metric')],
-                [
-                  h.span([h.Class('label')], [label]),
-                  h.span([h.Class('value')], [value]),
-                ],
-              ),
-          ),
-          h.div(
-            [h.Class('metric')],
-            [
-              h.span([h.Class('label')], [ui.hud.cost]),
-              h.span(
-                [h.Class('value')],
-                [ui.hud.perHour(shownSimulationCost(lesson, model))],
-              ),
-            ],
-          ),
-        ],
-      ),
-      h.div(
-        [h.Class('controls')],
-        [
-          h.button(
-            [
-              h.Type('button'),
-              h.Class('btn'),
-              h.AriaPressed(anim.isRunning ? 'false' : 'true'),
-              h.OnClick(Message.ClickedPlayPause()),
-            ],
-            [anim.isRunning ? `❚❚ ${ui.hud.pause}` : `▶ ${ui.hud.play}`],
-          ),
-          h.div(
-            [h.Class('segmented'), h.Role('group'), h.AriaLabel(ui.hud.speed)],
-            Array.map([1, 2, 4], speed =>
-              h.keyed('button')(
-                `speed-${speed}`,
-                [
-                  h.Type('button'),
-                  h.AriaPressed(anim.speed === speed ? 'true' : 'false'),
-                  h.OnClick(Message.ClickedSpeed({ speed })),
-                ],
-                [`×${speed}`],
-              ),
-            ),
-          ),
-          h.span([h.Class('separator'), h.AriaHidden(true)]),
-          h.button(
-            [
-              h.Type('button'),
-              h.Class('btn'),
-              ...(editable && Array.isReadonlyArrayNonEmpty(log)
-                ? [h.OnClick(Message.ClickedUndo())]
-                : [h.Disabled(true)]),
-            ],
-            [`↶ ${ui.hud.undo}`],
-          ),
-          h.button(
-            [
-              h.Type('button'),
-              h.Class('btn'),
-              ...(editable && Array.isReadonlyArrayNonEmpty(redo)
-                ? [h.OnClick(Message.ClickedRedo())]
-                : [h.Disabled(true)]),
-            ],
-            [`↷ ${ui.hud.redo}`],
-          ),
-          h.button(
-            [
-              h.Type('button'),
-              h.Class('btn'),
-              ...(editable && Array.isReadonlyArrayNonEmpty(log)
-                ? [h.OnClick(Message.ClickedReset())]
-                : [h.Disabled(true)]),
-            ],
-            [ui.hud.reset],
-          ),
-          h.span([h.Class('separator'), h.AriaHidden(true)]),
-          h.button(
-            [
-              h.Type('button'),
-              h.Class('btn'),
-              h.AriaExpanded(model.isJournalOpen),
-              h.OnClick(Message.ClickedJournalToggle()),
-            ],
-            [ui.hud.journal],
-          ),
-        ],
-      ),
-      h.div(
-        [h.Class('legend')],
-        [
-          h.span([], [h.i([h.Class('dot ok')]), ui.hud.legendOk]),
-          h.span([], [h.i([h.Class('dot warn')]), ui.hud.legendHot]),
-          h.span([], [h.i([h.Class('dot bad')]), ui.hud.legendLost]),
-          h.span([h.Class('model-note')], [ui.hud.modelNote]),
-        ],
-      ),
-    ],
-  )
+  return [
+    h.button(
+      [
+        h.Type('button'),
+        h.Class('btn'),
+        ...(editable && Array.isReadonlyArrayNonEmpty(log)
+          ? [h.OnClick(Message.ClickedUndo())]
+          : [h.Disabled(true)]),
+      ],
+      [`↶ ${ui.hud.undo}`],
+    ),
+    h.button(
+      [
+        h.Type('button'),
+        h.Class('btn'),
+        ...(editable && Array.isReadonlyArrayNonEmpty(redo)
+          ? [h.OnClick(Message.ClickedRedo())]
+          : [h.Disabled(true)]),
+      ],
+      [`↷ ${ui.hud.redo}`],
+    ),
+    h.button(
+      [
+        h.Type('button'),
+        h.Class('btn'),
+        ...(editable && Array.isReadonlyArrayNonEmpty(log)
+          ? [h.OnClick(Message.ClickedReset())]
+          : [h.Disabled(true)]),
+      ],
+      [ui.hud.reset],
+    ),
+    h.span([h.Class('separator'), h.AriaHidden(true)]),
+    h.button(
+      [
+        h.Type('button'),
+        h.Class('btn'),
+        h.AriaExpanded(model.isJournalOpen),
+        h.OnClick(Message.ClickedJournalToggle()),
+      ],
+      [ui.hud.journal],
+    ),
+  ]
 }
-
-const shownSimulationCost = (lesson: LessonDefinition, model: Model): number =>
-  shownSimulation(model.anim, currentDoc(lesson, model)).costPerHour
 
 // JOURNAL
 
-const opText = (op: BoardOp): string =>
-  BoardOp.match(op, {
-    AddNode: ({ id, kind, maybeCapacity, maybeRegion }) =>
-      [
-        `AddNode ${id} · ${kind}`,
-        ...Option.toArray(Option.map(maybeCapacity, rps => `${rps} rps`)),
-        ...Option.toArray(maybeRegion),
-      ].join(' · '),
-    RemoveNode: ({ id }) => `RemoveNode ${id}`,
-    MoveNode: ({ id, x, y }) => `MoveNode ${id} → (${x}, ${y})`,
-    Connect: ({ from, to }) => `Connect ${from} → ${to}`,
-    Disconnect: ({ from, to }) => `Disconnect ${from} → ${to}`,
-    SetLoad: ({ rps }) => `SetLoad ${rps} rps`,
-    FailNode: ({ id }) => `FailNode ${id}`,
-    RecoverNode: ({ id }) => `RecoverNode ${id}`,
-    FailRegion: ({ region }) => `FailRegion ${region}`,
-    RecoverRegion: ({ region }) => `RecoverRegion ${region}`,
-  })
-
-const stageText = (item: StageItem): string =>
-  item._tag === 'Highlight'
-    ? `Highlight ${typeof item.target === 'string' ? item.target : item.target.kind} · ${item.tone}`
-    : `Annotate ${typeof item.target === 'string' ? item.target : item.target.kind} · ${item.key}`
-
-const journalView = (
-  lesson: LessonDefinition,
-  model: Model,
-  texts: LooseLessonTexts,
-  ui: UiStrings,
+const journalView = <T extends KindTypes>(
+  { lesson, model, texts, ui }: Page<T>,
   h: HtmlBuilder<Message>,
 ): Html => {
+  const kind = lesson.kind
   const lessonStep = Array.get(lesson.steps, model.step)
   const script = Option.match(lessonStep, {
     onNone: () => [],
     onSome: found => [
-      ...Array.map(found.ops, opText),
-      ...Array.map(found.stage, stageText),
+      ...Array.map(found.ops, kind.describeOp),
+      ...Array.map(found.stage, kind.stage.describe),
     ],
   })
   const mine = Option.match(currentTask(lesson, model), {
     onNone: () => [],
-    onSome: task => Array.map(task.state.log, opText),
+    onSome: task => Array.map(opsOf(kind, task.state.log), kind.describeOp),
   })
   const title = Option.match(lessonStep, {
     onNone: () => '',
@@ -883,100 +678,222 @@ const journalView = (
   )
 }
 
-// BOARD INPUTS
+// BOARD
 
-const toneOf = (
-  tone: Tone | ((sim: ReturnType<typeof simulate>) => Tone),
-  sim: ReturnType<typeof simulate>,
-): Tone => (typeof tone === 'function' ? tone(sim) : tone)
-
-const boardInputs = (
-  lesson: LessonDefinition,
-  model: Model,
-  texts: LooseLessonTexts,
+const boardContext = <T extends KindTypes>(
+  page: Page<T>,
   inputs: PlayerViewInputs,
-): BoardViewInputs => {
+): BoardContext<T> => {
+  const { lesson, model, texts, ui } = page
   const doc = currentDoc(lesson, model)
-  const steady = simulate(doc, doc.load)
-  const stage = Option.match(Array.get(lesson.steps, model.step), {
-    onNone: () => [],
-    onSome: found => found.stage,
-  })
+  const run = lesson.kind.run(doc)
   const task = currentTask(lesson, model)
-  const failed = Option.flatMap(task, ({ state }) =>
-    state.check._tag === 'Failed' ? Option.some(state.check) : Option.none(),
-  )
-  const stageHalos = Array.getSomes(
-    Array.map(stage, item =>
-      item._tag === 'Highlight'
-        ? Option.map(resolveTarget(doc, item.target), id => ({
-            id,
-            tone: item.tone,
-          }))
-        : Option.none(),
-    ),
-  )
-  const focusHalos = Option.match(failed, {
-    onNone: () => [],
-    onSome: ({ focusNodes }) =>
-      Array.map(focusNodes, id => ({ id, tone: 'bad' as const })),
-  })
-  const annotations = Array.getSomes(
-    Array.map(stage, item =>
-      item._tag === 'Annotate'
-        ? Option.map(resolveTarget(doc, item.target), id => ({
-            id,
-            text: texts.annotations?.[item.key]?.(steady) ?? item.key,
-            tone: toneOf(item.tone, steady),
-          }))
-        : Option.none(),
-    ),
-  )
-  const ghost = Option.flatMap(task, ({ spec, state }) =>
-    state.hintsShown >= 3 && state.check._tag !== 'Solved'
-      ? Option.some(ghostPlan(doc, spec.solution))
-      : Option.none(),
-  )
   const order = Option.match(findLesson(model.course, lesson.slug), {
     onNone: () => 0,
     onSome: found => found.meta.order,
   })
+  const course = courseLessons(model.course)
+  const unlocks = unlocksOf(model)
 
   return {
     locale: inputs.locale,
+    ui,
+    prefersDark: inputs.prefersDark,
+    isReducedMotion: model.isReducedMotion,
     doc,
-    mode: isEditable(lesson, model)
-      ? 'Edit'
-      : isReplaying(lesson, model)
-        ? 'Replay'
-        : 'View',
+    run,
+    mode: boardMode(lesson, model),
+    stage: Option.match(Array.get(lesson.steps, model.step), {
+      onNone: () => [],
+      onSome: found => found.stage,
+    }),
+    annotationText: key =>
+      texts.annotations?.[key]?.(lesson.kind.annotationInput(doc, run)) ?? key,
+    label: labelOf(texts),
+    maybeTask: Option.map(task, ({ spec, state }) => ({
+      palette: spec.palette,
+      solution: spec.solution,
+      isGhostShown: state.hintsShown >= 3 && state.check._tag !== 'Solved',
+      focusNodes: state.check._tag === 'Failed' ? state.check.focusNodes : [],
+      focusEdges: state.check._tag === 'Failed' ? state.check.focusEdges : [],
+    })),
+    maybeQuiz: Option.none(),
     palette: Option.match(task, {
       onNone: () => lessonPalette(lesson),
       onSome: ({ spec }) => spec.palette,
     }),
-    newKinds: newInLesson(courseLessons(model.course), order),
-    later: laterInCourse(courseLessons(model.course), order),
-    halos: [...stageHalos, ...focusHalos],
-    annotations,
-    focusEdges: Option.match(failed, {
-      onNone: () => [],
-      onSome: ({ focusEdges }) => focusEdges,
-    }),
-    ghost,
+    newPalette: newInLesson(course, order),
+    laterPalette: laterInCourse(course, order),
     maybeHoveredRef: model.maybeHoveredRef,
-    flows: {
-      clock: model.anim.clock,
-      nodeUtil: model.anim.nodeUtil,
-      nodeIncoming: model.anim.nodeIncoming,
-      edgeFlow: model.anim.edgeFlow,
-    },
-    sim: shownSimulation(model.anim, doc),
-    prefersDark: inputs.prefersDark,
-    isReducedMotion: model.isReducedMotion,
+    unlocked: unlocks.unlocked,
+    newFeatures: unlocks.newFeatures,
   }
 }
 
+const boardViews = <T extends KindTypes>(
+  page: Page<T>,
+  inputs: PlayerViewInputs,
+  h: HtmlBuilder<Message>,
+): ReadonlyArray<Html> => {
+  const { lesson, model } = page
+  return Option.match(boardModelOf(lesson, model), {
+    onNone: () => [],
+    onSome: boardModel => {
+      const slot: BoardSlot<T, Message> = {
+        model: boardModel,
+        context: boardContext(page, inputs),
+        toParentMessage: message =>
+          Message.GotBoardMessage({
+            message: lesson.kind.board.message.wrap(message),
+          }),
+        controls: () => controlsView(page, h),
+      }
+      return [
+        lesson.kind.board.view(slot, h),
+        lesson.kind.board.instruments(slot, h),
+      ]
+    },
+  })
+}
+
+// SURFACES
+
+const surfaceHostView = <T extends KindTypes>(
+  page: Page<T>,
+  h: HtmlBuilder<Message>,
+): ReadonlyArray<Html> => {
+  const { lesson, model, texts, locale, ui } = page
+  const label = labelOf(texts)
+  return Array.match(visibleSurfaces(lesson, model), {
+    onEmpty: () => [],
+    onNonEmpty: surfaces => {
+      const maybeActive = activeSurface(lesson, model)
+      const isActive = (id: string) =>
+        Option.exists(maybeActive, active => active.id === id)
+      return [
+        h.section(
+          [h.Class('surface-host'), h.AriaLabel(ui.task.surfaces)],
+          [
+            h.div(
+              [h.Class('surface-tabs'), h.Role('tablist')],
+              Array.map(surfaces, surface =>
+                h.keyed('button')(
+                  surface.id,
+                  [
+                    h.Type('button'),
+                    h.Role('tab'),
+                    h.Id(`surface-tab-${surface.id}`),
+                    h.AriaSelected(isActive(surface.id)),
+                    h.AriaControls('surface-panel'),
+                    h.Class(
+                      isActive(surface.id)
+                        ? 'surface-tab active'
+                        : 'surface-tab',
+                    ),
+                    h.OnClick(
+                      Message.ClickedSurfaceTab({ surface: surface.id }),
+                    ),
+                  ],
+                  [
+                    surface.definition.tabLabel(
+                      surfaceContext(lesson, model, surface.target, label),
+                      ui,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            Option.match(maybeActive, {
+              onNone: () => h.empty,
+              onSome: surface =>
+                h.div(
+                  [
+                    h.Class('surface-panel'),
+                    h.Id('surface-panel'),
+                    h.Role('tabpanel'),
+                    h.AriaLabelledBy(`surface-tab-${surface.id}`),
+                  ],
+                  [
+                    Option.match(Record.get(model.surfaces, surface.id), {
+                      onNone: () => h.empty,
+                      onSome: state =>
+                        surface.definition.view(
+                          {
+                            state,
+                            context: surfaceContext(
+                              lesson,
+                              model,
+                              surface.target,
+                              label,
+                            ),
+                            locale,
+                            ui,
+                            toParentMessage: message =>
+                              Message.GotSurfaceMessage({
+                                surfaceId: surface.id,
+                                message,
+                              }),
+                          },
+                          h,
+                        ),
+                    }),
+                  ],
+                ),
+            }),
+          ],
+        ),
+      ]
+    },
+  })
+}
+
 // PLAYER
+
+export const lessonView = <T extends KindTypes>(
+  lesson: LessonDefinition<T>,
+  entry: Lesson,
+  model: Model,
+  inputs: PlayerViewInputs,
+  h: HtmlBuilder<Message>,
+): Html => {
+  const ui = uiFor(inputs.locale)
+  const choice = lessonTextFor(entry, inputs.locale)
+  const page: Page<T> = {
+    lesson,
+    model,
+    texts: choice.text,
+    locale: inputs.locale,
+    ui,
+  }
+  return h.main(
+    [h.Class('lesson-page')],
+    [
+      timelineView(page, h),
+      h.div(
+        [h.Class('lesson-main')],
+        [
+          theoryView(page, choice.isFallback, choice.shownIn, h),
+          h.section(
+            [h.AriaLabel(ui.lesson.boardRegion), h.Class('board-side')],
+            [
+              ...boardViews(page, inputs, h),
+              ...surfaceHostView(page, h),
+              ...(model.isJournalOpen ? [journalView(page, h)] : []),
+            ],
+          ),
+        ],
+      ),
+      Option.match(model.maybeToast, {
+        onNone: () => h.empty,
+        onSome: message =>
+          h.div(
+            [h.Class('toast'), h.Role('status')],
+            [messageText(page, message)],
+          ),
+      }),
+    ],
+  )
+}
 
 export const view = Submodel.defineView<Model, Message, PlayerViewInputs>(
   (model, inputs, h) =>
@@ -987,61 +904,12 @@ export const view = Submodel.defineView<Model, Message, PlayerViewInputs>(
       ]),
       Option.match({
         onNone: () => h.empty,
-        onSome: ([lesson, lessonEntry]) => {
-          const ui = uiFor(inputs.locale)
-          const choice = lessonTextFor(lessonEntry, inputs.locale)
-          return h.main(
-            [h.Class('lesson-page')],
-            [
-              timelineView(lesson, model, choice.text, ui, h),
-              h.div(
-                [h.Class('lesson-main')],
-                [
-                  theoryView(
-                    lesson,
-                    model,
-                    choice.text,
-                    choice.isFallback,
-                    choice.shownIn,
-                    inputs.locale,
-                    ui,
-                    h,
-                  ),
-                  h.section(
-                    [h.AriaLabel(ui.lesson.boardRegion), h.Class('board-side')],
-                    [
-                      h.submodel({
-                        slotId: 'board',
-                        model: model.board,
-                        view: boardView,
-                        toParentMessage: message =>
-                          Message.GotBoardMessage({ message }),
-                        viewInputs: boardInputs(
-                          lesson,
-                          model,
-                          choice.text,
-                          inputs,
-                        ),
-                      }),
-                      hudView(lesson, model, ui, h),
-                      ...(model.isJournalOpen
-                        ? [journalView(lesson, model, choice.text, ui, h)]
-                        : []),
-                    ],
-                  ),
-                ],
-              ),
-              Option.match(model.maybeToast, {
-                onNone: () => h.empty,
-                onSome: message =>
-                  h.div(
-                    [h.Class('toast'), h.Role('status')],
-                    [renderDomainMessage(ui.domain, message)],
-                  ),
-              }),
-            ],
-          )
-        },
+        onSome: ([lesson, entry]) =>
+          withLesson(
+            lesson,
+            <T extends KindTypes>(definition: LessonDefinition<T>) =>
+              lessonView(definition, entry, model, inputs, h),
+          ),
       }),
     ),
 )

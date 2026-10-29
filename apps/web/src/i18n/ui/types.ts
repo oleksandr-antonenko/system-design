@@ -109,6 +109,18 @@ export type UiStrings = Readonly<{
     resultServers: string
     resultCost: string
     continueLesson: string
+    surfaces: string
+  }>
+  network: Readonly<{
+    boardLabel: string
+    placeholder: string
+    run: string
+    wifiTab: (device: string) => string
+    wifiNetworks: string
+    wifiNone: string
+    wifiPassword: string
+    wifiJoin: string
+    wifiJoined: (ssid: string) => string
   }>
   notFound: Readonly<{
     title: string

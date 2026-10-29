@@ -13,7 +13,7 @@ import {
   failRegion,
   recoverRegion,
   setLoad,
-} from '../lesson/dsl'
+} from '../kinds/flow/dsl'
 import {
   type BoardDoc,
   type BoardOp,

@@ -3,16 +3,17 @@ import {
   addNode,
   annotate,
   connect,
-  defineLesson,
   failNode,
+  flow,
   highlight,
   recoverNode,
   setLoad,
-} from '../../../../lesson/dsl'
+} from '../../../../kinds/flow/dsl'
+import { defineLesson } from '../../../../lesson/dsl'
 
 // Сервер ставит ученик, поэтому шаги после задачи ссылаются на его блок:
 // первый сервер из палитры получает id `app1`, как и в эталоне.
-export default defineLesson({
+export default defineLesson(flow, {
   slug: 'one-server',
   steps: [
     {

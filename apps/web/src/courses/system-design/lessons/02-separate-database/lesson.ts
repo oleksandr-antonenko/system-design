@@ -3,19 +3,20 @@ import {
   addNode,
   annotate,
   connect,
-  defineLesson,
   disconnect,
   failNode,
+  flow,
   highlight,
   recoverNode,
   setLoad,
-} from '../../../../lesson/dsl'
+} from '../../../../kinds/flow/dsl'
+import { defineLesson } from '../../../../lesson/dsl'
 
 // Базу добавляет ученик, а доска называет первую добавленную базу `db2`.
 // Эталон использует тот же id, чтобы шаги после задачи (связь app2 → db2,
 // ссылки в текстах) работали и на доске ученика, и после «Показать решение».
 
-export default defineLesson({
+export default defineLesson(flow, {
   slug: 'separate-database',
   steps: [
     {

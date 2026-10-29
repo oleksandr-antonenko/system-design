@@ -3,11 +3,12 @@ import {
   addNode,
   annotate,
   connect,
-  defineLesson,
   disconnect,
+  flow,
   highlight,
   setLoad,
-} from '../../../../lesson/dsl'
+} from '../../../../kinds/flow/dsl'
+import { defineLesson } from '../../../../lesson/dsl'
 
 // CDN ставит ученик, а доска называет первый добавленный CDN `cdn-1`.
 // Эталон использует тот же id, чтобы ссылки в текстах после задачи работали
@@ -20,7 +21,7 @@ import {
 // половина запросов теряется. CDN сам отдаёт 60 % (статику), серверам
 // остаётся 960 rps, по 320 на каждый.
 
-export default defineLesson({
+export default defineLesson(flow, {
   slug: 'cdn',
   steps: [
     {

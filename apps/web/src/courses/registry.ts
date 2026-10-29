@@ -1,7 +1,13 @@
 import { Array, Option, pipe } from 'effect'
 
+import type { KindTypes } from '../kinds/contract'
 import type { CourseLesson } from '../lesson/course'
-import type { LessonDefinition } from '../lesson/dsl'
+import {
+  type AnyLesson,
+  type LessonDefinition,
+  lessonPalette,
+  withLesson,
+} from '../lesson/dsl'
 import { type Course, type Lesson, assembleCatalog } from './assemble'
 import type {
   CourseDefinition,
@@ -35,7 +41,7 @@ const texts = import.meta.glob<LessonText>('./*/lessons/*/text.*.ts', {
   import: 'default',
 })
 
-const scripts = import.meta.glob<LessonDefinition>('./*/lessons/*/lesson.ts', {
+const scripts = import.meta.glob<AnyLesson>('./*/lessons/*/lesson.ts', {
   eager: true,
   import: 'default',
 })
@@ -72,7 +78,7 @@ export const lessonKey = (course: string, slug: string): string =>
 
 export type CourseLessonDefinition = Readonly<{
   course: string
-  definition: LessonDefinition
+  definition: AnyLesson
 }>
 
 const courseOfScript = (modulePath: string): string =>
@@ -92,7 +98,7 @@ export const lessonDefinitions: ReadonlyArray<CourseLessonDefinition> =
 export const findDefinition = (
   course: string,
   slug: string,
-): Option.Option<LessonDefinition> =>
+): Option.Option<AnyLesson> =>
   pipe(
     Array.findFirst(
       lessonDefinitions,
@@ -101,13 +107,18 @@ export const findDefinition = (
     Option.map(({ definition }) => definition),
   )
 
-/** Уроки курса с задачами в порядке программы: из них строится палитра (D8). */
+/** Палитры уроков курса в порядке программы: из них строится палитра
+    «Позже в курсе» (D8). */
 export const courseLessons = (course: string): ReadonlyArray<CourseLesson> =>
   Array.getSomes(
     Array.map(lessonsOf(course), lesson =>
       Option.map(findDefinition(course, lesson.meta.slug), definition => ({
         order: lesson.meta.order,
-        lesson: definition,
+        palette: withLesson(
+          definition,
+          <T extends KindTypes>(script: LessonDefinition<T>) =>
+            Array.map(lessonPalette(script), item => `${item}`),
+        ),
       })),
     ),
   )

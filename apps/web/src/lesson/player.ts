@@ -1,59 +1,69 @@
-import {
-  Array,
-  Effect,
-  Option,
-  Order,
-  Record,
-  Result,
-  Schema,
-  pipe,
-} from 'effect'
+import { Array, Effect, Option, Record, Result, Schema, pipe } from 'effect'
 import { Command, Dom, Subscription, Update } from 'foldkit'
 import { defineMessageUnion } from 'foldkit/message'
 import { defineTaggedUnion } from 'foldkit/schema'
 import { modifyFields } from 'foldkit/struct'
 
-import * as Board from '../board/board'
-import { findDefinition } from '../courses/registry'
-import { type BoardDoc, BoardOp, applyOp } from '../domain/board'
-import { type GoalCheck, firstFailedGoal } from '../domain/goals'
-import { simulate } from '../domain/simulate'
-import { DomainMessage } from '../i18n/domainMessage'
-import { Anim, initialAnim, tick } from './anim'
 import {
+  findCourse,
+  findDefinition,
+  findLesson,
+  newFeatures as newFeaturesOf,
+  unlockedFeatures,
+} from '../courses/registry'
+import { isSurfaceOpen } from '../courses/unlocks'
+import * as KindBoard from '../kinds/board'
+import type {
+  BoardInput,
+  BoardKind,
+  BoardMode,
+  BoardOutMessage,
+  GoalCheck,
+  KindTypes,
+  SurfaceContext,
+  SurfaceDefinition,
+} from '../kinds/contract'
+import {
+  BoardMessage,
+  BoardState,
+  KindMessage,
+  KindOp,
+  SurfaceMessage,
+  SurfaceState,
+} from '../kinds/state'
+import * as KindSurface from '../kinds/surface'
+import {
+  type AnyLesson,
   type LessonDefinition,
   type TaskLogs,
   type TaskSpec,
   boardAt,
   taskOf,
   taskStartBoard,
+  taskSurfaces,
+  withLesson,
 } from './dsl'
 
-// MODEL
+// Плеер урока (design D2): шаги, задача, журнал ходов, поверхности. Всё, что
+// зависит от вида доски, он спрашивает у `lesson.kind`.
 
-export const Outcome = Schema.Struct({
-  errorRate: Schema.Number,
-  p95: Schema.Option(Schema.Number),
-  serverUtilization: Schema.Array(Schema.Number),
-  costPerHour: Schema.Number,
-})
-export type Outcome = typeof Outcome.Type
+// MODEL
 
 export const CheckState = defineTaggedUnion({
   Unchecked: {},
   Failed: {
     goalIndex: Schema.Number,
-    failure: DomainMessage,
+    failure: KindMessage,
     focusNodes: Schema.Array(Schema.String),
     focusEdges: Schema.Array(Schema.String),
   },
-  Solved: { withHint: Schema.Boolean, before: Outcome, after: Outcome },
+  Solved: { withHint: Schema.Boolean },
 })
 export type CheckState = typeof CheckState.Type
 
 export const TaskState = Schema.Struct({
-  log: Schema.Array(BoardOp),
-  redo: Schema.Array(BoardOp),
+  log: Schema.Array(KindOp),
+  redo: Schema.Array(KindOp),
   attempts: Schema.Number,
   hintsShown: Schema.Number,
   check: CheckState,
@@ -66,10 +76,12 @@ export const Model = Schema.Struct({
   slug: Schema.String,
   step: Schema.Number,
   tasks: Schema.Record(Schema.String, TaskState),
-  board: Board.Model,
-  anim: Anim,
+  board: BoardState,
+  /** Состояния поверхностей задач урока по id поверхности. */
+  surfaces: Schema.Record(Schema.String, SurfaceState),
+  maybeSurfaceTab: Schema.Option(Schema.String),
   isJournalOpen: Schema.Boolean,
-  maybeToast: Schema.Option(DomainMessage),
+  maybeToast: Schema.Option(KindMessage),
   toastSerial: Schema.Number,
   maybeHoveredRef: Schema.Option(Schema.String),
   isReducedMotion: Schema.Boolean,
@@ -83,9 +95,9 @@ export const Message = defineMessageUnion({
   ClickedPrevious: {},
   ClickedStep: { step: Schema.Number },
   PressedArrowKey: { direction: Schema.Literals(['Left', 'Right']) },
-  GotBoardMessage: { message: Board.Message },
-  ClickedPlayPause: {},
-  ClickedSpeed: { speed: Schema.Number },
+  GotBoardMessage: { message: KindBoard.Message },
+  GotSurfaceMessage: { surfaceId: Schema.String, message: KindSurface.Message },
+  ClickedSurfaceTab: { surface: Schema.String },
   ClickedUndo: {},
   ClickedRedo: {},
   ClickedReset: {},
@@ -161,31 +173,48 @@ const emptyTask: TaskState = {
 export const taskStateOf = (model: Model, taskId: string): TaskState =>
   model.tasks[taskId] ?? emptyTask
 
-const logsOf = (model: Model): TaskLogs =>
-  Record.map(model.tasks, task => task.log)
+/** Ходы задачи в типах вида доски. */
+export const opsOf = <T extends KindTypes>(
+  kind: BoardKind<T>,
+  ops: ReadonlyArray<KindOp>,
+): ReadonlyArray<T['Op']> => Array.getSomes(Array.map(ops, kind.op.unwrap))
+
+const logsOf = <T extends KindTypes>(
+  lesson: LessonDefinition<T>,
+  model: Model,
+): TaskLogs<T['Op']> =>
+  Record.map(model.tasks, task => opsOf(lesson.kind, task.log))
 
 export const isSolved = (task: TaskState): boolean =>
   task.check._tag === 'Solved'
 
-export const docAt = (
-  lesson: LessonDefinition,
+export const docAt = <T extends KindTypes>(
+  lesson: LessonDefinition<T>,
   model: Model,
   step: number,
-): BoardDoc => boardAt(lesson, step, logsOf(model))
+): T['Doc'] => boardAt(lesson, step, logsOf(lesson, model))
 
-export const currentDoc = (lesson: LessonDefinition, model: Model): BoardDoc =>
-  docAt(lesson, model, model.step)
+export const currentDoc = <T extends KindTypes>(
+  lesson: LessonDefinition<T>,
+  model: Model,
+): T['Doc'] => docAt(lesson, model, model.step)
 
-export type CurrentTask = Readonly<{
-  spec: TaskSpec
+/** Доска шага задачи до ходов ученика: «было» в итоге задачи. */
+export const taskStartDoc = <T extends KindTypes>(
+  lesson: LessonDefinition<T>,
+  model: Model,
+): T['Doc'] => taskStartBoard(lesson, model.step, logsOf(lesson, model))
+
+export type CurrentTask<T extends KindTypes> = Readonly<{
+  spec: TaskSpec<T>
   state: TaskState
   step: number
 }>
 
-export const currentTask = (
-  lesson: LessonDefinition,
+export const currentTask = <T extends KindTypes>(
+  lesson: LessonDefinition<T>,
   model: Model,
-): Option.Option<CurrentTask> =>
+): Option.Option<CurrentTask<T>> =>
   pipe(
     Array.get(lesson.steps, model.step),
     Option.flatMap(taskOf),
@@ -196,8 +225,8 @@ export const currentTask = (
     })),
   )
 
-export const maxAllowedStep = (
-  lesson: LessonDefinition,
+export const maxAllowedStep = <T extends KindTypes>(
+  lesson: LessonDefinition<T>,
   model: Model,
 ): number =>
   pipe(
@@ -211,43 +240,172 @@ export const maxAllowedStep = (
     Option.getOrElse(() => lesson.steps.length - 1),
   )
 
-export const isEditable = (lesson: LessonDefinition, model: Model): boolean =>
+export const isEditable = <T extends KindTypes>(
+  lesson: LessonDefinition<T>,
+  model: Model,
+): boolean =>
   Option.exists(
     currentTask(lesson, model),
     ({ state }) => !isSolved(state) && Option.isNone(state.maybeReplayIndex),
   )
 
-export const isReplaying = (lesson: LessonDefinition, model: Model): boolean =>
+export const isReplaying = <T extends KindTypes>(
+  lesson: LessonDefinition<T>,
+  model: Model,
+): boolean =>
   Option.exists(currentTask(lesson, model), ({ state }) =>
     Option.isSome(state.maybeReplayIndex),
   )
 
-export const outcomeOf = (doc: BoardDoc): Outcome => {
-  const result = simulate(doc, doc.load)
-  return {
-    errorRate: result.errorRate,
-    p95: result.p95,
-    serverUtilization: pipe(
-      doc.nodes,
-      Array.filter(node => node.kind === 'server'),
-      Array.sort(
-        Order.mapInput(
-          Order.String,
-          (node: BoardDoc['nodes'][number]) => node.id,
+export const boardMode = <T extends KindTypes>(
+  lesson: LessonDefinition<T>,
+  model: Model,
+): BoardMode =>
+  isEditable(lesson, model)
+    ? 'Edit'
+    : isReplaying(lesson, model)
+      ? 'Replay'
+      : 'View'
+
+/** Модель доски вида урока. */
+export const boardModelOf = <T extends KindTypes>(
+  lesson: LessonDefinition<T>,
+  model: Model,
+): Option.Option<T['BoardModel']> => lesson.kind.board.state.unwrap(model.board)
+
+/** Элементы интерфейса, открытые к этому уроку, и новые в нём (план 3.4). */
+export type Unlocks = Readonly<{
+  unlocked: ReadonlyArray<string>
+  newFeatures: ReadonlyArray<string>
+}>
+
+export const unlocksOf = (model: Model): Unlocks =>
+  Option.match(
+    Option.all([
+      findCourse(model.course),
+      findLesson(model.course, model.slug),
+    ]),
+    {
+      onNone: () => ({ unlocked: [], newFeatures: [] }),
+      onSome: ([course, lesson]) => ({
+        unlocked: unlockedFeatures(course.definition, lesson.meta.order),
+        newFeatures: newFeaturesOf(course.definition, lesson.meta.order),
+      }),
+    },
+  )
+
+// SURFACES
+
+export type TaskSurface<T extends KindTypes> = Readonly<{
+  id: string
+  target: string
+  definition: SurfaceDefinition<T>
+}>
+
+const parseSurface = (id: string): readonly [string, string] => {
+  const separator = id.indexOf(':')
+  return separator < 0
+    ? [id, '']
+    : [id.slice(0, separator), id.slice(separator + 1)]
+}
+
+export const surfaceOf = <T extends KindTypes>(
+  kind: BoardKind<T>,
+  id: string,
+): Option.Option<TaskSurface<T>> => {
+  const [type, target] = parseSurface(id)
+  return Option.map(
+    Array.findFirst(kind.surfaces, definition => definition.type === type),
+    definition => ({ id, target, definition }),
+  )
+}
+
+/** Поверхности задачи текущего шага, кроме доски, которые открыл курс. */
+export const visibleSurfaces = <T extends KindTypes>(
+  lesson: LessonDefinition<T>,
+  model: Model,
+): ReadonlyArray<TaskSurface<T>> =>
+  Option.match(currentTask(lesson, model), {
+    onNone: () => [],
+    onSome: ({ spec }) => {
+      const { unlocked } = unlocksOf(model)
+      return Array.filter(
+        Array.getSomes(
+          Array.map(taskSurfaces(spec), id => surfaceOf(lesson.kind, id)),
         ),
-      ),
-      Array.map(node => result.nodes[node.id]?.utilization ?? 0),
+        surface => isSurfaceOpen(unlocked, surface.definition.feature),
+      )
+    },
+  })
+
+/** Открытая вкладка поверхностей: выбранная учеником или первая. */
+export const activeSurface = <T extends KindTypes>(
+  lesson: LessonDefinition<T>,
+  model: Model,
+): Option.Option<TaskSurface<T>> => {
+  const surfaces = visibleSurfaces(lesson, model)
+  return pipe(
+    model.maybeSurfaceTab,
+    Option.flatMap(chosen =>
+      Array.findFirst(surfaces, surface => surface.id === chosen),
     ),
-    costPerHour: result.costPerHour,
+    Option.orElse(() => Array.head(surfaces)),
+  )
+}
+
+export const surfaceContext = <T extends KindTypes>(
+  lesson: LessonDefinition<T>,
+  model: Model,
+  target: string,
+  label: SurfaceContext<T>['label'] = () => Option.none(),
+): SurfaceContext<T> => {
+  const doc = currentDoc(lesson, model)
+  const unlocks = unlocksOf(model)
+  return {
+    doc,
+    run: lesson.kind.run(doc),
+    mode: boardMode(lesson, model),
+    target,
+    label,
+    maybeGhost: Option.flatMap(currentTask(lesson, model), ({ spec, state }) =>
+      state.hintsShown >= 3 && !isSolved(state)
+        ? Option.some(spec.solution)
+        : Option.none(),
+    ),
+    unlocked: unlocks.unlocked,
+    newFeatures: unlocks.newFeatures,
   }
 }
+
+const initialSurfaces = <T extends KindTypes>(
+  lesson: LessonDefinition<T>,
+): Readonly<Record<string, SurfaceState>> =>
+  Record.fromEntries(
+    Array.flatMap(lesson.steps, lessonStep =>
+      Option.match(taskOf(lessonStep), {
+        onNone: () => [],
+        onSome: spec =>
+          Array.getSomes(
+            Array.map(taskSurfaces(spec), id =>
+              Option.map(
+                surfaceOf(lesson.kind, id),
+                ({ definition, target }): readonly [string, SurfaceState] => [
+                  id,
+                  definition.init(target),
+                ],
+              ),
+            ),
+          ),
+      }),
+    ),
+  )
 
 // INIT
 
 // Номер шага приходит из адреса: дробный или нечисловой превращаем в
 // целый, затем держим в пределах урока и открытой задачи.
-const clampStep = (
-  lesson: LessonDefinition,
+const clampStep = <T extends KindTypes>(
+  lesson: LessonDefinition<T>,
   model: Model,
   requested: number,
 ): number =>
@@ -259,9 +417,9 @@ const clampStep = (
     maxAllowedStep(lesson, model),
   )
 
-export const init = (
+export const init = <T extends KindTypes>(
   course: string,
-  lesson: LessonDefinition,
+  lesson: LessonDefinition<T>,
   requestedStep: number,
 ): Model => {
   const model: Model = {
@@ -269,8 +427,9 @@ export const init = (
     slug: lesson.slug,
     step: 0,
     tasks: {},
-    board: Board.initialModel,
-    anim: initialAnim,
+    board: lesson.kind.board.state.wrap(lesson.kind.board.init),
+    surfaces: initialSurfaces(lesson),
+    maybeSurfaceTab: Option.none(),
     isJournalOpen: false,
     maybeToast: Option.none(),
     toastSerial: 0,
@@ -281,6 +440,16 @@ export const init = (
     step: () => clampStep(lesson, model, requestedStep),
   })
 }
+
+/** `init` для урока из реестра, вид которого заранее не известен. */
+export const initLesson = (
+  course: string,
+  lesson: AnyLesson,
+  requestedStep: number,
+): Model =>
+  withLesson(lesson, <T extends KindTypes>(definition: LessonDefinition<T>) =>
+    init(course, definition, requestedStep),
+  )
 
 // UPDATE
 
@@ -294,8 +463,19 @@ const withTask = (
       Record.set(tasks, taskId, change(tasks[taskId] ?? emptyTask)),
   })
 
-export const goToStep = (
-  lesson: LessonDefinition,
+/** Отменяет начатый на доске жест. */
+const interruptBoard = <T extends KindTypes>(
+  lesson: LessonDefinition<T>,
+  board: BoardState,
+): BoardState =>
+  Option.match(lesson.kind.board.state.unwrap(board), {
+    onNone: () => board,
+    onSome: boardModel =>
+      lesson.kind.board.state.wrap(lesson.kind.board.interrupt(boardModel)),
+  })
+
+export const goToStep = <T extends KindTypes>(
+  lesson: LessonDefinition<T>,
   model: Model,
   requested: number,
 ): UpdateReturn => {
@@ -310,7 +490,7 @@ export const goToStep = (
         Record.map(tasks, task =>
           modifyFields(task, { maybeReplayIndex: () => Option.none() }),
         ),
-      board: () => Board.initialModel,
+      board: board => interruptBoard(lesson, board),
       maybeToast: () => Option.none(),
       maybeHoveredRef: () => Option.none(),
     }),
@@ -319,7 +499,17 @@ export const goToStep = (
   }
 }
 
-const showToast = (model: Model, message: DomainMessage): PlainReturn => {
+/** `goToStep` для урока из реестра. */
+export const goToLessonStep = (
+  lesson: AnyLesson,
+  model: Model,
+  requested: number,
+): UpdateReturn =>
+  withLesson(lesson, <T extends KindTypes>(definition: LessonDefinition<T>) =>
+    goToStep(definition, model, requested),
+  )
+
+const showToast = (model: Model, message: KindMessage): PlainReturn => {
   const serial = model.toastSerial + 1
   return {
     model: modifyFields(model, {
@@ -330,62 +520,121 @@ const showToast = (model: Model, message: DomainMessage): PlainReturn => {
   }
 }
 
-const applyStudentOp = (
-  lesson: LessonDefinition,
+/** Ходы применяются вместе: первый отказ отменяет все и показывает причину. */
+const applyAll = <T extends KindTypes>(
+  kind: BoardKind<T>,
+  doc: T['Doc'],
+  ops: ReadonlyArray<T['Op']>,
+): Result.Result<T['Doc'], T['Message']> =>
+  Array.reduce(
+    ops,
+    Result.succeed(doc),
+    (current: Result.Result<T['Doc'], T['Message']>, op) =>
+      Result.flatMap(current, next => kind.apply(next, op)),
+  )
+
+/** Ходы ученика с доски и с поверхностей попадают в один журнал задачи. */
+const applyStudentOps = <T extends KindTypes>(
+  lesson: LessonDefinition<T>,
   model: Model,
-  op: BoardOp,
+  ops: ReadonlyArray<T['Op']>,
 ): PlainReturn =>
   Option.match(currentTask(lesson, model), {
     onNone: () => ({ model }),
     onSome: ({ spec }) =>
-      Result.match(applyOp(currentDoc(lesson, model), op), {
-        onFailure: refusal => showToast(model, refusal),
-        onSuccess: () => ({
-          model: withTask(model, spec.id, task => ({
-            ...task,
-            log: [...task.log, op],
-            redo: [],
-            check:
-              task.check._tag === 'Failed'
-                ? CheckState.Unchecked()
-                : task.check,
-          })),
-        }),
-      }),
+      !isEditable(lesson, model) || Array.isReadonlyArrayEmpty(ops)
+        ? { model }
+        : Result.match(applyAll(lesson.kind, currentDoc(lesson, model), ops), {
+            onFailure: refusal =>
+              showToast(model, lesson.kind.message.wrap(refusal)),
+            onSuccess: () => ({
+              model: withTask(model, spec.id, task => ({
+                ...task,
+                log: [...task.log, ...Array.map(ops, lesson.kind.op.wrap)],
+                redo: [],
+                check:
+                  task.check._tag === 'Failed'
+                    ? CheckState.Unchecked()
+                    : task.check,
+              })),
+            }),
+          }),
   })
 
-const boardInput = (lesson: LessonDefinition, model: Model): Board.Input => ({
-  doc: currentDoc(lesson, model),
-  isEditable: isEditable(lesson, model),
-})
-
-const boardAdapters = (lesson: LessonDefinition) => ({
-  read: (parent: Model) => Option.some(parent.board),
-  write: (parent: Model, nextBoard: Board.Model) =>
-    modifyFields(parent, { board: () => nextBoard }),
-  toParentMessage: (message: Board.Message) =>
-    Message.GotBoardMessage({ message }),
-  foldOutMessage: (outMessage: Board.OutMessage) => (parent: Model) =>
-    Board.OutMessage.match(outMessage, {
-      ProposedOp: ({ op }) => applyStudentOp(lesson, parent, op),
-    }),
-})
-
-const foldBoard = (lesson: LessonDefinition, model: Model) =>
-  Update.foldChild({
-    update: Board.update(boardInput(lesson, model)),
-    ...boardAdapters(lesson),
-  })
-
-const foldBoardStep = (
-  lesson: LessonDefinition,
+const boardInput = <T extends KindTypes>(
+  lesson: LessonDefinition<T>,
   model: Model,
-  step: (board: Board.Model) => Board.UpdateReturn,
-): UpdateReturn =>
-  Update.foldChildStep({ update: step, ...boardAdapters(lesson) })(model)
+): BoardInput<T> => ({
+  doc: currentDoc(lesson, model),
+  mode: boardMode(lesson, model),
+})
 
-const editTask = (
-  lesson: LessonDefinition,
+const boardAdapters = <T extends KindTypes>(lesson: LessonDefinition<T>) => ({
+  read: (parent: Model) => lesson.kind.board.state.unwrap(parent.board),
+  write: (parent: Model, nextBoard: T['BoardModel']) =>
+    modifyFields(parent, {
+      board: () => lesson.kind.board.state.wrap(nextBoard),
+    }),
+  toParentMessage: (message: T['BoardMessage']) =>
+    Message.GotBoardMessage({
+      message: lesson.kind.board.message.wrap(message),
+    }),
+  foldOutMessage:
+    (outMessage: BoardOutMessage<T['Op']>) =>
+    (parent: Model): PlainReturn =>
+      outMessage._tag === 'ProposedOps'
+        ? applyStudentOps(lesson, parent, outMessage.ops)
+        : { model: parent },
+})
+
+const foldBoard = <T extends KindTypes>(
+  lesson: LessonDefinition<T>,
+  model: Model,
+  message: BoardMessage,
+): PlainReturn =>
+  Option.match(lesson.kind.board.message.unwrap(message), {
+    onNone: () => ({ model }),
+    onSome: boardMessage =>
+      Update.foldChild({
+        update: lesson.kind.board.update(boardInput(lesson, model)),
+        ...boardAdapters(lesson),
+      })(model, boardMessage),
+  })
+
+const pressDelete = <T extends KindTypes>(
+  lesson: LessonDefinition<T>,
+  model: Model,
+): PlainReturn =>
+  Update.foldChildStep({
+    update: lesson.kind.board.pressDelete(boardInput(lesson, model)),
+    ...boardAdapters(lesson),
+  })(model)
+
+const foldSurface = <T extends KindTypes>(
+  lesson: LessonDefinition<T>,
+  model: Model,
+  surfaceId: string,
+  message: SurfaceMessage,
+): PlainReturn =>
+  Option.match(surfaceOf(lesson.kind, surfaceId), {
+    onNone: () => ({ model }),
+    onSome: ({ definition, target }) =>
+      Update.foldChild({
+        update: definition.update(surfaceContext(lesson, model, target)),
+        read: (parent: Model) => Record.get(parent.surfaces, surfaceId),
+        write: (parent: Model, nextSurface: SurfaceState) =>
+          modifyFields(parent, {
+            surfaces: surfaces => Record.set(surfaces, surfaceId, nextSurface),
+          }),
+        toParentMessage: (surfaceMessage: SurfaceMessage) =>
+          Message.GotSurfaceMessage({ surfaceId, message: surfaceMessage }),
+        foldOutMessage: outMessage => parent =>
+          applyStudentOps(lesson, parent, outMessage.ops),
+      })(model, message),
+  })
+
+const editTask = <T extends KindTypes>(
+  lesson: LessonDefinition<T>,
   model: Model,
   change: (task: TaskState) => TaskState,
 ): UpdateReturn =>
@@ -395,7 +644,7 @@ const editTask = (
       isEditable(lesson, model)
         ? {
             model: modifyFields(withTask(model, spec.id, change), {
-              board: () => Board.initialModel,
+              board: board => interruptBoard(lesson, board),
             }),
           }
         : { model },
@@ -430,41 +679,55 @@ const reset = (task: TaskState): TaskState => ({
   check: CheckState.Unchecked(),
 })
 
-const solve = (
-  lesson: LessonDefinition,
-  model: Model,
-  taskId: string,
-  withHint: boolean,
-): Model =>
+const solve = (model: Model, taskId: string, withHint: boolean): Model =>
   withTask(model, taskId, task => ({
     ...task,
     maybeReplayIndex: Option.none(),
-    check: CheckState.Solved({
-      withHint,
-      before: outcomeOf(taskStartBoard(lesson, model.step, logsOf(model))),
-      after: outcomeOf(currentDoc(lesson, model)),
-    }),
+    check: CheckState.Solved({ withHint }),
   }))
 
-const failedGoal = (lesson: LessonDefinition, model: Model, spec: TaskSpec) =>
-  firstFailedGoal(
-    currentDoc(lesson, model),
-    Array.map(spec.goals, ({ goal }) => goal),
+export const goalChecks = <T extends KindTypes>(
+  lesson: LessonDefinition<T>,
+  doc: T['Doc'],
+  spec: TaskSpec<T>,
+): ReadonlyArray<GoalCheck<T['Message']>> => {
+  const run = lesson.kind.run(doc)
+  return Array.map(spec.goals, ({ goal }) =>
+    lesson.kind.checkGoal(doc, run, goal),
+  )
+}
+
+const failedGoal = <T extends KindTypes>(
+  lesson: LessonDefinition<T>,
+  model: Model,
+  spec: TaskSpec<T>,
+) =>
+  pipe(
+    goalChecks(lesson, currentDoc(lesson, model), spec),
+    Array.map((goalCheck, index) => ({ index, goalCheck })),
+    Array.findFirst(({ goalCheck }) => !goalCheck.met),
   )
 
-const failedCheckState = (index: number, goalCheck: GoalCheck): CheckState =>
+const failedCheckState = <T extends KindTypes>(
+  lesson: LessonDefinition<T>,
+  index: number,
+  goalCheck: GoalCheck<T['Message']>,
+): CheckState =>
   Option.match(goalCheck.maybeFailure, {
     onNone: () => CheckState.Unchecked(),
     onSome: failure =>
       CheckState.Failed({
         goalIndex: index,
-        failure,
+        failure: lesson.kind.message.wrap(failure),
         focusNodes: goalCheck.focusNodes,
         focusEdges: goalCheck.focusEdges,
       }),
   })
 
-const check = (lesson: LessonDefinition, model: Model): UpdateReturn =>
+const check = <T extends KindTypes>(
+  lesson: LessonDefinition<T>,
+  model: Model,
+): UpdateReturn =>
   Option.match(currentTask(lesson, model), {
     onNone: () => ({ model }),
     onSome: ({ spec }) => {
@@ -472,12 +735,12 @@ const check = (lesson: LessonDefinition, model: Model): UpdateReturn =>
         return { model }
       }
       return Option.match(failedGoal(lesson, model, spec), {
-        onNone: () => ({ model: solve(lesson, model, spec.id, false) }),
-        onSome: ({ index, check: goalCheck }) => ({
+        onNone: () => ({ model: solve(model, spec.id, false) }),
+        onSome: ({ index, goalCheck }) => ({
           model: withTask(model, spec.id, task => ({
             ...task,
             attempts: task.attempts + 1,
-            check: failedCheckState(index, goalCheck),
+            check: failedCheckState(lesson, index, goalCheck),
           })),
         }),
       })
@@ -486,22 +749,25 @@ const check = (lesson: LessonDefinition, model: Model): UpdateReturn =>
 
 // Эталон из урока не принимается на веру: если после проигрывания цель
 // всё же не выполнена, задача остаётся открытой с понятной ошибкой.
-const finishReplay = (
-  lesson: LessonDefinition,
+const finishReplay = <T extends KindTypes>(
+  lesson: LessonDefinition<T>,
   model: Model,
-  spec: TaskSpec,
+  spec: TaskSpec<T>,
 ): Model =>
   Option.match(failedGoal(lesson, model, spec), {
-    onNone: () => solve(lesson, model, spec.id, true),
-    onSome: ({ index, check: goalCheck }) =>
+    onNone: () => solve(model, spec.id, true),
+    onSome: ({ index, goalCheck }) =>
       withTask(model, spec.id, task => ({
         ...task,
         maybeReplayIndex: Option.none(),
-        check: failedCheckState(index, goalCheck),
+        check: failedCheckState(lesson, index, goalCheck),
       })),
   })
 
-const startReplay = (lesson: LessonDefinition, model: Model): UpdateReturn =>
+const startReplay = <T extends KindTypes>(
+  lesson: LessonDefinition<T>,
+  model: Model,
+): UpdateReturn =>
   Option.match(currentTask(lesson, model), {
     onNone: () => ({ model }),
     onSome: ({ spec, state }) =>
@@ -513,13 +779,16 @@ const startReplay = (lesson: LessonDefinition, model: Model): UpdateReturn =>
                 ...reset(task),
                 maybeReplayIndex: Option.some(0),
               })),
-              { board: () => Board.initialModel },
+              { board: board => interruptBoard(lesson, board) },
             ),
             commands: [WaitBeforeReplayStep()],
           },
   })
 
-const continueReplay = (lesson: LessonDefinition, model: Model): UpdateReturn =>
+const continueReplay = <T extends KindTypes>(
+  lesson: LessonDefinition<T>,
+  model: Model,
+): UpdateReturn =>
   Option.match(currentTask(lesson, model), {
     onNone: () => ({ model }),
     onSome: ({ spec, state }) =>
@@ -531,8 +800,10 @@ const continueReplay = (lesson: LessonDefinition, model: Model): UpdateReturn =>
             onSome: op => ({
               model: withTask(model, spec.id, task => ({
                 ...task,
-                log: Result.isSuccess(applyOp(currentDoc(lesson, model), op))
-                  ? [...task.log, op]
+                log: Result.isSuccess(
+                  lesson.kind.apply(currentDoc(lesson, model), op),
+                )
+                  ? [...task.log, lesson.kind.op.wrap(op)]
                   : task.log,
                 maybeReplayIndex: Option.some(index + 1),
               })),
@@ -543,7 +814,7 @@ const continueReplay = (lesson: LessonDefinition, model: Model): UpdateReturn =>
   })
 
 export const updateWith =
-  (lesson: LessonDefinition) =>
+  <T extends KindTypes>(lesson: LessonDefinition<T>) =>
   (model: Model, message: Message): UpdateReturn =>
     Message.match<UpdateReturn>(message, {
       ClickedNext: () => goToStep(lesson, model, model.step + 1),
@@ -552,16 +823,12 @@ export const updateWith =
       PressedArrowKey: ({ direction }) =>
         goToStep(lesson, model, model.step + (direction === 'Left' ? -1 : 1)),
       GotBoardMessage: ({ message: boardMessage }) =>
-        foldBoard(lesson, model)(model, boardMessage),
-      ClickedPlayPause: () => ({
+        foldBoard(lesson, model, boardMessage),
+      GotSurfaceMessage: ({ surfaceId, message: surfaceMessage }) =>
+        foldSurface(lesson, model, surfaceId, surfaceMessage),
+      ClickedSurfaceTab: ({ surface }) => ({
         model: modifyFields(model, {
-          anim: anim =>
-            modifyFields(anim, { isRunning: isRunning => !isRunning }),
-        }),
-      }),
-      ClickedSpeed: ({ speed }) => ({
-        model: modifyFields(model, {
-          anim: anim => modifyFields(anim, { speed: () => speed }),
+          maybeSurfaceTab: () => Option.some(surface),
         }),
       }),
       ClickedUndo: () => editTask(lesson, model, undo),
@@ -569,14 +836,12 @@ export const updateWith =
       ClickedRedo: () => editTask(lesson, model, redo),
       PressedRedoKey: () => editTask(lesson, model, redo),
       ClickedReset: () => editTask(lesson, model, reset),
-      PressedDeleteKey: () =>
-        foldBoardStep(
-          lesson,
-          model,
-          Board.pressDeleteKey(boardInput(lesson, model)),
-        ),
-      PressedEscapeKey: () =>
-        foldBoardStep(lesson, model, Board.pressEscapeKey),
+      PressedDeleteKey: () => pressDelete(lesson, model),
+      PressedEscapeKey: () => ({
+        model: modifyFields(model, {
+          board: board => interruptBoard(lesson, board),
+        }),
+      }),
       ClickedCheck: () => check(lesson, model),
       ClickedHint: () =>
         Option.match(currentTask(lesson, model), {
@@ -611,27 +876,50 @@ export const updateWith =
       }),
     })
 
+const lessonOf = (model: Model): Option.Option<AnyLesson> =>
+  findDefinition(model.course, model.slug)
+
 export const update = (model: Model, message: Message): UpdateReturn =>
-  Option.match(findDefinition(model.course, model.slug), {
+  Option.match(lessonOf(model), {
     onNone: () => ({ model }),
-    onSome: lesson => updateWith(lesson)(model, message),
+    onSome: lesson =>
+      withLesson(
+        lesson,
+        <T extends KindTypes>(definition: LessonDefinition<T>) =>
+          updateWith(definition)(model, message),
+      ),
+  })
+
+const frameWith = <T extends KindTypes>(
+  lesson: LessonDefinition<T>,
+  model: Model,
+  deltaMs: number,
+): Model =>
+  Option.match(lesson.kind.board.state.unwrap(model.board), {
+    onNone: () => model,
+    onSome: boardModel =>
+      modifyFields(model, {
+        board: () =>
+          lesson.kind.board.state.wrap(
+            lesson.kind.board.frame(boardModel, deltaMs, {
+              doc: currentDoc(lesson, model),
+              isReducedMotion: model.isReducedMotion,
+            }),
+          ),
+      }),
   })
 
 export const advanceFrame =
   (deltaMs: number) =>
   (model: Model): PlainReturn =>
-    Option.match(findDefinition(model.course, model.slug), {
+    Option.match(lessonOf(model), {
       onNone: () => ({ model }),
       onSome: lesson => ({
-        model: modifyFields(model, {
-          anim: anim =>
-            tick(
-              anim,
-              deltaMs,
-              currentDoc(lesson, model),
-              model.isReducedMotion,
-            ),
-        }),
+        model: withLesson(
+          lesson,
+          <T extends KindTypes>(definition: LessonDefinition<T>) =>
+            frameWith(definition, model, deltaMs),
+        ),
       }),
     })
 

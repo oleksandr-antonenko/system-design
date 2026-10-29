@@ -33,7 +33,7 @@ import {
 import type { SimResult } from '../domain/simulate'
 import type { Locale } from '../i18n/locale'
 import { type UiStrings, uiFor } from '../i18n/ui'
-import type { Tone } from '../lesson/dsl'
+import type { Tone } from '../kinds/contract'
 import { Gesture, Message, type Model, Selection, previewDoc } from './board'
 import { BoardPointer } from './pointer'
 

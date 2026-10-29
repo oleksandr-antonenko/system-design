@@ -165,7 +165,7 @@ const enterLesson = (
       const maybeExisting = Record.get(model.lessonSessions, key)
       const session = Option.match(maybeExisting, {
         onNone: () =>
-          Player.init(
+          Player.initLesson(
             place.course,
             lesson,
             Option.getOrElse(requested, () => 0),
@@ -173,7 +173,7 @@ const enterLesson = (
         onSome: existing =>
           Option.match(requested, {
             onNone: () => existing,
-            onSome: step => Player.goToStep(lesson, existing, step).model,
+            onSome: step => Player.goToLessonStep(lesson, existing, step).model,
           }),
       })
       const isCanonical = Option.exists(

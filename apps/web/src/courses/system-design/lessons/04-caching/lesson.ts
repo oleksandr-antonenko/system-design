@@ -3,12 +3,13 @@ import {
   addNode,
   annotate,
   connect,
-  defineLesson,
   failNode,
+  flow,
   highlight,
   recoverNode,
   setLoad,
-} from '../../../../lesson/dsl'
+} from '../../../../kinds/flow/dsl'
+import { defineLesson } from '../../../../lesson/dsl'
 
 // Кеш ставит ученик, а доска называет первый добавленный кеш `cache-1`.
 // Эталон использует тот же id, чтобы шаги после задачи (отказ кеша, ссылки
@@ -18,7 +19,7 @@ import {
 // загружены на 80 % и справляются, а база получает все 1600 и теряет 100.
 // С кешем база получает запись (20 %) и промахи (20 % чтения): 320 + 256.
 
-export default defineLesson({
+export default defineLesson(flow, {
   slug: 'caching',
   steps: [
     {

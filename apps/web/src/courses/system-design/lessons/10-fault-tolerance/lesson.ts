@@ -3,18 +3,19 @@ import {
   addNode,
   annotate,
   connect,
-  defineLesson,
   failNode,
+  flow,
   highlight,
   recoverNode,
   setLoad,
-} from '../../../../lesson/dsl'
+} from '../../../../kinds/flow/dsl'
+import { defineLesson } from '../../../../lesson/dsl'
 
 // Второй балансировщик и реплику ставит ученик: доска называет их `lb-2` и
 // `replica-1`, как и эталон, поэтому шаги после задачи ссылаются на эти id.
 // Нагрузка 600 rps: трёх серверов хватает и без одного из них (N+1), так что
 // единые точки отказа здесь только балансировщик и база.
-export default defineLesson({
+export default defineLesson(flow, {
   slug: 'fault-tolerance',
   steps: [
     {

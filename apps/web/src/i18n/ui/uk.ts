@@ -159,6 +159,18 @@ export const uk = {
     resultServers: 'Завантаження серверів',
     resultCost: 'Ціна',
     continueLesson: 'Далі →',
+    surfaces: 'Де розв’язувати задачу',
+  },
+  network: {
+    boardLabel: 'Схема мережі',
+    placeholder: 'Дошка мережі в розробці: поки що тут лише список пристроїв.',
+    run: 'Пуск',
+    wifiTab: device => `Wi-Fi: ${device}`,
+    wifiNetworks: 'Мережі поруч',
+    wifiNone: 'Поруч немає мереж Wi-Fi.',
+    wifiPassword: 'Пароль',
+    wifiJoin: 'Підключитися',
+    wifiJoined: ssid => `Підключено до мережі «${ssid}»`,
   },
   notFound: {
     title: 'Сторінку не знайдено',

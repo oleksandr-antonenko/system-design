@@ -1,0 +1,103 @@
+import { Option } from 'effect'
+import type { HtmlBuilder } from 'foldkit/html'
+import {
+  click,
+  expect,
+  given,
+  label,
+  role,
+  scene,
+  text,
+  type,
+} from 'foldkit/scene'
+import { describe, test } from 'vitest'
+
+import type { Lesson } from '../../courses/assemble'
+import { findLesson } from '../../courses/registry'
+import * as Player from '../../lesson/player'
+import { lessonView } from '../../lesson/view'
+import { phoneOnline } from './testing'
+
+// Хост поверхностей в плеере (design D5): вкладка видна на шаге задачи,
+// поверхность пишет ходы в журнал, и цели задачи отмечаются сразу.
+
+const meta = Option.getOrThrow(findLesson('networks', 'phone-online')).meta
+
+const entry: Lesson = {
+  course: 'networks',
+  folder: '01-phone-online',
+  meta,
+  texts: [
+    {
+      locale: 'en',
+      text: {
+        title: 'How a phone gets online',
+        summary: 'The phone talks to the internet through the router.',
+        labels: { phone: { name: 'Phone' }, router: { name: 'Router' } },
+        steps: {
+          home: { title: 'Home', body: 'The [[router|router]] is the door.' },
+          join: { title: 'Join', body: 'Connect the phone to Home.' },
+          online: { title: 'Online', body: 'The phone is online.' },
+        },
+        annotations: { door: () => 'door to the internet' },
+        tasks: {
+          'join-home': {
+            prompt: 'Connect the phone to the home Wi-Fi.',
+            goals: { associated: 'The phone is on the home Wi-Fi' },
+            hints: [
+              'Open Wi-Fi.',
+              'Pick Home.',
+              'The password is on the router.',
+            ],
+            solvedNote: 'The phone is home.',
+          },
+        },
+      },
+    },
+  ],
+}
+
+const sceneFor = {
+  update: (playerModel: Player.Model, playerMessage: Player.Message) =>
+    Player.updateWith(phoneOnline)(playerModel, playerMessage),
+  view: (playerModel: Player.Model, h: HtmlBuilder<Player.Message>) =>
+    lessonView(
+      phoneOnline,
+      entry,
+      playerModel,
+      { locale: 'en', prefersDark: false },
+      h,
+    ),
+}
+
+const goal = text('The phone is on the home Wi-Fi')
+
+describe('task surfaces', () => {
+  test('a theory step has no surfaces', () => {
+    scene(
+      sceneFor,
+      given(Player.init('networks', phoneOnline, 0)),
+      expect(label('Where to solve the task')).not.toExist(),
+      expect(role('button', { name: '▶ Run' })).toExist(),
+    )
+  })
+
+  test('the task step shows the Wi-Fi tab; joining ticks the goal', () => {
+    scene(
+      sceneFor,
+      given(Player.init('networks', phoneOnline, 1)),
+      expect(role('tab', { name: 'Wi-Fi: Phone' })).toHaveAttr(
+        'aria-selected',
+        'true',
+      ),
+      expect(role('button', { name: 'Join' })).toBeDisabled(),
+      click(role('button', { name: 'Home' })),
+      type(label('Password'), 'correct-horse'),
+      click(role('button', { name: 'Join' })),
+      expect(text('Connected to “Home”')).toExist(),
+      click(role('button', { name: 'Check' })),
+      expect(text('The phone is home.')).toExist(),
+      expect(goal).toExist(),
+    )
+  })
+})

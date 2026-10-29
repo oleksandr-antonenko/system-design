@@ -33,13 +33,6 @@ const flags = (saved: string | null, browserLanguages: ReadonlyArray<string>) =>
 
 const LOAD_BALANCER = 'system-design/load-balancer'
 
-const emptyOutcome: Player.Outcome = {
-  errorRate: 0,
-  p95: Option.none(),
-  serverUtilization: [],
-  costPerHour: 0,
-}
-
 type CommandLike = Readonly<{ name: string; args?: Record<string, unknown> }>
 
 const describeCommands = (commands: ReadonlyArray<CommandLike> | undefined) =>
@@ -288,11 +281,7 @@ describe('lesson sessions', () => {
               redo: [],
               attempts: 1,
               hintsShown: 0,
-              check: Player.CheckState.Solved({
-                withHint: false,
-                before: emptyOutcome,
-                after: emptyOutcome,
-              }),
+              check: Player.CheckState.Solved({ withHint: false }),
               maybeReplayIndex: Option.none(),
             },
           },

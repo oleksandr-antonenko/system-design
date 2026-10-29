@@ -1,30 +1,16 @@
-import { Array, Option, Order, pipe } from 'effect'
+import { Array, Order, pipe } from 'effect'
 
-import type { ComponentKind } from '../domain/catalog'
-import { type LessonDefinition, taskOf } from './dsl'
-
+/** Урок курса глазами палитры: номер и всё, что ставят в его задачах. */
 export type CourseLesson = Readonly<{
   order: number
-  lesson: LessonDefinition
+  palette: ReadonlyArray<string>
 }>
 
-/** Урок, в палитре задачи которого вид блока появляется впервые. */
-export type KindDebut = Readonly<{ kind: ComponentKind; lesson: number }>
+/** Урок, в палитре задачи которого вид блока или устройства появляется
+    впервые. */
+export type KindDebut = Readonly<{ kind: string; lesson: number }>
 
 const LATER_LIMIT = 4
-
-/** Все виды из палитр задач урока, в порядке палитр. */
-export const lessonPalette = (
-  lesson: LessonDefinition,
-): ReadonlyArray<ComponentKind> =>
-  Array.dedupe(
-    Array.flatMap(lesson.steps, lessonStep =>
-      Option.match(taskOf(lessonStep), {
-        onNone: () => [],
-        onSome: task => task.palette,
-      }),
-    ),
-  )
 
 export const kindDebuts = (
   course: ReadonlyArray<CourseLesson>,
@@ -35,10 +21,7 @@ export const kindDebuts = (
       Order.mapInput(Order.Number, (entry: CourseLesson) => entry.order),
     ),
     Array.flatMap(entry =>
-      Array.map(lessonPalette(entry.lesson), kind => ({
-        kind,
-        lesson: entry.order,
-      })),
+      Array.map(entry.palette, kind => ({ kind, lesson: entry.order })),
     ),
     Array.dedupeWith((first, second) => first.kind === second.kind),
   )
@@ -59,7 +42,7 @@ export const laterInCourse = (
 export const newInLesson = (
   course: ReadonlyArray<CourseLesson>,
   order: number,
-): ReadonlyArray<ComponentKind> =>
+): ReadonlyArray<string> =>
   pipe(
     kindDebuts(course),
     Array.filter(debut => debut.lesson === order),

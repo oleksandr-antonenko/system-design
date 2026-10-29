@@ -2,9 +2,9 @@ import { describe, expect, test } from 'vitest'
 
 import { emptyBoard, foldOps } from '../domain/board'
 import { uiFor } from '../i18n/ui'
+import { addNode } from '../kinds/flow/dsl'
+import { extraMetrics } from '../kinds/flow/view'
 import { type Anim, initialAnim } from './anim'
-import { addNode } from './dsl'
-import { extraMetrics } from './view'
 
 describe('instruments that depend on the board', () => {
   const ui = uiFor('en')

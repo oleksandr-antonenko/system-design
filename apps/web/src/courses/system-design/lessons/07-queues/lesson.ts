@@ -5,12 +5,13 @@ import {
   addNode,
   annotate,
   connect,
-  defineLesson,
   failNode,
+  flow,
   highlight,
   recoverNode,
   setLoad,
-} from '../../../../lesson/dsl'
+} from '../../../../kinds/flow/dsl'
+import { defineLesson } from '../../../../lesson/dsl'
 
 // Сначала серверы сами шлют письмо и собирают PDF прямо в запросе. Такой
 // запрос держит сервер дольше, и сервер успевает около 150 rps вместо 400:
@@ -35,7 +36,7 @@ const servers = (options: NodeOptions): ReadonlyArray<BoardOp> => [
   connect('app2', 'db'),
 ]
 
-export default defineLesson({
+export default defineLesson(flow, {
   slug: 'queues',
   steps: [
     {

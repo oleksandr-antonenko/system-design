@@ -2,21 +2,17 @@ import { describe, expect, test } from 'vitest'
 
 import { courseLessons } from '../courses/registry'
 import type { ComponentKind } from '../domain/catalog'
+import { flow } from '../kinds/flow/dsl'
 import {
   type CourseLesson,
   kindDebuts,
   laterInCourse,
-  lessonPalette,
   newInLesson,
 } from './course'
-import { defineLesson } from './dsl'
+import { defineLesson, lessonPalette } from './dsl'
 
-const lessonWith = (
-  order: number,
-  palette: ReadonlyArray<ComponentKind>,
-): CourseLesson => ({
-  order,
-  lesson: defineLesson({
+const scriptWith = (order: number, palette: ReadonlyArray<ComponentKind>) =>
+  defineLesson(flow, {
     slug: `lesson-${order}`,
     steps: [
       { id: 'intro', ops: [], stage: [] },
@@ -27,7 +23,14 @@ const lessonWith = (
         task: { id: 'task', palette, goals: [], solution: [] },
       },
     ],
-  }),
+  })
+
+const lessonWith = (
+  order: number,
+  palette: ReadonlyArray<ComponentKind>,
+): CourseLesson => ({
+  order,
+  palette: lessonPalette(scriptWith(order, palette)),
 })
 
 const caching = lessonWith(4, ['cache', 'server'])
@@ -44,7 +47,7 @@ const course: ReadonlyArray<CourseLesson> = [
 
 describe('later in the course (D8)', () => {
   test('on lesson 4 the cache is in the task palette, not later; CDN is later', () => {
-    expect(lessonPalette(caching.lesson)).toEqual(['cache', 'server'])
+    expect(caching.palette).toEqual(['cache', 'server'])
     expect(laterInCourse(course, 4)).toEqual([
       { kind: 'cdn', lesson: 5 },
       { kind: 'replica', lesson: 6 },

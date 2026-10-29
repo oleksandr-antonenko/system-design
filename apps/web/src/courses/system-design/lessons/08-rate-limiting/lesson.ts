@@ -3,18 +3,19 @@ import {
   addNode,
   annotate,
   connect,
-  defineLesson,
   disconnect,
   failNode,
+  flow,
   highlight,
   recoverNode,
   setLoad,
-} from '../../../../lesson/dsl'
+} from '../../../../kinds/flow/dsl'
+import { defineLesson } from '../../../../lesson/dsl'
 
 // Ограничитель ставит ученик: первый ограничитель из палитры получает id
 // `limiter-1`, как и в эталоне, поэтому шаги после задачи ссылаются на него.
 // Ограничитель ученика берёт ёмкость из каталога: 1000 rps.
-export default defineLesson({
+export default defineLesson(flow, {
   slug: 'rate-limiting',
   steps: [
     {

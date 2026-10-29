@@ -12,11 +12,18 @@ import {
 import { describe, expect, test } from 'vitest'
 
 import * as Board from '../board/board'
-import lesson from '../courses/system-design/lessons/03-load-balancer/lesson'
+import loadBalancer from '../courses/system-design/lessons/03-load-balancer/lesson'
 import { type BoardOp, findNode } from '../domain/board'
 import { simulate } from '../domain/simulate'
-import { type LessonDefinition, addNode, connect, disconnect } from './dsl'
+import * as FlowBoard from '../kinds/flow/board'
+import { addNode, connect, disconnect, flow } from '../kinds/flow/dsl'
+import { outcomeOf } from '../kinds/flow/kind'
+import { BoardMessage, KindOp } from '../kinds/state'
+import type { FlowTypes } from '../kinds/types'
+import type { LessonDefinition } from './dsl'
 import * as Player from './player'
+
+const lesson: LessonDefinition<FlowTypes> = loadBalancer
 
 const COURSE = 'system-design'
 const TASK_STEP = 3
@@ -38,7 +45,7 @@ const atTask = (
   ...Player.init(COURSE, lesson, TASK_STEP),
   tasks: {
     [TASK_ID]: {
-      log,
+      log: log.map(op => KindOp.FlowOp({ op })),
       redo: [],
       attempts: 0,
       hintsShown: 0,
@@ -49,20 +56,30 @@ const atTask = (
 })
 
 const solvedTask = (log: ReadonlyArray<BoardOp>): Player.Model =>
-  atTask(
-    log,
-    Player.CheckState.Solved({
-      withHint: false,
-      before: Player.outcomeOf(Player.docAt(lesson, atTask(), TASK_STEP)),
-      after: Player.outcomeOf(Player.docAt(lesson, atTask(log), TASK_STEP)),
-    }),
-  )
+  atTask(log, Player.CheckState.Solved({ withHint: false }))
 
-const taskOf = (playerModel: Player.Model) =>
-  Player.taskStateOf(playerModel, TASK_ID)
+/** Состояние задачи с ходами в операциях доски System Design. */
+const taskOf = (playerModel: Player.Model) => {
+  const state = Player.taskStateOf(playerModel, TASK_ID)
+  return {
+    ...state,
+    log: Player.opsOf(flow, state.log),
+    redo: Player.opsOf(flow, state.redo),
+  }
+}
+
+const flowBoardOf = (playerModel: Player.Model): FlowBoard.Model =>
+  Option.getOrThrow(flow.board.state.unwrap(playerModel.board))
+
+const flowMessage = (boardMessage: FlowBoard.Message) =>
+  Player.Message.GotBoardMessage({
+    message: BoardMessage.GotFlowBoardMessage({ message: boardMessage }),
+  })
 
 const board = (boardMessage: Board.Message) =>
-  message(Player.Message.GotBoardMessage({ message: boardMessage }))
+  message(
+    flowMessage(FlowBoard.Message.GotEditorMessage({ message: boardMessage })),
+  )
 
 const scrolled = Command.resolve(
   Player.ScrollStepIntoView,
@@ -190,7 +207,7 @@ describe('board editing', () => {
       dragFromPort('users', 'app2'),
       model(next => {
         expect(taskOf(next).log).toEqual([connect('users', 'app2')])
-        expect(next.board.gesture._tag).toBe('Idle')
+        expect(flowBoardOf(next).editor.gesture._tag).toBe('Idle')
       }),
     )
   })
@@ -202,9 +219,12 @@ describe('board editing', () => {
       dragFromPort('app2', 'users'),
       model(next => {
         expect(taskOf(next).log).toEqual([])
-        expect(Option.map(next.maybeToast, toast => toast._tag)).toEqual(
-          Option.some('ConnectIntoClients'),
-        )
+        expect(
+          Option.map(
+            Option.flatMap(next.maybeToast, flow.message.unwrap),
+            toast => toast._tag,
+          ),
+        ).toEqual(Option.some('ConnectIntoClients'))
       }),
       Command.resolve(
         Player.WaitBeforeHidingToast,
@@ -251,7 +271,7 @@ describe('board editing', () => {
       message(Player.Message.PressedDeleteKey()),
       model(next => {
         expect(taskOf(next).log).toEqual([disconnect('users', 'app1')])
-        expect(next.board.maybeSelection).toEqual(Option.none())
+        expect(flowBoardOf(next).editor.maybeSelection).toEqual(Option.none())
       }),
     )
   })
@@ -345,10 +365,12 @@ describe('checking', () => {
         const check = taskOf(next).check
         expect(check._tag).toBe('Solved')
         if (check._tag === 'Solved') {
+          const before = outcomeOf(Player.taskStartDoc(lesson, next))
+          const after = outcomeOf(Player.currentDoc(lesson, next))
           expect(check.withHint).toBe(false)
-          expect(check.before.errorRate).toBeGreaterThan(0.5)
-          expect(check.after.errorRate).toBe(0)
-          expect(check.after.costPerHour).toBeCloseTo(2.3)
+          expect(before.errorRate).toBeGreaterThan(0.5)
+          expect(after.errorRate).toBe(0)
+          expect(after.costPerHour).toBeCloseTo(2.3)
         }
         expect(Player.isEditable(lesson, next)).toBe(false)
       }),
@@ -442,8 +464,8 @@ describe('replay safety', () => {
   })
 
   test('a faulty reference solution leaves the task open', () => {
-    const reference: LessonDefinition = lesson
-    const broken: LessonDefinition = {
+    const reference: LessonDefinition<FlowTypes> = lesson
+    const broken: LessonDefinition<FlowTypes> = {
       ...reference,
       steps: Array.map(reference.steps, lessonStep =>
         lessonStep.task === undefined
@@ -454,8 +476,12 @@ describe('replay safety', () => {
             },
       ),
     }
+    const updateBroken: (
+      model: Player.Model,
+      message: Player.Message,
+    ) => ReturnType<typeof Player.update> = Player.updateWith(broken)
     story(
-      Player.updateWith(broken),
+      updateBroken,
       given(atTask()),
       message(Player.Message.ClickedShowSolution()),
       ...Array.makeBy(6, () => replayStep),
@@ -482,21 +508,23 @@ describe('animation', () => {
   test('frames bring the instruments to the simulated values', () => {
     const overloaded = Player.init(COURSE, lesson, 1)
     const target = simulate(Player.currentDoc(lesson, overloaded), 900)
-    const settled = frames(400, overloaded)
+    const settled = flowBoardOf(frames(400, overloaded)).anim
 
-    expect(settled.anim.shownLoad).toBeCloseTo(900, 0)
-    expect(settled.anim.hudErrorRate).toBeCloseTo(target.errorRate, 2)
-    expect(settled.anim.clock).toBeGreaterThan(0)
-    expect(settled.anim.sparkErrors.length).toBeGreaterThan(0)
+    expect(settled.shownLoad).toBeCloseTo(900, 0)
+    expect(settled.hudErrorRate).toBeCloseTo(target.errorRate, 2)
+    expect(settled.clock).toBeGreaterThan(0)
+    expect(settled.sparkErrors.length).toBeGreaterThan(0)
   })
 
   test('on pause the clock stands still', () => {
     const paused = Player.update(
       Player.init(COURSE, lesson, 0),
-      Player.Message.ClickedPlayPause(),
+      flowMessage(FlowBoard.Message.ClickedPlayPause()),
     ).model
 
-    expect(frames(30, paused).anim.clock).toBe(paused.anim.clock)
+    expect(flowBoardOf(frames(30, paused)).anim.clock).toBe(
+      flowBoardOf(paused).anim.clock,
+    )
   })
 
   test('the model holds only plain finite data on every step', () => {

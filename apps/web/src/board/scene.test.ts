@@ -14,7 +14,7 @@ import { describe, test } from 'vitest'
 
 import { type BoardDoc, emptyBoard, foldOps } from '../domain/board'
 import { simulate } from '../domain/simulate'
-import { addNode, connect, failRegion, setLoad } from '../lesson/dsl'
+import { addNode, connect, failRegion, setLoad } from '../kinds/flow/dsl'
 import * as Board from './board'
 import { BoardPointer } from './pointer'
 import { type BoardViewInputs, view } from './view'

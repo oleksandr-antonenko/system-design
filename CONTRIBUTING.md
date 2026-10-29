@@ -83,13 +83,14 @@ export default defineLessonMeta(course, {
 
 **The interface grows with the student.** A lesson shows only what it and earlier lessons of the course have opened. List what your lesson opens in `unlocks`, using the course's feature set (for the networking course: `apps/web/src/courses/networks/features.ts`, e.g. `'terminal.ping'`, `'router.wifi'`, `'browser.addressBar'`). Each feature is opened by exactly one lesson. System Design lessons open nothing.
 
-`lesson.ts` is a script. Each step lists the operations that change the board, then what to highlight. The board at step N is all operations of steps 0..N applied in order, so the text and the board never drift apart:
+`lesson.ts` is a script for the board kind of its course: `flow` for System Design, `packet` for the networking course (`defineCourse({ board })`). Each step lists the operations that change the board, then what to highlight. The board at step N is all operations of steps 0..N applied in order, so the text and the board never drift apart. The kind comes first in `defineLesson`, and the operations come from that kind's DSL (`apps/web/src/kinds/flow/dsl.ts`, `apps/web/src/kinds/packet/dsl.ts`):
 
 ```ts
 import { Goal } from '../../../../domain/goals'
-import { addNode, annotate, connect, defineLesson, disconnect, highlight, setLoad } from '../../../../lesson/dsl'
+import { addNode, annotate, connect, disconnect, flow, highlight, setLoad } from '../../../../kinds/flow/dsl'
+import { defineLesson } from '../../../../lesson/dsl'
 
-export default defineLesson({
+export default defineLesson(flow, {
   slug: 'load-balancer',
   steps: [
     {
@@ -164,9 +165,11 @@ A size M server handles about **400 requests per second**.`,
 } satisfies LessonTexts<typeof lesson>
 ```
 
-Markup in step texts: `**bold**`, `[[blockId|words]]` (highlights the block on hover), a blank line starts a paragraph. A step body may also be a function `({ sim, doc }) => string` when the text quotes live numbers.
+Markup in step texts: `**bold**`, `[[blockId|words]]` (highlights the block on hover), a blank line starts a paragraph. A link target may contain `:` for things that are not blocks, such as `[[link:router-internet|cable]]` or `[[env:transport|TCP]]` on the networking board; the board kind decides what each target means. A step body may also be a function `({ sim, doc }) => string` when the text quotes live numbers (on the networking board: `({ doc, run }) => string`).
 
-`pnpm check` runs the content tests on every lesson: all operations apply, a task is unsolved at its start and its solution meets every goal, every `[[id|…]]` and highlight points at a block that exists on that step, and no text is empty. It also checks every course: the folder matches the id, each declared language has its `course.<locale>.ts`, a lesson's module and `unlocks` belong to its course, and no feature is unlocked twice. Folders are picked up automatically; you do not edit any shared file.
+Optional sections of the texts: `labels` gives board entities a caption per language (`{ phone: { name: 'Phone', note: 'in your hand' } }`; a lesson lists them in `labels: ['phone', …]` of `lesson.ts`, and a missing caption is a type error), and `feedback` replaces the text of a message code in this lesson's task (`{ ConnectIntoClients: 'Users only send requests.' }`, or a function of the message).
+
+`pnpm check` runs the content tests on every lesson through its board kind: the lesson uses the board of its course, all operations apply, a task is unsolved at its start and its solution meets every goal, every `[[id|…]]`, highlight and labelled entity points at something on the board, every task surface exists and is unlocked by then, and no text is empty. It also checks every course: the folder matches the id, each declared language has its `course.<locale>.ts`, a lesson's module and `unlocks` belong to its course, and no feature is unlocked twice. Folders are picked up automatically; you do not edit any shared file.
 
 ### Languages
 

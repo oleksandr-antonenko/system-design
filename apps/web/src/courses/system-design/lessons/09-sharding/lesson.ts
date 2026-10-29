@@ -3,10 +3,11 @@ import {
   addNode,
   annotate,
   connect,
-  defineLesson,
+  flow,
   highlight,
   setLoad,
-} from '../../../../lesson/dsl'
+} from '../../../../kinds/flow/dsl'
+import { defineLesson } from '../../../../lesson/dsl'
 
 // Чтобы реплики честно не спасали базу, одна запись (20 % нагрузки) должна
 // занимать больше 80 % её 1500 rps, а чтение забирает кеш. Это тысячи rps,
@@ -22,7 +23,7 @@ const groups = ['group1', 'group2', 'group3', 'group4'] as const
 
 const GROUP_CAPACITY = 2400
 
-export default defineLesson({
+export default defineLesson(flow, {
   slug: 'sharding',
   steps: [
     {
