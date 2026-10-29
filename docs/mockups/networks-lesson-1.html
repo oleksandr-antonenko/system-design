@@ -501,7 +501,7 @@ const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 const $ = id => document.getElementById(id);
 
 // ---------- сеть урока: никаких адресов, только имена ----------
-const HOME = { ssid: 'Router-7C21', pass: 'lipa-4827' };
+const HOME = { ssid: 'Router-7C21', pass: '12345678' };
 const NETS = [
   { id: 'cafe', ssid: 'Кафе Утро', open: true, sig: 3 },
   { id: 'home', ssid: HOME.ssid, open: false, sig: 3 },
@@ -1224,8 +1224,7 @@ function tryJoin() {
   if (T.sheet === 'neigh') { T.fails++; return sheetErr('Пароль не подошёл. Это точно ваша сеть? Сверьте её имя с наклейкой на роутере: оно должно совпасть до последней буквы.'); }
   if (p !== HOME.pass) {
     T.fails++;
-    if (p.toLowerCase() === HOME.pass) return sheetErr('Почти! В пароле важны большие и маленькие буквы: на наклейке все буквы маленькие.');
-    return sheetErr('Пароль не подошёл. Сверьте его с наклейкой на роутере: важна каждая буква и цифра.');
+    return sheetErr('Пароль не подошёл. Сверьте его с наклейкой на роутере: важна каждая цифра.');
   }
   T.sheet = null; T.err = null; T.connecting = true;
   renderPhone(); renderCard(); renderBoard(); renderTransport();
