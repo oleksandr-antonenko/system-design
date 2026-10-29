@@ -1,0 +1,10 @@
+[Unit]
+Description=System Design course: check the production branch every 30 s
+
+[Timer]
+OnBootSec=30s
+OnUnitActiveSec=30s
+AccuracySec=5s
+
+[Install]
+WantedBy=timers.target

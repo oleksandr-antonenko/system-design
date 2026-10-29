@@ -1,0 +1,8 @@
+[Unit]
+Description=System Design course: deploy the production branch when it moves
+After=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=%h/bin/poll.sh
+TimeoutStartSec=15min

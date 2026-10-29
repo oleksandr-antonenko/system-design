@@ -6,11 +6,11 @@
 
 ## 2. Файлы выкатки в репозитории
 
-- [ ] 2.1 `.github/workflows/ci.yml` с jobs `check`, `promote` и `verify` (design D2). Проверка: `actionlint` без замечаний.
+- [x] 2.1 `.github/workflows/ci.yml` с jobs `check`, `promote` и `verify` (design D2). Проверка: `actionlint` без замечаний.
 - [ ] 2.2 `deploy/poll.sh` и `deploy/release.sh` (design D3): `ls-remote`, `flock`, `state/failed`, переиспользование собранной версии, резервные копии, проверка версии, откат, чистка. Проверка: `bash -n` и `shellcheck` без замечаний; локальный прогон `release.sh` на временном каталоге с фиктивным `HOME` доходит до проверки здоровья.
 - [ ] 2.3 Unit-файлы `system-design-web.service`, `system-design-deploy.service` и `.timer` (design D3, D5). Проверка: `systemd-analyze --user verify` без ошибок.
 - [ ] 2.4 `deploy/nginx.conf` (design D6). Проверка: `nginx -t` на сервере проходит после установки (задача 3.3).
-- [ ] 2.5 `deploy/README.md`: как устроена выкатка, как откатиться (`git push --force origin <sha>:production`), где журналы. Без адресов и имён. Проверка: в файле нет хостов, портов и имён пользователей.
+- [x] 2.5 `deploy/README.md`: как устроена выкатка, как откатиться (`git push --force origin <sha>:production`), где журналы. Без адресов и имён. Проверка: в файле нет хостов, портов и имён пользователей.
 
 ## 3. Сервер (разовая настройка, детали вне репозитория)
 

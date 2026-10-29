@@ -1,0 +1,18 @@
+[Unit]
+Description=System Design course web server (127.0.0.1:3620)
+After=network-online.target
+
+[Service]
+WorkingDirectory=%h/apps/system-design/current
+EnvironmentFile=%h/apps/system-design/.env
+EnvironmentFile=-%h/apps/system-design/current/.release.env
+Environment=NODE_ENV=production PORT=3620 HOST=127.0.0.1
+ExecStart=/usr/bin/node apps/server/dist/main.js
+Restart=on-failure
+RestartSec=5
+TimeoutStopSec=15
+StandardOutput=append:%h/apps/system-design/logs/web.log
+StandardError=append:%h/apps/system-design/logs/web.log
+
+[Install]
+WantedBy=default.target
