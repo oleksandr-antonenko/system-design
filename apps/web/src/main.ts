@@ -5,14 +5,15 @@ import { UrlRequest, load, pushUrl, replaceUrl } from 'foldkit/navigation'
 import { modifyFields } from 'foldkit/struct'
 import { Url, toString as urlToString } from 'foldkit/url'
 
+import { findDefinition, lessonKey } from './courses/registry'
 import { Locale, isLocale, resolveLocale } from './i18n/locale'
 import * as Player from './lesson/player'
-import { findDefinition } from './lessons/registry'
 import {
   AppRoute,
-  lessonRouter,
+  lessonUrl,
   localeOf,
   localizedPath,
+  urlForRoute,
   urlToAppRoute,
 } from './route'
 
@@ -46,6 +47,7 @@ export const Message = defineMessageUnion({
   CompletedNavigateInternal: {},
   CompletedLoadExternal: {},
   CompletedRedirectToLocale: {},
+  CompletedRedirectToCourse: {},
   CompletedSaveLocale: {},
   CompletedReplaceStepUrl: {},
   CompletedRevealLessonStep: {},
@@ -78,6 +80,15 @@ export const RedirectToLocale = Command.define('RedirectToLocale', {
   messages: [Message.CompletedRedirectToLocale],
   execute: ({ url }) =>
     replaceUrl(url).pipe(Effect.as(Message.CompletedRedirectToLocale())),
+})
+
+// Старый адрес урока `/:locale/lessons/:slug` ведёт в курс System Design
+// с тем же шагом; запись в истории заменяется, «Назад» туда не вернёт.
+export const RedirectToCourse = Command.define('RedirectToCourse', {
+  args: { url: Schema.String },
+  messages: [Message.CompletedRedirectToCourse],
+  execute: ({ url }) =>
+    replaceUrl(url).pipe(Effect.as(Message.CompletedRedirectToCourse())),
 })
 
 // Шаг уже записан в Model, поэтому адрес меняем тихо, без события смены
@@ -127,29 +138,35 @@ const searchSuffix = (url: Url): string =>
 
 export const currentSession = (model: Model): Option.Option<Player.Model> =>
   AppRoute.match(model.route, {
-    Lesson: ({ slug }) => Record.get(model.lessonSessions, slug),
+    Lesson: ({ course, slug }) =>
+      Record.get(model.lessonSessions, lessonKey(course, slug)),
     Home: () => Option.none(),
+    Course: () => Option.none(),
+    LegacyLesson: () => Option.none(),
     NotFound: () => Option.none(),
     Unlocalized: () => Option.none(),
   })
 
-const stepUrl = (locale: Locale, slug: string, step: number): string =>
-  lessonRouter({ locale, slug, step: Option.some(step + 1) })
+type LessonPlace = Readonly<{ locale: Locale; course: string; slug: string }>
+
+const stepUrl = ({ locale, course, slug }: LessonPlace, step: number): string =>
+  lessonUrl({ locale, course, slug, step: Option.some(step + 1) })
 
 const enterLesson = (
   model: Model,
-  locale: Locale,
-  slug: string,
+  place: LessonPlace,
   maybeRequestedStep: Option.Option<number>,
 ): UpdateReturn =>
-  Option.match(findDefinition(slug), {
+  Option.match(findDefinition(place.course, place.slug), {
     onNone: () => ({ model }),
     onSome: lesson => {
+      const key = lessonKey(place.course, place.slug)
       const requested = Option.map(maybeRequestedStep, step => step - 1)
-      const maybeExisting = Record.get(model.lessonSessions, slug)
+      const maybeExisting = Record.get(model.lessonSessions, key)
       const session = Option.match(maybeExisting, {
         onNone: () =>
           Player.init(
+            place.course,
             lesson,
             Option.getOrElse(requested, () => 0),
           ),
@@ -170,18 +187,19 @@ const enterLesson = (
       const commands = [
         ...(isCanonical
           ? []
-          : [ReplaceStepUrl({ url: stepUrl(locale, slug, session.step) })]),
+          : [ReplaceStepUrl({ url: stepUrl(place, session.step) })]),
         ...(isStepShown ? [] : [RevealLessonStep({ step: session.step })]),
       ]
       return {
         model: modifyFields(model, {
           route: () =>
             AppRoute.Lesson({
-              locale,
-              slug,
+              locale: place.locale,
+              course: place.course,
+              slug: place.slug,
               step: Option.some(session.step + 1),
             }),
-          lessonSessions: sessions => Record.set(sessions, slug, session),
+          lessonSessions: sessions => Record.set(sessions, key, session),
         }),
         ...(Array.isReadonlyArrayNonEmpty(commands) ? { commands } : {}),
       }
@@ -211,8 +229,14 @@ const arriveAt = (model: Model, url: Url): UpdateReturn => {
         saved => saved === locale,
       )
       const lessonStep: UpdateReturn = AppRoute.match(route, {
-        Lesson: ({ slug, step }) => enterLesson(routed, locale, slug, step),
+        Lesson: ({ course, slug, step }) =>
+          enterLesson(routed, { locale, course, slug }, step),
+        LegacyLesson: () => ({
+          model: routed,
+          commands: [RedirectToCourse({ url: urlForRoute(route) })],
+        }),
         Home: () => ({ model: routed }),
+        Course: () => ({ model: routed }),
         NotFound: () => ({ model: routed }),
         Unlocalized: () => ({ model: routed }),
       })
@@ -226,12 +250,12 @@ const arriveAt = (model: Model, url: Url): UpdateReturn => {
   })
 }
 
-const routeSlugAndLocale = (
-  model: Model,
-): Option.Option<Readonly<{ slug: string; locale: Locale }>> =>
+const lessonPlaceOf = (model: Model): Option.Option<LessonPlace> =>
   AppRoute.match(model.route, {
-    Lesson: ({ slug, locale }) => Option.some({ slug, locale }),
+    Lesson: ({ locale, course, slug }) => Option.some({ locale, course, slug }),
     Home: () => Option.none(),
+    Course: () => Option.none(),
+    LegacyLesson: () => Option.none(),
     NotFound: () => Option.none(),
     Unlocalized: () => Option.none(),
   })
@@ -239,7 +263,11 @@ const routeSlugAndLocale = (
 const writeSession = (model: Model, nextSession: Player.Model): Model =>
   modifyFields(model, {
     lessonSessions: sessions =>
-      Record.set(sessions, nextSession.slug, nextSession),
+      Record.set(
+        sessions,
+        lessonKey(nextSession.course, nextSession.slug),
+        nextSession,
+      ),
   })
 
 const foldPlayer = Update.foldChild({
@@ -251,14 +279,19 @@ const foldPlayer = Update.foldChild({
   foldOutMessage: (outMessage: Player.OutMessage) => (model: Model) =>
     Player.OutMessage.match(outMessage, {
       ChangedStep: ({ step }) =>
-        Option.match(routeSlugAndLocale(model), {
+        Option.match(lessonPlaceOf(model), {
           onNone: () => ({ model }),
-          onSome: ({ slug, locale }) => ({
+          onSome: place => ({
             model: modifyFields(model, {
               route: () =>
-                AppRoute.Lesson({ locale, slug, step: Option.some(step + 1) }),
+                AppRoute.Lesson({
+                  locale: place.locale,
+                  course: place.course,
+                  slug: place.slug,
+                  step: Option.some(step + 1),
+                }),
             }),
-            commands: [ReplaceStepUrl({ url: stepUrl(locale, slug, step) })],
+            commands: [ReplaceStepUrl({ url: stepUrl(place, step) })],
           }),
         }),
     }),
@@ -290,6 +323,7 @@ export const update = (model: Model, message: Message) =>
     CompletedNavigateInternal: () => ({ model }),
     CompletedLoadExternal: () => ({ model }),
     CompletedRedirectToLocale: () => ({ model }),
+    CompletedRedirectToCourse: () => ({ model }),
     CompletedSaveLocale: () => ({ model }),
     CompletedReplaceStepUrl: () => ({ model }),
     CompletedRevealLessonStep: () => ({ model }),

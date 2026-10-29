@@ -187,6 +187,7 @@ describe('domain messages', () => {
 
 describe('every domain message', () => {
   const samples: ReadonlyArray<DomainMessage> = [
+    DomainMessage.UnknownCourse({ course: 'x' }),
     DomainMessage.UnknownLesson({ slug: 'x' }),
     DomainMessage.LessonNotTranslated({ shownIn: 'en' }),
     DomainMessage.ConnectSelf(),
@@ -264,7 +265,7 @@ describe('every domain message', () => {
   test('covers every tag', () => {
     const tags = new Set(samples.map(sample => sample._tag))
     expect(tags.size).toBe(samples.length)
-    expect(tags.size).toBe(27)
+    expect(tags.size).toBe(28)
   })
 
   test.each(locales)(

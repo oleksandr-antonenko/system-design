@@ -1,9 +1,9 @@
 import { Array, Option } from 'effect'
 import { describe, expect, test } from 'vitest'
 
+import lesson from '../courses/system-design/lessons/03-load-balancer/lesson'
+import queuesLesson from '../courses/system-design/lessons/07-queues/lesson'
 import { foldOps } from '../domain/board'
-import lesson from '../lessons/03-load-balancer/lesson'
-import queuesLesson from '../lessons/07-queues/lesson'
 import { addNode, boardAt, connect, disconnect, taskOf } from './dsl'
 import { ghostPlan } from './ghost'
 

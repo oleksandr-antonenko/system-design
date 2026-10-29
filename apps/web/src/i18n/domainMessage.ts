@@ -5,6 +5,7 @@ import { ComponentKind, Region } from '../domain/catalog'
 import { Locale } from './locale'
 
 export const DomainMessage = defineTaggedUnion({
+  UnknownCourse: { course: Schema.String },
   UnknownLesson: { slug: Schema.String },
   LessonNotTranslated: { shownIn: Locale },
   ConnectSelf: {},
@@ -94,6 +95,7 @@ export const renderDomainMessage = (
   message: DomainMessage,
 ): string =>
   DomainMessage.match(message, {
+    UnknownCourse: params => texts.UnknownCourse(params),
     UnknownLesson: params => texts.UnknownLesson(params),
     LessonNotTranslated: params => texts.LessonNotTranslated(params),
     ConnectSelf: params => texts.ConnectSelf(params),

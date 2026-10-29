@@ -9,6 +9,7 @@ import {
   Flags,
   Message,
   Model,
+  RedirectToCourse,
   RedirectToLocale,
   ReplaceStepUrl,
   RevealLessonStep,
@@ -29,6 +30,8 @@ const flags = (saved: string | null, browserLanguages: ReadonlyArray<string>) =>
     browserLanguages,
     prefersDark: false,
   })
+
+const LOAD_BALANCER = 'system-design/load-balancer'
 
 const emptyOutcome: Player.Outcome = {
   errorRate: 0,
@@ -77,12 +80,13 @@ describe('init', () => {
   test('opening a prefixed page saves its language', () => {
     const result = init(
       flags('ru', ['ru-RU']),
-      urlOf('/en/lessons/load-balancer'),
+      urlOf('/en/system-design/lessons/load-balancer'),
     )
 
     expect(result.model.route).toEqual(
       AppRoute.Lesson({
         locale: 'en',
+        course: 'system-design',
         slug: 'load-balancer',
         step: Option.some(1),
       }),
@@ -90,22 +94,26 @@ describe('init', () => {
     expect(describeCommands(result.commands)).toEqual(
       describeCommands([
         SaveLocale({ locale: 'en' }),
-        ReplaceStepUrl({ url: '/en/lessons/load-balancer?step=1' }),
+        ReplaceStepUrl({
+          url: '/en/system-design/lessons/load-balancer?step=1',
+        }),
       ]),
     )
-    expect(result.model.lessonSessions['load-balancer']?.step).toBe(0)
+    expect(result.model.lessonSessions[LOAD_BALANCER]?.step).toBe(0)
   })
 
   test('a requested step beyond an unsolved task is clamped to the task', () => {
     const result = init(
       flags('en', ['en-US']),
-      urlOf('/en/lessons/load-balancer?step=6'),
+      urlOf('/en/system-design/lessons/load-balancer?step=6'),
     )
 
-    expect(result.model.lessonSessions['load-balancer']?.step).toBe(3)
+    expect(result.model.lessonSessions[LOAD_BALANCER]?.step).toBe(3)
     expect(describeCommands(result.commands)).toEqual(
       describeCommands([
-        ReplaceStepUrl({ url: '/en/lessons/load-balancer?step=4' }),
+        ReplaceStepUrl({
+          url: '/en/system-design/lessons/load-balancer?step=4',
+        }),
         RevealLessonStep({ step: 3 }),
       ]),
     )
@@ -118,15 +126,14 @@ describe('init', () => {
   ])('?step=%s is corrected to step %i', (requested, expected) => {
     const result = init(
       flags('en', ['en-US']),
-      urlOf(`/en/lessons/load-balancer?step=${requested}`),
+      urlOf(`/en/system-design/lessons/load-balancer?step=${requested}`),
     )
 
-    expect(result.model.lessonSessions['load-balancer']?.step).toBe(
-      expected - 1,
-    )
+    expect(result.model.lessonSessions[LOAD_BALANCER]?.step).toBe(expected - 1)
     expect(result.model.route).toEqual(
       AppRoute.Lesson({
         locale: 'en',
+        course: 'system-design',
         slug: 'load-balancer',
         step: Option.some(expected),
       }),
@@ -134,7 +141,7 @@ describe('init', () => {
     expect(describeCommands(result.commands)).toEqual(
       describeCommands([
         ReplaceStepUrl({
-          url: `/en/lessons/load-balancer?step=${expected}`,
+          url: `/en/system-design/lessons/load-balancer?step=${expected}`,
         }),
         ...(expected > 1 ? [RevealLessonStep({ step: expected - 1 })] : []),
       ]),
@@ -144,12 +151,32 @@ describe('init', () => {
   test('a canonical step url is not rewritten', () => {
     const result = init(
       flags('en', ['en-US']),
-      urlOf('/en/lessons/load-balancer?step=2'),
+      urlOf('/en/system-design/lessons/load-balancer?step=2'),
     )
 
-    expect(result.model.lessonSessions['load-balancer']?.step).toBe(1)
+    expect(result.model.lessonSessions[LOAD_BALANCER]?.step).toBe(1)
     expect(describeCommands(result.commands)).toEqual(
       describeCommands([RevealLessonStep({ step: 1 })]),
+    )
+  })
+
+  test('an old lesson address is replaced by the System Design one with the same step', () => {
+    const result = init(
+      flags('ru', ['ru-RU']),
+      urlOf('/ru/lessons/caching?step=2'),
+    )
+
+    expect(result.model.route).toEqual(
+      AppRoute.LegacyLesson({
+        locale: 'ru',
+        slug: 'caching',
+        step: Option.some(2),
+      }),
+    )
+    expect(describeCommands(result.commands)).toEqual(
+      describeCommands([
+        RedirectToCourse({ url: '/ru/system-design/lessons/caching?step=2' }),
+      ]),
     )
   })
 
@@ -164,6 +191,7 @@ const onLesson = (locale: 'ru' | 'en') =>
   Model.make({
     route: AppRoute.Lesson({
       locale,
+      course: 'system-design',
       slug: 'load-balancer',
       step: Option.none(),
     }),
@@ -178,11 +206,16 @@ describe('update', () => {
     story(
       update,
       given(onLesson('ru')),
-      message(Message.ChangedUrl({ url: urlOf('/en/lessons/load-balancer') })),
+      message(
+        Message.ChangedUrl({
+          url: urlOf('/en/system-design/lessons/load-balancer'),
+        }),
+      ),
       model(next => {
         expect(next.route).toEqual(
           AppRoute.Lesson({
             locale: 'en',
+            course: 'system-design',
             slug: 'load-balancer',
             step: Option.some(1),
           }),
@@ -208,17 +241,46 @@ describe('update', () => {
   })
 })
 
+describe('old lesson addresses', () => {
+  test('after the redirect the lesson opens on the same step', () => {
+    story(
+      update,
+      given(
+        init(flags('ru', ['ru-RU']), urlOf('/ru/lessons/caching?step=2')).model,
+      ),
+      message(
+        Message.ChangedUrl({
+          url: urlOf('/ru/system-design/lessons/caching?step=2'),
+        }),
+      ),
+      model(next => {
+        expect(next.route).toEqual(
+          AppRoute.Lesson({
+            locale: 'ru',
+            course: 'system-design',
+            slug: 'caching',
+            step: Option.some(2),
+          }),
+        )
+        expect(next.lessonSessions['system-design/caching']?.step).toBe(1)
+      }),
+      Command.expectExact(RevealLessonStep({ step: 1 })),
+      Command.resolve(RevealLessonStep, Message.CompletedRevealLessonStep()),
+    )
+  })
+})
+
 describe('lesson sessions', () => {
   test('a solved task survives leaving the lesson and coming back', () => {
     const opened = init(
       flags('en', ['en-US']),
-      urlOf('/en/lessons/load-balancer?step=4'),
+      urlOf('/en/system-design/lessons/load-balancer?step=4'),
     ).model
-    const session = opened.lessonSessions['load-balancer']
+    const session = opened.lessonSessions[LOAD_BALANCER]
     const solved = Model.make({
       ...opened,
       lessonSessions: {
-        'load-balancer': {
+        [LOAD_BALANCER]: {
           ...session!,
           tasks: {
             'place-lb': {
@@ -243,10 +305,12 @@ describe('lesson sessions', () => {
       given(solved),
       message(Message.ChangedUrl({ url: urlOf('/en/') })),
       message(
-        Message.ChangedUrl({ url: urlOf('/en/lessons/load-balancer?step=6') }),
+        Message.ChangedUrl({
+          url: urlOf('/en/system-design/lessons/load-balancer?step=6'),
+        }),
       ),
       model(next => {
-        const back = next.lessonSessions['load-balancer']
+        const back = next.lessonSessions[LOAD_BALANCER]
         expect(back?.step).toBe(5)
         expect(back?.tasks['place-lb']?.check._tag).toBe('Solved')
       }),

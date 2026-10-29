@@ -14,11 +14,11 @@ import { defineTaggedUnion } from 'foldkit/schema'
 import { modifyFields } from 'foldkit/struct'
 
 import * as Board from '../board/board'
+import { findDefinition } from '../courses/registry'
 import { type BoardDoc, BoardOp, applyOp } from '../domain/board'
 import { type GoalCheck, firstFailedGoal } from '../domain/goals'
 import { simulate } from '../domain/simulate'
 import { DomainMessage } from '../i18n/domainMessage'
-import { findDefinition } from '../lessons/registry'
 import { Anim, initialAnim, tick } from './anim'
 import {
   type LessonDefinition,
@@ -62,6 +62,7 @@ export const TaskState = Schema.Struct({
 export type TaskState = typeof TaskState.Type
 
 export const Model = Schema.Struct({
+  course: Schema.String,
   slug: Schema.String,
   step: Schema.Number,
   tasks: Schema.Record(Schema.String, TaskState),
@@ -259,10 +260,12 @@ const clampStep = (
   )
 
 export const init = (
+  course: string,
   lesson: LessonDefinition,
   requestedStep: number,
 ): Model => {
   const model: Model = {
+    course,
     slug: lesson.slug,
     step: 0,
     tasks: {},
@@ -609,7 +612,7 @@ export const updateWith =
     })
 
 export const update = (model: Model, message: Message): UpdateReturn =>
-  Option.match(findDefinition(model.slug), {
+  Option.match(findDefinition(model.course, model.slug), {
     onNone: () => ({ model }),
     onSome: lesson => updateWith(lesson)(model, message),
   })
@@ -617,7 +620,7 @@ export const update = (model: Model, message: Message): UpdateReturn =>
 export const advanceFrame =
   (deltaMs: number) =>
   (model: Model): PlainReturn =>
-    Option.match(findDefinition(model.slug), {
+    Option.match(findDefinition(model.course, model.slug), {
       onNone: () => ({ model }),
       onSome: lesson => ({
         model: modifyFields(model, {

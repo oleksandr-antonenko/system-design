@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'vitest'
 
+import { courseLessons } from '../courses/registry'
 import type { ComponentKind } from '../domain/catalog'
-import { courseLessons } from '../lessons/registry'
 import {
   type CourseLesson,
   kindDebuts,
@@ -75,9 +75,17 @@ describe('later in the course (D8)', () => {
   })
 
   test('the real course places the load balancer in lesson 3', () => {
-    expect(newInLesson(courseLessons, 3)).toContain('lb')
+    const systemDesign = courseLessons('system-design')
+    expect(newInLesson(systemDesign, 3)).toContain('lb')
     expect(
-      laterInCourse(courseLessons, 3).every(({ lesson }) => lesson > 3),
+      laterInCourse(systemDesign, 3).every(({ lesson }) => lesson > 3),
     ).toBe(true)
+  })
+
+  test('the palette is computed within one course', () => {
+    expect(courseLessons('system-design')).toHaveLength(13)
+    expect(courseLessons('networks')).toEqual([])
+    expect(laterInCourse(courseLessons('networks'), 1)).toEqual([])
+    expect(courseLessons('no-such-course')).toEqual([])
   })
 })

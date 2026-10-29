@@ -23,12 +23,12 @@ import { describe, test } from 'vitest'
 
 import * as Board from './board/board'
 import { BoardPointer } from './board/pointer'
+import { lessonTextFor } from './courses/assemble'
+import { lessonsOf } from './courses/registry'
 import type { BoardOp } from './domain/board'
 import type { Locale } from './i18n/locale'
 import { addNode, connect } from './lesson/dsl'
 import * as Player from './lesson/player'
-import { lessonTextFor } from './lessons/assemble'
-import { lessons } from './lessons/registry'
 import {
   AppRoute,
   Flags,
@@ -57,6 +57,7 @@ describe('header', () => {
         at(
           AppRoute.Lesson({
             locale: 'ru',
+            course: 'system-design',
             slug: 'load-balancer',
             step: Option.none(),
           }),
@@ -65,7 +66,7 @@ describe('header', () => {
       ),
       expect(role('link', { name: 'English' })).toHaveAttr(
         'href',
-        '/en/lessons/load-balancer',
+        '/en/system-design/lessons/load-balancer',
       ),
       expect(role('link', { name: 'Lietuvių' })).toHaveAttr('hreflang', 'lt'),
       expect(role('link', { name: 'Русский' })).toHaveAttr(
@@ -82,6 +83,7 @@ describe('header', () => {
         at(
           AppRoute.Lesson({
             locale: 'en',
+            course: 'system-design',
             slug: 'load-balancer',
             step: Option.none(),
           }),
@@ -89,43 +91,123 @@ describe('header', () => {
         ),
       ),
       expect(role('heading', { name: 'Load balancer' })).toExist(),
-      expect(role('link', { name: 'System Design' })).toHaveAttr(
+      expect(role('link', { name: 'Interactive courses' })).toHaveAttr(
         'href',
         '/en/',
       ),
+      expect(role('link', { name: 'System Design' })).toHaveAttr(
+        'href',
+        '/en/system-design/',
+      ),
+      expect(role('link', { name: 'System Design' })).toHaveAttr(
+        'aria-current',
+        'page',
+      ),
+      expect(role('link', { name: '← Back to the course outline' })).toHaveAttr(
+        'href',
+        '/en/system-design/',
+      ),
+    )
+  })
+
+  test('the course switcher lists every course and marks the current one', () => {
+    scene(
+      { update, view },
+      given(at(AppRoute.Course({ locale: 'ru', course: 'networks' }), 'ru')),
+      expect(
+        within(
+          role('navigation', { name: 'Курс' }),
+          role('link', { name: 'System Design' }),
+        ),
+      ).toHaveAttr('href', '/ru/system-design/'),
+      expect(
+        within(
+          role('navigation', { name: 'Курс' }),
+          role('link', { name: 'Сети для вайбкодеров' }),
+        ),
+      ).toHaveAttr('aria-current', 'page'),
     )
   })
 })
 
-// Уроки открываются по мере написания (add-course-lessons), поэтому число
-// ссылок берётся из самих уроков, а не из константы.
-const ukTitle = (lesson: (typeof lessons)[number]) =>
+const ukTitle = (lesson: ReturnType<typeof lessonsOf>[number]) =>
   lessonTextFor(lesson, 'uk').text.title
 
-describe('home', () => {
-  test('lists all 13 lessons; only available ones are links', () => {
+describe('catalogue', () => {
+  test('has a card per course, and a course without lessons yet is “coming soon”', () => {
+    scene(
+      { update, view },
+      given(at(AppRoute.Home({ locale: 'lt' }), 'lt')),
+      expect(role('heading', { name: 'Interaktyvūs kursai' })).toExist(),
+      expectAll(all.selector('main li')).toHaveCount(2),
+      expect(
+        within(role('main'), role('link', { name: 'System Design' })),
+      ).toHaveAttr('href', '/lt/system-design/'),
+      expect(
+        within(role('main'), role('link', { name: 'Tinklai vaibkoderiams' })),
+      ).toHaveAttr('href', '/lt/networks/'),
+      expect(within(role('main'), text('13 pamokų'))).toExist(),
+      expect(within(role('main'), text('16 pamokų'))).toExist(),
+      expectAll(all.text('Netrukus')).toHaveCount(1),
+    )
+  })
+})
+
+describe('course map', () => {
+  test('lists all 13 System Design lessons; only available ones are links', () => {
+    const lessons = lessonsOf('system-design')
     const available = Array.filter(lessons, lesson => lesson.meta.available)
     const unavailable = Array.filter(lessons, lesson => !lesson.meta.available)
     scene(
       { update, view },
-      given(at(AppRoute.Home({ locale: 'uk' }), 'uk')),
-      expect(role('heading', { name: 'Програма курсу' })).toExist(),
+      given(
+        at(AppRoute.Course({ locale: 'uk', course: 'system-design' }), 'uk'),
+      ),
+      expect(role('heading', { name: 'System Design', level: 1 })).toExist(),
       expect(text('13 уроків')).toExist(),
-      expectAll(all.role('listitem')).toHaveCount(17),
+      expectAll(all.selector('main li')).toHaveCount(13),
       expectAll(all.selector('main a')).toHaveCount(available.length),
       expect(role('link', { name: 'Балансувальник навантаження' })).toHaveAttr(
         'href',
-        '/uk/lessons/load-balancer',
+        '/uk/system-design/lessons/load-balancer',
       ),
       ...Array.map(available, lesson =>
         expect(role('link', { name: ukTitle(lesson) })).toHaveAttr(
           'href',
-          `/uk/lessons/${lesson.meta.slug}`,
+          `/uk/system-design/lessons/${lesson.meta.slug}`,
         ),
       ),
       ...Array.map(unavailable, lesson =>
         expect(role('link', { name: ukTitle(lesson) })).toBeAbsent(),
       ),
+    )
+  })
+
+  test('the networking course shows 16 lessons in three modules, all coming soon', () => {
+    scene(
+      { update, view },
+      given(at(AppRoute.Course({ locale: 'ru', course: 'networks' }), 'ru')),
+      expect(
+        role('heading', { name: 'Сети для вайбкодеров', level: 1 }),
+      ).toExist(),
+      expect(role('heading', { name: 'Как устроена домашняя сеть' })).toExist(),
+      expect(role('heading', { name: 'Интернет' })).toExist(),
+      expect(role('heading', { name: 'Сеть разработчика' })).toExist(),
+      expectAll(all.selector('main li')).toHaveCount(16),
+      expectAll(all.selector('main a')).toHaveCount(0),
+      expectAll(all.text('Скоро')).toHaveCount(16),
+      expect(
+        role('heading', { name: 'Как телефон попадает в интернет' }),
+      ).toExist(),
+    )
+  })
+
+  test('an unknown course shows the not-found page', () => {
+    scene(
+      { update, view },
+      given(at(AppRoute.Course({ locale: 'en', course: 'nope' }), 'en')),
+      expect(role('heading', { name: 'Page not found' })).toExist(),
+      expect(text('There is no course “nope”.')).toExist(),
     )
   })
 })
@@ -138,6 +220,7 @@ describe('lesson page', () => {
         at(
           AppRoute.Lesson({
             locale: 'uk',
+            course: 'system-design',
             slug: 'load-balancer',
             step: Option.none(),
           }),
@@ -157,6 +240,7 @@ describe('lesson page', () => {
         at(
           AppRoute.Lesson({
             locale: 'en',
+            course: 'system-design',
             slug: 'no-such-lesson',
             step: Option.none(),
           }),
@@ -179,7 +263,7 @@ describe('not found', () => {
         at(AppRoute.NotFound({ locale: 'lt', path: '/lt/unknown/path' }), 'lt'),
       ),
       expect(role('heading', { name: 'Puslapis nerastas' })).toExist(),
-      expect(role('link', { name: 'Atgal į kurso programą' })).toHaveAttr(
+      expect(role('link', { name: 'Atgal į kursų sąrašą' })).toHaveAttr(
         'href',
         '/lt/',
       ),
@@ -209,7 +293,7 @@ describe('lesson player', () => {
   test('a theory step shows the text, a read-only board and the instruments', () => {
     scene(
       { update, view },
-      given(openLesson('/ru/lessons/load-balancer?step=1')),
+      given(openLesson('/ru/system-design/lessons/load-balancer?step=1')),
       pointerReady,
       expect(label('Теория')).toExist(),
       expect(role('heading', { name: 'Балансировщик нагрузки' })).toExist(),
@@ -225,7 +309,7 @@ describe('lesson player', () => {
   test('the task step has a live checklist and locks Next', () => {
     scene(
       { update, view },
-      given(openLesson('/ru/lessons/load-balancer?step=4')),
+      given(openLesson('/ru/system-design/lessons/load-balancer?step=4')),
       pointerReady,
       expect(role('button', { name: /Балансировщик/ })).toBeEnabled(),
       expect(text('На доске есть балансировщик')).toExist(),
@@ -238,7 +322,7 @@ describe('lesson player', () => {
   test('a Next button sits right under the step the student just read', () => {
     scene(
       { update, view },
-      given(openLesson('/ru/lessons/load-balancer?step=1')),
+      given(openLesson('/ru/system-design/lessons/load-balancer?step=1')),
       pointerReady,
       expect(role('button', { name: 'Далее: Распродажа →' })).toExist(),
       click(role('button', { name: 'Далее: Распродажа →' })),
@@ -254,7 +338,7 @@ describe('lesson player', () => {
   test('an unsolved task has no inline Next', () => {
     scene(
       { update, view },
-      given(openLesson('/ru/lessons/load-balancer?step=4')),
+      given(openLesson('/ru/system-design/lessons/load-balancer?step=4')),
       pointerReady,
       expect(role('button', { name: /^Далее: / })).toBeAbsent(),
     )
@@ -263,7 +347,7 @@ describe('lesson player', () => {
   test('the operation log shows the script of the step', () => {
     scene(
       { update, view },
-      given(openLesson('/ru/lessons/load-balancer?step=2')),
+      given(openLesson('/ru/system-design/lessons/load-balancer?step=2')),
       pointerReady,
       expect(label('Журнал операций')).toBeAbsent(),
       click(role('button', { name: 'Журнал операций' })),
@@ -273,7 +357,7 @@ describe('lesson player', () => {
   })
 })
 
-const TASK_URL = '/ru/lessons/load-balancer?step=4'
+const TASK_URL = '/ru/system-design/lessons/load-balancer?step=4'
 
 const paletteBalancer = role('button', { name: /Балансировщик/ })
 
@@ -284,15 +368,17 @@ const journal = (line: string) => within(label('Журнал операций'),
 
 const app1 = role('img', { name: /^Сервер app1/ })
 
+const LOAD_BALANCER = 'system-design/load-balancer'
+
 const withTaskLog = (model: Model, log: ReadonlyArray<BoardOp>): Model => {
-  const session = model.lessonSessions['load-balancer']
+  const session = model.lessonSessions[LOAD_BALANCER]
   if (session === undefined) {
     throw new Error('the lesson session is missing')
   }
   return Model.make({
     ...model,
     lessonSessions: {
-      'load-balancer': {
+      [LOAD_BALANCER]: {
         ...session,
         tasks: {
           'place-lb': {
@@ -370,7 +456,7 @@ describe('task on the board', () => {
   test('before the task Next is open and nothing asks to solve first', () => {
     scene(
       { update, view },
-      given(openLesson('/ru/lessons/load-balancer?step=3')),
+      given(openLesson('/ru/system-design/lessons/load-balancer?step=3')),
       pointerReady,
       expect(role('button', { name: 'Далее →' })).toBeEnabled(),
       expect(text('Решите задачу на доске, чтобы продолжить')).toBeAbsent(),
@@ -412,7 +498,7 @@ describe('theory and board together', () => {
   test('pointing at a term in the text highlights its block', () => {
     scene(
       { update, view },
-      given(openLesson('/ru/lessons/load-balancer?step=1')),
+      given(openLesson('/ru/system-design/lessons/load-balancer?step=1')),
       pointerReady,
       expect(app1).not.toHaveClass('selected'),
       hover(text('сервер приложения')),
@@ -426,7 +512,7 @@ describe('theory and board together', () => {
   test('a focused term highlights its block until focus leaves', () => {
     scene(
       { update, view },
-      given(openLesson('/ru/lessons/load-balancer?step=1')),
+      given(openLesson('/ru/system-design/lessons/load-balancer?step=1')),
       pointerReady,
       focus(text('сервер приложения')),
       expect(app1).toHaveClass('selected'),
@@ -438,7 +524,7 @@ describe('theory and board together', () => {
   test('Back from step 3 restores the board of step 2 with its marks', () => {
     scene(
       { update, view },
-      given(openLesson('/ru/lessons/load-balancer?step=3')),
+      given(openLesson('/ru/system-design/lessons/load-balancer?step=3')),
       pointerReady,
       expect(role('img', { name: /^Сервер app2/ })).toExist(),
       expectAll(all.selector('rect.halo.warn')).toHaveCount(2),

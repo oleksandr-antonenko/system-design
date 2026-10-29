@@ -43,10 +43,9 @@ const idList = (lead: string, ids: ReadonlyArray<string>) =>
   Array.isReadonlyArrayNonEmpty(ids) ? `${lead}${ids.join(', ')}.` : ''
 
 export const uk = {
-  courseTitle: 'System Design',
-  courseTagline:
-    'Інтерактивний курс: теорія на живій схемі та задачі власноруч',
-  documentTitle: pageTitle => `${pageTitle} · System Design`,
+  siteTitle: 'Інтерактивні курси',
+  siteTagline: 'Теорія на живій схемі та задачі власноруч',
+  courseSwitcherLabel: 'Курс',
   languageSwitcherLabel: 'Мова',
   inLanguage,
   kindName,
@@ -62,11 +61,6 @@ export const uk = {
       })}`,
     lessonNumber: order => `Урок ${formatNumber('uk', order)}`,
     comingSoon: 'Скоро',
-    moduleTitle: {
-      foundations: 'Основи',
-      scaling: 'Масштабування',
-      distributed: 'Надійність і розподіленість',
-    },
   },
   lesson: {
     backToCourse: 'До програми курсу',
@@ -169,9 +163,10 @@ export const uk = {
   notFound: {
     title: 'Сторінку не знайдено',
     body: path => `За адресою «${path}» нічого немає.`,
-    backHome: 'До програми курсу',
+    backHome: 'До списку курсів',
   },
   domain: {
+    UnknownCourse: ({ course }) => `Курсу «${course}» немає.`,
     UnknownLesson: ({ slug }) => `Уроку «${slug}» немає в курсі.`,
     LessonNotTranslated: ({ shownIn }) =>
       `Цей урок ще не перекладено українською, тому показуємо його ${inLanguage[shownIn]}.`,

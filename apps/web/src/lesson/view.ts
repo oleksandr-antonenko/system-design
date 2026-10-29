@@ -3,6 +3,8 @@ import { Submodel } from 'foldkit'
 import type { Html, HtmlBuilder } from 'foldkit/html'
 
 import { type BoardViewInputs, view as boardView } from '../board/view'
+import { lessonTextFor } from '../courses/assemble'
+import { courseLessons, findDefinition, findLesson } from '../courses/registry'
 import { type BoardDoc, BoardOp } from '../domain/board'
 import type { ComponentKind } from '../domain/catalog'
 import { checkGoal, isHiddenGoal } from '../domain/goals'
@@ -10,9 +12,7 @@ import { simulate } from '../domain/simulate'
 import { renderDomainMessage } from '../i18n/domainMessage'
 import type { Locale } from '../i18n/locale'
 import { type UiStrings, uiFor } from '../i18n/ui'
-import { lessonTextFor } from '../lessons/assemble'
-import { courseLessons, findDefinition, findLesson } from '../lessons/registry'
-import { homeUrl } from '../route'
+import { courseUrl } from '../route'
 import { type Anim, shownSimulation } from './anim'
 import { laterInCourse, lessonPalette, newInLesson } from './course'
 import {
@@ -446,7 +446,7 @@ const theoryView = (
   ui: UiStrings,
   h: HtmlBuilder<Message>,
 ): Html => {
-  const lessonMeta = findLesson(lesson.slug)
+  const lessonMeta = findLesson(model.course, lesson.slug)
   const order = Option.match(lessonMeta, {
     onNone: () => 0,
     onSome: found => found.meta.order,
@@ -466,7 +466,7 @@ const theoryView = (
         [h.Class('theory-scroll')],
         [
           h.a(
-            [h.Href(homeUrl(locale)), h.Class('back-link')],
+            [h.Href(courseUrl(locale, model.course)), h.Class('back-link')],
             [`← ${ui.lesson.backToCourse}`],
           ),
           h.p([h.Class('eyebrow')], [ui.home.lessonNumber(order)]),
@@ -937,7 +937,7 @@ const boardInputs = (
       ? Option.some(ghostPlan(doc, spec.solution))
       : Option.none(),
   )
-  const order = Option.match(findLesson(lesson.slug), {
+  const order = Option.match(findLesson(model.course, lesson.slug), {
     onNone: () => 0,
     onSome: found => found.meta.order,
   })
@@ -954,8 +954,8 @@ const boardInputs = (
       onNone: () => lessonPalette(lesson),
       onSome: ({ spec }) => spec.palette,
     }),
-    newKinds: newInLesson(courseLessons, order),
-    later: laterInCourse(courseLessons, order),
+    newKinds: newInLesson(courseLessons(model.course), order),
+    later: laterInCourse(courseLessons(model.course), order),
     halos: [...stageHalos, ...focusHalos],
     annotations,
     focusEdges: Option.match(failed, {
@@ -981,7 +981,10 @@ const boardInputs = (
 export const view = Submodel.defineView<Model, Message, PlayerViewInputs>(
   (model, inputs, h) =>
     pipe(
-      Option.all([findDefinition(model.slug), findLesson(model.slug)]),
+      Option.all([
+        findDefinition(model.course, model.slug),
+        findLesson(model.course, model.slug),
+      ]),
       Option.match({
         onNone: () => h.empty,
         onSome: ([lesson, lessonEntry]) => {

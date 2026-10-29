@@ -1,9 +1,9 @@
 import { Array } from 'effect'
 import { describe, expect, test } from 'vitest'
 
+import lesson from '../courses/system-design/lessons/03-load-balancer/lesson'
 import type { BoardDoc } from '../domain/board'
 import { simulate } from '../domain/simulate'
-import lesson from '../lessons/03-load-balancer/lesson'
 import { type Anim, initialAnim, tick } from './anim'
 import { boardAt } from './dsl'
 

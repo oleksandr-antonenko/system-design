@@ -62,8 +62,12 @@ describe('web server', () => {
     expect(await response.json()).toHaveProperty('error')
   })
 
-  test('deep links to language pages get the app HTML without caching', async () => {
-    const response = await get('/lt/lessons/load-balancer')
+  test.each([
+    '/lt/lessons/load-balancer',
+    '/lt/networks/',
+    '/ru/system-design/lessons/caching',
+  ])('deep link %s gets the app HTML without caching', async path => {
+    const response = await get(path)
 
     expect(response.status).toBe(200)
     expect(await response.text()).toContain('<title>app</title>')

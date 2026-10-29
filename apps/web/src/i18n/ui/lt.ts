@@ -43,10 +43,9 @@ const idList = (lead: string, ids: ReadonlyArray<string>) =>
   Array.isReadonlyArrayNonEmpty(ids) ? `${lead}${ids.join(', ')}.` : ''
 
 export const lt = {
-  courseTitle: 'System Design',
-  courseTagline:
-    'Interaktyvus kursas: teorija gyvoje schemoje ir praktinės užduotys',
-  documentTitle: pageTitle => `${pageTitle} · System Design`,
+  siteTitle: 'Interaktyvūs kursai',
+  siteTagline: 'Teorija gyvoje schemoje ir praktinės užduotys',
+  courseSwitcherLabel: 'Kursas',
   languageSwitcherLabel: 'Kalba',
   inLanguage,
   kindName,
@@ -62,11 +61,6 @@ export const lt = {
       })}`,
     lessonNumber: order => `${formatNumber('lt', order)} pamoka`,
     comingSoon: 'Netrukus',
-    moduleTitle: {
-      foundations: 'Pagrindai',
-      scaling: 'Mastelio didinimas',
-      distributed: 'Patikimumas ir paskirstytos sistemos',
-    },
   },
   lesson: {
     backToCourse: 'Atgal į kurso programą',
@@ -168,9 +162,10 @@ export const lt = {
   notFound: {
     title: 'Puslapis nerastas',
     body: path => `Adresu „${path}“ nieko nėra.`,
-    backHome: 'Atgal į kurso programą',
+    backHome: 'Atgal į kursų sąrašą',
   },
   domain: {
+    UnknownCourse: ({ course }) => `Kurso „${course}“ nėra.`,
     UnknownLesson: ({ slug }) => `Kurse nėra pamokos „${slug}“.`,
     LessonNotTranslated: ({ shownIn }) =>
       `Ši pamoka dar neišversta į lietuvių kalbą, todėl rodoma ${inLanguage[shownIn]}.`,

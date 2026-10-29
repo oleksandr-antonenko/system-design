@@ -12,12 +12,13 @@ import {
 import { describe, expect, test } from 'vitest'
 
 import * as Board from '../board/board'
+import lesson from '../courses/system-design/lessons/03-load-balancer/lesson'
 import { type BoardOp, findNode } from '../domain/board'
 import { simulate } from '../domain/simulate'
-import lesson from '../lessons/03-load-balancer/lesson'
 import { type LessonDefinition, addNode, connect, disconnect } from './dsl'
 import * as Player from './player'
 
+const COURSE = 'system-design'
 const TASK_STEP = 3
 const TASK_ID = 'place-lb'
 
@@ -34,7 +35,7 @@ const atTask = (
   log: ReadonlyArray<BoardOp> = [],
   check: Player.CheckState = Player.CheckState.Unchecked(),
 ): Player.Model => ({
-  ...Player.init(lesson, TASK_STEP),
+  ...Player.init(COURSE, lesson, TASK_STEP),
   tasks: {
     [TASK_ID]: {
       log,
@@ -94,7 +95,7 @@ describe('navigation', () => {
   test('Next moves forward, reports the step and scrolls to it', () => {
     story(
       Player.update,
-      given(Player.init(lesson, 0)),
+      given(Player.init(COURSE, lesson, 0)),
       message(Player.Message.ClickedNext()),
       model(next => {
         expect(next.step).toBe(1)
@@ -140,8 +141,8 @@ describe('navigation', () => {
   })
 
   test('a requested step is clamped to the lesson and the open task', () => {
-    expect(Player.init(lesson, -3).step).toBe(0)
-    expect(Player.init(lesson, 99).step).toBe(TASK_STEP)
+    expect(Player.init(COURSE, lesson, -3).step).toBe(0)
+    expect(Player.init(COURSE, lesson, 99).step).toBe(TASK_STEP)
   })
 
   test('after solving, the following steps open up', () => {
@@ -174,7 +175,7 @@ describe('board editing', () => {
   test('outside a task the board stays read-only', () => {
     story(
       Player.update,
-      given(Player.init(lesson, 0)),
+      given(Player.init(COURSE, lesson, 0)),
       board(Board.Message.ClickedPaletteItem({ kind: 'lb' })),
       model(next => {
         expect(next.tasks).toEqual({})
@@ -479,7 +480,7 @@ describe('animation', () => {
     )
 
   test('frames bring the instruments to the simulated values', () => {
-    const overloaded = Player.init(lesson, 1)
+    const overloaded = Player.init(COURSE, lesson, 1)
     const target = simulate(Player.currentDoc(lesson, overloaded), 900)
     const settled = frames(400, overloaded)
 
@@ -491,7 +492,7 @@ describe('animation', () => {
 
   test('on pause the clock stands still', () => {
     const paused = Player.update(
-      Player.init(lesson, 0),
+      Player.init(COURSE, lesson, 0),
       Player.Message.ClickedPlayPause(),
     ).model
 

@@ -42,10 +42,9 @@ const idList = (lead: string, ids: ReadonlyArray<string>) =>
   Array.isReadonlyArrayNonEmpty(ids) ? `${lead}${ids.join(', ')}.` : ''
 
 export const en = {
-  courseTitle: 'System Design',
-  courseTagline:
-    'An interactive course: theory on a live board and hands-on tasks',
-  documentTitle: pageTitle => `${pageTitle} · System Design`,
+  siteTitle: 'Interactive courses',
+  siteTagline: 'Theory on a live board and hands-on tasks',
+  courseSwitcherLabel: 'Course',
   languageSwitcherLabel: 'Language',
   inLanguage,
   kindName,
@@ -59,11 +58,6 @@ export const en = {
       })}`,
     lessonNumber: order => `Lesson ${formatNumber('en', order)}`,
     comingSoon: 'Coming soon',
-    moduleTitle: {
-      foundations: 'Foundations',
-      scaling: 'Scaling',
-      distributed: 'Reliability and distribution',
-    },
   },
   lesson: {
     backToCourse: 'Back to the course outline',
@@ -167,9 +161,10 @@ export const en = {
   notFound: {
     title: 'Page not found',
     body: path => `There is nothing at “${path}”.`,
-    backHome: 'Back to the course outline',
+    backHome: 'Back to all courses',
   },
   domain: {
+    UnknownCourse: ({ course }) => `There is no course “${course}”.`,
     UnknownLesson: ({ slug }) => `There is no lesson “${slug}” in the course.`,
     LessonNotTranslated: ({ shownIn }) =>
       `This lesson hasn’t been translated into English yet, so it is shown ${inLanguage[shownIn]}.`,

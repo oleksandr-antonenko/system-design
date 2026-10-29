@@ -1,12 +1,11 @@
 import type { ComponentKind, Region } from '../../domain/catalog'
-import type { ModuleId } from '../../lessons/model'
 import type { DomainMessageTexts } from '../domainMessage'
 import type { Locale } from '../locale'
 
 export type UiStrings = Readonly<{
-  courseTitle: string
-  courseTagline: string
-  documentTitle: (pageTitle: string) => string
+  siteTitle: string
+  siteTagline: string
+  courseSwitcherLabel: string
   languageSwitcherLabel: string
   inLanguage: Readonly<Record<Locale, string>>
   kindName: Readonly<Record<ComponentKind, string>>
@@ -16,7 +15,6 @@ export type UiStrings = Readonly<{
     lessonCount: (count: number) => string
     lessonNumber: (order: number) => string
     comingSoon: string
-    moduleTitle: Readonly<Record<ModuleId, string>>
   }>
   lesson: Readonly<{
     backToCourse: string

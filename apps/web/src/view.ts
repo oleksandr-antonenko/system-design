@@ -1,18 +1,24 @@
 import { Array, Option, pipe } from 'effect'
 import type { Document, Html, HtmlBuilder } from 'foldkit/html'
 
+import {
+  type Course,
+  type Lesson,
+  courseTextFor,
+  lessonTextFor,
+} from './courses/assemble'
+import { courses, findCourse, findLesson } from './courses/registry'
 import { DomainMessage, renderDomainMessage } from './i18n/domainMessage'
 import { type Locale, localeEndonym, locales } from './i18n/locale'
 import { type UiStrings, uiFor } from './i18n/ui'
 import * as Player from './lesson/view'
-import { type Lesson, lessonTextFor } from './lessons/assemble'
-import { moduleOrder } from './lessons/model'
-import { findLesson, lessons } from './lessons/registry'
 import { Message, type Model, currentSession } from './main'
 import {
   AppRoute,
+  courseOf,
+  courseUrl,
   homeUrl,
-  lessonRouter,
+  lessonUrl,
   localeOf,
   routeInLocale,
   urlForRoute,
@@ -41,6 +47,39 @@ const languageLinkView = (
     [localeEndonym[locale]],
   )
 
+const courseLinkView = (
+  course: Course,
+  locale: Locale,
+  maybeCurrent: Option.Option<string>,
+  h: HtmlBuilder<Message>,
+): Html => {
+  const choice = courseTextFor(course, locale)
+  const isCurrent = Option.exists(
+    maybeCurrent,
+    current => current === course.definition.id,
+  )
+
+  return h.keyed('li')(
+    course.definition.id,
+    [],
+    [
+      h.a(
+        [
+          h.Href(courseUrl(locale, course.definition.id)),
+          h.Lang(choice.shownIn),
+          ...(isCurrent ? [h.AriaCurrent('page')] : []),
+          h.Class(
+            isCurrent
+              ? 'block rounded-md bg-accent-soft px-2 py-1 text-[12.5px] font-semibold text-ink no-underline'
+              : 'block rounded-md px-2 py-1 text-[12.5px] text-muted no-underline hover:text-ink',
+          ),
+        ],
+        [choice.text.title],
+      ),
+    ],
+  )
+}
+
 const headerView = (
   route: AppRoute,
   locale: Locale,
@@ -59,7 +98,18 @@ const headerView = (
           h.Href(homeUrl(locale)),
           h.Class('font-display text-[14px] text-ink no-underline'),
         ],
-        [ui.courseTitle],
+        [ui.siteTitle],
+      ),
+      h.nav(
+        [h.AriaLabel(ui.courseSwitcherLabel)],
+        [
+          h.ul(
+            [h.Class('m-0 flex list-none flex-wrap gap-1 p-0')],
+            Array.map(courses, course =>
+              courseLinkView(course, locale, courseOf(route), h),
+            ),
+          ),
+        ],
       ),
       h.nav(
         [h.AriaLabel(ui.languageSwitcherLabel), h.Class('ml-auto')],
@@ -75,7 +125,106 @@ const headerView = (
     ],
   )
 
-// HOME
+// CATALOG
+
+const courseCardView = (
+  course: Course,
+  locale: Locale,
+  ui: UiStrings,
+  h: HtmlBuilder<Message>,
+): Html => {
+  const choice = courseTextFor(course, locale)
+  const hasAvailable = Array.some(
+    course.lessons,
+    lesson => lesson.meta.available,
+  )
+
+  return h.keyed('li')(
+    course.definition.id,
+    [
+      h.Class(
+        'flex flex-col gap-2 rounded-xl border border-line bg-page px-5 py-5',
+      ),
+    ],
+    [
+      h.h2(
+        [
+          h.Lang(choice.shownIn),
+          h.Class('m-0 font-display text-[20px] font-medium leading-snug'),
+        ],
+        [
+          h.a(
+            [
+              h.Href(courseUrl(locale, course.definition.id)),
+              h.Class('text-accent underline-offset-4 hover:underline'),
+            ],
+            [choice.text.title],
+          ),
+        ],
+      ),
+      h.p(
+        [
+          h.Lang(choice.shownIn),
+          h.Class('m-0 font-prose text-[15px] leading-relaxed text-muted'),
+        ],
+        [choice.text.tagline],
+      ),
+      h.div(
+        [
+          h.Class(
+            'mt-auto flex flex-wrap items-center gap-2 pt-2 text-[12px] text-muted',
+          ),
+        ],
+        [
+          h.span([], [ui.home.lessonCount(course.lessons.length)]),
+          hasAvailable
+            ? h.empty
+            : h.span(
+                [
+                  h.Class(
+                    'rounded-full border border-line px-2 py-0.5 text-[11px]',
+                  ),
+                ],
+                [ui.home.comingSoon],
+              ),
+        ],
+      ),
+    ],
+  )
+}
+
+const catalogView = (
+  locale: Locale,
+  ui: UiStrings,
+  h: HtmlBuilder<Message>,
+): Html =>
+  h.main(
+    [h.Class('mx-auto w-full max-w-3xl px-4 py-10 sm:px-6')],
+    [
+      h.h1(
+        [
+          h.Class(
+            'mt-0 mb-2 font-display text-[28px] font-medium leading-tight',
+          ),
+        ],
+        [ui.siteTitle],
+      ),
+      h.p(
+        [
+          h.Class(
+            'm-0 mb-8 max-w-[62ch] font-prose text-[17px] leading-relaxed text-muted',
+          ),
+        ],
+        [ui.siteTagline],
+      ),
+      h.ul(
+        [h.Class('m-0 grid list-none gap-4 p-0 sm:grid-cols-2')],
+        Array.map(courses, course => courseCardView(course, locale, ui, h)),
+      ),
+    ],
+  )
+
+// COURSE MAP
 
 const lessonCardView = (
   lesson: Lesson,
@@ -83,7 +232,7 @@ const lessonCardView = (
   ui: UiStrings,
   h: HtmlBuilder<Message>,
 ): Html => {
-  const { text } = lessonTextFor(lesson, locale)
+  const { text, shownIn } = lessonTextFor(lesson, locale)
   const number = h.div(
     [h.Class('text-[11px] uppercase tracking-[0.09em] text-muted')],
     [ui.home.lessonNumber(lesson.meta.order)],
@@ -92,8 +241,9 @@ const lessonCardView = (
     ? h.a(
         [
           h.Href(
-            lessonRouter({
+            lessonUrl({
               locale,
+              course: lesson.course,
               slug: lesson.meta.slug,
               step: Option.none(),
             }),
@@ -114,7 +264,7 @@ const lessonCardView = (
     [
       number,
       h.div(
-        [h.Class('min-w-0')],
+        [h.Lang(shownIn), h.Class('min-w-0')],
         [
           h.h3(
             [h.Class('m-0 font-prose text-[18px] font-semibold leading-snug')],
@@ -144,51 +294,57 @@ const lessonCardView = (
   )
 }
 
-const homeView = (
+const courseMapView = (
+  course: Course,
   locale: Locale,
   ui: UiStrings,
   h: HtmlBuilder<Message>,
-): Html =>
-  h.main(
+): Html => {
+  const choice = courseTextFor(course, locale)
+
+  return h.main(
     [h.Class('mx-auto w-full max-w-3xl px-4 py-10 sm:px-6')],
     [
       h.p(
         [h.Class('m-0 text-[12px] uppercase tracking-[0.1em] text-muted')],
-        [ui.home.lessonCount(lessons.length)],
+        [ui.home.lessonCount(course.lessons.length)],
       ),
       h.h1(
         [
+          h.Lang(choice.shownIn),
           h.Class(
             'mt-2 mb-2 font-display text-[28px] font-medium leading-tight',
           ),
         ],
-        [ui.home.heading],
+        [choice.text.title],
       ),
       h.p(
         [
+          h.Lang(choice.shownIn),
           h.Class(
             'm-0 mb-8 max-w-[62ch] font-prose text-[17px] leading-relaxed text-muted',
           ),
         ],
-        [ui.courseTagline],
+        [choice.text.tagline],
       ),
-      ...Array.map(moduleOrder, module =>
+      ...Array.map(course.definition.modules, module =>
         h.keyed('section')(
           module,
           [h.Class('mb-10')],
           [
             h.h2(
               [
+                h.Lang(choice.shownIn),
                 h.Class(
                   'mb-1 text-[12px] font-semibold uppercase tracking-[0.09em] text-accent',
                 ),
               ],
-              [ui.home.moduleTitle[module]],
+              [choice.text.modules[module] ?? module],
             ),
             h.ol(
               [h.Class('m-0 list-none p-0')],
               pipe(
-                lessons,
+                course.lessons,
                 Array.filter(lesson => lesson.meta.module === module),
                 Array.map(lesson => lessonCardView(lesson, locale, ui, h)),
               ),
@@ -198,6 +354,7 @@ const homeView = (
       ),
     ],
   )
+}
 
 // LESSON
 
@@ -250,7 +407,7 @@ const lessonView = (
         [
           h.a(
             [
-              h.Href(homeUrl(locale)),
+              h.Href(courseUrl(locale, lesson.course)),
               h.Class('text-[12px] text-accent no-underline hover:underline'),
             ],
             [`← ${ui.lesson.backToCourse}`],
@@ -353,39 +510,58 @@ const notFoundView = (
 
 // DOCUMENT
 
+const titled = (page: string, context: string): string => `${page} · ${context}`
+
+const courseTitleIn = (course: string, locale: Locale): Option.Option<string> =>
+  Option.map(
+    findCourse(course),
+    found => courseTextFor(found, locale).text.title,
+  )
+
 const pageTitle = (route: AppRoute, locale: Locale, ui: UiStrings): string =>
   AppRoute.match(route, {
-    Home: () => ui.home.heading,
-    Lesson: ({ slug }) =>
-      Option.match(findLesson(slug), {
-        onNone: () => ui.notFound.title,
-        onSome: lesson => lessonTextFor(lesson, locale).text.title,
+    Home: () => ui.siteTitle,
+    Course: ({ course }) =>
+      Option.match(courseTitleIn(course, locale), {
+        onNone: () => titled(ui.notFound.title, ui.siteTitle),
+        onSome: title => titled(ui.home.heading, title),
       }),
-    NotFound: () => ui.notFound.title,
-    Unlocalized: () => ui.courseTitle,
+    Lesson: ({ course, slug }) =>
+      Option.match(
+        Option.all([findLesson(course, slug), courseTitleIn(course, locale)]),
+        {
+          onNone: () => titled(ui.notFound.title, ui.siteTitle),
+          onSome: ([lesson, title]) =>
+            titled(lessonTextFor(lesson, locale).text.title, title),
+        },
+      ),
+    LegacyLesson: () => ui.siteTitle,
+    NotFound: () => titled(ui.notFound.title, ui.siteTitle),
+    Unlocalized: () => ui.siteTitle,
   })
 
-export const view = (model: Model, h: HtmlBuilder<Message>): Document => {
-  const locale = Option.getOrElse(
-    localeOf(model.route),
-    () => model.preferredLocale,
-  )
-  const ui = uiFor(locale)
+const unknownView = (
+  locale: Locale,
+  ui: UiStrings,
+  message: DomainMessage,
+  h: HtmlBuilder<Message>,
+): Html => notFoundView(locale, ui, renderDomainMessage(ui.domain, message), h)
 
-  const content = AppRoute.match(model.route, {
-    Home: () => homeView(locale, ui, h),
-    Lesson: ({ slug }) =>
-      Option.match(findLesson(slug), {
+const lessonPageView = (
+  model: Model,
+  course: string,
+  slug: string,
+  locale: Locale,
+  ui: UiStrings,
+  h: HtmlBuilder<Message>,
+): Html =>
+  Option.match(findCourse(course), {
+    onNone: () =>
+      unknownView(locale, ui, DomainMessage.UnknownCourse({ course }), h),
+    onSome: () =>
+      Option.match(findLesson(course, slug), {
         onNone: () =>
-          notFoundView(
-            locale,
-            ui,
-            renderDomainMessage(
-              ui.domain,
-              DomainMessage.UnknownLesson({ slug }),
-            ),
-            h,
-          ),
+          unknownView(locale, ui, DomainMessage.UnknownLesson({ slug }), h),
         onSome: lesson =>
           Option.match(currentSession(model), {
             onNone: () => lessonView(lesson, locale, ui, h),
@@ -400,12 +576,32 @@ export const view = (model: Model, h: HtmlBuilder<Message>): Document => {
               }),
           }),
       }),
+  })
+
+export const view = (model: Model, h: HtmlBuilder<Message>): Document => {
+  const locale = Option.getOrElse(
+    localeOf(model.route),
+    () => model.preferredLocale,
+  )
+  const ui = uiFor(locale)
+
+  const content = AppRoute.match(model.route, {
+    Home: () => catalogView(locale, ui, h),
+    Course: ({ course }) =>
+      Option.match(findCourse(course), {
+        onNone: () =>
+          unknownView(locale, ui, DomainMessage.UnknownCourse({ course }), h),
+        onSome: found => courseMapView(found, locale, ui, h),
+      }),
+    Lesson: ({ course, slug }) =>
+      lessonPageView(model, course, slug, locale, ui, h),
+    LegacyLesson: () => h.main([]),
     NotFound: ({ path }) => notFoundView(locale, ui, ui.notFound.body(path), h),
     Unlocalized: () => h.main([]),
   })
 
   return {
-    title: ui.documentTitle(pageTitle(model.route, locale, ui)),
+    title: pageTitle(model.route, locale, ui),
     lang: locale,
     body: h.div(
       [
