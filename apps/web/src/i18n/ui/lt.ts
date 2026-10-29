@@ -58,6 +58,13 @@ export const lt = {
     paletteTitle: 'Paletė',
     laterTitle: 'Vėliau kurse',
     paletteClosed: 'Atsivers užduotyje',
+    paletteHint: 'Nuvilkite ant lentos arba spustelėkite, kad pridėtumėte',
+    upcomingName: {
+      cache: 'Podėlis',
+      cdn: 'CDN',
+      queue: 'Eilė',
+      shard: 'Šardai',
+    },
     lockedUntilLesson: order => `${order} pamoka`,
     newBadge: 'nauja',
     capacityTag: rps => `iki ${n(rps)} rps`,
@@ -167,6 +174,6 @@ export const lt = {
     GoalNotConnected: ({ from, via }) =>
       `Nėra ryšio nuo „${kindName[from]}“ iki bloko „${kindName[via]}“: užklausoms nėra kur eiti.`,
     GoalTooManyErrors: ({ load, errorRate, overloaded }) =>
-      `Esant ${n(load)} rps prarandama ${percent(errorRate)} užklausų. Perkrauti: ${overloaded.join(', ')}.`,
+      `Esant ${n(load)} rps prarandama ${percent(errorRate)} užklausų. Užklausas praranda: ${overloaded.join(', ')}.`,
   },
 } satisfies UiStrings

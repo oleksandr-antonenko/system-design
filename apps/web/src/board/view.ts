@@ -1,8 +1,14 @@
-import { Array, Option, pipe } from 'effect'
+import { Array, Option, Result, pipe } from 'effect'
 import { Canvas, Submodel } from 'foldkit'
 import { type Html, type HtmlBuilder } from 'foldkit/html'
 
-import { type BoardDoc, type BoardNode, edgeKey } from '../domain/board'
+import {
+  type BoardDoc,
+  type BoardNode,
+  BoardOp,
+  applyOp,
+  edgeKey,
+} from '../domain/board'
 import { type ComponentKind, hasFiniteCapacity } from '../domain/catalog'
 import {
   BOARD_HEIGHT,
@@ -122,22 +128,11 @@ const nodeView = (
     Connecting: ({ from }) =>
       from === node.id
         ? ''
-        : pipe(
-            Array.findFirst(
-              inputs.doc.nodes,
-              candidate => candidate.id === from,
-            ),
-            Option.match({
-              onNone: () => '',
-              onSome: source =>
-                (source.kind === 'client' &&
-                  (node.kind === 'lb' || node.kind === 'server')) ||
-                (source.kind === 'lb' && node.kind === 'server') ||
-                (source.kind === 'server' && node.kind === 'db')
-                  ? ' drop-ok'
-                  : ' drop-no',
-            }),
-          ),
+        : Result.isSuccess(
+              applyOp(inputs.doc, BoardOp.Connect({ from, to: node.id })),
+            )
+          ? ' drop-ok'
+          : ' drop-no',
     Idle: () => '',
     DraggingNode: () => '',
     Placing: () => '',
@@ -384,15 +379,31 @@ const annotationView = (
   )
 }
 
+const isAt = (node: Point, point: Point): boolean =>
+  node.x === point.x && node.y === point.y
+
 const ghostView = (
   plan: GhostPlan,
+  blocks: ReadonlyArray<Point>,
   ui: UiStrings,
   h: HtmlBuilder<Message>,
 ): ReadonlyArray<Html> => [
   ...Array.map(plan.edges, edge =>
     h.path([
       h.Class('ghost-edge'),
-      h.Attribute('d', curvePath(edgeCurve(edge.from, edge.to))),
+      h.Attribute(
+        'd',
+        curvePath(
+          edgeCurve(
+            edge.from,
+            edge.to,
+            Array.filter(
+              [...blocks, ...plan.nodes],
+              block => !isAt(block, edge.from) && !isAt(block, edge.to),
+            ),
+          ),
+        ),
+      ),
     ]),
   ),
   ...Array.map(plan.nodes, node =>
@@ -533,6 +544,7 @@ const gestureOverlay = (
               edges: [],
               removeEdges: [],
             },
+            [],
             ui,
             h,
           )
@@ -638,20 +650,16 @@ export const particleShapes = (
 
 // PALETTE
 
-const upcoming: ReadonlyArray<Readonly<{ icon: string; lesson: number }>> = [
+type UpcomingKind = keyof UiStrings['board']['upcomingName']
+
+const upcoming: ReadonlyArray<
+  Readonly<{ icon: UpcomingKind; lesson: number }>
+> = [
   { icon: 'cache', lesson: 4 },
   { icon: 'cdn', lesson: 5 },
   { icon: 'queue', lesson: 7 },
   { icon: 'shard', lesson: 9 },
 ]
-
-const upcomingName = (icon: string, locale: Locale): string =>
-  ({
-    cache: { uk: 'Кеш', ru: 'Кеш', en: 'Cache', lt: 'Podėlis' },
-    cdn: { uk: 'CDN', ru: 'CDN', en: 'CDN', lt: 'CDN' },
-    queue: { uk: 'Черга', ru: 'Очередь', en: 'Queue', lt: 'Eilė' },
-    shard: { uk: 'Шарди', ru: 'Шарды', en: 'Shards', lt: 'Šardai' },
-  })[icon]?.[locale] ?? icon
 
 const paletteView = (
   inputs: BoardViewInputs,
@@ -676,7 +684,7 @@ const paletteView = (
             ...(isEditable
               ? [h.OnClick(Message.ClickedPaletteItem({ kind }))]
               : [h.Disabled(true)]),
-            h.Title(isEditable ? ui.board.connectHint : ui.board.paletteClosed),
+            h.Title(isEditable ? ui.board.paletteHint : ui.board.paletteClosed),
           ],
           [
             h.svg(
@@ -718,7 +726,7 @@ const paletteView = (
             h.span(
               [],
               [
-                h.span([h.Class('name')], [upcomingName(icon, inputs.locale)]),
+                h.span([h.Class('name')], [ui.board.upcomingName[icon]]),
                 h.span([h.Class('tag')], [ui.board.lockedUntilLesson(lesson)]),
               ],
             ),
@@ -753,112 +761,123 @@ export const view = Submodel.defineView<Model, Message, BoardViewInputs>(
       [
         paletteView(inputs, ui, h),
         h.div(
-          [h.Class('board-stage board-surface')],
+          [h.Class('board-scroll')],
           [
-            Canvas.view(
-              {
-                width: BOARD_WIDTH * SCALE,
-                height: BOARD_HEIGHT * SCALE,
-                shapes: particleShapes({ ...inputs, doc }),
-                className: 'board-particles',
-              },
-              h,
-            ),
-            h.svg(
+            h.div(
+              [h.Class('board-stage board-surface')],
               [
-                h.DataAttribute('board', 'true'),
-                h.ViewBox(`0 0 ${BOARD_WIDTH} ${BOARD_HEIGHT}`),
-                h.Attribute('preserveAspectRatio', 'xMidYMid meet'),
-                h.AriaLabel(ui.board.label),
-                h.Class('board-svg'),
-              ],
-              [
-                h.defs(
-                  [],
+                Canvas.view(
+                  {
+                    width: BOARD_WIDTH * SCALE,
+                    height: BOARD_HEIGHT * SCALE,
+                    shapes: particleShapes({ ...inputs, doc }),
+                    className: 'board-particles',
+                  },
+                  h,
+                ),
+                h.svg(
                   [
-                    h.marker(
+                    h.DataAttribute('board', 'true'),
+                    h.ViewBox(`0 0 ${BOARD_WIDTH} ${BOARD_HEIGHT}`),
+                    h.Attribute('preserveAspectRatio', 'xMidYMid meet'),
+                    h.AriaLabel(ui.board.label),
+                    h.Class('board-svg'),
+                  ],
+                  [
+                    h.defs(
+                      [],
                       [
-                        h.Id('arrow'),
-                        h.ViewBox('0 0 10 10'),
-                        h.Attribute('refX', '9'),
-                        h.Attribute('refY', '5'),
-                        h.Attribute('markerWidth', '10'),
-                        h.Attribute('markerHeight', '10'),
-                        h.Attribute('markerUnits', 'userSpaceOnUse'),
-                        h.Attribute('orient', 'auto'),
-                      ],
-                      [
-                        h.path([
-                          h.Class('arrow-head'),
-                          h.Attribute('d', 'M0,1 L10,5 L0,9 z'),
-                        ]),
+                        h.marker(
+                          [
+                            h.Id('arrow'),
+                            h.ViewBox('0 0 10 10'),
+                            h.Attribute('refX', '9'),
+                            h.Attribute('refY', '5'),
+                            h.Attribute('markerWidth', '10'),
+                            h.Attribute('markerHeight', '10'),
+                            h.Attribute('markerUnits', 'userSpaceOnUse'),
+                            h.Attribute('orient', 'auto'),
+                          ],
+                          [
+                            h.path([
+                              h.Class('arrow-head'),
+                              h.Attribute('d', 'M0,1 L10,5 L0,9 z'),
+                            ]),
+                          ],
+                        ),
+                        h.marker(
+                          [
+                            h.Id('arrow-accent'),
+                            h.ViewBox('0 0 10 10'),
+                            h.Attribute('refX', '9'),
+                            h.Attribute('refY', '5'),
+                            h.Attribute('markerWidth', '10'),
+                            h.Attribute('markerHeight', '10'),
+                            h.Attribute('markerUnits', 'userSpaceOnUse'),
+                            h.Attribute('orient', 'auto'),
+                          ],
+                          [
+                            h.path([
+                              h.Class('arrow-head accent'),
+                              h.Attribute('d', 'M0,1 L10,5 L0,9 z'),
+                            ]),
+                          ],
+                        ),
                       ],
                     ),
-                    h.marker(
-                      [
-                        h.Id('arrow-accent'),
-                        h.ViewBox('0 0 10 10'),
-                        h.Attribute('refX', '9'),
-                        h.Attribute('refY', '5'),
-                        h.Attribute('markerWidth', '10'),
-                        h.Attribute('markerHeight', '10'),
-                        h.Attribute('markerUnits', 'userSpaceOnUse'),
-                        h.Attribute('orient', 'auto'),
-                      ],
-                      [
-                        h.path([
-                          h.Class('arrow-head accent'),
-                          h.Attribute('d', 'M0,1 L10,5 L0,9 z'),
-                        ]),
-                      ],
+                    ...Array.getSomes(
+                      Array.map(inputs.halos, ({ id, tone }) =>
+                        Option.map(nodeById(id), node =>
+                          haloView(node, tone, h),
+                        ),
+                      ),
                     ),
+                    ...Array.flatMap(doc.edges, edge =>
+                      Option.match(
+                        Option.all([nodeById(edge.from), nodeById(edge.to)]),
+                        {
+                          onNone: () => [],
+                          onSome: ([from, to]) =>
+                            edgeView(
+                              from,
+                              to,
+                              { ...inputs, doc },
+                              model,
+                              removeEdges,
+                              h,
+                            ),
+                        },
+                      ),
+                    ),
+                    ...Option.match(inputs.ghost, {
+                      onNone: () => [],
+                      onSome: plan => ghostView(plan, doc.nodes, ui, h),
+                    }),
+                    ...Array.map(doc.nodes, node =>
+                      nodeView(node, { ...inputs, doc }, ui, model, h),
+                    ),
+                    ...Array.getSomes(
+                      Array.map(inputs.annotations, ({ id, text, tone }) =>
+                        Option.map(nodeById(id), node =>
+                          annotationView(node, text, tone, h),
+                        ),
+                      ),
+                    ),
+                    ...(inputs.mode === 'Edit'
+                      ? selectionControls(doc, model, ui, h)
+                      : []),
+                    ...gestureOverlay(doc, model, ui, h),
                   ],
                 ),
-                ...Array.getSomes(
-                  Array.map(inputs.halos, ({ id, tone }) =>
-                    Option.map(nodeById(id), node => haloView(node, tone, h)),
-                  ),
-                ),
-                ...Option.match(inputs.ghost, {
-                  onNone: () => [],
-                  onSome: plan => ghostView(plan, ui, h),
-                }),
-                ...Array.flatMap(doc.edges, edge =>
-                  Option.match(
-                    Option.all([nodeById(edge.from), nodeById(edge.to)]),
-                    {
-                      onNone: () => [],
-                      onSome: ([from, to]) =>
-                        edgeView(
-                          from,
-                          to,
-                          { ...inputs, doc },
-                          model,
-                          removeEdges,
-                          h,
-                        ),
-                    },
-                  ),
-                ),
-                ...Array.map(doc.nodes, node =>
-                  nodeView(node, { ...inputs, doc }, ui, model, h),
-                ),
-                ...Array.getSomes(
-                  Array.map(inputs.annotations, ({ id, text, tone }) =>
-                    Option.map(nodeById(id), node =>
-                      annotationView(node, text, tone, h),
+                h.div(
+                  [
+                    h.Class(
+                      `mode-chip${inputs.mode === 'Edit' ? ' edit' : ''}`,
                     ),
-                  ),
+                  ],
+                  [modeLabel],
                 ),
-                ...(inputs.mode === 'Edit'
-                  ? selectionControls(doc, model, ui, h)
-                  : []),
-                ...gestureOverlay(doc, model, ui, h),
               ],
-            ),
-            h.div(
-              [h.Class(`mode-chip${inputs.mode === 'Edit' ? ' edit' : ''}`)],
-              [modeLabel],
             ),
           ],
         ),

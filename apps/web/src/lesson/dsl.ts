@@ -82,7 +82,6 @@ export type TaskSpec<
   palette: ReadonlyArray<ComponentKind>
   goals: ReadonlyArray<TaskGoal<GoalId>>
   solution: ReadonlyArray<BoardOp>
-  ghost: Readonly<{ kind: ComponentKind; x: number; y: number }>
 }>
 
 export type LessonStep = Readonly<{
@@ -183,9 +182,10 @@ export const boardAt = (
 export const taskStartBoard = (
   lesson: LessonDefinition,
   step: number,
+  logs: TaskLogs,
 ): BoardDoc =>
   foldOps(
-    boardAt(lesson, step - 1, {}),
+    boardAt(lesson, step - 1, logs),
     Option.match(Array.get(lesson.steps, step), {
       onNone: () => [],
       onSome: lessonStep => lessonStep.ops,

@@ -32,16 +32,26 @@
 ```
 apps/web/src/domain/         без Foldkit
   catalog.ts   ComponentKind, ёмкость, цена, ранг, правила связей
-  board.ts     Node, Edge, BoardDoc (Schema), BoardOp, applyOp, foldOps
-  simulate.ts  simulate(doc, load) → SimResult; latency, cost
-  goals.ts     Goal (Schema-union), evaluateGoals(doc, goals) → GoalResult[]
-  geometry.ts  размеры блоков, кривые связей, точка на кривой
+  board.ts     BoardNode, Edge, BoardDoc (Schema), BoardOp, applyOp, foldOps
+  simulate.ts  simulate(doc, load) → SimResult; задержка, цена
+  goals.ts     Goal (Schema-union), checkGoal, firstFailedGoal
+  geometry.ts  размеры блоков, кривые связей (с обходом блоков), точка на кривой
 apps/web/src/board/          Submodel доски (Foldkit)
-  model.ts message.ts update.ts pointer.ts(Mount) view.ts particles.ts
+  board.ts     Model, жесты, update, pressDeleteKey / pressEscapeKey
+  message.ts   Message и OutMessage (их строят pointer.ts и view.ts)
+  pointer.ts   Mount указателя
+  view.ts      SVG и частицы на Canvas
 apps/web/src/lesson/         плеер урока
-  model.ts message.ts update.ts view/{theory,task,hud,journal}.ts markup.ts
+  dsl.ts       defineLesson, операции и стадия, LessonTexts, boardAt
+  player.ts    Model, Message, Commands, update, subscriptions
+  anim.ts      состояние анимации и сглаживание приборов
+  ghost.ts     призрак третьей подсказки из эталона
+  markup.ts    мини-разметка текста
+  view.ts      теория, карточка задачи, приборы, журнал
 apps/web/src/lessons/NN-slug/lesson.ts + text.<locale>.ts
 ```
+
+Файлы разделены по швам, которые проявились при работе, а не заранее: `message.ts` доски вынесен, потому что сообщения строят и `pointer.ts`, и `view.ts`. Остальное пока живёт в одном файле на подмодель.
 
 ### D2. `BoardOp` и свёртка
 
@@ -67,7 +77,7 @@ apps/web/src/lessons/NN-slug/lesson.ts + text.<locale>.ts
 
 ### D5. Рендер доски: SVG и Canvas
 
-- Блоки, связи, подписи, подсветки и призрак рисует SVG через `h` (`viewBox 0 0 900 560`, `preserveAspectRatio="xMidYMid meet"`). Блоки — `createKeyedLazy` по id и данным блока, чтобы кадры анимации не пересобирали неизменные блоки.
+- Блоки, связи, подписи, подсветки и призрак рисует SVG через `h` (`viewBox 0 0 900 560`, `preserveAspectRatio="xMidYMid meet"`). Блоки перерисовываются на каждом кадре: замер ниже показал, что view укладывается в 0,2 мс, поэтому `createKeyedLazy` не понадобился. Его стоит включить, если на доске станет заметно больше блоков.
 - Частицы рисует `Canvas.view` с внутренним размером 1800×1120 (2× для чётких точек) и CSS `object-fit: contain`. Холст вписывается в тот же прямоугольник, что и SVG с `meet`, поэтому координаты частиц — те же единицы доски ×2, без измерения DOM.
 - Полоски загрузки и подписи потоков на рёбрах обновляются через тот же SVG по сглаженным значениям.
 
@@ -116,9 +126,9 @@ export default defineLesson({
 
 ### D9. Маршрут и Model плеера
 
-`AppRoute.Lesson` получает `step: Option<number>` (query `step`). Корневой Model хранит `Option<LessonPlayer.Model>`: создаётся при входе в урок, сбрасывается при уходе.
+`AppRoute.Lesson` получает `step: Option<number>` (query `step`). Корневой Model хранит `lessonSessions: Record<slug, LessonPlayer.Model>`: сессия урока создаётся при первом входе и живёт до закрытия вкладки. Поэтому возврат к уроку не теряет ни решённые задачи, ни шаг. Сохранять сессии между визитами будет `add-learning-progress` у вошедших пользователей.
 
-Состояние решённой задачи на время визита хранится в корневом Model в `solvedTasks: Record<slug, TaskOutcome>`, поэтому возврат к уроку его не теряет. Смена шага делает `replaceUrl` с новым `?step`.
+Номер шага из адреса приводится к целому и ограничивается уроком и открытой задачей. Неканонический адрес заменяется. Смена шага пишет новый `?step` через `history.replaceState` без события смены адреса: шаг уже лежит в Model, а запоздавшее событие от быстрых нажатий «Далее» откатывало бы шаг назад.
 
 ### D10. Тесты контента
 

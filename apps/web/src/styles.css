@@ -595,6 +595,10 @@ h3 {
   color: var(--muted);
 }
 
+/* Обёртка-прокрутка нужна только узкому экрану, на широком её коробки нет. */
+.board-scroll {
+  display: contents;
+}
 .board-stage {
   position: relative;
   min-height: 0;
@@ -1070,10 +1074,35 @@ h3 {
   .palette-item {
     flex: 1 1 130px;
   }
-  .board-stage {
+  /* Ужатая в ширину телефона доска нечитаема (масштаб ≈0,42, подписи ≈5px).
+     Держим её не уже 720px (масштаб 0,8, заголовки узлов 10px) и даём
+     прокручивать по горизонтали. Пустой фон отдаёт жесты браузеру: доска
+     листается вбок, страница — вверх и вниз. Узлы, порты и рёбра забирают
+     касание себе в pointer.ts (touch-action на элементах SVG Chrome не
+     применяет). */
+  .board-scroll {
+    display: block;
     flex: none;
-    width: 100%;
+    overflow-x: auto;
+    overflow-y: hidden;
+    overscroll-behavior-x: contain;
+  }
+  .board-stage {
+    display: flow-root;
+    width: max(100%, 720px);
     aspect-ratio: 900 / 560;
+    /* clip, а не hidden: иначе сцена сама станет контейнером прокрутки
+       и метка режима не прилипнет к краю видимой части. flow-root держит
+       внутри отступ метки, который clip наружу пропускает. */
+    overflow: clip;
+    touch-action: pan-x pan-y pinch-zoom;
+  }
+  .mode-chip {
+    position: sticky;
+    top: auto;
+    left: 12px;
+    width: fit-content;
+    margin: 12px 0 0 12px;
   }
   .toast {
     position: fixed;

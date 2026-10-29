@@ -1,4 +1,4 @@
-import { Option } from 'effect'
+import { Array, Option } from 'effect'
 import { Canvas } from 'foldkit'
 import {
   expectNoOutMessage,
@@ -10,7 +10,15 @@ import {
 } from 'foldkit/story'
 import { describe, expect, test } from 'vitest'
 
-import { BoardOp, edgeKey, foldOps } from '../domain/board'
+import { type BoardDoc, BoardOp, edgeKey, foldOps } from '../domain/board'
+import {
+  BOARD_HEIGHT,
+  BOARD_WIDTH,
+  GRID_STEP,
+  NODE_HEIGHT,
+  NODE_WIDTH,
+  isSpotFree,
+} from '../domain/geometry'
 import { simulate } from '../domain/simulate'
 import { addNode, connect, setLoad } from '../lesson/dsl'
 import * as Board from './board'
@@ -164,6 +172,158 @@ describe('gestures', () => {
         expect(next).toEqual(Board.initialModel)
       }),
     )
+  })
+})
+
+describe('deleting', () => {
+  test('the cross on a selected connection proposes to disconnect it', () => {
+    story(
+      update,
+      given({
+        ...Board.initialModel,
+        maybeSelection: Option.some(
+          Board.Selection.Edge({ from: 'users', to: 'app1' }),
+        ),
+      }),
+      message(
+        Board.Message.PressedPointer({
+          target: Board.PointerTarget.DeleteEdge({ from: 'users', to: 'app1' }),
+          point: point(310, 258),
+        }),
+      ),
+      expectOutMessage(
+        Board.OutMessage.ProposedOp({
+          op: BoardOp.Disconnect({ from: 'users', to: 'app1' }),
+        }),
+      ),
+      model(next => {
+        expect(next.maybeSelection).toEqual(Option.none())
+      }),
+    )
+  })
+
+  test('the cross on a selected block proposes to remove it', () => {
+    story(
+      update,
+      given({
+        ...Board.initialModel,
+        maybeSelection: Option.some(Board.Selection.Node({ id: 'app1' })),
+      }),
+      message(
+        Board.Message.PressedPointer({
+          target: Board.PointerTarget.DeleteNode({ id: 'app1' }),
+          point: point(592, 252),
+        }),
+      ),
+      expectOutMessage(
+        Board.OutMessage.ProposedOp({ op: BoardOp.RemoveNode({ id: 'app1' }) }),
+      ),
+      model(next => {
+        expect(next.maybeSelection).toEqual(Option.none())
+      }),
+    )
+  })
+})
+
+const runUpdate = (
+  input: Board.Input,
+  messages: ReadonlyArray<Board.Message>,
+): Board.UpdateReturn =>
+  Array.reduce(
+    messages,
+    { model: Board.initialModel } satisfies Board.UpdateReturn,
+    (previous: Board.UpdateReturn, boardMessage) =>
+      Board.update(input)(previous.model, boardMessage),
+  )
+
+const proposedAddNode = (result: Board.UpdateReturn) => {
+  const op = result.outMessage?.op
+  if (op?._tag !== 'AddNode') {
+    throw new Error(`expected AddNode, got ${op?._tag ?? 'nothing'}`)
+  }
+  return op
+}
+
+describe('palette click', () => {
+  const taskBoard = foldOps(doc, [
+    addNode('db', 'db', 790, 280),
+    addNode('app2', 'server', 520, 130),
+    addNode('app3', 'server', 520, 430),
+    connect('app1', 'db'),
+    connect('app2', 'db'),
+    connect('app3', 'db'),
+  ])
+
+  const clickServer = (board: BoardDoc) =>
+    proposedAddNode(
+      runUpdate({ doc: board, isEditable: true }, [
+        Board.Message.ClickedPaletteItem({ kind: 'server' }),
+      ]),
+    )
+
+  test('a new server gets the next free name and a spot clear of other blocks', () => {
+    const app4 = clickServer(taskBoard)
+
+    expect(app4).toMatchObject({ id: 'app4', kind: 'server', locked: false })
+    expect(isSpotFree(taskBoard.nodes, app4)).toBe(true)
+  })
+
+  test('the next server does not land on the previous one', () => {
+    const withApp4 = foldOps(taskBoard, [clickServer(taskBoard)])
+    const app5 = clickServer(withApp4)
+
+    expect(app5.id).toBe('app5')
+    expect(isSpotFree(withApp4.nodes, app5)).toBe(true)
+  })
+})
+
+describe('moving a block', () => {
+  const dragApp1To = (to: { x: number; y: number }) =>
+    runUpdate({ doc, isEditable: true }, [
+      Board.Message.PressedPointer({
+        target: Board.PointerTarget.Node({ id: 'app1' }),
+        point: point(520, 280),
+      }),
+      Board.Message.MovedPointer({ point: to, isOverBoard: true }),
+      Board.Message.ReleasedPointer({
+        target: Board.PointerTarget.Background(),
+        point: to,
+        isOverBoard: true,
+      }),
+    ]).outMessage?.op
+
+  test('the drop point snaps to the 10-unit grid', () => {
+    expect(dragApp1To(point(563, 337))).toEqual(
+      BoardOp.MoveNode({ id: 'app1', x: 560, y: 340 }),
+    )
+  })
+
+  test.each([
+    ['top left', point(-400, -400)],
+    ['bottom right', point(2000, 2000)],
+  ])('a block dragged past the %s edge stays on the board', (_edge, to) => {
+    const op = dragApp1To(to)
+
+    expect(op?._tag).toBe('MoveNode')
+    if (op?._tag === 'MoveNode') {
+      expect(op.x - NODE_WIDTH / 2).toBeGreaterThanOrEqual(0)
+      expect(op.x + NODE_WIDTH / 2).toBeLessThanOrEqual(BOARD_WIDTH)
+      expect(op.y - NODE_HEIGHT / 2).toBeGreaterThanOrEqual(0)
+      expect(op.y + NODE_HEIGHT / 2).toBeLessThanOrEqual(BOARD_HEIGHT)
+    }
+  })
+
+  test.each([
+    ['top', point(520, -400)],
+    ['bottom', point(520, 2000)],
+  ])('a block clamped at the %s edge is still on the grid', (_edge, to) => {
+    const op = dragApp1To(to)
+
+    expect(op?._tag).toBe('MoveNode')
+    if (op?._tag === 'MoveNode') {
+      expect(op.x % GRID_STEP).toBe(0)
+      expect(op.y % GRID_STEP).toBe(0)
+    }
   })
 })
 

@@ -37,7 +37,7 @@ const solutionLogs = (lesson: LessonDefinition): TaskLogs =>
 const shownBoard = (lesson: LessonDefinition, index: number): BoardDoc =>
   Option.match(Option.flatMap(Array.get(lesson.steps, index), taskOf), {
     onNone: () => boardAt(lesson, index, solutionLogs(lesson)),
-    onSome: () => taskStartBoard(lesson, index),
+    onSome: () => taskStartBoard(lesson, index, solutionLogs(lesson)),
   })
 
 const refusalsOf = (start: BoardDoc, ops: ReadonlyArray<BoardOp>) =>
@@ -108,7 +108,7 @@ describe.each(cases)('lesson %s', (_slug, lesson) => {
   test('each task starts unsolved and its solution meets every goal', () => {
     lesson.steps.forEach((lessonStep, index) =>
       Option.map(taskOf(lessonStep), task => {
-        const start = taskStartBoard(lesson, index)
+        const start = taskStartBoard(lesson, index, solutionLogs(lesson))
         const solved = foldOps(start, task.solution)
         const goals = Array.map(task.goals, ({ goal }) => goal)
 
@@ -179,6 +179,7 @@ describe.each(cases)('lesson %s', (_slug, lesson) => {
           task.goals.forEach(({ id }) =>
             filled(taskTexts?.goals[id], `${task.id}.goals.${id}`),
           )
+          expect(taskTexts?.hints.length, `${task.id}.hints`).toBe(3)
           taskTexts?.hints.forEach((hint, hintIndex) =>
             filled(hint, `${task.id}.hints[${hintIndex}]`),
           )

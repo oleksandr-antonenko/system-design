@@ -1,23 +1,41 @@
 import { Option } from 'effect'
 import {
+  Command,
   Mount,
   all,
+  blur,
   click,
   expect,
   expectAll,
+  filter,
+  first,
+  focus,
   given,
+  hover,
   label,
   role,
   scene,
   text,
+  within,
 } from 'foldkit/scene'
 import { fromString } from 'foldkit/url'
 import { describe, test } from 'vitest'
 
 import * as Board from './board/board'
 import { BoardPointer } from './board/pointer'
+import type { BoardOp } from './domain/board'
 import type { Locale } from './i18n/locale'
-import { AppRoute, Flags, Model, init, update } from './main'
+import { addNode, connect } from './lesson/dsl'
+import * as Player from './lesson/player'
+import {
+  AppRoute,
+  Flags,
+  Message,
+  Model,
+  ReplaceStepUrl,
+  init,
+  update,
+} from './main'
 import { view } from './view'
 
 const at = (route: AppRoute, locale: Locale) =>
@@ -210,6 +228,191 @@ describe('lesson player', () => {
       click(role('button', { name: 'Журнал операций' })),
       expect(label('Журнал операций')).toExist(),
       expect(text('Сценарий шага «Распродажа»')).toExist(),
+    )
+  })
+})
+
+const TASK_URL = '/ru/lessons/load-balancer?step=4'
+
+const paletteBalancer = role('button', { name: /Балансировщик/ })
+
+const goal = (name: string) =>
+  first(filter(all.selector('ul.goals li'), { hasText: name }))
+
+const journal = (line: string) => within(label('Журнал операций'), text(line))
+
+const app1 = role('img', { name: /^Сервер app1/ })
+
+const withTaskLog = (model: Model, log: ReadonlyArray<BoardOp>): Model => {
+  const session = model.lessonSessions['load-balancer']
+  if (session === undefined) {
+    throw new Error('the lesson session is missing')
+  }
+  return Model.make({
+    ...model,
+    lessonSessions: {
+      'load-balancer': {
+        ...session,
+        tasks: {
+          'place-lb': {
+            log,
+            redo: [],
+            attempts: 0,
+            hintsShown: 0,
+            check: Player.CheckState.Unchecked(),
+            maybeReplayIndex: Option.none(),
+          },
+        },
+      },
+    },
+  })
+}
+
+describe('task on the board', () => {
+  test('placing a balancer ticks its goal at once', () => {
+    scene(
+      { update, view },
+      given(openLesson(TASK_URL)),
+      pointerReady,
+      expect(goal('На доске есть балансировщик')).not.toHaveClass('met'),
+      click(paletteBalancer),
+      expect(goal('На доске есть балансировщик')).toHaveClass('met'),
+      expect(goal('Балансировщик ведёт к трём серверам')).not.toHaveClass(
+        'met',
+      ),
+    )
+  })
+
+  test('the operation log lists the block the student just added', () => {
+    scene(
+      { update, view },
+      given(openLesson(TASK_URL)),
+      pointerReady,
+      click(role('button', { name: 'Журнал операций' })),
+      expect(
+        journal('Пока пусто. Ходы появятся, когда начнёте задачу.'),
+      ).toExist(),
+      click(paletteBalancer),
+      expect(journal('AddNode lb-1 · lb')).toExist(),
+      expect(
+        journal('Пока пусто. Ходы появятся, когда начнёте задачу.'),
+      ).toBeAbsent(),
+    )
+  })
+
+  test('the operation log names connections in the same language', () => {
+    scene(
+      { update, view },
+      given(
+        withTaskLog(openLesson(TASK_URL), [
+          addNode('lb-1', 'lb', 300, 280, { locked: false }),
+          connect('lb-1', 'app1'),
+        ]),
+      ),
+      pointerReady,
+      click(role('button', { name: 'Журнал операций' })),
+      expect(journal('AddNode lb-1 · lb')).toExist(),
+      expect(journal('Connect lb-1 → app1')).toExist(),
+    )
+  })
+
+  test('at an unsolved task the player says why Next is locked', () => {
+    scene(
+      { update, view },
+      given(openLesson(TASK_URL)),
+      pointerReady,
+      expect(role('button', { name: 'Далее →' })).toBeDisabled(),
+      expect(text('Решите задачу на доске, чтобы продолжить')).toExist(),
+    )
+  })
+
+  test('before the task Next is open and nothing asks to solve first', () => {
+    scene(
+      { update, view },
+      given(openLesson('/ru/lessons/load-balancer?step=3')),
+      pointerReady,
+      expect(role('button', { name: 'Далее →' })).toBeEnabled(),
+      expect(text('Решите задачу на доске, чтобы продолжить')).toBeAbsent(),
+    )
+  })
+
+  test('Show solution appears after the second failed check', () => {
+    scene(
+      { update, view },
+      given(openLesson(TASK_URL)),
+      pointerReady,
+      expect(role('button', { name: 'Показать решение' })).toBeAbsent(),
+      click(role('button', { name: 'Проверить' })),
+      expect(role('button', { name: 'Показать решение' })).toBeAbsent(),
+      click(role('button', { name: 'Проверить' })),
+      expect(role('button', { name: 'Показать решение' })).toBeEnabled(),
+    )
+  })
+
+  test('the third hint draws the outline and offers the solution', () => {
+    const hint = role('button', { name: /^Подсказка/ })
+    scene(
+      { update, view },
+      given(openLesson(TASK_URL)),
+      pointerReady,
+      click(hint),
+      click(hint),
+      expect(role('button', { name: 'Показать решение' })).toBeAbsent(),
+      expect(text('сюда: Балансировщик')).toBeAbsent(),
+      click(hint),
+      expect(role('button', { name: 'Показать решение' })).toBeEnabled(),
+      expect(text('сюда: Балансировщик')).toExist(),
+      expect(hint).toBeDisabled(),
+    )
+  })
+})
+
+describe('theory and board together', () => {
+  test('pointing at a term in the text highlights its block', () => {
+    scene(
+      { update, view },
+      given(openLesson('/ru/lessons/load-balancer?step=1')),
+      pointerReady,
+      expect(app1).not.toHaveClass('selected'),
+      hover(text('сервер приложения')),
+      expect(app1).toHaveClass('selected'),
+      expect(role('img', { name: /^Пользователи users/ })).not.toHaveClass(
+        'selected',
+      ),
+    )
+  })
+
+  test('a focused term highlights its block until focus leaves', () => {
+    scene(
+      { update, view },
+      given(openLesson('/ru/lessons/load-balancer?step=1')),
+      pointerReady,
+      focus(text('сервер приложения')),
+      expect(app1).toHaveClass('selected'),
+      blur(text('сервер приложения')),
+      expect(app1).not.toHaveClass('selected'),
+    )
+  })
+
+  test('Back from step 3 restores the board of step 2 with its marks', () => {
+    scene(
+      { update, view },
+      given(openLesson('/ru/lessons/load-balancer?step=3')),
+      pointerReady,
+      expect(role('img', { name: /^Сервер app2/ })).toExist(),
+      expectAll(all.selector('rect.halo.warn')).toHaveCount(2),
+      expect(text(/^загрузка .* · ошибки /)).toBeAbsent(),
+      click(role('button', { name: '← Назад' })),
+      Command.resolve(
+        Player.ScrollStepIntoView,
+        Player.Message.CompletedScrollStepIntoView(),
+      ),
+      Command.resolve(ReplaceStepUrl, Message.CompletedReplaceStepUrl()),
+      expect(role('img', { name: /^Сервер app2/ })).toBeAbsent(),
+      expectAll(all.selector('rect.halo.warn')).toHaveCount(0),
+      expectAll(all.selector('rect.halo.bad')).toHaveCount(1),
+      expect(text('загрузка 225% · ошибки 56%')).toExist(),
+      expect(text('0 rps · простаивает')).toBeAbsent(),
     )
   })
 })

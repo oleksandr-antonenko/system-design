@@ -15,7 +15,7 @@ import { modifyFields } from 'foldkit/struct'
 
 import * as Board from '../board/board'
 import { type BoardDoc, BoardOp, applyOp } from '../domain/board'
-import { firstFailedGoal } from '../domain/goals'
+import { type GoalCheck, firstFailedGoal } from '../domain/goals'
 import { simulate } from '../domain/simulate'
 import { DomainMessage } from '../i18n/domainMessage'
 import { findDefinition } from '../lessons/registry'
@@ -243,6 +243,21 @@ export const outcomeOf = (doc: BoardDoc): Outcome => {
 
 // INIT
 
+// Номер шага приходит из адреса: дробный или нечисловой превращаем в
+// целый, затем держим в пределах урока и открытой задачи.
+const clampStep = (
+  lesson: LessonDefinition,
+  model: Model,
+  requested: number,
+): number =>
+  Math.min(
+    Math.max(
+      globalThis.Number.isFinite(requested) ? Math.trunc(requested) : 0,
+      0,
+    ),
+    maxAllowedStep(lesson, model),
+  )
+
 export const init = (
   lesson: LessonDefinition,
   requestedStep: number,
@@ -260,8 +275,7 @@ export const init = (
     isReducedMotion: false,
   }
   return modifyFields(model, {
-    step: () =>
-      Math.min(Math.max(requestedStep, 0), maxAllowedStep(lesson, model)),
+    step: () => clampStep(lesson, model, requestedStep),
   })
 }
 
@@ -282,13 +296,17 @@ export const goToStep = (
   model: Model,
   requested: number,
 ): UpdateReturn => {
-  const step = Math.min(Math.max(requested, 0), maxAllowedStep(lesson, model))
+  const step = clampStep(lesson, model, requested)
   if (step === model.step) {
     return { model }
   }
   return {
     model: modifyFields(model, {
       step: () => step,
+      tasks: tasks =>
+        Record.map(tasks, task =>
+          modifyFields(task, { maybeReplayIndex: () => Option.none() }),
+        ),
       board: () => Board.initialModel,
       maybeToast: () => Option.none(),
       maybeHoveredRef: () => Option.none(),
@@ -420,10 +438,28 @@ const solve = (
     maybeReplayIndex: Option.none(),
     check: CheckState.Solved({
       withHint,
-      before: outcomeOf(taskStartBoard(lesson, model.step)),
+      before: outcomeOf(taskStartBoard(lesson, model.step, logsOf(model))),
       after: outcomeOf(currentDoc(lesson, model)),
     }),
   }))
+
+const failedGoal = (lesson: LessonDefinition, model: Model, spec: TaskSpec) =>
+  firstFailedGoal(
+    currentDoc(lesson, model),
+    Array.map(spec.goals, ({ goal }) => goal),
+  )
+
+const failedCheckState = (index: number, goalCheck: GoalCheck): CheckState =>
+  Option.match(goalCheck.maybeFailure, {
+    onNone: () => CheckState.Unchecked(),
+    onSome: failure =>
+      CheckState.Failed({
+        goalIndex: index,
+        failure,
+        focusNodes: goalCheck.focusNodes,
+        focusEdges: goalCheck.focusEdges,
+      }),
+  })
 
 const check = (lesson: LessonDefinition, model: Model): UpdateReturn =>
   Option.match(currentTask(lesson, model), {
@@ -432,27 +468,34 @@ const check = (lesson: LessonDefinition, model: Model): UpdateReturn =>
       if (!isEditable(lesson, model)) {
         return { model }
       }
-      const goals = Array.map(spec.goals, ({ goal }) => goal)
-      return Option.match(firstFailedGoal(currentDoc(lesson, model), goals), {
+      return Option.match(failedGoal(lesson, model, spec), {
         onNone: () => ({ model: solve(lesson, model, spec.id, false) }),
         onSome: ({ index, check: goalCheck }) => ({
           model: withTask(model, spec.id, task => ({
             ...task,
             attempts: task.attempts + 1,
-            check: Option.match(goalCheck.maybeFailure, {
-              onNone: () => CheckState.Unchecked(),
-              onSome: failure =>
-                CheckState.Failed({
-                  goalIndex: index,
-                  failure,
-                  focusNodes: goalCheck.focusNodes,
-                  focusEdges: goalCheck.focusEdges,
-                }),
-            }),
+            check: failedCheckState(index, goalCheck),
           })),
         }),
       })
     },
+  })
+
+// Эталон из урока не принимается на веру: если после проигрывания цель
+// всё же не выполнена, задача остаётся открытой с понятной ошибкой.
+const finishReplay = (
+  lesson: LessonDefinition,
+  model: Model,
+  spec: TaskSpec,
+): Model =>
+  Option.match(failedGoal(lesson, model, spec), {
+    onNone: () => solve(lesson, model, spec.id, true),
+    onSome: ({ index, check: goalCheck }) =>
+      withTask(model, spec.id, task => ({
+        ...task,
+        maybeReplayIndex: Option.none(),
+        check: failedCheckState(index, goalCheck),
+      })),
   })
 
 const startReplay = (lesson: LessonDefinition, model: Model): UpdateReturn =>
@@ -481,7 +524,7 @@ const continueReplay = (lesson: LessonDefinition, model: Model): UpdateReturn =>
         onNone: () => ({ model }),
         onSome: index =>
           Option.match(Array.get(spec.solution, index), {
-            onNone: () => ({ model: solve(lesson, model, spec.id, true) }),
+            onNone: () => ({ model: finishReplay(lesson, model, spec) }),
             onSome: op => ({
               model: withTask(model, spec.id, task => ({
                 ...task,
@@ -496,7 +539,7 @@ const continueReplay = (lesson: LessonDefinition, model: Model): UpdateReturn =>
       }),
   })
 
-const updateWith =
+export const updateWith =
   (lesson: LessonDefinition) =>
   (model: Model, message: Message): UpdateReturn =>
     Message.match<UpdateReturn>(message, {

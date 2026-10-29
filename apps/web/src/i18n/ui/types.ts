@@ -31,6 +31,8 @@ export type UiStrings = Readonly<{
     paletteTitle: string
     laterTitle: string
     paletteClosed: string
+    paletteHint: string
+    upcomingName: Readonly<Record<'cache' | 'cdn' | 'queue' | 'shard', string>>
     lockedUntilLesson: (order: number) => string
     newBadge: string
     capacityTag: (rps: number) => string

@@ -79,7 +79,6 @@ export default defineLesson({
           connect('users', 'lb-1'),
           disconnect('users', 'app1'),
         ],
-        ghost: { kind: 'lb', x: 300, y: 280 },
       },
     },
     {

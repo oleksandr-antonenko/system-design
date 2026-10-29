@@ -58,6 +58,13 @@ export const ru = {
     paletteTitle: 'Палитра',
     laterTitle: 'Позже в курсе',
     paletteClosed: 'Откроется в задаче',
+    paletteHint: 'Перетащите на доску или нажмите, чтобы добавить',
+    upcomingName: {
+      cache: 'Кеш',
+      cdn: 'CDN',
+      queue: 'Очередь',
+      shard: 'Шарды',
+    },
     lockedUntilLesson: order => `урок ${order}`,
     newBadge: 'новое',
     capacityTag: rps => `до ${n(rps)} rps`,
@@ -167,6 +174,6 @@ export const ru = {
     GoalNotConnected: ({ from, via }) =>
       `Нет связи от «${kindName[from]}» к блоку «${kindName[via]}»: запросам некуда идти.`,
     GoalTooManyErrors: ({ load, errorRate, overloaded }) =>
-      `При ${n(load)} rps теряется ${percent(errorRate)} запросов. Перегружены: ${overloaded.join(', ')}.`,
+      `При ${n(load)} rps теряется ${percent(errorRate)} запросов. Теряют запросы: ${overloaded.join(', ')}.`,
   },
 } satisfies UiStrings

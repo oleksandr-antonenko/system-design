@@ -4,6 +4,7 @@ import {
   type BoardDoc,
   type BoardNode,
   edgeKey,
+  nodesOfKind,
   rankOf,
   targetsOf,
 } from './board'
@@ -52,17 +53,23 @@ const activeTargets = (doc: BoardDoc, node: BoardNode, isDown: boolean) => {
     : targets
 }
 
+// Клиент и балансировщик без живой связи дальше ничего не обслуживают.
+// Сервер тоже, если на доске есть база: без неё он не может ответить.
+const needsTarget = (doc: BoardDoc, node: BoardNode): boolean =>
+  node.kind === 'client' ||
+  node.kind === 'lb' ||
+  (node.kind === 'server' &&
+    Array.isReadonlyArrayNonEmpty(nodesOfKind(doc, 'db')))
+
 const servedBy = (
+  doc: BoardDoc,
   node: BoardNode,
   incoming: number,
   isDown: boolean,
   targetCount: number,
 ): number => {
-  if (isDown) {
+  if (isDown || (needsTarget(doc, node) && targetCount === 0)) {
     return 0
-  }
-  if (node.kind === 'client' || node.kind === 'lb') {
-    return targetCount > 0 ? Math.min(incoming, catalog[node.kind].capacity) : 0
   }
   return Math.min(incoming, catalog[node.kind].capacity)
 }
@@ -73,7 +80,7 @@ const flowThrough =
     const incoming = flow.inflow[node.id] ?? 0
     const isDown = Array.contains(doc.failed, node.id)
     const targets = activeTargets(doc, node, isDown)
-    const served = servedBy(node, incoming, isDown, targets.length)
+    const served = servedBy(doc, node, incoming, isDown, targets.length)
     const share = Array.isReadonlyArrayNonEmpty(targets)
       ? served / targets.length
       : 0

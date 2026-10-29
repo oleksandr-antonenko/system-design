@@ -183,6 +183,32 @@ describe('goals', () => {
     )
   })
 
+  test('cutting servers off the database does not pass the load goal', () => {
+    const cut = foldOps(solved, [
+      BoardOp.Disconnect({ from: 'app1', to: 'db' }),
+      BoardOp.Disconnect({ from: 'app2', to: 'db' }),
+    ])
+    const result = simulate(cut, 900)
+    const check = checkGoal(cut, Goal.MaxErrorRate({ max: 0.01, load: 900 }))
+
+    expect(result.nodes['app1']?.served).toBe(0)
+    expect(result.nodes['app3']?.dropped).toBe(0)
+    expect(result.errorRate).toBeCloseTo(2 / 3, 2)
+    expect(check.met).toBe(false)
+    expect(check.focusNodes).toEqual(['app1', 'app2'])
+  })
+
+  test('a server serves on its own while the board has no database', () => {
+    const noDatabase = foldOps(emptyBoard, [
+      add('users', 'client'),
+      add('app1', 'server'),
+      connect('users', 'app1'),
+      BoardOp.SetLoad({ rps: 300 }),
+    ])
+
+    expect(simulate(noDatabase, 300).errorRate).toBe(0)
+  })
+
   test('too few servers behind the balancer highlights the idle ones', () => {
     const partial = foldOps(taskStart, [
       add('lb-1', 'lb', false),

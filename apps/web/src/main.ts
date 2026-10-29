@@ -1,4 +1,4 @@
-import { Effect, Option, Record, Schema, pipe } from 'effect'
+import { Array, Effect, Option, Record, Schema, pipe } from 'effect'
 import { Command, Dom, Runtime, Subscription, Update } from 'foldkit'
 import { defineMessageUnion } from 'foldkit/message'
 import { UrlRequest, load, pushUrl, replaceUrl } from 'foldkit/navigation'
@@ -48,6 +48,7 @@ export const Message = defineMessageUnion({
   CompletedRedirectToLocale: {},
   CompletedSaveLocale: {},
   CompletedReplaceStepUrl: {},
+  CompletedRevealLessonStep: {},
   GotPlayerMessage: { message: Player.Message },
   TickedAnimationFrame: { deltaMs: Schema.Number },
   ChangedColorScheme: { prefersDark: Schema.Boolean },
@@ -79,11 +80,29 @@ export const RedirectToLocale = Command.define('RedirectToLocale', {
     replaceUrl(url).pipe(Effect.as(Message.CompletedRedirectToLocale())),
 })
 
+// Шаг уже записан в Model, поэтому адрес меняем тихо, без события смены
+// адреса: иначе запоздавшее событие от быстрых «Далее» откатывало бы шаг.
 export const ReplaceStepUrl = Command.define('ReplaceStepUrl', {
   args: { url: Schema.String },
   messages: [Message.CompletedReplaceStepUrl],
   execute: ({ url }) =>
-    replaceUrl(url).pipe(Effect.as(Message.CompletedReplaceStepUrl())),
+    Effect.sync(() =>
+      window.history.replaceState(window.history.state, '', url),
+    ).pipe(Effect.as(Message.CompletedReplaceStepUrl())),
+})
+
+// Урок открыли по ссылке на шаг или вернулись к нему кнопками браузера:
+// текст теории прокручивается к текущему шагу.
+export const RevealLessonStep = Command.define('RevealLessonStep', {
+  args: { step: Schema.Number },
+  messages: [Message.CompletedRevealLessonStep],
+  execute: ({ step }) =>
+    Dom.scrollIntoViewAfterPaint(`[data-step="${step}"]`, {
+      block: 'nearest',
+    }).pipe(
+      Effect.as(Message.CompletedRevealLessonStep()),
+      Effect.catch(() => Effect.succeed(Message.CompletedRevealLessonStep())),
+    ),
 })
 
 export const SaveLocale = Command.define('SaveLocale', {
@@ -127,7 +146,8 @@ const enterLesson = (
     onNone: () => ({ model }),
     onSome: lesson => {
       const requested = Option.map(maybeRequestedStep, step => step - 1)
-      const session = Option.match(Record.get(model.lessonSessions, slug), {
+      const maybeExisting = Record.get(model.lessonSessions, slug)
+      const session = Option.match(maybeExisting, {
         onNone: () =>
           Player.init(
             lesson,
@@ -143,17 +163,27 @@ const enterLesson = (
         maybeRequestedStep,
         step => step === session.step + 1,
       )
+      const isStepShown = Option.match(maybeExisting, {
+        onNone: () => session.step === 0,
+        onSome: existing => existing.step === session.step,
+      })
+      const commands = [
+        ...(isCanonical
+          ? []
+          : [ReplaceStepUrl({ url: stepUrl(locale, slug, session.step) })]),
+        ...(isStepShown ? [] : [RevealLessonStep({ step: session.step })]),
+      ]
       return {
         model: modifyFields(model, {
+          route: () =>
+            AppRoute.Lesson({
+              locale,
+              slug,
+              step: Option.some(session.step + 1),
+            }),
           lessonSessions: sessions => Record.set(sessions, slug, session),
         }),
-        ...(isCanonical
-          ? {}
-          : {
-              commands: [
-                ReplaceStepUrl({ url: stepUrl(locale, slug, session.step) }),
-              ],
-            }),
+        ...(Array.isReadonlyArrayNonEmpty(commands) ? { commands } : {}),
       }
     },
   })
@@ -262,6 +292,7 @@ export const update = (model: Model, message: Message) =>
     CompletedRedirectToLocale: () => ({ model }),
     CompletedSaveLocale: () => ({ model }),
     CompletedReplaceStepUrl: () => ({ model }),
+    CompletedRevealLessonStep: () => ({ model }),
     GotPlayerMessage: ({ message: playerMessage }) =>
       foldPlayer(model, playerMessage),
     TickedAnimationFrame: ({ deltaMs }) => advancePlayerFrame(deltaMs)(model),

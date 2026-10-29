@@ -66,6 +66,69 @@ const targetOf = (
     : PointerTarget.Outside()
 }
 
+const isEditableNode = (element: Element | null): boolean =>
+  closest(element, '[data-node]')?.classList.contains('editable') === true
+
+// A press that carries something across the board: near the edge of a
+// scrolled (narrow-screen) board the board scrolls under it.
+const isDragSource = (
+  element: Element | null,
+  target: PointerTarget,
+): boolean =>
+  PointerTarget.match(target, {
+    Port: () => true,
+    Node: () => isEditableNode(element),
+    Palette: () =>
+      closest(element, '[data-palette]')?.matches(':disabled') === false,
+    Edge: () => false,
+    DeleteNode: () => false,
+    DeleteEdge: () => false,
+    Background: () => false,
+    Outside: () => false,
+  })
+
+// A touch that must reach the board instead of panning the page. On a narrow
+// screen the board background allows panning, and Chrome ignores
+// `touch-action` on SVG children, so the pan is refused at touchstart. Palette
+// buttons are HTML with `touch-action: none` and need the tap's click.
+const keepsTouch = (element: Element | null, target: PointerTarget): boolean =>
+  PointerTarget.match(target, {
+    Port: () => true,
+    Node: () => isEditableNode(element),
+    Edge: () => true,
+    DeleteNode: () => true,
+    DeleteEdge: () => true,
+    Palette: () => false,
+    Background: () => false,
+    Outside: () => false,
+  })
+
+const EDGE_ZONE_PX = 40
+const EDGE_SPEED_PX = 14
+
+const edgeScrollStep = (
+  scroller: HTMLElement | null,
+  clientX: number,
+  clientY: number,
+): number => {
+  if (scroller === null || scroller.scrollWidth <= scroller.clientWidth) {
+    return 0
+  }
+  const rect = scroller.getBoundingClientRect()
+  if (clientY < rect.top || clientY > rect.bottom) {
+    return 0
+  }
+  const speed = (distance: number) =>
+    Math.ceil(EDGE_SPEED_PX * (1 - Math.max(distance, 0) / EDGE_ZONE_PX))
+  const toLeft = clientX - rect.left
+  const toRight = rect.right - clientX
+  return toLeft < EDGE_ZONE_PX
+    ? -speed(toLeft)
+    : toRight < EDGE_ZONE_PX
+      ? speed(toRight)
+      : 0
+}
+
 const boardPoint = (
   svg: SVGSVGElement | null,
   clientX: number,
@@ -112,11 +175,53 @@ const attach = (
   const state = {
     isPressed: false,
     fromPalette: false,
+    isDrag: false,
     startX: 0,
     startY: 0,
+    lastX: 0,
+    lastY: 0,
     swallowUntil: 0,
+    scrollFrame: 0,
   }
   const svg = () => container.querySelector<SVGSVGElement>('svg[data-board]')
+  const scroller = () => container.querySelector<HTMLElement>('.board-scroll')
+
+  const emitMove = (clientX: number, clientY: number) =>
+    emit(
+      Message.MovedPointer({
+        point: boardPoint(svg(), clientX, clientY),
+        isOverBoard: isInside(svg(), clientX, clientY),
+      }),
+    )
+
+  const stopScrolling = () => {
+    cancelAnimationFrame(state.scrollFrame)
+    state.scrollFrame = 0
+  }
+
+  // The board moves under a resting finger, so the board point changes
+  // without a pointermove: re-send the last position after every step.
+  const scrollStep = () => {
+    state.scrollFrame = 0
+    const element = scroller()
+    const step = edgeScrollStep(element, state.lastX, state.lastY)
+    if (!state.isPressed || element === null || step === 0) {
+      return
+    }
+    const before = element.scrollLeft
+    element.scrollLeft = before + step
+    if (element.scrollLeft !== before) {
+      emitMove(state.lastX, state.lastY)
+      state.scrollFrame = requestAnimationFrame(scrollStep)
+    }
+  }
+
+  const onTouchStart = (event: Event) => {
+    const target = event.target instanceof Element ? event.target : null
+    if (event.cancelable && keepsTouch(target, targetOf(target, svg()))) {
+      event.preventDefault()
+    }
+  }
 
   const onDown = (event: Event) => {
     if (!(event instanceof PointerEvent) || event.button !== 0) {
@@ -129,6 +234,7 @@ const attach = (
     }
     state.isPressed = true
     state.fromPalette = pointerTarget._tag === 'Palette'
+    state.isDrag = isDragSource(target, pointerTarget)
     state.startX = event.clientX
     state.startY = event.clientY
     if (!state.fromPalette) {
@@ -149,12 +255,16 @@ const attach = (
     if (!state.isPressed || !(event instanceof PointerEvent)) {
       return
     }
-    emit(
-      Message.MovedPointer({
-        point: boardPoint(svg(), event.clientX, event.clientY),
-        isOverBoard: isInside(svg(), event.clientX, event.clientY),
-      }),
-    )
+    state.lastX = event.clientX
+    state.lastY = event.clientY
+    emitMove(event.clientX, event.clientY)
+    if (
+      state.isDrag &&
+      state.scrollFrame === 0 &&
+      edgeScrollStep(scroller(), event.clientX, event.clientY) !== 0
+    ) {
+      state.scrollFrame = requestAnimationFrame(scrollStep)
+    }
   }
 
   const onUp = (event: Event) => {
@@ -162,6 +272,7 @@ const attach = (
       return
     }
     state.isPressed = false
+    stopScrolling()
     const dragged =
       Math.hypot(event.clientX - state.startX, event.clientY - state.startY) >
       PALETTE_DRAG_PX
@@ -181,6 +292,7 @@ const attach = (
   }
 
   const onCancel = () => {
+    stopScrolling()
     if (state.isPressed) {
       state.isPressed = false
       emit(Message.CancelledPointer())
@@ -194,6 +306,7 @@ const attach = (
     }
   }
 
+  container.addEventListener('touchstart', onTouchStart, { passive: false })
   container.addEventListener('pointerdown', onDown)
   container.addEventListener('pointermove', onMove)
   container.addEventListener('pointerup', onUp)
@@ -201,6 +314,8 @@ const attach = (
   container.addEventListener('click', onClickCapture, true)
 
   return () => {
+    stopScrolling()
+    container.removeEventListener('touchstart', onTouchStart)
     container.removeEventListener('pointerdown', onDown)
     container.removeEventListener('pointermove', onMove)
     container.removeEventListener('pointerup', onUp)

@@ -75,13 +75,14 @@ export default defineLesson({
           { id: 'only-through-lb', goal: Goal.OnlyThrough({ from: 'client', to: 'server', via: 'lb' }) },
           { id: 'holds-load', goal: Goal.MaxErrorRate({ max: 0.01, load: 900 }) }, // checked by simulation
         ],
-        solution: [ // replayed by “Show solution”; the tests check that it meets every goal
+        // replayed by “Show solution” and drawn as the dashed outline of the third hint;
+        // the tests check that it meets every goal
+        solution: [
           addNode('lb-1', 'lb', 300, 280, { locked: false }),
           connect('lb-1', 'app1'),
           connect('users', 'lb-1'),
           disconnect('users', 'app1'),
         ],
-        ghost: { kind: 'lb', x: 300, y: 280 }, // the dashed outline of the third hint
       },
     },
   ],

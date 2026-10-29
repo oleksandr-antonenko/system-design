@@ -82,15 +82,16 @@ export const curveLength = ({ start, end }: Curve): number =>
 export const snapToGrid = (value: number): number =>
   Math.round(value / GRID_STEP) * GRID_STEP
 
+// Пределы округлены внутрь сетки, чтобы блок у края тоже стоял на сетке.
+const snapWithin = (value: number, min: number, max: number): number =>
+  Math.min(
+    Math.max(snapToGrid(value), Math.ceil(min / GRID_STEP) * GRID_STEP),
+    Math.floor(max / GRID_STEP) * GRID_STEP,
+  )
+
 export const clampToBoard = ({ x, y }: Point): Point => ({
-  x: Math.min(
-    Math.max(snapToGrid(x), NODE_WIDTH / 2 + 6),
-    BOARD_WIDTH - NODE_WIDTH / 2 - 6,
-  ),
-  y: Math.min(
-    Math.max(snapToGrid(y), NODE_HEIGHT / 2 + 44),
-    BOARD_HEIGHT - NODE_HEIGHT / 2 - 6,
-  ),
+  x: snapWithin(x, NODE_WIDTH / 2 + 6, BOARD_WIDTH - NODE_WIDTH / 2 - 6),
+  y: snapWithin(y, NODE_HEIGHT / 2 + 44, BOARD_HEIGHT - NODE_HEIGHT / 2 - 6),
 })
 
 export const nodeCenter = (node: BoardNode): Point => ({ x: node.x, y: node.y })

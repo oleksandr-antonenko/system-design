@@ -59,6 +59,13 @@ export const uk = {
     paletteTitle: 'Палітра',
     laterTitle: 'Пізніше в курсі',
     paletteClosed: 'Відкриється в задачі',
+    paletteHint: 'Перетягніть на дошку або натисніть, щоб додати',
+    upcomingName: {
+      cache: 'Кеш',
+      cdn: 'CDN',
+      queue: 'Черга',
+      shard: 'Шарди',
+    },
     lockedUntilLesson: order => `урок ${order}`,
     newBadge: 'нове',
     capacityTag: rps => `до ${n(rps)} rps`,
@@ -168,6 +175,6 @@ export const uk = {
     GoalNotConnected: ({ from, via }) =>
       `Немає зв’язку від «${kindName[from]}» до блока «${kindName[via]}»: запитам нікуди йти.`,
     GoalTooManyErrors: ({ load, errorRate, overloaded }) =>
-      `При ${n(load)} rps втрачається ${percent(errorRate)} запитів. Перевантажені: ${overloaded.join(', ')}.`,
+      `При ${n(load)} rps втрачається ${percent(errorRate)} запитів. Втрачають запити: ${overloaded.join(', ')}.`,
   },
 } satisfies UiStrings

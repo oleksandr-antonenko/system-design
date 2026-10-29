@@ -11,6 +11,7 @@ import {
   Model,
   RedirectToLocale,
   ReplaceStepUrl,
+  RevealLessonStep,
   SaveLocale,
   init,
   update,
@@ -83,7 +84,7 @@ describe('init', () => {
       AppRoute.Lesson({
         locale: 'en',
         slug: 'load-balancer',
-        step: Option.none(),
+        step: Option.some(1),
       }),
     )
     expect(describeCommands(result.commands)).toEqual(
@@ -105,6 +106,37 @@ describe('init', () => {
     expect(describeCommands(result.commands)).toEqual(
       describeCommands([
         ReplaceStepUrl({ url: '/en/lessons/load-balancer?step=4' }),
+        RevealLessonStep({ step: 3 }),
+      ]),
+    )
+  })
+
+  test.each([
+    ['2.5', 2],
+    ['NaN', 1],
+    ['-4', 1],
+  ])('?step=%s is corrected to step %i', (requested, expected) => {
+    const result = init(
+      flags('en', ['en-US']),
+      urlOf(`/en/lessons/load-balancer?step=${requested}`),
+    )
+
+    expect(result.model.lessonSessions['load-balancer']?.step).toBe(
+      expected - 1,
+    )
+    expect(result.model.route).toEqual(
+      AppRoute.Lesson({
+        locale: 'en',
+        slug: 'load-balancer',
+        step: Option.some(expected),
+      }),
+    )
+    expect(describeCommands(result.commands)).toEqual(
+      describeCommands([
+        ReplaceStepUrl({
+          url: `/en/lessons/load-balancer?step=${expected}`,
+        }),
+        ...(expected > 1 ? [RevealLessonStep({ step: expected - 1 })] : []),
       ]),
     )
   })
@@ -116,7 +148,9 @@ describe('init', () => {
     )
 
     expect(result.model.lessonSessions['load-balancer']?.step).toBe(1)
-    expect(describeCommands(result.commands)).toEqual([])
+    expect(describeCommands(result.commands)).toEqual(
+      describeCommands([RevealLessonStep({ step: 1 })]),
+    )
   })
 
   test('the already saved language is not saved again', () => {
@@ -150,7 +184,7 @@ describe('update', () => {
           AppRoute.Lesson({
             locale: 'en',
             slug: 'load-balancer',
-            step: Option.none(),
+            step: Option.some(1),
           }),
         )
         expect(next.maybeSavedLocale).toEqual(Option.some('en'))
@@ -216,6 +250,8 @@ describe('lesson sessions', () => {
         expect(back?.step).toBe(5)
         expect(back?.tasks['place-lb']?.check._tag).toBe('Solved')
       }),
+      Command.expectExact(RevealLessonStep({ step: 5 })),
+      Command.resolve(RevealLessonStep, Message.CompletedRevealLessonStep()),
     )
   })
 })

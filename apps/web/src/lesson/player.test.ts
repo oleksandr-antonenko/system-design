@@ -15,7 +15,7 @@ import * as Board from '../board/board'
 import { type BoardOp, findNode } from '../domain/board'
 import { simulate } from '../domain/simulate'
 import lesson from '../lessons/03-load-balancer/lesson'
-import { addNode, connect, disconnect } from './dsl'
+import { type LessonDefinition, addNode, connect, disconnect } from './dsl'
 import * as Player from './player'
 
 const TASK_STEP = 3
@@ -254,6 +254,30 @@ describe('board editing', () => {
       }),
     )
   })
+
+  test('a new move after undo clears the redo list', () => {
+    const [placeLb, linkApp1] = solution
+    story(
+      Player.update,
+      given(atTask(solution.slice(0, 2))),
+      message(Player.Message.ClickedUndo()),
+      model(next => {
+        expect(taskOf(next).redo).toEqual([linkApp1])
+      }),
+      board(Board.Message.ClickedPaletteItem({ kind: 'server' })),
+      model(next => {
+        expect(taskOf(next).log).toEqual([
+          placeLb,
+          expect.objectContaining({ _tag: 'AddNode', id: 'app4' }),
+        ])
+        expect(taskOf(next).redo).toEqual([])
+      }),
+      message(Player.Message.ClickedRedo()),
+      model(next => {
+        expect(taskOf(next).log).toHaveLength(2)
+      }),
+    )
+  })
 })
 
 describe('checking', () => {
@@ -281,6 +305,32 @@ describe('checking', () => {
           goalIndex: 2,
           focusEdges: ['users>app1'],
         })
+      }),
+    )
+  })
+
+  test('editing the board after a failed check clears the verdict', () => {
+    story(
+      Player.update,
+      given(atTask(solution.slice(0, 5))),
+      message(Player.Message.ClickedCheck()),
+      model(next => {
+        expect(taskOf(next).check).toMatchObject({
+          _tag: 'Failed',
+          focusEdges: ['users>app1'],
+        })
+      }),
+      board(
+        Board.Message.PressedPointer({
+          target: Board.PointerTarget.DeleteEdge({ from: 'users', to: 'app1' }),
+          point: point(310, 258),
+        }),
+      ),
+      model(next => {
+        const task = taskOf(next)
+        expect(task.log).toEqual(solution)
+        expect(task.check).toEqual(Player.CheckState.Unchecked())
+        expect(task.attempts).toBe(1)
       }),
     )
   })
@@ -355,6 +405,65 @@ describe('hints and replay', () => {
         expect(task.log).toEqual(solution)
         expect(task.maybeReplayIndex).toEqual(Option.none())
         expect(task.check).toMatchObject({ _tag: 'Solved', withHint: true })
+      }),
+      Command.expectNone(),
+    )
+  })
+})
+
+describe('replay safety', () => {
+  const replayStep = Command.resolve(
+    Player.WaitBeforeReplayStep,
+    Player.Message.CompletedWaitBeforeReplayStep(),
+  )
+
+  test('leaving the task mid-replay cancels it and keeps the board usable', () => {
+    const started = Player.update(
+      atTask(),
+      Player.Message.ClickedShowSolution(),
+    ).model
+    const left = Player.update(started, Player.Message.ClickedPrevious()).model
+    const lateTimer = Player.update(
+      left,
+      Player.Message.CompletedWaitBeforeReplayStep(),
+    )
+    const back = Player.update(
+      lateTimer.model,
+      Player.Message.ClickedNext(),
+    ).model
+
+    expect(left.step).toBe(TASK_STEP - 1)
+    expect(taskOf(left).maybeReplayIndex).toEqual(Option.none())
+    expect(lateTimer.commands ?? []).toEqual([])
+    expect(back.step).toBe(TASK_STEP)
+    expect(Player.isEditable(lesson, back)).toBe(true)
+    expect(Player.isReplaying(lesson, back)).toBe(false)
+  })
+
+  test('a faulty reference solution leaves the task open', () => {
+    const reference: LessonDefinition = lesson
+    const broken: LessonDefinition = {
+      ...reference,
+      steps: Array.map(reference.steps, lessonStep =>
+        lessonStep.task === undefined
+          ? lessonStep
+          : {
+              ...lessonStep,
+              task: { ...lessonStep.task, solution: solution.slice(0, 5) },
+            },
+      ),
+    }
+    story(
+      Player.updateWith(broken),
+      given(atTask()),
+      message(Player.Message.ClickedShowSolution()),
+      ...Array.makeBy(6, () => replayStep),
+      model(next => {
+        expect(taskOf(next).check).toMatchObject({
+          _tag: 'Failed',
+          focusEdges: ['users>app1'],
+        })
+        expect(Player.maxAllowedStep(broken, next)).toBe(TASK_STEP)
       }),
       Command.expectNone(),
     )

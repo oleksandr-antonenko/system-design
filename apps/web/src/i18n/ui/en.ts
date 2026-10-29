@@ -57,6 +57,13 @@ export const en = {
     paletteTitle: 'Palette',
     laterTitle: 'Later in the course',
     paletteClosed: 'Opens during a task',
+    paletteHint: 'Drag onto the board or click to add',
+    upcomingName: {
+      cache: 'Cache',
+      cdn: 'CDN',
+      queue: 'Queue',
+      shard: 'Shards',
+    },
     lockedUntilLesson: order => `lesson ${order}`,
     newBadge: 'new',
     capacityTag: rps => `up to ${n(rps)} rps`,
@@ -167,6 +174,6 @@ export const en = {
     GoalNotConnected: ({ from, via }) =>
       `There is no connection from “${kindName[from]}” to the “${kindName[via]}” block, so requests have nowhere to go.`,
     GoalTooManyErrors: ({ load, errorRate, overloaded }) =>
-      `At ${n(load)} rps, ${percent(errorRate)} of requests are lost. Overloaded: ${overloaded.join(', ')}.`,
+      `At ${n(load)} rps, ${percent(errorRate)} of requests are lost. Losing requests: ${overloaded.join(', ')}.`,
   },
 } satisfies UiStrings
