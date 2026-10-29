@@ -26,7 +26,9 @@ export const intlTag: Readonly<Record<Locale, string>> = {
 const primarySubtag = (languageTag: string): string =>
   pipe(languageTag, String.toLowerCase, String.split('-'), Array.headNonEmpty)
 
-export const localeFromLanguageTag = (languageTag: string): Option.Option<Locale> =>
+export const localeFromLanguageTag = (
+  languageTag: string,
+): Option.Option<Locale> =>
   Option.liftPredicate(primarySubtag(languageTag), isLocale)
 
 export type LocaleSources = Readonly<{
@@ -42,7 +44,9 @@ export const resolveLocale = ({
     maybeSavedLocale,
     Option.filter(isLocale),
     Option.orElse(() =>
-      Array.head(Array.getSomes(Array.map(browserLanguages, localeFromLanguageTag))),
+      Array.head(
+        Array.getSomes(Array.map(browserLanguages, localeFromLanguageTag)),
+      ),
     ),
     Option.getOrElse(() => DEFAULT_LOCALE),
   )

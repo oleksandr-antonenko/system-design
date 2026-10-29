@@ -11,7 +11,8 @@ const inLanguage: UiStrings['inLanguage'] = {
 
 export const ru = {
   courseTitle: 'System Design',
-  courseTagline: 'Интерактивный курс: теория на живой схеме и задачи своими руками',
+  courseTagline:
+    'Интерактивный курс: теория на живой схеме и задачи своими руками',
   documentTitle: pageTitle => `${pageTitle} · System Design`,
   languageSwitcherLabel: 'Язык',
   inLanguage,

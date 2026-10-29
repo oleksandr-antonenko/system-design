@@ -1,68 +1,96 @@
-import { Schema, pipe } from 'effect'
+import { Array, Option, Schema, String, pipe } from 'effect'
 import { Route } from 'foldkit'
-import { defineRouteUnion, int, literal, rest, slash } from 'foldkit/route'
+import {
+  defineRouteUnion,
+  literal,
+  schemaSegment,
+  slash,
+  string,
+} from 'foldkit/route'
+import type { Url } from 'foldkit/url'
+
+import { Locale, isLocale } from './i18n/locale'
 
 export const AppRoute = defineRouteUnion({
-  Home: {},
-  Nested: {},
-  People: { searchText: Schema.Option(Schema.String) },
-  Person: { personId: Schema.Number },
-  FilesIndex: {},
-  Files: { path: Schema.NonEmptyArray(Schema.String) },
-  NotFound: { path: Schema.String },
+  Home: { locale: Locale },
+  Lesson: { locale: Locale, slug: Schema.String },
+  NotFound: { locale: Locale, path: Schema.String },
+  Unlocalized: { path: Schema.String },
 })
-
 export type AppRoute = typeof AppRoute.Type
-export type PeopleRoute = typeof AppRoute.People.Type
 
-export const homeRouter = pipe(Route.root, Route.mapTo(AppRoute.Home))
+const localeSegment = schemaSegment('locale', Locale)
 
-export const nestedRouter = pipe(
-  literal('nested'),
-  slash(literal('route')),
-  slash(literal('is')),
-  slash(literal('very')),
-  slash(literal('nested')),
-  Route.mapTo(AppRoute.Nested),
+export const homeRouter = pipe(localeSegment, Route.mapTo(AppRoute.Home))
+
+export const lessonRouter = pipe(
+  localeSegment,
+  slash(literal('lessons')),
+  slash(string('slug')),
+  Route.mapTo(AppRoute.Lesson),
 )
 
-export const peopleRouter = pipe(
-  literal('people'),
-  Route.query(
-    Schema.Struct({
-      searchText: Schema.OptionFromOptional(Schema.String),
-    }),
-  ),
-  Route.mapTo(AppRoute.People),
+const parseKnownRoute = Route.parseUrlWithFallback(
+  Route.oneOf(lessonRouter, homeRouter),
+  AppRoute.Unlocalized,
 )
 
-export const personRouter = pipe(
-  literal('people'),
-  slash(int('personId')),
-  Route.mapTo(AppRoute.Person),
-)
+const pathSegments = (path: string): ReadonlyArray<string> =>
+  Array.filter(String.split(path, '/'), String.isNonEmpty)
 
-export const filesIndexRouter = pipe(
-  literal('files'),
-  Route.mapTo(AppRoute.FilesIndex),
-)
+const localeOfPath = (path: string): Option.Option<Locale> =>
+  pipe(pathSegments(path), Array.head, Option.filter(isLocale))
 
-export const filesRouter = pipe(
-  literal('files'),
-  slash(rest('path')),
-  Route.mapTo(AppRoute.Files),
-)
+const classifyUnmatched = (path: string): AppRoute =>
+  Option.match(localeOfPath(path), {
+    onNone: () => AppRoute.Unlocalized({ path }),
+    onSome: locale => AppRoute.NotFound({ locale, path }),
+  })
 
-const routeParser = Route.oneOf(
-  personRouter,
-  peopleRouter,
-  filesIndexRouter,
-  filesRouter,
-  nestedRouter,
-  homeRouter,
-)
+export const urlToAppRoute = (url: Url): AppRoute => {
+  const route = parseKnownRoute(url)
 
-export const urlToAppRoute = Route.parseUrlWithFallback(
-  routeParser,
-  AppRoute.NotFound,
-)
+  return AppRoute.match(route, {
+    Unlocalized: ({ path }) => classifyUnmatched(path),
+    Home: () => route,
+    Lesson: () => route,
+    NotFound: () => route,
+  })
+}
+
+export const localeOf = (route: AppRoute): Option.Option<Locale> =>
+  AppRoute.match(route, {
+    Home: ({ locale }) => Option.some(locale),
+    Lesson: ({ locale }) => Option.some(locale),
+    NotFound: ({ locale }) => Option.some(locale),
+    Unlocalized: () => Option.none(),
+  })
+
+export const homeUrl = (locale: Locale): string => `${homeRouter({ locale })}/`
+
+const withoutLocale = (path: string): string =>
+  pipe(pathSegments(path), Array.drop(1), segments => `/${segments.join('/')}`)
+
+export const localizedPath = (locale: Locale, path: string): string =>
+  path === '/' ? homeUrl(locale) : `/${locale}${path}`
+
+export const urlForRoute = (route: AppRoute): string =>
+  AppRoute.match(route, {
+    Home: ({ locale }) => homeUrl(locale),
+    Lesson: ({ locale, slug }) => lessonRouter({ locale, slug }),
+    NotFound: ({ path }) => path,
+    Unlocalized: ({ path }) => path,
+  })
+
+export const routeInLocale = (route: AppRoute, locale: Locale): AppRoute =>
+  AppRoute.match(route, {
+    Home: () => AppRoute.Home({ locale }),
+    Lesson: ({ slug }) => AppRoute.Lesson({ locale, slug }),
+    NotFound: ({ path }) =>
+      AppRoute.NotFound({
+        locale,
+        path: localizedPath(locale, withoutLocale(path)),
+      }),
+    Unlocalized: ({ path }) =>
+      AppRoute.NotFound({ locale, path: localizedPath(locale, path) }),
+  })

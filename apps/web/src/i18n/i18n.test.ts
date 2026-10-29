@@ -129,7 +129,10 @@ describe('number formatting', () => {
   )
 })
 
-const collectStrings = (value: unknown, path: string): ReadonlyArray<[string, string]> => {
+const collectStrings = (
+  value: unknown,
+  path: string,
+): ReadonlyArray<[string, string]> => {
   if (typeof value === 'string') {
     return [[path, value]]
   }

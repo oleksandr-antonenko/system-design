@@ -11,7 +11,8 @@ const inLanguage: UiStrings['inLanguage'] = {
 
 export const en = {
   courseTitle: 'System Design',
-  courseTagline: 'An interactive course: theory on a live board and hands-on tasks',
+  courseTagline:
+    'An interactive course: theory on a live board and hands-on tasks',
   documentTitle: pageTitle => `${pageTitle} · System Design`,
   languageSwitcherLabel: 'Language',
   inLanguage,
@@ -35,7 +36,8 @@ export const en = {
     theoryRegion: 'Theory',
     boardRegion: 'Board',
     instrumentsRegion: 'Instruments',
-    theoryPlaceholder: 'This lesson is still in the works. Theory steps will appear here.',
+    theoryPlaceholder:
+      'This lesson is still in the works. Theory steps will appear here.',
     boardPlaceholder: 'The system diagram board will appear here.',
     instrumentsPlaceholder: 'Load, errors and response time will appear here.',
   },

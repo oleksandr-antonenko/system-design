@@ -11,7 +11,8 @@ const inLanguage: UiStrings['inLanguage'] = {
 
 export const uk = {
   courseTitle: 'System Design',
-  courseTagline: 'Інтерактивний курс: теорія на живій схемі та задачі власноруч',
+  courseTagline:
+    'Інтерактивний курс: теорія на живій схемі та задачі власноруч',
   documentTitle: pageTitle => `${pageTitle} · System Design`,
   languageSwitcherLabel: 'Мова',
   inLanguage,
@@ -39,7 +40,8 @@ export const uk = {
     instrumentsRegion: 'Прилади',
     theoryPlaceholder: 'Урок ще готується. Тут з’являться кроки теорії.',
     boardPlaceholder: 'Тут буде дошка зі схемою системи.',
-    instrumentsPlaceholder: 'Тут будуть навантаження, помилки та час відповіді.',
+    instrumentsPlaceholder:
+      'Тут будуть навантаження, помилки та час відповіді.',
   },
   notFound: {
     title: 'Сторінку не знайдено',

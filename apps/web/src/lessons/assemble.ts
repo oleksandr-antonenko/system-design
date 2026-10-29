@@ -1,7 +1,12 @@
 import { Array, Option, Order, String, pipe } from 'effect'
 
 import type { Locale } from '../i18n/locale'
-import { type LessonMeta, type LessonText, type ModuleId, moduleOrder } from './model'
+import {
+  type LessonMeta,
+  type LessonText,
+  type ModuleId,
+  moduleOrder,
+} from './model'
 
 export type LocalizedText = Readonly<{ locale: Locale; text: LessonText }>
 
@@ -22,7 +27,12 @@ export type AssembledCourse = Readonly<{
 }>
 
 const folderOf = (modulePath: string): string =>
-  pipe(modulePath, String.split('/'), Array.get(1), Option.getOrElse(() => modulePath))
+  pipe(
+    modulePath,
+    String.split('/'),
+    Array.get(1),
+    Option.getOrElse(() => modulePath),
+  )
 
 const textLocaleOf = (modulePath: string): Option.Option<string> =>
   pipe(
@@ -57,7 +67,9 @@ const problemsForLesson = (
   const folderProblems =
     folder === expectedFolder(meta)
       ? []
-      : [`${folder}: folder must be named "${expectedFolder(meta)}" (order and slug from meta.ts)`]
+      : [
+          `${folder}: folder must be named "${expectedFolder(meta)}" (order and slug from meta.ts)`,
+        ]
 
   const declaredProblems = Array.flatMap(meta.locales, locale =>
     Option.match(
@@ -67,8 +79,12 @@ const problemsForLesson = (
           `${folder}: missing translation for declared locale "${locale}" (text.${locale}.ts)`,
         ],
         onSome: ({ text }) => [
-          ...(isBlank(text.title) ? [`${folder}: empty title in text.${locale}.ts`] : []),
-          ...(isBlank(text.summary) ? [`${folder}: empty summary in text.${locale}.ts`] : []),
+          ...(isBlank(text.title)
+            ? [`${folder}: empty title in text.${locale}.ts`]
+            : []),
+          ...(isBlank(text.summary)
+            ? [`${folder}: empty summary in text.${locale}.ts`]
+            : []),
         ],
       },
     ),
@@ -103,10 +119,15 @@ const duplicateProblems = (
   )
 
 const moduleRank = (module: ModuleId): number =>
-  Option.getOrElse(Array.findFirstIndex(moduleOrder, candidate => candidate === module), () => moduleOrder.length)
+  Option.getOrElse(
+    Array.findFirstIndex(moduleOrder, candidate => candidate === module),
+    () => moduleOrder.length,
+  )
 
 const lessonOrder: Order.Order<Lesson> = Order.combine(
-  Order.mapInput(Order.Number, (lesson: Lesson) => moduleRank(lesson.meta.module)),
+  Order.mapInput(Order.Number, (lesson: Lesson) =>
+    moduleRank(lesson.meta.module),
+  ),
   Order.mapInput(Order.Number, (lesson: Lesson) => lesson.meta.order),
 )
 
@@ -129,13 +150,19 @@ const toLocalizedTexts = (
     }),
   )
 
-export const assembleCourse = ({ metas, texts }: LessonSources): AssembledCourse => {
+export const assembleCourse = ({
+  metas,
+  texts,
+}: LessonSources): AssembledCourse => {
   const allTexts = textEntries(texts)
 
-  const folderMetas = Array.map(Object.entries(metas), ([modulePath, meta]) => ({
-    folder: folderOf(modulePath),
-    meta,
-  }))
+  const folderMetas = Array.map(
+    Object.entries(metas),
+    ([modulePath, meta]) => ({
+      folder: folderOf(modulePath),
+      meta,
+    }),
+  )
 
   const assembled = Array.map(folderMetas, ({ folder, meta }) => {
     const entries = Array.filter(allTexts, entry => entry.folder === folder)
@@ -174,13 +201,20 @@ export type LessonTextChoice = Readonly<{
 
 const FALLBACK_LOCALE: Locale = 'en'
 
-export const lessonTextFor = (lesson: Lesson, locale: Locale): LessonTextChoice => {
+export const lessonTextFor = (
+  lesson: Lesson,
+  locale: Locale,
+): LessonTextChoice => {
   const textIn = (wanted: Locale) =>
     Array.findFirst(lesson.texts, entry => entry.locale === wanted)
 
   return pipe(
     textIn(locale),
-    Option.map(({ text, locale: shownIn }) => ({ text, shownIn, isFallback: false })),
+    Option.map(({ text, locale: shownIn }) => ({
+      text,
+      shownIn,
+      isFallback: false,
+    })),
     Option.orElse(() =>
       Option.map(textIn(FALLBACK_LOCALE), ({ text, locale: shownIn }) => ({
         text,

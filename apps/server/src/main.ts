@@ -1,7 +1,8 @@
-import { NodeHttpServer, NodeRuntime } from '@effect/platform-node'
 import { Effect, Layer } from 'effect'
 import { HttpRouter } from 'effect/http'
 import { createServer } from 'node:http'
+
+import { NodeHttpServer, NodeRuntime } from '@effect/platform-node'
 
 import { makeAppLayer } from './app.ts'
 import { loadServerConfig } from './config.ts'

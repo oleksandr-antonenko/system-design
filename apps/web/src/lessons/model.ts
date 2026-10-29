@@ -2,7 +2,11 @@ import { Schema } from 'effect'
 
 import { Locale } from '../i18n/locale'
 
-export const ModuleId = Schema.Literals(['foundations', 'scaling', 'distributed'])
+export const ModuleId = Schema.Literals([
+  'foundations',
+  'scaling',
+  'distributed',
+])
 export type ModuleId = typeof ModuleId.Type
 
 export const moduleOrder: ReadonlyArray<ModuleId> = ModuleId.literals

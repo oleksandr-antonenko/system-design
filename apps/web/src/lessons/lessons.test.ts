@@ -6,7 +6,10 @@ import { assembleCourse, lessonTextFor } from './assemble'
 import type { LessonMeta, LessonText } from './model'
 import { course, findLesson, lessons } from './registry'
 
-const text = (title: string): LessonText => ({ title, summary: `${title} summary` })
+const text = (title: string): LessonText => ({
+  title,
+  summary: `${title} summary`,
+})
 
 const meta = (overrides: Partial<LessonMeta> = {}): LessonMeta => ({
   slug: 'demo',
@@ -23,9 +26,7 @@ describe('course registry', () => {
   })
 
   test('the course has 13 lessons in order', () => {
-    expect(lessons.map(lesson => lesson.meta.order)).toEqual(
-      Array.range(1, 13),
-    )
+    expect(lessons.map(lesson => lesson.meta.order)).toEqual(Array.range(1, 13))
   })
 
   test('every lesson ships all four languages', () => {
@@ -48,7 +49,10 @@ describe('course registry', () => {
 describe('assembleCourse', () => {
   const fullTexts = (folder: string) =>
     Object.fromEntries(
-      locales.map(locale => [`./${folder}/text.${locale}.ts`, text(`${folder} ${locale}`)]),
+      locales.map(locale => [
+        `./${folder}/text.${locale}.ts`,
+        text(`${folder} ${locale}`),
+      ]),
     )
 
   test('a new folder joins the course without touching other files', () => {

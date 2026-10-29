@@ -1,157 +1,113 @@
-import { Array, Option, String } from 'effect'
-import { expect, given, role, scene, text } from 'foldkit/scene'
+import { Option } from 'effect'
+import {
+  all,
+  expect,
+  expectAll,
+  given,
+  label,
+  role,
+  scene,
+  text,
+} from 'foldkit/scene'
 import { describe, test } from 'vitest'
 
-import { AppRoute, Model, update, view } from './main'
-import { People } from './page'
+import type { Locale } from './i18n/locale'
+import { AppRoute, Model, update } from './main'
+import { view } from './view'
 
-const peoplePageWith = (searchInput: string) =>
-  People.Model.make({
-    searchInput,
-    searchHistory: Array.liftPredicate(String.isNonEmpty)(searchInput),
-    results: People.SearchResults.Loaded({
-      query: searchInput,
-      people: People.searchPeople(searchInput),
-    }),
+const at = (route: AppRoute, locale: Locale) =>
+  Model.make({
+    route,
+    preferredLocale: locale,
+    maybeSavedLocale: Option.some(locale),
   })
 
-const initialPeoplePage = peoplePageWith('')
+describe('header', () => {
+  test('the language switcher keeps the current lesson', () => {
+    scene(
+      { update, view },
+      given(at(AppRoute.Lesson({ locale: 'ru', slug: 'load-balancer' }), 'ru')),
+      expect(role('link', { name: 'English' })).toHaveAttr(
+        'href',
+        '/en/lessons/load-balancer',
+      ),
+      expect(role('link', { name: 'Lietuvių' })).toHaveAttr('hreflang', 'lt'),
+      expect(role('link', { name: 'Русский' })).toHaveAttr(
+        'aria-current',
+        'true',
+      ),
+    )
+  })
 
-const home = Model.make({
-  route: AppRoute.Home(),
-  peoplePage: initialPeoplePage,
+  test('after switching, the lesson is shown in English', () => {
+    scene(
+      { update, view },
+      given(at(AppRoute.Lesson({ locale: 'en', slug: 'load-balancer' }), 'en')),
+      expect(role('heading', { name: 'Load balancer' })).toExist(),
+      expect(role('link', { name: 'System Design' })).toHaveAttr(
+        'href',
+        '/en/',
+      ),
+    )
+  })
 })
-const people = (searchInput: string) =>
-  Model.make({
-    route: AppRoute.People({
-      searchText: Option.liftPredicate(String.isNonEmpty)(searchInput),
-    }),
-    peoplePage: peoplePageWith(searchInput),
+
+describe('home', () => {
+  test('lists all 13 lessons; only available ones are links', () => {
+    scene(
+      { update, view },
+      given(at(AppRoute.Home({ locale: 'uk' }), 'uk')),
+      expect(role('heading', { name: 'Програма курсу' })).toExist(),
+      expect(text('13 уроків')).toExist(),
+      expectAll(all.role('listitem')).toHaveCount(17),
+      expectAll(all.selector('main a')).toHaveCount(1),
+      expect(role('link', { name: 'Балансувальник навантаження' })).toHaveAttr(
+        'href',
+        '/uk/lessons/load-balancer',
+      ),
+      expect(text('Один сервер')).toExist(),
+      expect(role('link', { name: 'Один сервер' })).toBeAbsent(),
+    )
   })
-const person = (personId: number) =>
-  Model.make({
-    route: AppRoute.Person({ personId }),
-    peoplePage: initialPeoplePage,
-  })
-const nested = Model.make({
-  route: AppRoute.Nested(),
-  peoplePage: initialPeoplePage,
 })
-const filesIndex = Model.make({
-  route: AppRoute.FilesIndex(),
-  peoplePage: initialPeoplePage,
+
+describe('lesson page', () => {
+  test('has theory, board and instruments regions', () => {
+    scene(
+      { update, view },
+      given(at(AppRoute.Lesson({ locale: 'uk', slug: 'load-balancer' }), 'uk')),
+      expect(label('Теорія')).toExist(),
+      expect(label('Дошка')).toExist(),
+      expect(label('Прилади')).toExist(),
+    )
+  })
+
+  test('an unknown lesson shows the not-found page', () => {
+    scene(
+      { update, view },
+      given(
+        at(AppRoute.Lesson({ locale: 'en', slug: 'no-such-lesson' }), 'en'),
+      ),
+      expect(role('heading', { name: 'Page not found' })).toExist(),
+      expect(
+        text('There is no lesson “no-such-lesson” in the course.'),
+      ).toExist(),
+    )
+  })
 })
-const files = (path: Array.NonEmptyReadonlyArray<string>) =>
-  Model.make({
-    route: AppRoute.Files({ path }),
-    peoplePage: initialPeoplePage,
-  })
-const notFound = (path: string) =>
-  Model.make({
-    route: AppRoute.NotFound({ path }),
-    peoplePage: initialPeoplePage,
-  })
 
-describe('view', () => {
-  test('the nav bar appears on every route', () => {
+describe('not found', () => {
+  test('is shown in the route language with a link home', () => {
     scene(
       { update, view },
-      given(home),
-      expect(role('link', { name: 'Home' })).toExist(),
-      expect(role('link', { name: 'People' })).toExist(),
-      expect(role('link', { name: 'Files' })).toExist(),
-      expect(role('link', { name: 'Nested' })).toExist(),
-    )
-  })
-
-  test('the Home route renders its welcome heading', () => {
-    scene(
-      { update, view },
-      given(home),
-      expect(role('heading', { name: 'Welcome Home' })).toExist(),
-    )
-  })
-
-  test('the Nested route renders its deep-route message', () => {
-    scene(
-      { update, view },
-      given(nested),
-      expect(role('heading', { name: 'Very Nested Route!' })).toExist(),
-    )
-  })
-
-  test('the People route renders the People heading', () => {
-    scene(
-      { update, view },
-      given(people('')),
-      expect(role('heading', { name: 'People' })).toExist(),
-    )
-  })
-
-  test('a valid Person route renders the person details', () => {
-    scene(
-      { update, view },
-      given(person(1)),
-      expect(role('heading', { name: 'Alice Johnson' })).toExist(),
-      expect(text('Designer')).toExist(),
-      expect(role('link', { name: '← Back to People' })).toExist(),
-    )
-  })
-
-  test('an unknown Person id renders the not-found panel', () => {
-    scene(
-      { update, view },
-      given(person(99)),
-      expect(role('heading', { name: 'Person Not Found' })).toExist(),
-      expect(text('No person found with ID: 99')).toExist(),
-    )
-  })
-
-  test('the Files index lists the top-level entries', () => {
-    scene(
-      { update, view },
-      given(filesIndex),
-      expect(role('link', { name: 'documents' })).toExist(),
-      expect(role('link', { name: 'photos' })).toExist(),
-      expect(role('link', { name: 'notes.txt' })).toExist(),
-    )
-  })
-
-  test('a directory path renders breadcrumb links and its entries', () => {
-    scene(
-      { update, view },
-      given(files(['documents', 'taxes'])),
-      expect(role('link', { name: 'documents' })).toExist(),
-      expect(role('link', { name: '2024.pdf' })).toExist(),
-      expect(role('link', { name: '2025.pdf' })).toExist(),
-    )
-  })
-
-  test('a file path renders the file details', () => {
-    scene(
-      { update, view },
-      given(files(['documents', 'resume.pdf'])),
-      expect(role('heading', { name: 'resume.pdf' })).toExist(),
-      expect(text('47.1 KB')).toExist(),
-    )
-  })
-
-  test('an unknown path under files renders the missing panel', () => {
-    scene(
-      { update, view },
-      given(files(['documents', 'missing.txt'])),
-      expect(role('heading', { name: 'Nothing Here' })).toExist(),
-      expect(role('link', { name: '← Back to Files' })).toExist(),
-    )
-  })
-
-  test('an unmatched URL renders the NotFound view', () => {
-    scene(
-      { update, view },
-      given(notFound('/missing')),
-      expect(role('heading', { name: '404 - Page Not Found' })).toExist(),
-      expect(text('The path "/missing" was not found.')).toExist(),
-      expect(role('link', { name: '← Go Home' })).toExist(),
+      given(
+        at(AppRoute.NotFound({ locale: 'lt', path: '/lt/unknown/path' }), 'lt'),
+      ),
+      expect(role('heading', { name: 'Puslapis nerastas' })).toExist(),
+      expect(role('link', { name: 'Atgal į kurso programą' })).toHaveAttr(
+        'href',
+        '/lt/',
+      ),
     )
   })
 })

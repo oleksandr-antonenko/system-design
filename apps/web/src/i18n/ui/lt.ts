@@ -11,7 +11,8 @@ const inLanguage: UiStrings['inLanguage'] = {
 
 export const lt = {
   courseTitle: 'System Design',
-  courseTagline: 'Interaktyvus kursas: teorija gyvoje schemoje ir praktinės užduotys',
+  courseTagline:
+    'Interaktyvus kursas: teorija gyvoje schemoje ir praktinės užduotys',
   documentTitle: pageTitle => `${pageTitle} · System Design`,
   languageSwitcherLabel: 'Kalba',
   inLanguage,

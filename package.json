@@ -10,7 +10,7 @@
     "node": ">=24"
   },
   "scripts": {
-    "dev": "pnpm --parallel --filter ./apps/* dev",
+    "dev": "pnpm -r --parallel dev",
     "build": "pnpm --filter @system-design/web build && pnpm --filter @system-design/server build",
     "start": "pnpm --filter @system-design/server start",
     "typecheck": "pnpm -r typecheck",
