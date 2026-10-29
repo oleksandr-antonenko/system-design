@@ -1,4 +1,4 @@
-import { Effect, Layer } from 'effect'
+import { Cause, Effect, Exit, Layer, Runtime } from 'effect'
 import { HttpRouter } from 'effect/http'
 import { createServer } from 'node:http'
 
@@ -25,4 +25,12 @@ const ServerLive = Layer.unwrap(
   }),
 )
 
-NodeRuntime.runMain(Layer.launch(ServerLive))
+const stopCleanlyOnSignal: Runtime.Teardown = (exit, onExit) => {
+  if (Exit.isFailure(exit) && Cause.hasInterruptsOnly(exit.cause)) {
+    onExit(0)
+    return
+  }
+  Runtime.defaultTeardown(exit, onExit)
+}
+
+NodeRuntime.runMain(Layer.launch(ServerLive), { teardown: stopCleanlyOnSignal })

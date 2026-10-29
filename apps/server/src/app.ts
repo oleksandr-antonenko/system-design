@@ -2,7 +2,7 @@ import { Layer } from 'effect'
 import { HttpRouter, HttpServerResponse } from 'effect/http'
 
 import type { ServerConfig } from './config.ts'
-import { makeStaticHandler } from './static.ts'
+import { makeStaticRoute } from './static.ts'
 
 const apiNotFound = HttpServerResponse.json(
   { error: 'not_found' },
@@ -17,5 +17,5 @@ export const makeAppLayer = (config: ServerConfig) =>
       HttpServerResponse.json({ status: 'ok', version: config.appVersion }),
     ),
     HttpRouter.add('*', '/api/*', apiNotFound),
-    HttpRouter.add('GET', '/*', makeStaticHandler(config.webDist)),
+    makeStaticRoute(config.webDist),
   )
