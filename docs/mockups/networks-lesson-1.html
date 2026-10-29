@@ -1,0 +1,1432 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Сети: урок 1</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Literata:opsz,wght@7..72,400;7..72,600&family=Unbounded:wght@500&display=swap">
+<style>
+/* Урок 1 для новичков: учебник слева, доска справа, под доской одна кнопка «Пуск»; в задаче рядом с доской экран телефона */
+:root {
+  --bg: #EDF0EF;
+  --page: #FAFBF9;
+  --board: #F4F7F8;
+  --grid: #E0E7EA;
+  --ink: #17202A;
+  --muted: #5A6774;
+  --line: #D2DAE0;
+  --node: #FFFFFF;
+  --node-line: #8D9BA8;
+  --accent: #2B4BD4;
+  --accent-soft: #E2E7FB;
+  --ok: #148A55;
+  --warn: #C27C05;
+  --bad: #CF3F36;
+  --bad-soft: #FBE6E4;
+  --ok-soft: #E0F3E9;
+  --on-warn: #1A1406;
+  --zone-home: #E9F0F5;
+  --cloud: #F1F4FC;
+  --cloud-line: #A7B3D9;
+  --sticker: #FBE8A6;
+  --sticker-line: #D3B34A;
+  --sticker-ink: #3A2E05;
+  --screen: #FFFFFF;
+  --word: #FFE9A8;
+  --shadow: rgba(23, 32, 42, .18);
+  --f-display: "Unbounded", "Arial Black", system-ui, sans-serif;
+  --f-prose: "Literata", "PT Serif", Georgia, serif;
+  --f-ui: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  --f-phone: system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0E1318; --page: #131A21; --board: #0F151B; --grid: #1A232C; --ink: #E3E9EF; --muted: #93A0AD;
+    --line: #27323C; --node: #18202A; --node-line: #536475; --accent: #8EA3FF; --accent-soft: #1E2850;
+    --ok: #3DC48B; --warn: #E8AA3C; --bad: #F2675C; --bad-soft: #3A1715; --ok-soft: #12301F;
+    --zone-home: #121C26; --cloud: #161E2E; --cloud-line: #3E4D72;
+    --sticker: #4A3F17; --sticker-line: #8A7428; --sticker-ink: #F6E7B4;
+    --screen: #10161D; --word: #4A3D12; --shadow: rgba(0, 0, 0, .55);
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0E1318; --page: #131A21; --board: #0F151B; --grid: #1A232C; --ink: #E3E9EF; --muted: #93A0AD;
+  --line: #27323C; --node: #18202A; --node-line: #536475; --accent: #8EA3FF; --accent-soft: #1E2850;
+  --ok: #3DC48B; --warn: #E8AA3C; --bad: #F2675C; --bad-soft: #3A1715; --ok-soft: #12301F;
+  --zone-home: #121C26; --cloud: #161E2E; --cloud-line: #3E4D72;
+  --sticker: #4A3F17; --sticker-line: #8A7428; --sticker-ink: #F6E7B4;
+  --screen: #10161D; --word: #4A3D12; --shadow: rgba(0, 0, 0, .55);
+  color-scheme: dark;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html, body { height: 100%; }
+body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--f-ui); font-size: 13px; line-height: 1.45; -webkit-font-smoothing: antialiased; }
+button, input { font: inherit; color: inherit; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+
+.app { height: 100%; display: grid; grid-template-rows: auto minmax(0, 1fr); }
+
+/* ---------- верхняя лента ---------- */
+.top {
+  display: flex; align-items: center; flex-wrap: wrap; gap: 8px 24px;
+  padding-block: 8px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  background: var(--page); border-bottom: 1px solid var(--line);
+}
+.crumb { font-size: 12px; color: var(--muted); white-space: nowrap; display: flex; gap: 10px; align-items: baseline; }
+.crumb .brand { font-family: var(--f-display); font-weight: 500; font-size: 12.5px; color: var(--ink); }
+.crumb b { color: var(--ink); font-weight: 600; }
+.timeline { flex: 1 1 340px; display: flex; align-items: center; justify-content: center; gap: 14px; min-width: 0; }
+.tl-steps { display: flex; align-items: center; gap: 4px; }
+.tl { appearance: none; border: 0; background: none; padding: 9px 0; cursor: pointer; display: grid; place-items: center; }
+.tl .bar { display: block; width: 34px; height: 5px; border-radius: 3px; background: var(--line); transition: background .2s, height .2s; }
+.tl.done .bar { background: var(--accent); opacity: .5; }
+.tl.current .bar { background: var(--accent); height: 8px; }
+.tl.is-task .bar { width: 11px; height: 11px; border-radius: 2px; transform: rotate(45deg); margin-inline: 5px; }
+.tl.is-task.current .bar { height: 11px; }
+.tl.is-task.solved .bar { background: var(--ok); opacity: 1; }
+.tl.is-quiz .bar { width: 13px; height: 13px; border-radius: 50%; margin-inline: 4px; background: transparent; border: 2.5px solid var(--line); }
+.tl.is-quiz.done .bar { border-color: var(--accent); background: transparent; }
+.tl.is-quiz.current .bar { height: 13px; border-color: var(--accent); background: var(--accent-soft); opacity: 1; }
+.tl.is-quiz.first .bar { border-color: var(--ok); background: var(--ok); opacity: 1; }
+.tl.is-quiz.shown .bar { border-color: var(--warn); background: transparent; opacity: 1; }
+.tl:disabled { cursor: not-allowed; }
+.tl-label { font-size: 12px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+.tl-label b { color: var(--ink); font-weight: 600; }
+.top-note { font-size: 10.5px; color: var(--muted); letter-spacing: .08em; text-transform: uppercase; white-space: nowrap; }
+
+/* ---------- раскладка ---------- */
+.main { display: grid; grid-template-columns: minmax(340px, 38%) minmax(0, 1fr); min-height: 0; }
+
+.theory { display: flex; flex-direction: column; min-height: 0; min-width: 0; background: var(--page); border-right: 1px solid var(--line); }
+.theory-scroll {
+  position: relative; flex: 1; overflow-y: auto;
+  padding-block: 26px 32px;
+  padding-left: max(28px, env(safe-area-inset-left, 0px));
+  padding-right: 28px;
+}
+.eyebrow { font-size: 10.5px; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
+h1 { font-family: var(--f-display); font-weight: 500; font-size: 23px; line-height: 1.22; margin: 8px 0 6px; text-wrap: balance; letter-spacing: -.01em; }
+.meta { font-size: 12px; color: var(--muted); }
+.lesson-head { padding-bottom: 18px; display: grid; gap: 4px; }
+.words { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin-top: 8px; font-size: 11.5px; color: var(--muted); }
+.words .w { font-weight: 600; color: var(--ink); background: var(--word); border-radius: 999px; padding: 2px 10px; }
+
+.beat { padding-block: 18px; border-top: 1px solid var(--line); }
+.beat h2 { margin: 0 0 10px; font-size: 11px; font-weight: 600; letter-spacing: .09em; text-transform: uppercase; color: var(--muted); display: flex; gap: 10px; align-items: baseline; }
+.beat h2 .n { color: var(--accent); font-variant-numeric: tabular-nums; }
+.beat.past { opacity: .5; cursor: pointer; transition: opacity .15s; }
+.beat.past:hover { opacity: .8; }
+.beat.past .prose { font-size: 15px; }
+.prose { font-family: var(--f-prose); font-size: 16.5px; line-height: 1.62; max-width: 62ch; }
+.prose p { margin: 0; }
+.prose p + p { margin-top: .75em; }
+.prose strong, .prose b { font-weight: 600; }
+.prose dfn { font-style: normal; font-weight: 600; background: linear-gradient(transparent 58%, var(--word) 58%); padding-inline: 1px; }
+.prose ul { margin: .7em 0 0; padding-left: 1.2em; display: grid; gap: .35em; }
+.prose li::marker { color: var(--accent); }
+.ref { font-weight: 600; border-bottom: 1.5px dashed var(--accent); cursor: help; border-radius: 2px; }
+.ref:hover, .ref:focus-visible, .ref.on { background: var(--accent-soft); }
+.ref.act { cursor: pointer; }
+.task-done { margin: 12px 0 0; font-size: 12px; color: var(--ok); font-weight: 600; }
+.task-done.shown { color: var(--warn); }
+
+/* подробнее */
+.more { margin-top: 14px; border: 1px solid var(--line); border-radius: 12px; background: var(--node); }
+.more summary { cursor: pointer; list-style: none; padding: 11px 14px; font-size: 12.5px; font-weight: 600; display: flex; gap: 10px; align-items: center; }
+.more summary::-webkit-details-marker { display: none; }
+.more summary::before { content: "+"; width: 18px; height: 18px; border-radius: 50%; border: 1.5px solid var(--accent); color: var(--accent); display: grid; place-items: center; font-size: 13px; line-height: 1; flex: none; }
+.more[open] summary::before { content: "−"; }
+.more summary .tag { margin-left: auto; font-weight: 500; font-size: 11px; color: var(--muted); white-space: nowrap; }
+.more-body { padding: 0 16px 14px 42px; font-family: var(--f-prose); font-size: 15px; line-height: 1.58; display: grid; gap: .6em; }
+.more-body p { margin: 0; }
+
+/* итог урока */
+.finish { margin-top: 6px; padding-top: 18px; border-top: 1px solid var(--line); display: grid; gap: 12px; }
+.score { display: flex; flex-wrap: wrap; gap: 6px 10px; font-size: 12px; }
+.next { border: 1.5px solid var(--accent); border-radius: 14px; background: var(--node); padding: 16px; display: grid; gap: 8px; }
+.next h3 { margin: 0; font-family: var(--f-display); font-weight: 500; font-size: 17px; line-height: 1.3; }
+.next p { margin: 0; font-family: var(--f-prose); font-size: 15px; line-height: 1.55; }
+.next .eyebrow { color: var(--accent); font-weight: 600; }
+
+/* ---------- карточки задачи и вопроса ---------- */
+.task { margin-top: 16px; border: 1.5px solid var(--accent); border-radius: 12px; background: var(--node); padding: 16px; display: grid; gap: 12px; }
+.task.solved { border-color: var(--ok); }
+.task.revealed { border-color: var(--warn); }
+.task-head { display: flex; align-items: center; gap: 9px; font-size: 11px; font-weight: 700; letter-spacing: .09em; text-transform: uppercase; color: var(--accent); }
+.task.solved .task-head { color: var(--ok); }
+.task.revealed .task-head { color: var(--warn); }
+.task-head .dia { width: 9px; height: 9px; background: currentColor; transform: rotate(45deg); border-radius: 1px; flex: none; }
+.task-head .ring { width: 11px; height: 11px; border: 2.5px solid currentColor; border-radius: 50%; flex: none; }
+.task-head .att { margin-left: auto; font-weight: 500; color: var(--muted); letter-spacing: .04em; text-transform: none; }
+.task-goal { font-family: var(--f-prose); font-size: 16px; line-height: 1.5; font-weight: 600; margin: 0; }
+.task-how { font-size: 12px; color: var(--muted); margin: 0; }
+.checks { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.checks li { display: grid; grid-template-columns: 18px 1fr; gap: 8px; font-size: 12.5px; align-items: start; }
+.checks .mk { width: 16px; height: 16px; border-radius: 50%; border: 1.5px solid var(--node-line); display: grid; place-items: center; font-size: 10px; line-height: 1; margin-top: 1px; font-weight: 700; transition: background .25s, border-color .25s; }
+.checks li.ok .mk { background: var(--ok); border-color: var(--ok); color: var(--page); }
+.checks li.wait .mk { border-style: dashed; border-color: var(--accent); }
+.checks .why { display: block; font-size: 11.5px; color: var(--muted); margin-top: 2px; }
+.fb { border-radius: 8px; padding: 10px 12px; font-size: 12.5px; }
+.fb.fail { background: var(--bad-soft); border: 1px solid var(--bad); }
+.fb.ok { background: var(--ok-soft); border: 1px solid var(--ok); }
+.fb p { margin: 0; }
+.fb p + p { margin-top: 6px; }
+.explain { font-family: var(--f-prose); font-size: 15px; line-height: 1.5; margin: 0; }
+.mark { display: inline-flex; align-items: center; gap: 6px; font-size: 11.5px; font-weight: 600; border-radius: 999px; padding: 3px 10px; justify-self: start; }
+.mark.first { color: var(--ok); background: var(--ok-soft); }
+.mark.shown { color: var(--warn); border: 1px solid var(--warn); }
+.hints { margin: 0; padding-left: 20px; font-size: 12.5px; display: grid; gap: 4px; }
+.hints li::marker { color: var(--accent); }
+.task-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+
+/* ---------- кнопки ---------- */
+.btn { appearance: none; border: 1px solid var(--line); background: var(--node); color: var(--ink); border-radius: 8px; padding: 7px 11px; font-size: 12px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
+.btn:hover:not(:disabled) { border-color: var(--node-line); }
+.btn:disabled { opacity: .42; cursor: not-allowed; }
+.btn.primary { background: var(--accent); border-color: var(--accent); color: var(--page); font-weight: 600; }
+.btn.link { border-color: transparent; background: transparent; color: var(--accent); padding-inline: 4px; }
+
+.theory-nav {
+  display: flex; justify-content: space-between; align-items: center; gap: 10px;
+  padding-block: 12px;
+  padding-left: max(28px, env(safe-area-inset-left, 0px)); padding-right: 28px;
+  border-top: 1px solid var(--line); background: var(--page);
+}
+.theory-nav .nav-text { font-size: 11.5px; color: var(--muted); text-align: center; flex: 1; min-width: 0; }
+
+/* ---------- сторона доски ---------- */
+.boardside {
+  display: grid; min-width: 0; min-height: 0;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: minmax(0, 1fr) auto;
+  grid-template-areas: "stage" "transport";
+}
+.boardside.with-phone { grid-template-columns: minmax(0, 1fr) 336px; grid-template-areas: "stage phone" "transport phone"; }
+.stage {
+  grid-area: stage; position: relative; min-height: 240px; overflow: hidden;
+  background-color: var(--board);
+  background-image: linear-gradient(var(--grid) 1px, transparent 1px), linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+  background-size: 24px 24px;
+  touch-action: manipulation; user-select: none; -webkit-user-select: none;
+}
+.stage svg { position: absolute; inset: 0; margin: auto; width: 100%; height: 100%; display: block; }
+.stage.flash { animation: flash 1.3s ease-out; }
+@keyframes flash { 0% { box-shadow: inset 0 0 0 5px var(--ok); } 100% { box-shadow: inset 0 0 0 0 var(--ok); } }
+.mode-chip { position: absolute; top: 12px; right: max(12px, env(safe-area-inset-right, 0px)); font-size: 11px; padding: 5px 10px; border-radius: 999px; background: var(--page); border: 1px solid var(--line); color: var(--muted); pointer-events: none; }
+.mode-chip.quiz, .mode-chip.edit { color: var(--accent); border-color: var(--accent); font-weight: 600; }
+
+#board text { pointer-events: none; }
+#board .house { fill: var(--zone-home); stroke: var(--node-line); stroke-opacity: .55; stroke-width: 1.4; stroke-dasharray: 2 5; stroke-linecap: round; stroke-linejoin: round; }
+#board .house-label { font: 600 10px var(--f-ui); letter-spacing: .14em; fill: var(--muted); }
+#board .cloud-edge { fill: none; stroke: var(--cloud-line); stroke-width: 4; }
+#board .cloud-fill { fill: var(--cloud); }
+#board .cloud.hl .cloud-edge, #board .cloud.ref-hover .cloud-edge { stroke: var(--accent); }
+#board .cloud.appear { animation: appear .5s ease-out both; }
+#board .inner-link { stroke: var(--cloud-line); stroke-width: 1.6; fill: none; }
+#board .inner-link.lit { stroke: var(--accent); stroke-width: 2.4; }
+#board .inner .ring { fill: var(--node); stroke: var(--cloud-line); stroke-width: 1.6; }
+#board .inner .dot { fill: var(--node-line); }
+#board .inner.lit .ring { stroke: var(--accent); stroke-width: 2.2; }
+#board .inner.appear { animation: pop .45s ease-out both; }
+@keyframes pop { from { opacity: 0; transform: scale(.4); } to { opacity: 1; transform: none; } }
+#board .inner { transform-box: fill-box; transform-origin: center; }
+#board .link { fill: none; stroke: var(--node-line); stroke-width: 2; stroke-linecap: round; transition: stroke .25s; }
+#board .link.radio { stroke-width: 1.8; }
+#board .link.lit { stroke: var(--accent); stroke-width: 2.6; }
+#board .link.new { animation: draw 1.2s ease-out; }
+@keyframes draw { from { opacity: 0; } to { opacity: 1; } }
+#board .node .body { fill: var(--node); stroke: var(--node-line); stroke-width: 1.5; transition: stroke .2s; }
+#board .node.hl .body, #board .node.ref-hover .body { stroke: var(--accent); stroke-width: 2.5; }
+#board .node.off .body { stroke-dasharray: 5 4; }
+#board .node.off .icon { opacity: .55; }
+#board .node.appear { animation: appear .5s ease-out both; }
+@keyframes appear { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+#board .icon { fill: none; stroke: var(--ink); stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+#board .title { font: 600 12.5px var(--f-ui); fill: var(--ink); }
+#board .cloud-title { font: 600 13px var(--f-ui); fill: var(--ink); }
+#board .sub { font: 400 10.5px var(--f-ui); fill: var(--muted); }
+#board .sub.bad { fill: var(--bad); font-weight: 600; }
+#board .sub.ok { fill: var(--ok); font-weight: 600; }
+#board .cand { cursor: pointer; }
+#board .cand:focus { outline: none; }
+#board .cand .body { stroke: var(--accent); stroke-width: 2; }
+#board .cand:hover .body, #board .cand:focus-visible .body { stroke-width: 3; fill: var(--accent-soft); }
+#board .halo { fill: none; stroke-width: 3; pointer-events: none; }
+#board .halo.pulse { animation: pulse 1.4s ease-in-out infinite; }
+#board .halo.info { stroke: var(--accent); }
+#board .halo.ok { stroke: var(--ok); }
+#board .halo.bad { stroke: var(--bad); }
+@keyframes pulse { 0%, 100% { stroke-opacity: .25; } 50% { stroke-opacity: 1; } }
+#board .ann { pointer-events: none; }
+#board .ann rect { fill: var(--ink); }
+#board .ann text { font: 600 11px var(--f-ui); fill: var(--page); }
+#board .ann .stem { stroke: var(--ink); stroke-width: 1.5; }
+#board .ann.bad rect { fill: var(--bad); }
+#board .ann.bad .stem { stroke: var(--bad); }
+#board .ann.ok rect { fill: var(--ok); }
+#board .ann.ok .stem { stroke: var(--ok); }
+#board .ann.info rect { fill: var(--accent); }
+#board .ann.info .stem { stroke: var(--accent); }
+#board .sticker { cursor: pointer; }
+#board .sticker:focus { outline: none; }
+#board .sticker .paper { fill: var(--sticker); stroke: var(--sticker-line); stroke-width: 1.2; }
+#board .sticker text { font: 700 8.5px var(--f-ui); fill: var(--sticker-ink); letter-spacing: .04em; }
+#board .sticker .bars { stroke: var(--sticker-ink); stroke-width: 1; opacity: .55; }
+#board .sticker:hover .paper, #board .sticker:focus-visible .paper, #board .sticker.on .paper { stroke: var(--accent); stroke-width: 2.2; }
+#board .sticker-halo { fill: none; stroke: var(--accent); stroke-width: 2.5; pointer-events: none; }
+#board .letter { pointer-events: none; }
+#board .letter .lt-body { fill: var(--node); stroke: var(--accent); stroke-width: 1.8; }
+#board .letter .lt-flap { fill: none; stroke: var(--accent); stroke-width: 1.2; stroke-opacity: .55; stroke-linejoin: round; }
+#board .letter.reply .lt-body, #board .letter.reply .lt-flap { stroke: var(--ok); }
+#board .letter .lt-t { font: 500 11.5px var(--f-ui); fill: var(--ink); }
+#board .letter .lt-t.b { font-weight: 700; }
+#board .letter .k { fill: var(--muted); font-weight: 500; }
+#board .letter.stuck .lt-in { animation: shake .45s ease-in-out 3; }
+#board .letter.stuck .lt-body { stroke: var(--bad); }
+@keyframes shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-5px); } 75% { transform: translateX(5px); } }
+
+/* наклейка крупно */
+.sticker-pop {
+  position: absolute; z-index: 6; width: 250px; max-width: calc(100% - 16px);
+  background: var(--sticker); color: var(--sticker-ink); border: 1px solid var(--sticker-line);
+  border-radius: 6px; padding: 12px 14px 12px; box-shadow: 0 14px 30px -14px var(--shadow);
+  transform: rotate(-1.2deg); display: grid; gap: 8px;
+}
+.sticker-pop .sp-head { display: flex; align-items: center; gap: 8px; font-size: 10.5px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; }
+.sticker-pop .sp-x { margin-left: auto; appearance: none; border: 0; background: none; color: inherit; cursor: pointer; font-size: 16px; line-height: 1; padding: 2px 4px; border-radius: 4px; }
+.sticker-pop dl { margin: 0; display: grid; grid-template-columns: auto 1fr; gap: 4px 12px; font-size: 12.5px; align-items: baseline; }
+.sticker-pop dt { opacity: .8; }
+.sticker-pop dd { margin: 0; font-weight: 700; font-size: 14px; letter-spacing: .03em; }
+.sticker-pop .sp-note { margin: 0; font-size: 11px; opacity: .8; }
+.sticker-pop .sp-code { height: 16px; background: repeating-linear-gradient(90deg, currentColor 0 2px, transparent 2px 4px, currentColor 4px 5px, transparent 5px 8px); opacity: .35; border-radius: 1px; }
+
+/* ---------- под доской: одна кнопка ---------- */
+.transport {
+  grid-area: transport; background: var(--page); border-top: 1px solid var(--line);
+  padding-block: 10px;
+  padding-left: 16px; padding-right: max(16px, env(safe-area-inset-right, 0px));
+  display: flex; align-items: center; gap: 14px; min-width: 0;
+}
+.play { appearance: none; border: 1px solid var(--accent); background: var(--accent); color: var(--page); border-radius: 10px; padding: 9px 16px; font-size: 13px; font-weight: 600; cursor: pointer; white-space: nowrap; min-width: 128px; flex: none; }
+.play:disabled { opacity: .45; cursor: not-allowed; }
+.play.nudge { animation: nudge 1.6s ease-in-out infinite; }
+@keyframes nudge { 0%, 100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--accent) 45%, transparent); } 50% { box-shadow: 0 0 0 7px color-mix(in srgb, var(--accent) 0%, transparent); } }
+.caption { margin: 0; display: flex; gap: 9px; align-items: baseline; min-width: 0; font-family: var(--f-prose); font-size: 14.5px; line-height: 1.4; }
+.caption .dot { width: 9px; height: 9px; border-radius: 50%; flex: none; transform: translateY(1px); background: var(--node-line); }
+.caption.info .dot { background: var(--accent); }
+.caption.ok .dot { background: var(--ok); }
+.caption.bad .dot { background: var(--bad); }
+.caption.bad { color: var(--bad); }
+
+/* ---------- экран телефона ---------- */
+.phone-panel { grid-area: phone; background: var(--page); border-left: 1px solid var(--line); padding: 16px; overflow-y: auto; display: grid; justify-items: center; align-content: start; gap: 10px; min-height: 0; }
+.pp-cap { font-size: 10.5px; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); text-align: center; }
+.pp-cap b { color: var(--accent); }
+.phone { width: 100%; max-width: 300px; border: 2px solid var(--node-line); border-radius: 32px; background: var(--node); padding: 10px 10px 14px; box-shadow: 0 16px 34px -22px var(--shadow); font-family: var(--f-phone); }
+.phone .notch { width: 64px; height: 5px; border-radius: 3px; background: var(--line); margin: 2px auto 8px; }
+.sbar { display: flex; justify-content: space-between; align-items: center; font-size: 11.5px; padding: 0 12px 8px; color: var(--muted); font-weight: 600; font-variant-numeric: tabular-nums; }
+.sbar .r { display: inline-flex; gap: 6px; align-items: center; }
+.sbar svg { width: 15px; height: 12px; }
+.sbar .nonet { color: var(--bad); font-weight: 600; font-size: 11px; }
+.scr { border-radius: 20px; background: var(--screen); border: 1px solid var(--line); height: 452px; position: relative; overflow: hidden; display: flex; flex-direction: column; }
+.scr-head { padding: 12px 14px 4px; display: grid; gap: 2px; }
+.scr-head .back { appearance: none; border: 0; background: none; padding: 0; color: var(--accent); font-size: 13px; cursor: pointer; justify-self: start; }
+.scr-head .back:disabled { cursor: default; opacity: .7; }
+.scr-head h3 { margin: 0; font-size: 24px; font-weight: 700; letter-spacing: -.01em; }
+.scr-body { flex: 1; overflow-y: auto; padding: 4px 10px 14px; }
+.wf-switch { display: flex; justify-content: space-between; align-items: center; padding: 10px 10px; font-size: 15px; border-radius: 12px; background: var(--page); border: 1px solid var(--line); margin: 6px 0 4px; }
+.sw { width: 40px; height: 24px; border-radius: 12px; background: var(--ok); position: relative; flex: none; }
+.sw::after { content: ""; position: absolute; top: 3px; right: 3px; width: 18px; height: 18px; border-radius: 50%; background: #fff; }
+.grp { margin: 14px 10px 4px; font-size: 11px; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); font-weight: 600; }
+.nets { list-style: none; margin: 0; padding: 0; border-radius: 12px; background: var(--page); border: 1px solid var(--line); overflow: hidden; }
+.nets li + li { border-top: 1px solid var(--line); }
+.net { appearance: none; width: 100%; border: 0; background: none; text-align: left; cursor: pointer; display: grid; grid-template-columns: 18px minmax(0, 1fr) auto auto; gap: 8px; align-items: center; padding: 10px 10px; font-size: 15px; }
+.net:hover:not(:disabled) { background: var(--accent-soft); }
+.net:disabled { cursor: default; }
+.net .chk { color: var(--ok); font-weight: 700; font-size: 14px; }
+.net .nm { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.net .st { display: block; font-size: 11.5px; color: var(--muted); font-weight: 400; }
+.net.on .st { color: var(--ok); font-weight: 600; }
+.net .ic { width: 16px; height: 16px; fill: none; stroke: var(--muted); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.net .sig { width: 18px; height: 14px; }
+.net .sig rect { fill: var(--line); }
+.net .sig rect.f { fill: var(--ink); }
+.net.ghost { outline: 2px dashed var(--accent); outline-offset: -3px; border-radius: 10px; }
+.scr-note { margin: 10px 10px 0; font-size: 11.5px; color: var(--muted); line-height: 1.4; }
+.spin { width: 14px; height: 14px; border-radius: 50%; border: 2px solid var(--line); border-top-color: var(--accent); animation: spin .8s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.scrim { position: absolute; inset: 0; background: color-mix(in srgb, var(--ink) 22%, transparent); }
+.sheet { position: absolute; left: 0; right: 0; bottom: 0; background: var(--node); border-top: 1px solid var(--line); border-radius: 18px 18px 0 0; padding: 10px 14px 16px; box-shadow: 0 -14px 30px -22px var(--shadow); display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px; margin: 0; }
+.sheet .grab { width: 36px; height: 4px; border-radius: 2px; background: var(--line); justify-self: center; }
+.sheet h4 { margin: 0; font-size: 15.5px; font-weight: 700; line-height: 1.3; }
+.sheet p { margin: 0; font-size: 13.5px; line-height: 1.45; }
+.pw { display: flex; align-items: center; border: 1.5px solid var(--line); border-radius: 10px; background: var(--page); }
+.pw:focus-within { border-color: var(--accent); }
+.pw.err { border-color: var(--bad); }
+.pw input { flex: 1; width: 100%; min-width: 0; border: 0; background: transparent; padding: 10px 12px; font-size: 16px; font-family: var(--f-ui); outline: none; }
+.pw .eye { appearance: none; border: 0; background: none; padding: 8px 10px; cursor: pointer; color: var(--muted); display: grid; place-items: center; }
+.pw .eye svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.sh-err { color: var(--bad); font-size: 13px; line-height: 1.4; background: var(--bad-soft); border-radius: 8px; padding: 8px 10px; }
+.sh-err.shake { animation: shake .4s ease-in-out 1; }
+.sh-hint { font-size: 12px; color: var(--muted); }
+.sh-actions { display: flex; flex-wrap: wrap; gap: 8px; justify-content: flex-end; }
+.pbtn { appearance: none; border: 0; border-radius: 10px; padding: 9px 14px; font-size: 14px; font-weight: 600; cursor: pointer; background: var(--page); color: var(--accent); }
+.pbtn.go { background: var(--accent); color: var(--page); }
+.pbtn:disabled { opacity: .5; cursor: not-allowed; }
+.cafe-ic { width: 34px; height: 34px; border-radius: 50%; background: var(--accent-soft); display: grid; place-items: center; }
+.cafe-ic svg { width: 18px; height: 18px; fill: none; stroke: var(--accent); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+
+/* браузер на телефоне */
+.br-top { display: flex; align-items: center; gap: 8px; padding: 10px 12px; border-bottom: 1px solid var(--line); font-size: 13px; }
+.br-top .back { appearance: none; border: 0; background: none; color: var(--accent); cursor: pointer; padding: 0; font-size: 13px; }
+.br-top .ttl { margin-left: auto; margin-right: auto; font-weight: 600; transform: translateX(-20px); }
+.page { padding: 16px 14px; display: grid; gap: 10px; align-content: start; }
+.pg-h { margin: 0; font-family: var(--f-display); font-weight: 500; font-size: 18px; }
+.pg-sub { margin: 0; font-size: 12.5px; color: var(--muted); line-height: 1.45; }
+.pg-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.pg-card { border: 1px solid var(--line); border-radius: 12px; padding: 8px; display: grid; gap: 5px; font-size: 12.5px; }
+.pg-card .pic { height: 54px; border-radius: 8px; background: repeating-linear-gradient(135deg, var(--accent-soft) 0 7px, var(--node) 7px 14px); }
+.pg-card span { color: var(--ok); font-size: 11.5px; font-weight: 600; }
+.pg-ok { display: flex; gap: 8px; align-items: center; font-size: 12.5px; color: var(--ok); font-weight: 600; background: var(--ok-soft); border-radius: 10px; padding: 8px 10px; }
+
+/* ---------- узкий экран ---------- */
+@media (max-width: 880px) {
+  html, body { height: auto; }
+  .app { height: auto; display: block; }
+  .main { display: flex; flex-direction: column; }
+  .boardside { order: -1; }
+  .boardside, .boardside.with-phone { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto; grid-template-areas: "stage" "transport" "phone"; }
+  .theory { border-right: 0; border-top: 1px solid var(--line); }
+  .theory-scroll { overflow: visible; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+  .theory-nav { position: sticky; bottom: 0; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); z-index: 4; }
+  .stage { aspect-ratio: 960 / 600; width: 100%; min-height: 0; }
+  .transport { padding-left: max(16px, env(safe-area-inset-left, 0px)); }
+  .phone-panel { border-left: 0; border-top: 1px solid var(--line); overflow: visible; padding-inline: max(16px, env(safe-area-inset-left, 0px)) max(16px, env(safe-area-inset-right, 0px)); }
+  .top-note { display: none; }
+}
+@media (max-width: 600px) {
+  .stage { aspect-ratio: 400 / 604; }
+  .tl .bar { width: 22px; }
+  .tl-steps { gap: 3px; }
+  .timeline { flex-wrap: wrap; gap: 4px 12px; }
+  .transport { flex-wrap: wrap; gap: 8px 12px; }
+  .play { min-width: 0; }
+  .caption { font-size: 14px; flex-basis: 100%; }
+  .mode-chip { top: 8px; right: 8px; font-size: 10.5px; padding: 3px 8px; }
+  .more-body { padding-left: 16px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  #board .halo.pulse, #board .node.appear, #board .link.new, #board .cloud.appear, #board .inner.appear, #board .letter.stuck .lt-in { animation: none; }
+  .stage.flash, .play.nudge, .sh-err.shake, .spin { animation: none; }
+  .tl .bar, .checks .mk, #board .link, #board .node .body { transition: none; }
+}
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="top">
+    <div class="crumb"><span class="brand">Сети для вайбкодеров</span><span>Урок <b>1</b> из 16</span></div>
+    <nav class="timeline" id="timeline" aria-label="Шаги урока"></nav>
+    <div class="top-note">Макет · урок для новичков</div>
+  </header>
+
+  <main class="main">
+    <section class="theory" aria-label="Теория">
+      <div class="theory-scroll" id="theory-scroll">
+        <div class="lesson-head">
+          <div class="eyebrow">Модуль 1 · Как устроена домашняя сеть</div>
+          <h1>Как телефон попадает в интернет</h1>
+          <div class="meta">≈ 7 минут · 6 шагов · 1 вопрос · 1 задача</div>
+          <div class="words" aria-label="Новые слова урока">Новые слова: <span class="w">роутер</span><span class="w">интернет</span></div>
+        </div>
+        <div id="beats"></div>
+      </div>
+      <div class="theory-nav" id="theory-nav"></div>
+    </section>
+
+    <section class="boardside" id="boardside" aria-label="Доска">
+      <div class="stage" id="stage">
+        <svg id="board" viewBox="0 0 960 600" preserveAspectRatio="xMidYMid meet" aria-label="Схема: дом, роутер, интернет и сайт магазина">
+          <g id="g-zones"></g>
+          <g id="g-links"></g>
+          <g id="g-nodes"></g>
+          <g id="g-over"></g>
+          <g id="g-letter"></g>
+        </svg>
+        <div class="mode-chip" id="mode-chip"></div>
+        <div class="sticker-pop" id="sticker-pop" role="dialog" aria-label="Наклейка на роутере" hidden>
+          <div class="sp-head">Наклейка на роутере<button class="sp-x" type="button" id="sp-x" aria-label="Закрыть наклейку">×</button></div>
+          <dl><dt>Имя сети</dt><dd id="sp-ssid"></dd><dt>Пароль</dt><dd id="sp-pass"></dd></dl>
+          <div class="sp-code" aria-hidden="true"></div>
+          <p class="sp-note">Такая наклейка обычно есть на дне или на задней стенке роутера.</p>
+        </div>
+      </div>
+
+      <div class="transport" id="transport">
+        <button class="play" type="button" id="t-play">▶ Пуск</button>
+        <p class="caption" id="caption" aria-live="polite"></p>
+      </div>
+
+      <aside class="phone-panel" id="phone-panel" aria-label="Экран телефона" hidden>
+        <div class="pp-cap" id="pp-cap"></div>
+        <div class="phone">
+          <div class="notch" aria-hidden="true"></div>
+          <div class="sbar" id="sbar"></div>
+          <div class="scr" id="scr"></div>
+        </div>
+      </aside>
+    </section>
+  </main>
+</div>
+
+<script>
+(() => {
+'use strict';
+
+const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+const mobileMQ = window.matchMedia('(max-width: 880px)');
+const smallMQ = window.matchMedia('(max-width: 600px)');
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+const $ = id => document.getElementById(id);
+
+// ---------- сеть урока: никаких адресов, только имена ----------
+const HOME = { ssid: 'Router-7C21', pass: 'lipa-4827' };
+const NETS = [
+  { id: 'cafe', ssid: 'Кафе Утро', open: true, sig: 3 },
+  { id: 'home', ssid: HOME.ssid, open: false, sig: 3 },
+  { id: 'neigh', ssid: 'Router-3A90', open: false, sig: 1 },
+];
+
+const DEV = {
+  phone: { title: 'Телефон', sub: 'у вас в руке', icon: 'phone', name: 'телефон' },
+  laptop: { title: 'Ноутбук', sub: 'на столе', icon: 'laptop', name: 'ноутбук' },
+  router: { title: 'Wi-Fi-роутер', sub: 'почта вашего дома', icon: 'router', name: 'роутер' },
+  internet: { title: 'Интернет', sub: 'много сетей', name: 'интернет' },
+  shop: { title: 'Сайт магазина', sub: 'где-то далеко', icon: 'shop', name: 'сайт магазина' },
+};
+const ICON = {
+  phone: '<rect x="6.5" y="2.5" width="11" height="19" rx="2.2"/><path d="M10.5 18.5h3"/>',
+  laptop: '<rect x="4.5" y="4.5" width="15" height="10" rx="1.3"/><path d="M2.5 18.5h19M4.5 14.5l-2 4M19.5 14.5l2 4"/>',
+  router: '<rect x="3" y="12.5" width="18" height="7" rx="1.6"/><path d="M7 12.5 6 7.5M17 12.5l1-5M7 16h.01M10 16h.01"/><path d="M9.3 6.4a4 4 0 0 1 5.4 0M7.3 4.2a6.8 6.8 0 0 1 9.4 0"/>',
+  shop: '<path d="M4.5 10.5v9.5h15v-9.5"/><path d="M3 10.5 5 4h14l2 6.5"/><path d="M3 10.5a3 3 0 0 0 6 0 3 3 0 0 0 6 0 3 3 0 0 0 6 0"/><path d="M10 20v-5h4v5"/>',
+};
+// облако: пузыри в базовых единицах (rx = 100, ry = 70), растягиваются под раскладку
+const BUMPS = [[-58, 18, 36], [-20, -16, 46], [32, -12, 42], [66, 18, 32], [6, 24, 40]];
+// сети внутри облака (доли полуосей облака)
+const INNER = { nA: [-0.6, 0.18], nB: [-0.18, 0.5], nC: [-0.16, -0.36], nD: [0.3, 0.28], nE: [0.64, -0.04] };
+const INNER_LINKS = [['nA', 'nB'], ['nA', 'nC'], ['nB', 'nD'], ['nC', 'nD'], ['nC', 'nE'], ['nD', 'nE']];
+const NET_PATH = { wide: ['nA', 'nB', 'nD', 'nE'], narrow: ['nE', 'nC', 'nA', 'nB'] };
+
+const LAYOUTS = {
+  wide: {
+    w: 960, h: 600,
+    pos: { phone: [116, 222], laptop: [116, 452], router: [316, 337], internet: [612, 337], shop: [872, 337] },
+    size: { phone: [168, 56], laptop: [168, 56], router: [176, 64], shop: [152, 56] },
+    cloud: { rx: 136, ry: 108 },
+    house: { x: 16, y: 128, w: 400, h: 446, roof: 62 },
+    sticker: [58, 42],
+  },
+  narrow: {
+    w: 400, h: 604,
+    pos: { phone: [94, 146], laptop: [94, 290], router: [302, 218], internet: [200, 440], shop: [200, 572] },
+    size: { phone: [140, 50], laptop: [140, 50], router: [156, 56], shop: [160, 50] },
+    cloud: { rx: 130, ry: 82 },
+    house: { x: 10, y: 80, w: 380, h: 246, roof: 44 },
+    sticker: [48, 40],
+  },
+};
+
+// ---------- шаги ----------
+const R = (id, text) => `<span class="ref${id === 'sticker' ? ' act' : ''}" data-ref="${id}" tabindex="0">${text}</span>`;
+const MORE = `<details class="more" id="more"><summary>Подробнее: что такое письмо на самом деле<span class="tag">для любопытных</span></summary>
+  <div class="more-body">
+    <p>Письма на доске — упрощение. В сетях их называют <b>пакетами</b>. Пакет — это небольшой кусочек данных, к которому приписано, от кого он и кому.</p>
+    <p>Страница магазина в один пакет не помещается. Сайт присылает её сотнями пакетов, а телефон собирает их по порядку, как пазл. Пакеты одной страницы могут идти даже разными путями.</p>
+    <p>На настоящем пакете вместо имён написаны числа — адреса. О них урок 2. А что внутри пакета спрятано ещё несколько конвертов, разберём в уроке 7 «Под капотом».</p>
+  </div></details>`;
+
+const STEPS = [
+  { id: 'at-home', title: 'Что у вас дома',
+    html: () => `<p>Это ваша квартира. В ней ${R('phone', 'телефон')}, ${R('laptop', 'ноутбук')} и коробочка с антеннами — ${R('router', 'Wi-Fi-роутер')}. Волнистые линии — это Wi-Fi: связь по радио, без проводов.</p>
+      <p>Устройства не говорят друг с другом напрямую. Даже фото с ноутбука на телефон идёт через роутер. <dfn>Роутер</dfn> — почтовое отделение вашего дома: он принимает письма от всех устройств и разносит их.</p>
+      <p>Нажмите «Пуск» под доской.</p>` },
+  { id: 'to-the-site', title: 'Письмо на сайт',
+    html: () => `<p>Откроем на телефоне сайт магазина. Телефон пишет письмо: «пришлите страницу». На конверте только два поля: от кого и кому.</p>
+      <p>Сайт живёт не у вас дома, поэтому роутер не отдаёт письмо сам, а передаёт его в ${R('internet', 'интернет')}. Оттуда письмо доходит до ${R('shop', 'сайта магазина')}, а страница возвращается ответным письмом тем же путём.</p>`,
+    more: true },
+  { id: 'many-networks', title: 'Интернет — это много сетей',
+    html: () => `<p>Внутри облака не один огромный компьютер, а тысячи сетей вроде вашей домашней, только больше: сети компаний, которым вы платите за интернет, сети городов, сеть магазина. Каждая соединена с соседними.</p>
+      <p><dfn>Интернет</dfn> — это много сетей, соединённых между собой. Письмо передают из сети в сеть, пока оно не дойдёт до адресата, как посылку из отделения в отделение.</p>` },
+  { id: 'way-out', title: 'Вопрос: где выход из дома', quiz: true,
+    html: () => `<p>Телефон отправляет письмо сайту магазина. Через какое устройство письмо выходит из дома в интернет? Нажмите его на доске.</p>` },
+  { id: 'join-wifi', title: 'Задача: подключите телефон', task: true,
+    html: () => `<p>У вас новый телефон. Домашний Wi-Fi он ещё не знает: волнистой линии к роутеру нет, и письма из телефона никуда не уходят.</p>
+      <p>Подключите его в настройках Wi-Fi на экране телефона. Имя вашей сети и пароль написаны на ${R('sticker', 'наклейке')} на роутере.</p>` },
+  { id: 'summary', title: 'Итог',
+    html: () => `<p>Вы прошли весь путь письма: телефон → роутер → интернет → сайт магазина и обратно.</p>
+      <ul><li>Устройства дома говорят через <b>роутер</b> — почтовое отделение вашего дома.</li>
+      <li><b>Интернет</b> — это много сетей, соединённых между собой. Роутер — дверь из дома в интернет.</li>
+      <li>Чтобы телефон попал в интернет, его подключают к Wi-Fi роутера: своя сеть и пароль с наклейки.</li></ul>` },
+];
+const QUIZ_STEP = 3, TASK = 4, LAST = 5;
+
+const QUIZ = {
+  answer: 'router', cands: ['laptop', 'router', 'shop'],
+  wrong: {
+    laptop: 'Ноутбук — сосед телефона по дому. Он сам отправляет письма через роутер, а чужие через него не ходят.',
+    shop: 'Сайт магазина — получатель. Напрямую телефон до него не достаёт: сначала письмо выходит из дома.',
+  },
+  tag: { laptop: 'чужие письма не носит', shop: 'это получатель' },
+  explain: 'Роутер — дверь вашего дома в интернет: все письма из дома выходят через него и через него же возвращаются.',
+};
+
+const HINTS = [
+  'Где обычно пишут пароль от домашнего Wi-Fi? Посмотрите на сам роутер: нажмите наклейку на доске.',
+  'На наклейке есть имя сети. Найдите в списке точно такое же: соседская сеть похожа, но цифры другие.',
+  'Нажмите «Router-7C21», введите пароль с наклейки и нажмите «Подключиться». В списке эта сеть обведена пунктиром.',
+];
+
+// ---------- состояние ----------
+const S = { step: 0, maxStep: 0, layout: 'wide', quiz: null, refHl: null, played: {}, seen: {}, appear: null, newLink: false, stickerOpen: false, doneAnn: null };
+const T = { joined: false, connecting: false, solved: false, sheet: null, pass: '', showPass: false, err: null, errN: 0, fails: 0, hint: 0, help: false, demo: false, screen: 'wifi', cafeSeen: false };
+
+// ---------- геометрия ----------
+const svg = $('board'), stage = $('stage');
+const LAY = () => LAYOUTS[S.layout];
+function pos(id) {
+  const L = LAY();
+  if (L.pos[id]) return L.pos[id];
+  const n = INNER[id], c = L.pos.internet;
+  return [c[0] + n[0] * L.cloud.rx, c[1] + n[1] * L.cloud.ry];
+}
+const sizeOf = id => LAY().size[id];
+function edgePt(id, tx, ty, pad = 3) {
+  const [cx, cy] = pos(id), dx = tx - cx, dy = ty - cy;
+  if (!dx && !dy) return [cx, cy];
+  if (id === 'internet') return cloudExit(cx, cy, dx, dy, pad);
+  if (INNER[id]) { const d = Math.hypot(dx, dy), r = 12 + pad; return [cx + dx / d * r, cy + dy / d * r]; }
+  const [w, h] = sizeOf(id);
+  const k = Math.min((w / 2 + pad) / Math.abs(dx || 1e-9), (h / 2 + pad) / Math.abs(dy || 1e-9));
+  return [cx + dx * k, cy + dy * k];
+}
+// облако — объединение эллипсов; край ищем шагом вдоль луча
+function cloudEllipses() {
+  const [cx, cy] = pos('internet'), { rx, ry } = LAY().cloud, sx = rx / 100, sy = ry / 70;
+  return BUMPS.map(([bx, by, r]) => [cx + bx * sx, cy + by * sy, r * sx, r * sy]);
+}
+function inCloud(x, y) { return cloudEllipses().some(([ex, ey, a, b]) => ((x - ex) / a) ** 2 + ((y - ey) / b) ** 2 <= 1); }
+function cloudExit(x0, y0, dx, dy, pad) {
+  const d = Math.hypot(dx, dy), ux = dx / d, uy = dy / d;
+  let s = 0;
+  while (s < 400 && inCloud(x0 + ux * s, y0 + uy * s)) s += 1;
+  return [x0 + ux * (s + pad), y0 + uy * (s + pad)];
+}
+const P = p => `${p[0].toFixed(1)},${p[1].toFixed(1)}`;
+function wavePath(p0, p1) {
+  const dx = p1[0] - p0[0], dy = p1[1] - p0[1], len = Math.hypot(dx, dy), ux = dx / len, uy = dy / len;
+  const pts = [];
+  for (let s = 0; s < len; s += 2) {
+    const o = 4 * Math.min(1, s / 10, (len - s) / 10) * Math.sin(2 * Math.PI * s / 13);
+    pts.push(P([p0[0] + ux * s - uy * o, p0[1] + uy * s + ux * o]));
+  }
+  pts.push(P(p1));
+  return 'M' + pts.join(' L');
+}
+// где стоит письмо у устройства: над ним, чтобы не закрывать подпись
+function anchor(id) {
+  const [x, y] = pos(id);
+  if (INNER[id]) return [x, y - 28, 0.7];
+  if (id === 'internet') return [x, y - LAY().cloud.ry * 0.42, 0.8];
+  const [, h] = sizeOf(id);
+  return [x, y - h / 2 - 27, 1];
+}
+
+// ---------- что на доске на этом шаге ----------
+const expanded = () => S.step >= 2;
+function devices() {
+  const d = ['phone', 'laptop', 'router'];
+  if (S.step >= 1) d.push('internet', 'shop');
+  return d;
+}
+function boardLinks() {
+  const out = [];
+  if (S.step !== TASK || T.joined) out.push({ a: 'phone', b: 'router', m: 'radio' });
+  out.push({ a: 'laptop', b: 'router', m: 'radio' });
+  if (S.step >= 1) { out.push({ a: 'router', b: 'internet', m: 'cable' }); out.push({ a: 'internet', b: 'shop', m: 'cable' }); }
+  return out;
+}
+
+// ---------- письма: трасса — список перелётов между устройствами ----------
+const LET = {
+  photo: { from: 'ноутбук', to: 'телефон' },
+  up: { from: 'телефон', to: 'сайт магазина' },
+  down: { from: 'сайт магазина', to: 'телефон' },
+};
+const leg = (from, to, letter, note, reply = false) => ({ from, to, letter, note, reply });
+function photoLegs() {
+  return [leg('laptop', 'router', LET.photo, 'Ноутбук отдаёт письмо роутеру.'), leg('router', 'phone', LET.photo, 'Роутер разносит письмо: отдаёт его телефону.')];
+}
+function noteUp(a, b) {
+  if (a === 'phone') return 'Телефон отдаёт письмо роутеру по Wi-Fi.';
+  if (a === 'router') return 'Роутер передаёт письмо в интернет.';
+  if (b === 'shop') return 'Письмо дошло до сайта магазина.';
+  return 'Письмо идёт из сети в сеть.';
+}
+function noteDown(a, b) {
+  if (a === 'shop') return 'Сайт отвечает: вот страница.';
+  if (b === 'router') return 'Ответ вернулся к вашему роутеру.';
+  if (b === 'phone') return 'Роутер отдаёт ответ телефону.';
+  return 'Ответ идёт из сети в сеть.';
+}
+function siteLegs(opts = {}) {
+  const mid = expanded() ? NET_PATH[S.layout] : ['internet'];
+  const up = ['phone', 'router', ...mid, 'shop'];
+  if (opts.outOnly) up.splice(3);
+  const legs = [];
+  for (let k = 0; k < up.length - 1; k++) legs.push(leg(up[k], up[k + 1], LET.up, noteUp(up[k], up[k + 1])));
+  if (opts.reply) {
+    const down = [...up].reverse();
+    for (let k = 0; k < down.length - 1; k++) legs.push(leg(down[k], down[k + 1], LET.down, noteDown(down[k], down[k + 1]), true));
+  }
+  return legs;
+}
+
+// ---------- проигрыватель: перелёт, пауза у устройства, следующий перелёт ----------
+const PL = { legs: [], i: 0, t: 0, phase: 'idle', wait: 0, dur: 800, onEnd: null, doneNote: '', lit: new Set() };
+const playing = () => ['wait', 'fly', 'dwell', 'stuck'].includes(PL.phase);
+const legKey = (a, b) => [a, b].sort().join('|');
+function play(legs, doneNote, onEnd) {
+  Object.assign(PL, { legs, i: 0, t: 0, phase: 'wait', wait: reduce ? 150 : 350, onEnd: onEnd || null, doneNote, lit: new Set() });
+  S.doneAnn = null;
+  sync();
+}
+function stopPlayer() { Object.assign(PL, { legs: [], i: 0, t: 0, phase: 'idle', onEnd: null, lit: new Set() }); }
+function startLeg() {
+  const lg = PL.legs[PL.i], a = anchor(lg.from), b = anchor(lg.to);
+  PL.dur = clamp(Math.hypot(b[0] - a[0], b[1] - a[1]) * 3.2, 480, 1000);
+  if (reduce) arrive();
+  else { PL.phase = 'fly'; PL.t = 0; }
+}
+function arrive() {
+  const lg = PL.legs[PL.i];
+  PL.lit.add(legKey(lg.from, lg.to));
+  PL.i++;
+  PL.phase = 'dwell';
+  const last = PL.i >= PL.legs.length;
+  PL.wait = reduce ? 1100 : last ? 450 : (lg.to === 'shop' || lg.to === 'router' ? 520 : 260);
+}
+function tick(dt) {
+  if (PL.phase === 'wait') { PL.wait -= dt; if (PL.wait <= 0) { startLeg(); return 'state'; } return null; }
+  if (PL.phase === 'fly') { PL.t += dt / PL.dur; if (PL.t >= 1) { arrive(); return 'state'; } return 'pos'; }
+  if (PL.phase === 'dwell') {
+    PL.wait -= dt;
+    if (PL.wait > 0) return null;
+    if (PL.i >= PL.legs.length) {
+      PL.phase = 'done';
+      const f = PL.onEnd; PL.onEnd = null;
+      if (f) f();
+    } else startLeg();
+    return 'state';
+  }
+  if (PL.phase === 'stuck') { PL.wait -= dt; if (PL.wait <= 0) { PL.phase = 'idle'; return 'state'; } }
+  return null;
+}
+function curLeg() {
+  if (PL.phase === 'fly') return PL.legs[PL.i];
+  if (PL.phase === 'dwell') return PL.legs[PL.i - 1];
+  if (PL.phase === 'wait') return PL.legs[0];
+  return null;
+}
+function letterPos() {
+  if (PL.phase === 'stuck') return anchor('phone');
+  const lg = curLeg();
+  if (!lg) return null;
+  if (PL.phase === 'fly') {
+    const a = anchor(lg.from), b = anchor(lg.to), t = PL.t < .5 ? 2 * PL.t * PL.t : 1 - Math.pow(-2 * PL.t + 2, 2) / 2;
+    return [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t, a[2] + (b[2] - a[2]) * t];
+  }
+  return anchor(PL.phase === 'wait' ? lg.from : lg.to);
+}
+
+// ---------- отрисовка доски ----------
+function houseSvg() {
+  const { x, y, w, h, roof } = LAY().house, r = 14;
+  const d = `M${x},${y} L${x},${y + h - r} Q${x},${y + h} ${x + r},${y + h} L${x + w - r},${y + h} Q${x + w},${y + h} ${x + w},${y + h - r} L${x + w},${y} L${x + w / 2},${y - roof} Z`;
+  return `<path class="house" d="${d}"/><text class="house-label" x="${x + w / 2}" y="${y - 12}" text-anchor="middle">ВАШ ДОМ</text>`;
+}
+function cloudSvg(o) {
+  const [cx, cy] = pos('internet'), { rx, ry } = LAY().cloud;
+  const el = cloudEllipses();
+  const edge = el.map(e => `<ellipse class="cloud-edge" cx="${e[0].toFixed(1)}" cy="${e[1].toFixed(1)}" rx="${e[2].toFixed(1)}" ry="${e[3].toFixed(1)}"/>`).join('');
+  const fill = el.map(e => `<ellipse class="cloud-fill" cx="${e[0].toFixed(1)}" cy="${e[1].toFixed(1)}" rx="${e[2].toFixed(1)}" ry="${e[3].toFixed(1)}"/>`).join('');
+  const cls = ['cloud', o.hl ? 'hl' : '', S.refHl === 'internet' ? 'ref-hover' : '', o.appear ? 'appear' : ''].filter(Boolean).join(' ');
+  let label;
+  if (expanded()) {
+    const ty = cy - ry * 0.92 - 10, left = S.layout === 'narrow';
+    label = `<text class="cloud-title" x="${left ? cx - rx * 0.92 : cx}" y="${ty}" text-anchor="${left ? 'start' : 'middle'}">Интернет<tspan class="sub" dx="8">· много сетей</tspan></text>`;
+  } else {
+    label = `<text class="cloud-title" x="${cx}" y="${cy + 2}" text-anchor="middle">Интернет</text><text class="sub" x="${cx}" y="${cy + 19}" text-anchor="middle">весь мир</text>`;
+  }
+  return `<g class="${cls}" data-node="internet">${edge}${fill}${label}</g>`;
+}
+function innerSvg() {
+  if (!expanded()) return '';
+  const appear = S.appear === 'inner';
+  let out = INNER_LINKS.map(([a, b]) => {
+    const pa = pos(a), pb = pos(b);
+    return `<line class="inner-link${PL.lit.has(legKey(a, b)) ? ' lit' : ''}" x1="${pa[0].toFixed(1)}" y1="${pa[1].toFixed(1)}" x2="${pb[0].toFixed(1)}" y2="${pb[1].toFixed(1)}"/>`;
+  }).join('');
+  const lc = curLeg();
+  Object.keys(INNER).forEach((id, k) => {
+    const [x, y] = pos(id);
+    const lit = [...PL.lit].some(key => key.split('|').includes(id)) || (lc && PL.phase === 'fly' && (lc.from === id || lc.to === id));
+    const dots = [[-4, -3], [4, -3], [0, 4]].map(([dx, dy]) => `<circle class="dot" cx="${(x + dx).toFixed(1)}" cy="${(y + dy).toFixed(1)}" r="2"/>`).join('');
+    out += `<g class="inner${lit ? ' lit' : ''}${appear ? ' appear' : ''}"${appear ? ` style="animation-delay:${k * 120 + 100}ms"` : ''}><circle class="ring" cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="12"/>${dots}<title>одна из сетей интернета</title></g>`;
+  });
+  return out;
+}
+function nodeSvg(id, o) {
+  const [cx, cy] = pos(id), [w, h] = sizeOf(id), d = DEV[id];
+  const cls = ['node', o.hl ? 'hl' : '', o.off ? 'off' : '', o.cand ? 'cand' : '', o.appear ? 'appear' : '', S.refHl === id ? 'ref-hover' : ''].filter(Boolean).join(' ');
+  const attrs = o.cand ? ` tabindex="0" role="button" aria-label="${esc(d.title)}"` : '';
+  const style = o.appear ? ` style="animation-delay:${o.delay}ms"` : '';
+  const x0 = cx - w / 2, y0 = cy - h / 2;
+  const sub = o.sub || d.sub;
+  return `<g class="${cls}" data-node="${id}"${attrs}${style}>
+    <rect class="body" x="${x0}" y="${y0}" width="${w}" height="${h}" rx="11"/>
+    <g class="icon" transform="translate(${x0 + 11},${cy - 12})">${ICON[d.icon]}</g>
+    <text class="title" x="${x0 + 42}" y="${cy - 2}">${esc(d.title)}</text>
+    <text class="sub${o.subTone ? ' ' + o.subTone : ''}" x="${x0 + 42}" y="${cy + 13}">${esc(sub)}</text>
+  </g>`;
+}
+function stickerSvg() {
+  const [rx, ry] = pos('router'), [ox, oy] = LAY().sticker, x = rx + ox, y = ry + oy;
+  const on = S.stickerOpen || S.refHl === 'sticker';
+  const halo = S.step === TASK && !T.joined && T.hint >= 3 ? `<rect class="sticker-halo halo${reduce ? '' : ' pulse'}" x="${x - 35}" y="${y - 19}" width="70" height="38" rx="6" transform="rotate(-6 ${x} ${y})"/>` : '';
+  return `${halo}<g class="sticker${on ? ' on' : ''}" data-sticker="1" tabindex="0" role="button" aria-label="Наклейка на роутере: имя сети и пароль" transform="translate(${x},${y}) rotate(-6)">
+    <rect class="paper" x="-29" y="-13" width="58" height="26" rx="2.5"/>
+    <text x="-24" y="-2.5">Wi-Fi</text><text x="-24" y="8" style="font-weight:500;font-size:7.5px">пароль ···</text>
+    <path class="bars" d="M8,-6v5M10,-6v5M13,-6v5M15,-6v5M18,-6v5M21,-6v5"/>
+    <title>Наклейка на роутере: нажмите, чтобы рассмотреть</title></g>`;
+}
+function haloSvg(id, tone, pulse) {
+  const [cx, cy] = pos(id), c = `halo ${tone}${pulse ? ' pulse' : ''}`;
+  if (id === 'internet') { const { rx, ry } = LAY().cloud; return `<ellipse class="${c}" cx="${cx}" cy="${cy}" rx="${rx + 12}" ry="${ry + 10}"/>`; }
+  const [w, h] = sizeOf(id);
+  return `<rect class="${c}" x="${cx - w / 2 - 7}" y="${cy - h / 2 - 7}" width="${w + 14}" height="${h + 14}" rx="16"/>`;
+}
+function annSvg(id, text, tone) {
+  const L = LAY(), [cx, cy] = pos(id), [, h] = sizeOf(id);
+  const tw = text.length * 6.7 + 20;
+  const x = clamp(cx - tw / 2, 6, L.w - tw - 6);
+  let y = cy - h / 2 - 32, s0 = y + 22, s1 = cy - h / 2 - 1;
+  if (y < 6) { y = cy + h / 2 + 10; s0 = y; s1 = cy + h / 2 + 1; }
+  return `<g class="ann ${tone}"><path class="stem" d="M${cx},${s0} V${s1}"/><rect x="${x}" y="${y}" width="${tw}" height="22" rx="6"/><text x="${x + tw / 2}" y="${y + 15}" text-anchor="middle">${esc(text)}</text></g>`;
+}
+function marks() {
+  const ann = {}, halo = {}, cands = [];
+  const i = S.step;
+  if (i === QUIZ_STEP) {
+    if (!S.quiz) QUIZ.cands.forEach(id => { cands.push(id); halo[id] = ['info', !reduce]; });
+    else {
+      halo.router = ['ok', false];
+      if (!playing()) ann.router = [S.quiz.first ? 'верно: выход в интернет' : 'выход в интернет', 'ok'];
+      if (S.quiz.pick !== 'router') { halo[S.quiz.pick] = ['bad', false]; ann[S.quiz.pick] = [QUIZ.tag[S.quiz.pick], 'bad']; }
+    }
+  }
+  if (i === TASK) {
+    if (PL.phase === 'stuck') ann.phone = ['нет Wi-Fi: письму некуда идти', 'bad'];
+    else if (T.joined && !T.solved && !playing()) ann.phone = ['подключён к Wi-Fi', 'ok'];
+  }
+  if (S.doneAnn && !playing()) ann[S.doneAnn[0]] = [S.doneAnn[1], 'ok'];
+  return { ann, halo, cands };
+}
+function renderBoard() {
+  const L = LAY();
+  let vx = 0, vy = 0;
+  if (S.step === 0) {
+    const H = L.house;
+    vx = Math.round(H.x + H.w / 2 - L.w / 2);
+    vy = Math.round(H.y - H.roof + (H.h + H.roof) / 2 - L.h / 2);
+  }
+  svg.setAttribute('viewBox', `${vx} ${vy} ${L.w} ${L.h}`);
+  svg.style.maxWidth = `${L.w * 1.22}px`;
+  svg.style.maxHeight = `${L.h * 1.22}px`;
+  const devs = devices(), lc = curLeg(), { ann, halo, cands } = marks();
+  const appearAll = S.appear === 'all', appearNet = S.appear === 'net';
+
+  let Z = houseSvg();
+  if (devs.includes('internet')) Z += cloudSvg({ appear: appearNet || appearAll, hl: lc && PL.phase === 'fly' && (lc.from === 'internet' || lc.to === 'internet') });
+  $('g-zones').innerHTML = Z;
+
+  let Ls = '';
+  for (const l of boardLinks()) {
+    const pb = pos(l.b), pa = pos(l.a);
+    let p0 = edgePt(l.a, pb[0], pb[1]), p1 = edgePt(l.b, pa[0], pa[1]);
+    if (S.layout === 'narrow' && l.a === 'router' && l.b === 'internet') {
+      p0 = [pa[0], pa[1] + sizeOf('router')[1] / 2 + 3];
+      p1 = cloudExit(pa[0], pb[1], 0, -1, 3);
+    }
+    const radio = l.m === 'radio';
+    const d = radio ? wavePath(p0, p1) : `M${P(p0)} L${P(p1)}`;
+    const touches = key => key.split('|').some(x => x === l.a || x === l.b);
+    let lit = PL.lit.has(legKey(l.a, l.b));
+    if (!lit && (l.a === 'internet' || l.b === 'internet')) {
+      const other = l.a === 'internet' ? l.b : l.a;
+      lit = [...PL.lit].some(key => touches(key) && key.split('|').includes(other) && key.split('|').some(x => INNER[x] || x === 'internet'));
+    }
+    const isNew = (S.newLink && l.a === 'phone') || (appearNet && l.a !== 'phone' && l.a !== 'laptop') || appearAll;
+    Ls += `<path class="link${radio ? ' radio' : ''}${lit ? ' lit' : ''}${isNew ? ' new' : ''}" d="${d}"><title>${radio ? 'Wi-Fi: связь по радио' : 'кабель'}</title></path>`;
+  }
+  Ls += innerSvg();
+  $('g-links').innerHTML = Ls;
+
+  const hl = new Set();
+  if (lc && PL.phase === 'fly') { hl.add(lc.from); hl.add(lc.to); }
+  let N = '';
+  devs.filter(id => id !== 'internet').forEach((id, k) => {
+    const appear = appearAll || (appearNet && id === 'shop');
+    const o = { hl: hl.has(id), appear, delay: appearAll ? k * 180 + 80 : 250 };
+    if (cands.includes(id)) o.cand = true;
+    if (id === 'phone' && S.step === TASK) {
+      if (!T.joined) { o.off = true; o.sub = T.connecting ? 'подключается…' : 'нет Wi-Fi'; o.subTone = T.connecting ? '' : 'bad'; }
+      else { o.sub = 'в Wi-Fi дома'; o.subTone = 'ok'; }
+    }
+    N += nodeSvg(id, o);
+  });
+  N += stickerSvg();
+  $('g-nodes').innerHTML = N;
+
+  let O = '';
+  for (const id in halo) if (devs.includes(id)) O += haloSvg(id, halo[id][0], halo[id][1]);
+  for (const id in ann) if (devs.includes(id)) O += annSvg(id, ann[id][0], ann[id][1]);
+  $('g-over').innerHTML = O;
+
+  renderLetter();
+  S.appear = null; S.newLink = false;
+  placeStickerPop();
+}
+function letterSvg(L, reply, stuck) {
+  const fs = 11.5, cw = fs * 0.6;
+  const l1 = `от: ${L.from}`, l2 = `кому: ${L.to}`;
+  const w = Math.ceil(Math.max(l1.length, l2.length) * cw + 20), h = 44;
+  return `<g class="letter${reply ? ' reply' : ''}${stuck ? ' stuck' : ''}" id="letter" data-w="${w}" data-h="${h}"><g class="lt-in">
+    <rect class="lt-body" x="${-w / 2}" y="${-h / 2}" width="${w}" height="${h}" rx="5"/>
+    <path class="lt-flap" d="M${-w / 2 + 3},${-h / 2 + 2} L0,${-h / 2 + 9} L${w / 2 - 3},${-h / 2 + 2}"/>
+    <text class="lt-t" x="${-w / 2 + 10}" y="${-h / 2 + 24}"><tspan class="k">от:</tspan> ${esc(L.from)}</text>
+    <text class="lt-t b" x="${-w / 2 + 10}" y="${-h / 2 + 37}"><tspan class="k">кому:</tspan> ${esc(L.to)}</text>
+  </g></g>`;
+}
+function renderLetter() {
+  const g = $('g-letter');
+  if (PL.phase === 'stuck') g.innerHTML = letterSvg(LET.up, false, true);
+  else {
+    const lc = curLeg();
+    g.innerHTML = lc ? letterSvg(lc.letter, lc.reply, false) : '';
+  }
+  placeLetter();
+}
+function placeLetter() {
+  const el = $('letter'), p = letterPos();
+  if (!el || !p) return;
+  const L = LAY(), s = p[2] || 1, w = +el.dataset.w * s, h = +el.dataset.h * s, vb = svg.viewBox.baseVal;
+  const x = clamp(p[0], vb.x + w / 2 + 4, vb.x + L.w - w / 2 - 4), y = clamp(p[1], vb.y + h / 2 + 4, vb.y + L.h - h / 2 - 4);
+  el.setAttribute('transform', `translate(${x.toFixed(1)},${y.toFixed(1)}) scale(${s.toFixed(3)})`);
+}
+
+// ---------- наклейка крупно ----------
+function placeStickerPop() {
+  const pop = $('sticker-pop');
+  pop.hidden = !S.stickerOpen;
+  if (!S.stickerOpen) return;
+  const g = svg.querySelector('[data-sticker]');
+  if (!g) return;
+  const r = g.getBoundingClientRect(), sr = stage.getBoundingClientRect();
+  const pw = pop.offsetWidth, ph = pop.offsetHeight;
+  let x = r.left + r.width / 2 - sr.left - pw / 2, y = r.bottom - sr.top + 12;
+  if (y + ph > sr.height - 8) y = r.top - sr.top - ph - 12;
+  pop.style.left = `${clamp(x, 8, Math.max(8, sr.width - pw - 8))}px`;
+  pop.style.top = `${clamp(y, 8, Math.max(8, sr.height - ph - 8))}px`;
+}
+function openSticker(on = true) {
+  S.stickerOpen = on;
+  renderBoard();
+  if (on) $('sp-x').focus({ preventScroll: true });
+}
+
+// ---------- лента шагов, теория, карточки ----------
+function stepDone(i) { return i === QUIZ_STEP ? !!S.quiz : i === TASK ? T.solved : true; }
+function canGo(i) {
+  if (i < 0 || i >= STEPS.length || i > S.maxStep + 1) return false;
+  for (let j = 0; j < i; j++) if (!stepDone(j)) return false;
+  return true;
+}
+function renderTimeline() {
+  const steps = STEPS.map((b, i) => {
+    const q = b.quiz && S.quiz;
+    const cls = ['tl', i < S.step ? 'done' : '', i === S.step ? 'current' : '', b.task ? 'is-task' : '', b.quiz ? 'is-quiz' : '', q ? (q.first ? 'first' : 'shown') : '', b.task && T.solved ? 'solved' : ''].filter(Boolean).join(' ');
+    const note = q ? (q.first ? ' · верно с первой попытки' : ' · ответ показан') : b.task && T.solved ? ' · решено' : '';
+    return `<button type="button" class="${cls}" data-goto="${i}" ${canGo(i) ? '' : 'disabled'} title="${esc(b.title + note)}" aria-label="Шаг ${i + 1}: ${esc(b.title + note)}" ${i === S.step ? 'aria-current="step"' : ''}><span class="bar"></span></button>`;
+  }).join('');
+  $('timeline').innerHTML = `<div class="tl-steps">${steps}</div><div class="tl-label">Шаг ${S.step + 1} из ${STEPS.length} · <b>${esc(STEPS[S.step].title)}</b></div>`;
+}
+function pastTail(i) {
+  if (i === QUIZ_STEP && S.quiz) return `<p class="task-done${S.quiz.first ? '' : ' shown'}">${S.quiz.first ? '✓ Верно с первой попытки' : '● Ответ показан'}</p>`;
+  if (i === TASK && T.solved) return `<p class="task-done">✓ Задача решена${T.help ? ' с показом решения' : ''}</p>`;
+  return '';
+}
+function renderTheory() {
+  const openMore = $('more') && $('more').open;
+  const parts = [];
+  for (let i = 0; i <= S.step; i++) {
+    const b = STEPS[i], past = i < S.step;
+    const label = b.task ? '◆ Задача' : b.quiz ? '● Вопрос' : `Шаг ${i + 1}`;
+    const tail = past ? pastTail(i) : '<div id="card"></div>';
+    parts.push(`<article class="beat ${past ? 'past' : 'current'}" id="beat-${i}" ${past ? `data-goto="${i}" title="Вернуться к этому шагу"` : ''}>
+      <h2><span class="n">${label}</span>${esc(b.title.replace(/^(Задача|Вопрос): /, ''))}</h2>
+      <div class="prose">${b.html()}</div>${b.more ? MORE : ''}${tail}</article>`);
+  }
+  if (S.step === LAST) {
+    const score = [
+      S.quiz ? (S.quiz.first ? '<span class="mark first">✓ Вопрос: с первой попытки</span>' : '<span class="mark shown">● Вопрос: ответ показан</span>') : '',
+      T.solved ? `<span class="mark ${T.help ? 'shown' : 'first'}">${T.help ? '● Задача: с показом решения' : '✓ Задача решена'}</span>` : '',
+    ].join('');
+    parts.push(`<div class="finish">
+      <div class="eyebrow">Урок 1 пройден</div>
+      <div class="score">${score}</div>
+      <div class="next">
+        <div class="eyebrow">Дальше · урок 2</div>
+        <h3>У каждого свой адрес</h3>
+        <p>Сегодня на конвертах были имена: «телефон», «сайт магазина». Но роутер не читает имён. В уроке 2 узнаем, какие адреса пишут на настоящих письмах, как номер дома, и кто их выдаёт.</p>
+        <div><button class="btn" type="button" disabled>Урок 2 · в этом макете его нет</button></div>
+      </div>
+    </div>`);
+  }
+  $('beats').innerHTML = parts.join('');
+  if (openMore && $('more')) $('more').open = true;
+  const sc = $('theory-scroll'), cur = $('beat-' + S.step);
+  if (cur && getComputedStyle(sc).overflowY === 'auto') sc.scrollTo({ top: Math.max(0, cur.offsetTop - 16), behavior: reduce ? 'auto' : 'smooth' });
+}
+function quizCard() {
+  const q = S.quiz;
+  let body;
+  if (!q) {
+    body = '<p class="task-how">На доске подсвечены ноутбук, роутер и сайт магазина. Нажмите одно устройство. Попытка одна, после неё покажем ответ и объяснение.</p>';
+  } else {
+    const pickName = DEV[q.pick].title.toLowerCase();
+    body = q.first
+      ? '<div class="fb ok"><p>Верно: роутер.</p></div>'
+      : `<div class="fb fail"><p>Вы выбрали: ${esc(pickName)}. ${QUIZ.wrong[q.pick]}</p><p>Правильный ответ: <strong>роутер</strong>.</p></div>`;
+    body += `<p class="explain">${QUIZ.explain}</p>
+      <span class="mark ${q.first ? 'first' : 'shown'}">${q.first ? '✓ Верно с первой попытки' : '● Ответ показан · в прогресс без отметки'}</span>
+      <div class="task-actions"><button class="btn primary" type="button" data-action="next" id="card-next">Дальше →</button></div>`;
+  }
+  const st = q ? (q.first ? ' solved' : ' revealed') : '';
+  return `<div class="task${st}"><div class="task-head"><span class="ring" aria-hidden="true"></span>Вопрос на доске<span class="att">одна попытка</span></div>
+    <p class="task-goal">Через какое устройство письмо выходит из дома в интернет?</p>${body}</div>`;
+}
+function taskCard() {
+  const goals = [
+    { st: T.joined ? 'ok' : T.connecting ? 'wait' : '', label: 'Телефон подключён к вашей сети', why: T.joined ? `${HOME.ssid}, как на наклейке` : T.connecting ? 'Подключается…' : 'Пока ни к какой сети.' },
+    { st: T.solved ? 'ok' : T.joined ? 'wait' : '', label: 'Сайт магазина открылся на телефоне', why: T.solved ? 'Письмо дошло до сайта, ответ вернулся.' : T.joined ? 'Письмо в пути, смотрите на доску.' : '' },
+  ];
+  const items = goals.map(g => `<li class="${g.st}"><span class="mk" aria-hidden="true">${g.st === 'ok' ? '✓' : ''}</span><span>${g.label}${g.why ? `<span class="why">${esc(g.why)}</span>` : ''}</span></li>`).join('');
+  let body;
+  if (T.solved) {
+    body = `<div class="fb ok">Готово: телефон в вашей сети, письмо прошло через роутер и интернет, и страница магазина открылась.</div>
+      <div class="task-actions"><button class="btn primary" type="button" data-action="next" id="card-next">Дальше: итог →</button></div>`;
+  } else {
+    const hints = T.hint ? `<ol class="hints">${HINTS.slice(0, T.hint).map(t => `<li>${t}</li>`).join('')}</ol>` : '';
+    const showSol = T.fails >= 2 || T.hint >= 2;
+    const busy = T.demo || T.connecting || T.joined;
+    body = `${hints}<div class="task-actions">
+      <button class="btn" type="button" data-action="hint" id="task-hint" ${T.hint >= 3 || busy ? 'disabled' : ''}>Подсказка · ${T.hint} из 3</button>
+      ${showSol ? `<button class="btn link" type="button" data-action="solution" id="task-solution" ${busy ? 'disabled' : ''}>Показать решение</button>` : ''}</div>`;
+  }
+  return `<div class="task${T.solved ? ' solved' : ''}">
+    <div class="task-head"><span class="dia" aria-hidden="true"></span>${T.solved ? `Решено${T.help ? ' с показом решения' : ''}` : 'Задача на экране телефона'}</div>
+    <p class="task-goal">Подключите телефон к домашнему Wi-Fi.</p>
+    ${T.solved ? '' : '<p class="task-how">Выберите свою сеть в списке и введите пароль. Имя сети и пароль — на наклейке на роутере: нажмите её на доске. Цели проверяются сами.</p>'}
+    <ul class="checks">${items}</ul>${body}</div>`;
+}
+function renderCard() {
+  const el = $('card');
+  if (el) {
+    const fid = document.activeElement && document.activeElement.id;
+    el.innerHTML = S.step === QUIZ_STEP ? quizCard() : S.step === TASK ? taskCard() : '';
+    if (fid) { const f = document.getElementById(fid); if (f && !f.disabled && el.contains(f)) f.focus({ preventScroll: true }); }
+  }
+  renderNav();
+  renderTimeline();
+}
+function renderNav() {
+  const fid = document.activeElement && document.activeElement.id;
+  const done = stepDone(S.step), last = S.step === LAST;
+  const text = !done ? (S.step === QUIZ_STEP ? 'Ответьте на вопрос, чтобы продолжить' : 'Подключите телефон, чтобы продолжить') : last ? 'Конец урока' : 'Стрелки ← → тоже работают';
+  $('theory-nav').innerHTML = `<button class="btn" type="button" id="nav-prev" ${S.step === 0 ? 'disabled' : ''}>← Назад</button>
+    <span class="nav-text">${text}</span>
+    <button class="btn primary" type="button" id="nav-next" ${!done || last ? 'disabled' : ''}>Далее →</button>`;
+  if (fid === 'nav-prev' || fid === 'nav-next') { const f = $(fid); if (f && !f.disabled) f.focus({ preventScroll: true }); }
+}
+function renderModeChip() {
+  const c = $('mode-chip');
+  let t = 'Доска следует за текстом', k = '';
+  if (S.step === QUIZ_STEP && !S.quiz) { t = 'Вопрос · нажмите устройство'; k = 'quiz'; }
+  if (S.step === TASK) { t = T.solved ? 'Задача решена' : 'Задача · подключите телефон'; k = T.solved ? '' : 'edit'; }
+  c.className = 'mode-chip' + (k ? ' ' + k : '');
+  c.textContent = t;
+}
+
+// ---------- кнопка «Пуск» и подпись ----------
+function caption() {
+  const st = S.step;
+  if (PL.phase === 'stuck') return ['bad', 'Телефон не подключён к Wi-Fi: письму некуда идти.'];
+  if (playing()) { const lg = curLeg(); return [lg.reply ? 'ok' : 'info', lg.note]; }
+  if (PL.phase === 'done') return ['ok', PL.doneNote];
+  if (st === 0) return ['', 'Нажмите «Пуск»: ноутбук отправит фото на телефон.'];
+  if (st === 1) return ['', 'Нажмите «Пуск»: телефон попросит у сайта магазина страницу.'];
+  if (st === 2) return ['', 'Нажмите «Пуск»: письмо пройдёт через сети внутри интернета.'];
+  if (st === QUIZ_STEP) return S.quiz ? ['', 'Нажмите «Ещё раз», чтобы снова увидеть, как письмо выходит из дома.'] : ['info', 'Сначала ответьте на вопрос: нажмите устройство на доске.'];
+  if (st === TASK) {
+    if (T.solved) return ['ok', 'Страница открылась на телефоне.'];
+    if (T.connecting) return ['info', 'Телефон подключается к Wi-Fi…'];
+    if (T.joined) return ['ok', 'Телефон в Wi-Fi. Сейчас он откроет сайт магазина.'];
+    return ['', `Телефон пока не в Wi-Fi. Подключите его на экране телефона ${mobileMQ.matches ? 'ниже' : 'справа'}.`];
+  }
+  return ['', 'Нажмите «Пуск»: весь путь письма ещё раз.'];
+}
+function renderTransport() {
+  const b = $('t-play'), st = S.step;
+  const locked = (st === QUIZ_STEP && !S.quiz) || T.connecting || T.demo || (st === TASK && T.joined && !T.solved);
+  b.disabled = playing() || locked;
+  b.textContent = playing() && PL.phase !== 'stuck' ? 'Письмо в пути…' : S.played[st] ? '↻ Ещё раз' : '▶ Пуск';
+  b.classList.toggle('nudge', !reduce && !S.played[st] && st <= 2);
+  const [tone, text] = caption(), c = $('caption');
+  c.className = 'caption' + (tone ? ' ' + tone : '');
+  c.innerHTML = `<span class="dot" aria-hidden="true"></span><span>${esc(text)}</span>`;
+}
+function onPlay() {
+  const st = S.step;
+  S.played[st] = true;
+  if (st === 0) play(photoLegs(), 'Фото пришло. Ноутбук и телефон поговорили через роутер.', () => { S.doneAnn = ['phone', 'фото пришло']; });
+  else if (st === QUIZ_STEP) play(siteLegs({ outOnly: true }), 'Письмо вышло из дома через роутер и попало в интернет.');
+  else if (st === TASK && !T.joined) { stopPlayer(); PL.phase = 'stuck'; PL.wait = reduce ? 1800 : 1500; sync(); }
+  else play(siteLegs({ reply: true }), 'Ответ пришёл: страница открылась на телефоне.', () => { S.doneAnn = ['phone', 'страница открылась']; });
+}
+
+// ---------- экран телефона ----------
+const SVG_LOCK = '<svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>';
+const SVG_EYE = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
+const SVG_EYE_OFF = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.5-7 10-7c2 0 3.7.6 5.1 1.5M22 12s-3.5 7-10 7c-2 0-3.7-.6-5.1-1.5"/><path d="M3 3l18 18"/></svg>';
+const SVG_CUP = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9h13v5a5 5 0 0 1-5 5H9a5 5 0 0 1-5-5z"/><path d="M17 10h1.5a2.5 2.5 0 0 1 0 5H17"/><path d="M8 3v3M12 3v3"/></svg>';
+const sigSvg = n => `<svg class="sig" viewBox="0 0 18 14" aria-label="сигнал ${n} из 3"><rect x="1" y="9" width="4" height="4" rx="1" class="${n >= 1 ? 'f' : ''}"/><rect x="7" y="5" width="4" height="8" rx="1" class="${n >= 2 ? 'f' : ''}"/><rect x="13" y="1" width="4" height="12" rx="1" class="${n >= 3 ? 'f' : ''}"/></svg>`;
+const WIFI_ICON = '<svg viewBox="0 0 16 12" aria-hidden="true"><path d="M1 4.2a10 10 0 0 1 14 0M3.4 6.8a6.6 6.6 0 0 1 9.2 0M5.8 9.3a3.2 3.2 0 0 1 4.4 0" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><circle cx="8" cy="11" r="1" fill="currentColor"/></svg>';
+const BATT = '<svg viewBox="0 0 24 12" aria-hidden="true" style="width:22px"><rect x="1" y="1.5" width="19" height="9" rx="2.5" fill="none" stroke="currentColor" stroke-width="1.2"/><rect x="3" y="3.5" width="12" height="5" rx="1" fill="currentColor"/><rect x="21" y="4.5" width="2" height="3" rx="1" fill="currentColor"/></svg>';
+
+function netRow(n) {
+  const isHome = n.id === 'home', ghost = isHome && T.hint >= 3 && !T.joined;
+  const busy = T.connecting || T.demo || T.joined;
+  let st = n.open ? 'Открытая сеть, без пароля' : 'Защищена паролем';
+  if (isHome && T.connecting) st = 'Подключаюсь…';
+  return `<li><button class="net${ghost ? ' ghost' : ''}" type="button" data-net="${n.id}" ${busy ? 'disabled' : ''}>
+    <span class="chk" aria-hidden="true">${isHome && T.connecting ? '<span class="spin"></span>' : ''}</span>
+    <span class="nm">${esc(n.ssid)}<span class="st">${st}</span></span>
+    ${n.open ? '<span></span>' : SVG_LOCK}${sigSvg(n.sig)}</button></li>`;
+}
+function wifiScreen() {
+  const mine = T.joined ? `<p class="grp">Моя сеть</p><ul class="nets"><li><button class="net on" type="button" disabled>
+      <span class="chk" aria-hidden="true">✓</span><span class="nm">${esc(HOME.ssid)}<span class="st">Подключено</span></span>${SVG_LOCK}${sigSvg(3)}</button></li></ul>` : '';
+  const others = NETS.filter(n => !(T.joined && n.id === 'home'));
+  let sheet = '';
+  if (T.sheet === 'cafe') {
+    sheet = `<div class="scrim" data-ph="close"></div><div class="sheet" role="dialog" aria-label="Открытая сеть кафе">
+      <div class="grab" aria-hidden="true"></div>
+      <div class="cafe-ic">${SVG_CUP}</div>
+      <h4>«Кафе Утро» — не ваша домашняя сеть</h4>
+      <p>Это открытая сеть кафе внизу: без замка и без пароля, подключиться может любой прохожий. Письма телефона пошли бы через роутер кафе, а не через ваш.</p>
+      <p>Дома выбирайте свою сеть — ту, чьё имя написано на наклейке вашего роутера.</p>
+      <div class="sh-actions"><button class="pbtn go" type="button" data-ph="close" id="cafe-ok">Понятно, выберу свою</button></div></div>`;
+  } else if (T.sheet) {
+    const n = NETS.find(x => x.id === T.sheet);
+    sheet = `<div class="scrim" data-ph="close"></div><form class="sheet" id="pw-form" role="dialog" aria-label="Пароль сети" autocomplete="off">
+      <div class="grab" aria-hidden="true"></div>
+      <h4>Пароль для «${esc(n.ssid)}»</h4>
+      <div class="pw${T.err ? ' err' : ''}"><label class="sr-only" for="wifi-pass">Пароль</label>
+        <input id="wifi-pass" type="${T.showPass ? 'text' : 'password'}" value="${esc(T.pass)}" placeholder="Пароль" autocapitalize="off" autocorrect="off" spellcheck="false" ${T.demo ? 'readonly' : ''}>
+        <button class="eye" type="button" data-ph="eye" aria-label="${T.showPass ? 'Скрыть пароль' : 'Показать пароль'}" aria-pressed="${T.showPass}">${T.showPass ? SVG_EYE_OFF : SVG_EYE}</button></div>
+      ${T.err ? `<p class="sh-err${reduce ? '' : ' shake'}" role="alert" data-n="${T.errN}">${esc(T.err)}</p>` : '<p class="sh-hint">Пароль написан на наклейке на роутере.</p>'}
+      <div class="sh-actions"><button class="pbtn" type="button" data-ph="close">Отмена</button><button class="pbtn go" type="submit" id="pw-join" ${T.demo ? 'disabled' : ''}>Подключиться</button></div></form>`;
+  }
+  return `<div class="scr-head"><button class="back" type="button" disabled>‹ Настройки</button><h3>Wi-Fi</h3></div>
+    <div class="scr-body">
+      <div class="wf-switch"><span>Wi-Fi</span><span class="sw" aria-label="включён"></span></div>
+      ${mine}
+      <p class="grp">${T.joined ? 'Другие сети' : 'Сети рядом'}</p>
+      <ul class="nets">${others.map(netRow).join('')}</ul>
+      <p class="scr-note">Замок значит, что сеть защищена паролем. Чем больше полосок, тем лучше ловит.</p>
+      ${T.solved ? '<p class="scr-note"><button class="back" type="button" data-ph="to-browser" style="appearance:none;border:0;background:none;padding:0;color:var(--accent);cursor:pointer;font:inherit">Открыть сайт магазина ›</button></p>' : ''}
+    </div>${sheet}`;
+}
+function browserScreen() {
+  return `<div class="br-top"><button class="back" type="button" data-ph="to-wifi">‹ Wi-Fi</button><span class="ttl">Сайт магазина</span></div>
+    <div class="page">
+      <div class="pg-ok">✓ Страница открылась</div>
+      <p class="pg-h">Учебный магазин</p>
+      <p class="pg-sub">Эта страница пришла ответным письмом: сайт → интернет → ваш роутер → телефон.</p>
+      <div class="pg-grid"><div class="pg-card"><div class="pic"></div>Кружка<span>в наличии</span></div><div class="pg-card"><div class="pic"></div>Плед<span>в наличии</span></div></div>
+    </div>`;
+}
+function renderPhone() {
+  const show = S.step === TASK;
+  $('boardside').classList.toggle('with-phone', show);
+  $('phone-panel').hidden = !show;
+  if (!show) return;
+  $('pp-cap').innerHTML = T.solved ? 'Экран телефона · <b>готово</b>' : 'Экран телефона · <b>задача</b>';
+  $('sbar').innerHTML = `<span>9:41</span><span class="r">${T.joined ? `<span style="color:var(--ink)">${WIFI_ICON}</span>` : '<span class="nonet">нет сети</span>'}${BATT}</span>`;
+  $('scr').innerHTML = T.screen === 'browser' ? browserScreen() : wifiScreen();
+}
+function openNet(id) {
+  if (T.joined || T.connecting || T.demo) return;
+  T.err = null; T.pass = ''; T.showPass = false;
+  if (id === 'cafe') { T.sheet = 'cafe'; T.cafeSeen = true; renderPhone(); $('cafe-ok').focus({ preventScroll: true }); return; }
+  T.sheet = id;
+  renderPhone();
+  const inp = $('wifi-pass');
+  if (inp) inp.focus({ preventScroll: true });
+}
+function closeSheet() {
+  T.sheet = null; T.err = null;
+  renderPhone();
+}
+function sheetErr(msg) {
+  T.err = msg; T.errN++;
+  renderPhone();
+  renderCard();
+  const inp = $('wifi-pass');
+  if (inp) { inp.focus({ preventScroll: true }); inp.select(); }
+}
+function tryJoin() {
+  if (!T.sheet || T.sheet === 'cafe') return;
+  const p = T.pass.trim();
+  if (!p) return sheetErr('Введите пароль: он написан на наклейке на роутере.');
+  if (T.sheet === 'neigh') { T.fails++; return sheetErr('Пароль не подошёл. Это точно ваша сеть? Сверьте её имя с наклейкой на роутере: оно должно совпасть до последней буквы.'); }
+  if (p !== HOME.pass) {
+    T.fails++;
+    if (p.toLowerCase() === HOME.pass) return sheetErr('Почти! В пароле важны большие и маленькие буквы: на наклейке все буквы маленькие.');
+    return sheetErr('Пароль не подошёл. Сверьте его с наклейкой на роутере: важна каждая буква и цифра.');
+  }
+  T.sheet = null; T.err = null; T.connecting = true;
+  renderPhone(); renderCard(); renderBoard(); renderTransport();
+  setTimeout(joined, reduce ? 200 : 1000);
+}
+function joined() {
+  T.connecting = false; T.joined = true; T.demo = false;
+  S.newLink = true;
+  S.played[TASK] = true;
+  stopPlayer();
+  renderPhone(); renderCard(); sync();
+  setTimeout(openSite, reduce ? 200 : 700);
+}
+function openSite() {
+  if (S.step !== TASK || !T.joined || T.solved || playing()) return;
+  play(siteLegs({ reply: true }), 'Ответ пришёл: страница открылась на телефоне.', () => {
+    T.solved = true; T.screen = 'browser'; S.doneAnn = ['phone', 'страница открылась'];
+    renderPhone(); renderCard(); renderModeChip();
+    const st = $('stage');
+    st.classList.remove('flash'); void st.offsetWidth; st.classList.add('flash');
+  });
+}
+function showSolution() {
+  if (T.joined || T.connecting || T.demo) return;
+  T.help = true; T.demo = true; T.sheet = 'home'; T.pass = ''; T.err = null; T.showPass = true;
+  renderPhone(); renderCard(); renderTransport();
+  const chars = HOME.pass.split('');
+  const type = () => {
+    if (S.step !== TASK) { T.demo = false; return; }
+    if (!chars.length) { T.demo = false; tryJoin(); return; }
+    T.pass += chars.shift();
+    const inp = $('wifi-pass');
+    if (inp) inp.value = T.pass;
+    setTimeout(type, reduce ? 0 : 90);
+  };
+  setTimeout(type, reduce ? 0 : 500);
+}
+
+// ---------- переходы между шагами ----------
+function enterStep(i) {
+  S.step = i;
+  S.maxStep = Math.max(S.maxStep, i);
+  S.stickerOpen = false; S.doneAnn = null;
+  stopPlayer();
+  if (!S.seen[i]) {
+    S.appear = i === 0 ? 'all' : i === 1 ? 'net' : i === 2 ? 'inner' : null;
+    S.seen[i] = true;
+  }
+  if (i === QUIZ_STEP && S.quiz) S.doneAnn = null;
+  if (i === TASK && T.solved) { S.doneAnn = ['phone', 'страница открылась']; T.screen = 'browser'; }
+  if (i === TASK && !T.solved) { T.sheet = null; T.err = null; }
+}
+function sync() {
+  renderBoard();
+  renderTransport();
+  if (S.step === TASK) renderCard();
+}
+function renderAll() {
+  renderTheory();
+  renderCard();
+  renderPhone();
+  renderBoard();
+  renderTransport();
+  renderModeChip();
+}
+function goTo(n) {
+  if (n === S.step || !canGo(n)) return;
+  enterStep(n);
+  renderAll();
+  if (n === QUIZ_STEP || n === TASK) setTimeout(showCard, 450);
+  if (n === TASK && T.joined && !T.solved) setTimeout(openSite, 500);
+}
+function showCard() {
+  const c = $('card'), sc = $('theory-scroll');
+  if (c && getComputedStyle(sc).overflowY === 'auto') c.scrollIntoView({ block: 'nearest', behavior: reduce ? 'auto' : 'smooth' });
+}
+function answerQuiz(id) {
+  if (S.step !== QUIZ_STEP || S.quiz || !QUIZ.cands.includes(id)) return;
+  S.quiz = { pick: id, first: id === QUIZ.answer };
+  S.played[QUIZ_STEP] = true;
+  renderCard(); renderModeChip(); showCard();
+  play(siteLegs({ outOnly: true }), 'Письмо вышло из дома через роутер и попало в интернет.');
+}
+
+// ---------- события: доска ----------
+svg.addEventListener('click', e => {
+  const t = e.target;
+  if (t.closest('[data-sticker]')) { openSticker(!S.stickerOpen); return; }
+  const cand = t.closest('.cand');
+  if (cand) { answerQuiz(cand.dataset.node); return; }
+  if (S.stickerOpen) openSticker(false);
+});
+svg.addEventListener('keydown', e => {
+  if (e.key !== 'Enter' && e.key !== ' ') return;
+  const t = e.target;
+  if (t.closest && t.closest('[data-sticker]')) { e.preventDefault(); openSticker(!S.stickerOpen); return; }
+  if (t.classList && t.classList.contains('cand')) { e.preventDefault(); answerQuiz(t.dataset.node); }
+});
+$('sp-x').addEventListener('click', () => {
+  openSticker(false);
+  const s = svg.querySelector('[data-sticker]');
+  if (s) s.focus({ preventScroll: true });
+});
+$('t-play').addEventListener('click', onPlay);
+
+// ---------- события: теория ----------
+function hoverRef(e, on) {
+  const r = e.target.closest && e.target.closest('.ref');
+  if (!r) return;
+  S.refHl = on ? r.dataset.ref : null;
+  renderBoard();
+}
+$('beats').addEventListener('pointerover', e => hoverRef(e, true));
+$('beats').addEventListener('pointerout', e => hoverRef(e, false));
+$('beats').addEventListener('focusin', e => hoverRef(e, true));
+$('beats').addEventListener('focusout', e => hoverRef(e, false));
+$('beats').addEventListener('click', e => {
+  const a = e.target.closest('[data-action]');
+  if (a) {
+    const k = a.dataset.action;
+    if (k === 'next') goTo(S.step + 1);
+    else if (k === 'hint') { T.hint = Math.min(3, T.hint + 1); renderCard(); renderPhone(); renderBoard(); }
+    else if (k === 'solution') showSolution();
+    return;
+  }
+  if (e.target.closest('.more')) return;
+  const r = e.target.closest('.ref');
+  if (r) {
+    if (r.dataset.ref === 'sticker' && S.step === TASK) { openSticker(true); if (mobileMQ.matches) stage.scrollIntoView({ block: 'nearest', behavior: reduce ? 'auto' : 'smooth' }); }
+    return;
+  }
+  const past = e.target.closest('.beat.past');
+  if (past) goTo(+past.dataset.goto);
+});
+$('beats').addEventListener('keydown', e => {
+  const r = e.target.closest && e.target.closest('.ref.act');
+  if (r && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); r.click(); }
+});
+$('timeline').addEventListener('click', e => { const b = e.target.closest('[data-goto]'); if (b && !b.disabled) goTo(+b.dataset.goto); });
+$('theory-nav').addEventListener('click', e => {
+  if (e.target.closest('#nav-prev')) goTo(S.step - 1);
+  if (e.target.closest('#nav-next')) goTo(S.step + 1);
+});
+
+// ---------- события: телефон ----------
+$('scr').addEventListener('click', e => {
+  const n = e.target.closest('[data-net]');
+  if (n && !n.disabled) { openNet(n.dataset.net); return; }
+  const a = e.target.closest('[data-ph]');
+  if (!a) return;
+  const k = a.dataset.ph;
+  if (k === 'close') { if (!T.demo) closeSheet(); }
+  else if (k === 'eye') { T.showPass = !T.showPass; const inp = $('wifi-pass'); if (inp) T.pass = inp.value; renderPhone(); const i2 = $('wifi-pass'); if (i2) { i2.focus({ preventScroll: true }); i2.setSelectionRange(i2.value.length, i2.value.length); } }
+  else if (k === 'to-wifi') { T.screen = 'wifi'; renderPhone(); }
+  else if (k === 'to-browser') { T.screen = 'browser'; renderPhone(); }
+});
+$('scr').addEventListener('input', e => { if (e.target.id === 'wifi-pass') T.pass = e.target.value; });
+$('scr').addEventListener('submit', e => { e.preventDefault(); if (!T.demo) tryJoin(); });
+
+// ---------- клавиатура и размер ----------
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') {
+    if (S.stickerOpen) { openSticker(false); return; }
+    if (T.sheet && !T.demo) { closeSheet(); return; }
+  }
+  if (e.target.closest && e.target.closest('input, textarea, select, .scr')) return;
+  if (e.metaKey || e.ctrlKey || e.altKey) return;
+  if (e.key === 'ArrowRight') goTo(S.step + 1);
+  if (e.key === 'ArrowLeft') goTo(S.step - 1);
+});
+function pickLayout() {
+  let L;
+  if (mobileMQ.matches) L = smallMQ.matches ? 'narrow' : 'wide';
+  else {
+    const r = stage.getBoundingClientRect();
+    L = r.width / Math.max(1, r.height) >= 0.95 ? 'wide' : 'narrow';
+  }
+  if (L !== S.layout) { S.layout = L; renderBoard(); }
+  else placeStickerPop();
+}
+if ('ResizeObserver' in window) new ResizeObserver(pickLayout).observe(stage);
+const onMQ = () => { pickLayout(); renderTransport(); };
+[mobileMQ, smallMQ].forEach(m => (m.addEventListener ? m.addEventListener('change', onMQ) : m.addListener(onMQ)));
+
+// ---------- кадр ----------
+let last = performance.now();
+function frame(now) {
+  const dt = Math.min(now - last, 64);
+  last = now;
+  const r = tick(dt);
+  if (r === 'state') sync();
+  else if (r === 'pos') { placeLetter(); }
+  requestAnimationFrame(frame);
+}
+
+$('sp-ssid').textContent = HOME.ssid;
+$('sp-pass').textContent = HOME.pass;
+pickLayout();
+enterStep(0);
+renderAll();
+requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>
