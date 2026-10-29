@@ -195,9 +195,17 @@ describe('every domain message', () => {
     DomainMessage.ConnectServerToServer(),
     DomainMessage.ConnectBalancerToDatabase(),
     DomainMessage.ConnectWrongDirection(),
+    DomainMessage.ConnectFromSink({ from: 'db' }),
+    DomainMessage.ConnectNotAllowed({
+      from: 'client',
+      to: 'cache',
+      allowed: ['cdn', 'limiter', 'lb', 'server'],
+    }),
     DomainMessage.NodeIsPartOfTask({ id: 'app1' }),
     DomainMessage.UnknownNode({ id: 'app9' }),
     DomainMessage.DuplicateNodeId({ id: 'lb-1' }),
+    DomainMessage.InvalidCapacity({ id: 'limiter-1' }),
+    DomainMessage.RegionHasNoBlocks({ region: 'asia' }),
     DomainMessage.GoalMissingKind({ kind: 'lb' }),
     DomainMessage.GoalTooFewTargets({
       from: 'lb',
@@ -216,11 +224,93 @@ describe('every domain message', () => {
       errorRate: 0.11,
       overloaded: ['app1'],
     }),
+    DomainMessage.GoalSlowResponse({
+      load: 900,
+      p95: 1334,
+      max: 300,
+      hottest: ['app1'],
+    }),
+    DomainMessage.GoalOverUtilized({
+      kind: 'server',
+      load: 1050,
+      utilization: 0.875,
+      max: 0.8,
+      nodes: ['app1', 'app2'],
+    }),
+    DomainMessage.GoalBacklogGrowing({
+      load: 600,
+      backlog: 200,
+      max: 0,
+      nodes: ['queue-1'],
+    }),
+    DomainMessage.GoalTooExpensive({ cost: 3.45, max: 3 }),
+    DomainMessage.GoalFailureNotSurvived({
+      id: 'db',
+      kind: 'db',
+      load: 500,
+      errorRate: 1,
+      max: 0.01,
+    }),
+    DomainMessage.GoalRegionFailureNotSurvived({
+      region: 'eu',
+      load: 300,
+      errorRate: 1,
+      max: 0.01,
+      overloaded: ['lb-eu'],
+    }),
   ]
 
   test('covers every tag', () => {
-    expect(new Set(samples.map(sample => sample._tag)).size).toBe(17)
+    const tags = new Set(samples.map(sample => sample._tag))
+    expect(tags.size).toBe(samples.length)
+    expect(tags.size).toBe(27)
   })
+
+  test.each(locales)(
+    'new messages carry their parameters into the %s text',
+    locale => {
+      const render = (message: DomainMessage) =>
+        renderDomainMessage(uiFor(locale).domain, message)
+      const ui = uiFor(locale)
+
+      expect(
+        render(
+          DomainMessage.ConnectNotAllowed({
+            from: 'client',
+            to: 'cache',
+            allowed: ['lb'],
+          }),
+        ),
+      ).toContain(ui.kindName.cache)
+      expect(
+        render(DomainMessage.RegionHasNoBlocks({ region: 'asia' })),
+      ).toContain(ui.regionName.asia)
+      expect(
+        render(
+          DomainMessage.GoalSlowResponse({
+            load: 900,
+            p95: 1334,
+            max: 300,
+            hottest: ['app1'],
+          }),
+        ),
+      ).toContain('app1')
+      expect(
+        render(
+          DomainMessage.GoalFailureNotSurvived({
+            id: 'db',
+            kind: 'db',
+            load: 500,
+            errorRate: 1,
+            max: 0.01,
+          }),
+        ),
+      ).toContain(ui.kindName.db)
+      expect(
+        render(DomainMessage.GoalTooExpensive({ cost: 3.45, max: 3 })),
+      ).toContain(ui.hud.perHour(3.45))
+    },
+  )
 
   test.each(locales)('renders non-empty text in %s', locale => {
     samples.forEach(sample => {

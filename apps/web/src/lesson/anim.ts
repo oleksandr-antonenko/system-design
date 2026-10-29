@@ -15,6 +15,8 @@ export const Anim = Schema.Struct({
   hudErrorRate: Schema.Number,
   hudP95: Schema.Option(Schema.Number),
   hudDatabase: Schema.Number,
+  hudRejected: Schema.Number,
+  hudBacklog: Schema.Number,
   sparkErrors: Schema.Array(Schema.Number),
   sparkP95: Schema.Array(Schema.Number),
   sinceSampleMs: Schema.Number,
@@ -33,6 +35,8 @@ export const initialAnim: Anim = {
   hudErrorRate: 0,
   hudP95: Option.none(),
   hudDatabase: 0,
+  hudRejected: 0,
+  hudBacklog: 0,
   sparkErrors: [],
   sparkP95: [],
   sinceSampleMs: 0,
@@ -113,6 +117,8 @@ export const tick = (
     hudErrorRate,
     hudP95,
     hudDatabase: lerp(anim.hudDatabase, sim.databaseLoad, valueWeight),
+    hudRejected: lerp(anim.hudRejected, sim.rejected, valueWeight),
+    hudBacklog: lerp(anim.hudBacklog, sim.backlog, valueWeight),
     sparkErrors: shouldSample
       ? keepLast(anim.sparkErrors, hudErrorRate)
       : anim.sparkErrors,

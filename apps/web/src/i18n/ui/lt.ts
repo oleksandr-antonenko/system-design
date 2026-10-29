@@ -1,3 +1,6 @@
+import { Array } from 'effect'
+
+import type { ComponentKind } from '../../domain/catalog'
 import { formatNumber } from '../format'
 import { plural } from '../plural'
 import type { UiStrings } from './types'
@@ -11,13 +14,33 @@ const inLanguage: UiStrings['inLanguage'] = {
 
 const kindName: UiStrings['kindName'] = {
   client: 'Naudotojai',
+  cdn: 'CDN',
+  limiter: 'Ribotuvas',
   lb: 'Balansuotuvas',
   server: 'Serveris',
+  cache: 'Podėlis',
+  queue: 'Eilė',
+  events: 'Įvykių magistralė',
+  worker: 'Vykdytojas',
   db: 'Duomenų bazė',
+  replica: 'Bazės replika',
+  search: 'Paieškos indeksas',
+}
+
+const regionName: UiStrings['regionName'] = {
+  eu: 'Europa',
+  us: 'JAV',
+  asia: 'Azija',
 }
 
 const n = (value: number) => formatNumber('lt', Math.round(value))
 const percent = (ratio: number) => `${n(ratio * 100)} %`
+const perHour = (dollars: number) =>
+  `${dollars.toFixed(2).replace('.', ',')} $/val.`
+const kindList = (kinds: ReadonlyArray<ComponentKind>) =>
+  kinds.map(kind => kindName[kind]).join(', ')
+const idList = (lead: string, ids: ReadonlyArray<string>) =>
+  Array.isReadonlyArrayNonEmpty(ids) ? `${lead}${ids.join(', ')}.` : ''
 
 export const lt = {
   courseTitle: 'System Design',
@@ -27,6 +50,7 @@ export const lt = {
   languageSwitcherLabel: 'Kalba',
   inLanguage,
   kindName,
+  regionName,
   home: {
     heading: 'Kurso programa',
     lessonCount: count =>
@@ -59,12 +83,6 @@ export const lt = {
     laterTitle: 'Vėliau kurse',
     paletteClosed: 'Atsivers užduotyje',
     paletteHint: 'Nuvilkite ant lentos arba spustelėkite, kad pridėtumėte',
-    upcomingName: {
-      cache: 'Podėlis',
-      cdn: 'CDN',
-      queue: 'Eilė',
-      shard: 'Šardai',
-    },
     lockedUntilLesson: order => `${order} pamoka`,
     newBadge: 'nauja',
     capacityTag: rps => `iki ${n(rps)} rps`,
@@ -77,6 +95,9 @@ export const lt = {
     nodeLoad: (rps, utilization) => `${n(rps)} rps · ${percent(utilization)}`,
     clientsLoad: rps => `${n(rps)} rps →`,
     nodeDown: 'nepasiekiamas',
+    queueGrowing: rps => `auga +${n(rps)}/s`,
+    rejecting: rps => `atmesta ${n(rps)}/s`,
+    zoneDown: region => `${regionName[region]} · regionas neveikia`,
     edgeFlow: rps => `${n(rps)} rps`,
     ghost: kind => `čia: ${kindName[kind]}`,
   },
@@ -85,11 +106,14 @@ export const lt = {
     errors: 'Klaidos',
     p95: 'p95 atsakas',
     database: 'Užklausos į bazę',
+    rejected: 'Atmesta',
+    backlog: 'Eilė auga',
     cost: 'Kaina',
     rps: value => `${n(value)} rps`,
+    growth: value => `+${n(value)} rps`,
     ms: value => `${n(value)} ms`,
     percent,
-    perHour: dollars => `${dollars.toFixed(2).replace('.', ',')} $/val.`,
+    perHour,
     pause: 'Pauzė',
     play: 'Srautas',
     speed: 'Greitis',
@@ -175,5 +199,31 @@ export const lt = {
       `Nėra ryšio nuo „${kindName[from]}“ iki bloko „${kindName[via]}“: užklausoms nėra kur eiti.`,
     GoalTooManyErrors: ({ load, errorRate, overloaded }) =>
       `Esant ${n(load)} rps prarandama ${percent(errorRate)} užklausų. Užklausas praranda: ${overloaded.join(', ')}.`,
+    ConnectFromSink: ({ from }) =>
+      `Bloke „${kindName[from]}“ užklausos kelias baigiasi: toliau jis nieko neperduoda.`,
+    ConnectNotAllowed: ({ from, to, allowed }) =>
+      `„${kindName[from]}“ neperduoda užklausų blokui „${kindName[to]}“. Galimi ryšiai: ${kindList(allowed)}.`,
+    InvalidCapacity: ({ id }) =>
+      `Blokui ${id} reikia pralaidumo, didesnio už nulį.`,
+    RegionHasNoBlocks: ({ region }) =>
+      `Regione „${regionName[region]}“ blokų nėra.`,
+    GoalSlowResponse: ({ load, p95, max, hottest }) =>
+      `Esant ${n(load)} rps, p95 yra ${n(p95)} ms – daugiau nei riba ${n(max)} ms.${idList(' Labiausiai apkrautas blokas: ', hottest)}`,
+    GoalOverUtilized: ({ kind, load, utilization, max, nodes }) =>
+      `Esant ${n(load)} rps, blokai „${kindName[kind]}“ apkrauti iki ${percent(utilization)} – daugiau nei riba ${percent(max)}: ${nodes.join(', ')}.`,
+    GoalBacklogGrowing: ({ load, backlog, max, nodes }) =>
+      `Esant ${n(load)} rps, eilės auga ${n(backlog)} rps, leidžiama ${n(max)} rps.${idList(' Nespėja: ', nodes)}`,
+    GoalTooExpensive: ({ cost, max }) =>
+      `Sistema kainuoja ${perHour(cost)} – daugiau nei biudžetas ${perHour(max)}.`,
+    GoalFailureNotSurvived: ({ id, kind, load, errorRate, max }) =>
+      `Sugedus ${id} („${kindName[kind]}“) ir esant ${n(load)} rps, prarandama ${percent(errorRate)} užklausų, leidžiama ne daugiau kaip ${percent(max)}.`,
+    GoalRegionFailureNotSurvived: ({
+      region,
+      load,
+      errorRate,
+      max,
+      overloaded,
+    }) =>
+      `Sugedus regionui „${regionName[region]}“ ir esant ${n(load)} rps, prarandama ${percent(errorRate)} užklausų, leidžiama ne daugiau kaip ${percent(max)}.${idList(' Užklausas praranda: ', overloaded)}`,
   },
 } satisfies UiStrings

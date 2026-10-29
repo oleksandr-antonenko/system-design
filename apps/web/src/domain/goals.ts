@@ -2,15 +2,40 @@ import { Array, Number, Option, Schema, pipe } from 'effect'
 import { defineTaggedUnion } from 'foldkit/schema'
 
 import { DomainMessage } from '../i18n/domainMessage'
-import { type BoardDoc, edgeKey, nodesOfKind, targetsOf } from './board'
-import { ComponentKind } from './catalog'
-import { overloadedNodes, simulate } from './simulate'
+import {
+  type BoardDoc,
+  BoardOp,
+  edgeKey,
+  foldOps,
+  nodesOfKind,
+  targetsOf,
+} from './board'
+import { ComponentKind, Region } from './catalog'
+import { type SimResult, costOf, overloadedNodes, simulate } from './simulate'
 
 export const Goal = defineTaggedUnion({
   HasKind: { kind: ComponentKind },
   FansOut: { from: ComponentKind, to: ComponentKind, min: Schema.Number },
   OnlyThrough: { from: ComponentKind, to: ComponentKind, via: ComponentKind },
   MaxErrorRate: { max: Schema.Number, load: Schema.Number },
+  MaxP95: { max: Schema.Number, load: Schema.Number },
+  MaxUtilization: {
+    kind: ComponentKind,
+    max: Schema.Number,
+    load: Schema.Number,
+  },
+  MaxBacklog: { max: Schema.Number, load: Schema.Number },
+  MaxCost: { max: Schema.Number },
+  SurvivesFailure: {
+    kinds: Schema.Array(ComponentKind),
+    maxErrorRate: Schema.Number,
+    load: Schema.Number,
+  },
+  SurvivesRegionFailure: {
+    region: Region,
+    maxErrorRate: Schema.Number,
+    load: Schema.Number,
+  },
 })
 export type Goal = typeof Goal.Type
 
@@ -53,8 +78,64 @@ const targetsOfKind = (
     Option.exists(kindOf(doc, target), targetKind => targetKind === kind),
   )
 
+/** Симуляционные цели проверяются прогоном нагрузки по кнопке «Проверить»
+    и до проверки показываются пунктиром (D7). Цена считается вживую. */
 export const isHiddenGoal = (goal: Goal): boolean =>
-  goal._tag === 'MaxErrorRate'
+  Goal.match(goal, {
+    HasKind: () => false,
+    FansOut: () => false,
+    OnlyThrough: () => false,
+    MaxCost: () => false,
+    MaxErrorRate: () => true,
+    MaxP95: () => true,
+    MaxUtilization: () => true,
+    MaxBacklog: () => true,
+    SurvivesFailure: () => true,
+    SurvivesRegionFailure: () => true,
+  })
+
+// «Не выше порога»: допуск гасит погрешность сложения долей потока.
+const TOLERANCE = 1e-9
+
+const isWithin = (value: number, max: number): boolean =>
+  value <= max + TOLERANCE
+
+const LATENCY_PATH: ReadonlyArray<ComponentKind> = [
+  'cdn',
+  'lb',
+  'server',
+  'cache',
+  'db',
+  'replica',
+]
+
+// Самый загруженный блок на пути запроса: его и подсвечивает медленный p95.
+const hottestNode = (doc: BoardDoc, result: SimResult): ReadonlyArray<string> =>
+  pipe(
+    doc.nodes,
+    Array.filter(node => Array.contains(LATENCY_PATH, node.kind)),
+    Array.map(node => ({
+      id: node.id,
+      utilization: result.nodes[node.id]?.utilization ?? 0,
+    })),
+    Array.filter(({ utilization }) => utilization > 0),
+    Array.reduce(
+      Option.none<{ id: string; utilization: number }>(),
+      (best, entry) =>
+        Option.match(best, {
+          onNone: () => Option.some(entry),
+          onSome: current =>
+            entry.utilization > current.utilization ? Option.some(entry) : best,
+        }),
+    ),
+    Option.match({ onNone: () => [], onSome: ({ id }) => [id] }),
+  )
+
+const simulateWith = (
+  doc: BoardDoc,
+  ops: ReadonlyArray<BoardOp>,
+  load: number,
+): SimResult => simulate(foldOps(doc, ops), load)
 
 export const checkGoal = (doc: BoardDoc, goal: Goal): GoalCheck =>
   Goal.match(goal, {
@@ -131,6 +212,142 @@ export const checkGoal = (doc: BoardDoc, goal: Goal): GoalCheck =>
             DomainMessage.GoalTooManyErrors({
               load,
               errorRate: result.errorRate,
+              overloaded,
+            }),
+            { focusNodes: overloaded },
+          )
+    },
+
+    MaxP95: ({ max, load }) => {
+      const result = simulate(doc, load)
+      return Option.match(result.p95, {
+        onNone: () => {
+          const overloaded = overloadedNodes(result)
+          return failed(
+            DomainMessage.GoalTooManyErrors({
+              load,
+              errorRate: result.errorRate,
+              overloaded,
+            }),
+            { focusNodes: overloaded },
+          )
+        },
+        onSome: p95 => {
+          const hottest = hottestNode(doc, result)
+          return isWithin(p95, max)
+            ? met
+            : failed(
+                DomainMessage.GoalSlowResponse({ load, p95, max, hottest }),
+                { focusNodes: hottest },
+              )
+        },
+      })
+    },
+
+    MaxUtilization: ({ kind, max, load }) => {
+      const result = simulate(doc, load)
+      const loaded = pipe(
+        nodesOfKind(doc, kind),
+        Array.map(node => ({
+          id: node.id,
+          utilization: result.nodes[node.id]?.utilization ?? 0,
+        })),
+      )
+      const over = Array.filter(
+        loaded,
+        ({ utilization }) => !isWithin(utilization, max),
+      )
+      return Array.isReadonlyArrayEmpty(over)
+        ? met
+        : failed(
+            DomainMessage.GoalOverUtilized({
+              kind,
+              load,
+              utilization: Math.max(
+                ...Array.map(over, ({ utilization }) => utilization),
+              ),
+              max,
+              nodes: Array.map(over, ({ id }) => id),
+            }),
+            { focusNodes: Array.map(over, ({ id }) => id) },
+          )
+    },
+
+    MaxBacklog: ({ max, load }) => {
+      const result = simulate(doc, load)
+      const growing = pipe(
+        doc.nodes,
+        Array.filter(node => (result.nodes[node.id]?.backlog ?? 0) >= 0.5),
+        Array.map(node => node.id),
+      )
+      return isWithin(result.backlog, max)
+        ? met
+        : failed(
+            DomainMessage.GoalBacklogGrowing({
+              load,
+              backlog: result.backlog,
+              max,
+              nodes: growing,
+            }),
+            { focusNodes: growing },
+          )
+    },
+
+    MaxCost: ({ max }) => {
+      const cost = costOf(doc)
+      return isWithin(cost, max)
+        ? met
+        : failed(DomainMessage.GoalTooExpensive({ cost, max }), {
+            focusNodes: pipe(
+              doc.nodes,
+              Array.filter(node => !node.locked),
+              Array.map(node => node.id),
+            ),
+          })
+    },
+
+    SurvivesFailure: ({ kinds, maxErrorRate, load }) =>
+      pipe(
+        doc.nodes,
+        Array.filter(
+          node =>
+            Array.contains(kinds, node.kind) &&
+            !Array.contains(doc.failed, node.id),
+        ),
+        Array.map(node => ({
+          node,
+          result: simulateWith(doc, [BoardOp.FailNode({ id: node.id })], load),
+        })),
+        Array.findFirst(
+          ({ result }) => !isWithin(result.errorRate, maxErrorRate),
+        ),
+        Option.match({
+          onNone: () => met,
+          onSome: ({ node, result }) =>
+            failed(
+              DomainMessage.GoalFailureNotSurvived({
+                id: node.id,
+                kind: node.kind,
+                load,
+                errorRate: result.errorRate,
+                max: maxErrorRate,
+              }),
+              { focusNodes: [node.id] },
+            ),
+        }),
+      ),
+
+    SurvivesRegionFailure: ({ region, maxErrorRate, load }) => {
+      const result = simulateWith(doc, [BoardOp.FailRegion({ region })], load)
+      const overloaded = overloadedNodes(result)
+      return isWithin(result.errorRate, maxErrorRate)
+        ? met
+        : failed(
+            DomainMessage.GoalRegionFailureNotSurvived({
+              region,
+              load,
+              errorRate: result.errorRate,
+              max: maxErrorRate,
               overloaded,
             }),
             { focusNodes: overloaded },

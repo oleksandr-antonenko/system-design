@@ -1,5 +1,6 @@
 import { Array, Option } from 'effect'
 
+import type { CourseLesson } from '../lesson/course'
 import type { LessonDefinition } from '../lesson/dsl'
 import { type Lesson, assembleCourse } from './assemble'
 import type { LessonMeta, LessonText } from './model'
@@ -31,3 +32,13 @@ export const lessonDefinitions: ReadonlyArray<LessonDefinition> =
 
 export const findDefinition = (slug: string): Option.Option<LessonDefinition> =>
   Array.findFirst(lessonDefinitions, definition => definition.slug === slug)
+
+/** Уроки с задачами в порядке программы: из них строится палитра (D8). */
+export const courseLessons: ReadonlyArray<CourseLesson> = Array.getSomes(
+  Array.map(lessonDefinitions, definition =>
+    Option.map(findLesson(definition.slug), found => ({
+      order: found.meta.order,
+      lesson: definition,
+    })),
+  ),
+)

@@ -4,6 +4,6 @@ export default defineLessonMeta({
   slug: 'one-server',
   module: 'foundations',
   order: 1,
-  available: false,
+  available: true,
   locales: ['uk', 'ru', 'en', 'lt'],
 })

@@ -20,7 +20,16 @@ const add = (
   id: string,
   kind: 'client' | 'lb' | 'server' | 'db',
   locked = true,
-) => BoardOp.AddNode({ id, kind, x: 0, y: 0, locked })
+) =>
+  BoardOp.AddNode({
+    id,
+    kind,
+    x: 0,
+    y: 0,
+    locked,
+    maybeCapacity: Option.none(),
+    maybeRegion: Option.none(),
+  })
 const connect = (from: string, to: string) => BoardOp.Connect({ from, to })
 
 const oneServer = foldOps(emptyBoard, [

@@ -7,7 +7,7 @@ import {
   findNode,
   foldOps,
 } from '../domain/board'
-import type { ComponentKind } from '../domain/catalog'
+import type { ComponentKind, Region } from '../domain/catalog'
 import type { Goal } from '../domain/goals'
 import type { SimResult } from '../domain/simulate'
 
@@ -46,14 +46,32 @@ export const annotate = <const Key extends string>(
 
 // OPERATIONS
 
+export type NodeOptions = Readonly<{
+  /** Блок задачи нельзя удалить. По умолчанию `true`; решение задачи
+      добавляет блоки с `locked: false`. */
+  locked?: boolean
+  /** Своя ёмкость в rps вместо каталожной, например лимит ограничителя. */
+  capacity?: number
+  /** Регион блока: доска рисует под блоками региона подписанную зону. */
+  region?: Region
+}>
+
 export const addNode = (
   id: string,
   kind: ComponentKind,
   x: number,
   y: number,
-  options: Readonly<{ locked?: boolean }> = {},
+  options: NodeOptions = {},
 ): BoardOp =>
-  BoardOp.AddNode({ id, kind, x, y, locked: options.locked ?? true })
+  BoardOp.AddNode({
+    id,
+    kind,
+    x,
+    y,
+    locked: options.locked ?? true,
+    maybeCapacity: Option.fromNullishOr(options.capacity),
+    maybeRegion: Option.fromNullishOr(options.region),
+  })
 
 export const connect = (from: string, to: string): BoardOp =>
   BoardOp.Connect({ from, to })
@@ -66,6 +84,13 @@ export const setLoad = (rps: number): BoardOp => BoardOp.SetLoad({ rps })
 export const failNode = (id: string): BoardOp => BoardOp.FailNode({ id })
 
 export const recoverNode = (id: string): BoardOp => BoardOp.RecoverNode({ id })
+
+/** Роняет все блоки региона, кроме пользователей. */
+export const failRegion = (region: Region): BoardOp =>
+  BoardOp.FailRegion({ region })
+
+export const recoverRegion = (region: Region): BoardOp =>
+  BoardOp.RecoverRegion({ region })
 
 // LESSON
 

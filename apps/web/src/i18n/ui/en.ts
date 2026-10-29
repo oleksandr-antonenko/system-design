@@ -1,3 +1,6 @@
+import { Array } from 'effect'
+
+import type { ComponentKind } from '../../domain/catalog'
 import { formatNumber } from '../format'
 import { plural } from '../plural'
 import type { UiStrings } from './types'
@@ -11,13 +14,32 @@ const inLanguage: UiStrings['inLanguage'] = {
 
 const kindName: UiStrings['kindName'] = {
   client: 'Users',
+  cdn: 'CDN',
+  limiter: 'Rate limiter',
   lb: 'Load balancer',
   server: 'Server',
+  cache: 'Cache',
+  queue: 'Queue',
+  events: 'Event bus',
+  worker: 'Worker',
   db: 'Database',
+  replica: 'Read replica',
+  search: 'Search index',
+}
+
+const regionName: UiStrings['regionName'] = {
+  eu: 'Europe',
+  us: 'USA',
+  asia: 'Asia',
 }
 
 const n = (value: number) => formatNumber('en', Math.round(value))
 const percent = (ratio: number) => `${n(ratio * 100)}%`
+const perHour = (dollars: number) => `$${dollars.toFixed(2)}/h`
+const kindList = (kinds: ReadonlyArray<ComponentKind>) =>
+  kinds.map(kind => kindName[kind]).join(', ')
+const idList = (lead: string, ids: ReadonlyArray<string>) =>
+  Array.isReadonlyArrayNonEmpty(ids) ? `${lead}${ids.join(', ')}.` : ''
 
 export const en = {
   courseTitle: 'System Design',
@@ -27,6 +49,7 @@ export const en = {
   languageSwitcherLabel: 'Language',
   inLanguage,
   kindName,
+  regionName,
   home: {
     heading: 'Course outline',
     lessonCount: count =>
@@ -58,12 +81,6 @@ export const en = {
     laterTitle: 'Later in the course',
     paletteClosed: 'Opens during a task',
     paletteHint: 'Drag onto the board or click to add',
-    upcomingName: {
-      cache: 'Cache',
-      cdn: 'CDN',
-      queue: 'Queue',
-      shard: 'Shards',
-    },
     lockedUntilLesson: order => `lesson ${order}`,
     newBadge: 'new',
     capacityTag: rps => `up to ${n(rps)} rps`,
@@ -76,6 +93,9 @@ export const en = {
     nodeLoad: (rps, utilization) => `${n(rps)} rps · ${percent(utilization)}`,
     clientsLoad: rps => `${n(rps)} rps →`,
     nodeDown: 'down',
+    queueGrowing: rps => `grows +${n(rps)}/s`,
+    rejecting: rps => `rejected ${n(rps)}/s`,
+    zoneDown: region => `${regionName[region]} · region down`,
     edgeFlow: rps => `${n(rps)} rps`,
     ghost: kind => `${kindName[kind]} here`,
   },
@@ -84,11 +104,14 @@ export const en = {
     errors: 'Errors',
     p95: 'p95 response',
     database: 'Database load',
+    rejected: 'Rejected',
+    backlog: 'Queue growing',
     cost: 'Cost',
     rps: value => `${n(value)} rps`,
+    growth: value => `+${n(value)} rps`,
     ms: value => `${n(value)} ms`,
     percent,
-    perHour: dollars => `$${dollars.toFixed(2)}/h`,
+    perHour,
     pause: 'Pause',
     play: 'Traffic',
     speed: 'Speed',
@@ -175,5 +198,30 @@ export const en = {
       `There is no connection from “${kindName[from]}” to the “${kindName[via]}” block, so requests have nowhere to go.`,
     GoalTooManyErrors: ({ load, errorRate, overloaded }) =>
       `At ${n(load)} rps, ${percent(errorRate)} of requests are lost. Losing requests: ${overloaded.join(', ')}.`,
+    ConnectFromSink: ({ from }) =>
+      `Requests end at the “${kindName[from]}” block: it does not pass them any further.`,
+    ConnectNotAllowed: ({ from, to, allowed }) =>
+      `“${kindName[from]}” does not pass requests to “${kindName[to]}”. Allowed connections: ${kindList(allowed)}.`,
+    InvalidCapacity: ({ id }) => `Block ${id} needs a capacity above zero.`,
+    RegionHasNoBlocks: ({ region }) =>
+      `There are no blocks in region “${regionName[region]}”.`,
+    GoalSlowResponse: ({ load, p95, max, hottest }) =>
+      `At ${n(load)} rps, p95 is ${n(p95)} ms, above the ${n(max)} ms limit.${idList(' The busiest block: ', hottest)}`,
+    GoalOverUtilized: ({ kind, load, utilization, max, nodes }) =>
+      `At ${n(load)} rps, “${kindName[kind]}” blocks are loaded up to ${percent(utilization)}, above the ${percent(max)} limit: ${nodes.join(', ')}.`,
+    GoalBacklogGrowing: ({ load, backlog, max, nodes }) =>
+      `At ${n(load)} rps, queues grow by ${n(backlog)} rps, the limit is ${n(max)} rps.${idList(' Falling behind: ', nodes)}`,
+    GoalTooExpensive: ({ cost, max }) =>
+      `The system costs ${perHour(cost)}, above the ${perHour(max)} budget.`,
+    GoalFailureNotSurvived: ({ id, kind, load, errorRate, max }) =>
+      `When ${id} (“${kindName[kind]}”) fails, ${percent(errorRate)} of requests are lost at ${n(load)} rps; at most ${percent(max)} is allowed.`,
+    GoalRegionFailureNotSurvived: ({
+      region,
+      load,
+      errorRate,
+      max,
+      overloaded,
+    }) =>
+      `When region “${regionName[region]}” goes down, ${percent(errorRate)} of requests are lost at ${n(load)} rps; at most ${percent(max)} is allowed.${idList(' Losing requests: ', overloaded)}`,
   },
 } satisfies UiStrings

@@ -691,6 +691,38 @@ h3 {
   fill: var(--muted);
   font-variant-numeric: tabular-nums;
 }
+.board-svg .sub.alert {
+  fill: var(--warn);
+  font-weight: 600;
+}
+.board-svg .board-node.down .sub {
+  fill: var(--bad);
+}
+/* Зона региона лежит под блоками и связями и не ловит указатель: блок,
+   брошенный в зону, получает её регион (board.ts). */
+.board-svg .region-zone {
+  pointer-events: none;
+}
+.board-svg .region-zone rect {
+  fill: var(--accent);
+  fill-opacity: 0.05;
+  stroke: var(--accent);
+  stroke-opacity: 0.45;
+  stroke-width: 1.2;
+  stroke-dasharray: 6 5;
+}
+.board-svg .region-zone text {
+  font: 600 11px var(--font-ui);
+  letter-spacing: 0.06em;
+  fill: var(--accent);
+}
+.board-svg .region-zone.down rect {
+  fill: var(--bad);
+  stroke: var(--bad);
+}
+.board-svg .region-zone.down text {
+  fill: var(--bad);
+}
 .board-svg .track {
   fill: var(--grid);
 }

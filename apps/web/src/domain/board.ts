@@ -2,7 +2,7 @@ import { Array, Option, Result, Schema, pipe } from 'effect'
 import { defineTaggedUnion } from 'foldkit/schema'
 
 import { DomainMessage } from '../i18n/domainMessage'
-import { ComponentKind, canConnect, catalog } from './catalog'
+import { ComponentKind, Region, canConnect, catalog, isSink } from './catalog'
 
 // MODEL
 
@@ -12,6 +12,8 @@ export const BoardNode = Schema.Struct({
   x: Schema.Number,
   y: Schema.Number,
   locked: Schema.Boolean,
+  maybeCapacity: Schema.Option(Schema.Number),
+  maybeRegion: Schema.Option(Region),
 })
 export type BoardNode = typeof BoardNode.Type
 
@@ -44,6 +46,8 @@ export const BoardOp = defineTaggedUnion({
     x: Schema.Number,
     y: Schema.Number,
     locked: Schema.Boolean,
+    maybeCapacity: Schema.Option(Schema.Number),
+    maybeRegion: Schema.Option(Region),
   },
   RemoveNode: { id: Schema.String },
   MoveNode: { id: Schema.String, x: Schema.Number, y: Schema.Number },
@@ -52,6 +56,8 @@ export const BoardOp = defineTaggedUnion({
   SetLoad: { rps: Schema.Number },
   FailNode: { id: Schema.String },
   RecoverNode: { id: Schema.String },
+  FailRegion: { region: Region },
+  RecoverRegion: { region: Region },
 })
 export type BoardOp = typeof BoardOp.Type
 
@@ -91,7 +97,19 @@ const connectRefusal = (
   if (from.kind === 'lb' && to.kind === 'db') {
     return Option.some(DomainMessage.ConnectBalancerToDatabase())
   }
-  return Option.some(DomainMessage.ConnectWrongDirection())
+  if (catalog[to.kind].rank < catalog[from.kind].rank) {
+    return Option.some(DomainMessage.ConnectWrongDirection())
+  }
+  if (isSink(from.kind)) {
+    return Option.some(DomainMessage.ConnectFromSink({ from: from.kind }))
+  }
+  return Option.some(
+    DomainMessage.ConnectNotAllowed({
+      from: from.kind,
+      to: to.kind,
+      allowed: catalog[from.kind].connectsTo,
+    }),
+  )
 }
 
 const withNode = (
@@ -104,15 +122,57 @@ const withNode = (
     onSome: apply,
   })
 
+// Отказ региона роняет его инфраструктуру. Пользователи региона остаются:
+// они не исчезают вместе с дата-центром, а уходят в живой регион (D6).
+const regionBlocks = (doc: BoardDoc, region: Region): ReadonlyArray<string> =>
+  pipe(
+    doc.nodes,
+    Array.filter(
+      node =>
+        node.kind !== 'client' &&
+        Option.exists(node.maybeRegion, nodeRegion => nodeRegion === region),
+    ),
+    Array.map(node => node.id),
+  )
+
+const withRegion = (
+  doc: BoardDoc,
+  region: Region,
+  apply: (ids: Array.NonEmptyReadonlyArray<string>) => BoardResult,
+): BoardResult =>
+  Array.match(regionBlocks(doc, region), {
+    onEmpty: () => Result.fail(DomainMessage.RegionHasNoBlocks({ region })),
+    onNonEmpty: apply,
+  })
+
+const isValidCapacity = (maybeCapacity: Option.Option<number>): boolean =>
+  Option.match(maybeCapacity, {
+    onNone: () => true,
+    onSome: capacity => globalThis.Number.isFinite(capacity) && capacity > 0,
+  })
+
 export const applyOp = (doc: BoardDoc, op: BoardOp): BoardResult =>
   BoardOp.match(op, {
-    AddNode: ({ id, kind, x, y, locked }) =>
-      hasNode(doc, id)
-        ? Result.fail(DomainMessage.DuplicateNodeId({ id }))
-        : Result.succeed({
-            ...doc,
-            nodes: [...doc.nodes, { id, kind, x, y, locked }],
-          }),
+    AddNode: node =>
+      hasNode(doc, node.id)
+        ? Result.fail(DomainMessage.DuplicateNodeId({ id: node.id }))
+        : isValidCapacity(node.maybeCapacity)
+          ? Result.succeed({
+              ...doc,
+              nodes: [
+                ...doc.nodes,
+                {
+                  id: node.id,
+                  kind: node.kind,
+                  x: node.x,
+                  y: node.y,
+                  locked: node.locked,
+                  maybeCapacity: node.maybeCapacity,
+                  maybeRegion: node.maybeRegion,
+                },
+              ],
+            })
+          : Result.fail(DomainMessage.InvalidCapacity({ id: node.id })),
     RemoveNode: ({ id }) =>
       withNode(doc, id, node =>
         node.locked
@@ -169,6 +229,20 @@ export const applyOp = (doc: BoardDoc, op: BoardOp): BoardResult =>
         ...doc,
         failed: Array.filter(doc.failed, failedId => failedId !== id),
       }),
+    FailRegion: ({ region }) =>
+      withRegion(doc, region, ids =>
+        Result.succeed({
+          ...doc,
+          failed: Array.union(doc.failed, ids),
+        }),
+      ),
+    RecoverRegion: ({ region }) =>
+      withRegion(doc, region, ids =>
+        Result.succeed({
+          ...doc,
+          failed: Array.difference(doc.failed, ids),
+        }),
+      ),
   })
 
 export const foldOps = (doc: BoardDoc, ops: ReadonlyArray<BoardOp>): BoardDoc =>
@@ -197,13 +271,45 @@ const nextFreeId = (doc: BoardDoc, prefix: string, start: number): string =>
     Option.getOrElse(() => `${prefix}${start}`),
   )
 
-export const nextNodeId = (doc: BoardDoc, kind: ComponentKind): string =>
-  kind === 'lb'
-    ? nextFreeId(doc, 'lb-', 1)
-    : kind === 'server'
-      ? nextFreeId(doc, 'app', 1)
-      : kind === 'db'
-        ? nextFreeId(doc, 'db', 2)
-        : nextFreeId(doc, 'users', 2)
+const idPattern: Readonly<
+  Record<ComponentKind, readonly [prefix: string, start: number]>
+> = {
+  client: ['users', 2],
+  cdn: ['cdn-', 1],
+  limiter: ['limiter-', 1],
+  lb: ['lb-', 1],
+  server: ['app', 1],
+  cache: ['cache-', 1],
+  queue: ['queue-', 1],
+  events: ['events-', 1],
+  worker: ['worker-', 1],
+  db: ['db', 2],
+  replica: ['replica-', 1],
+  search: ['search-', 1],
+}
+
+export const nextNodeId = (doc: BoardDoc, kind: ComponentKind): string => {
+  const [prefix, start] = idPattern[kind]
+  return nextFreeId(doc, prefix, start)
+}
 
 export const rankOf = (node: BoardNode): number => catalog[node.kind].rank
+
+/** Ёмкость блока: своя из `AddNode`, иначе из каталога. */
+export const capacityOf = (node: BoardNode): number =>
+  Option.getOrElse(node.maybeCapacity, () => catalog[node.kind].capacity)
+
+export const nodesInRegion = (
+  doc: BoardDoc,
+  region: Region,
+): ReadonlyArray<BoardNode> =>
+  Array.filter(doc.nodes, node =>
+    Option.exists(node.maybeRegion, nodeRegion => nodeRegion === region),
+  )
+
+/** Регион упал: все его блоки, кроме пользователей, недоступны. */
+export const isRegionDown = (doc: BoardDoc, region: Region): boolean =>
+  Array.match(regionBlocks(doc, region), {
+    onEmpty: () => false,
+    onNonEmpty: ids => Array.every(ids, id => Array.contains(doc.failed, id)),
+  })

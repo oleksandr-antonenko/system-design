@@ -4,15 +4,17 @@ import type { Html, HtmlBuilder } from 'foldkit/html'
 
 import { type BoardViewInputs, view as boardView } from '../board/view'
 import { type BoardDoc, BoardOp } from '../domain/board'
+import type { ComponentKind } from '../domain/catalog'
 import { checkGoal, isHiddenGoal } from '../domain/goals'
 import { simulate } from '../domain/simulate'
 import { renderDomainMessage } from '../i18n/domainMessage'
 import type { Locale } from '../i18n/locale'
 import { type UiStrings, uiFor } from '../i18n/ui'
 import { lessonTextFor } from '../lessons/assemble'
-import { findDefinition, findLesson } from '../lessons/registry'
+import { courseLessons, findDefinition, findLesson } from '../lessons/registry'
 import { homeUrl } from '../route'
-import { shownSimulation } from './anim'
+import { type Anim, shownSimulation } from './anim'
+import { laterInCourse, lessonPalette, newInLesson } from './course'
 import {
   type LessonDefinition,
   type LooseLessonTexts,
@@ -196,7 +198,7 @@ const taskCardView = (
     const text =
       isHidden && !isMet && !isFailed
         ? ui.task.hiddenGoal
-        : isHidden && isSolved && task.state.check._tag === 'Solved'
+        : goal._tag === 'MaxErrorRate' && task.state.check._tag === 'Solved'
           ? ui.task.metricGoalPassed(doc.load, task.state.check.after.errorRate)
           : label
     return h.keyed('li')(
@@ -547,6 +549,28 @@ const sparkView = (
     ],
   )
 
+const hasAnyKind = (
+  doc: BoardDoc,
+  kinds: ReadonlyArray<ComponentKind>,
+): boolean => Array.some(doc.nodes, node => Array.contains(kinds, node.kind))
+
+export type ExtraMetric = Readonly<{ label: string; value: string }>
+
+/** Приборы, которые есть не на каждой доске: «отклонено» — когда стоит
+    ограничитель, «очередь растёт» — когда есть очередь или шина (D4, D3). */
+export const extraMetrics = (
+  doc: BoardDoc,
+  anim: Anim,
+  ui: UiStrings,
+): ReadonlyArray<ExtraMetric> => [
+  ...(hasAnyKind(doc, ['limiter'])
+    ? [{ label: ui.hud.rejected, value: ui.hud.rps(anim.hudRejected) }]
+    : []),
+  ...(hasAnyKind(doc, ['queue', 'events'])
+    ? [{ label: ui.hud.backlog, value: ui.hud.growth(anim.hudBacklog) }]
+    : []),
+]
+
 const hudView = (
   lesson: LessonDefinition,
   model: Model,
@@ -618,6 +642,18 @@ const hudView = (
               h.span([h.Class('label')], [ui.hud.database]),
               h.span([h.Class('value')], [ui.hud.rps(anim.hudDatabase)]),
             ],
+          ),
+          ...Array.map(
+            extraMetrics(currentDoc(lesson, model), anim, ui),
+            ({ label, value }) =>
+              h.keyed('div')(
+                label,
+                [h.Class('metric')],
+                [
+                  h.span([h.Class('label')], [label]),
+                  h.span([h.Class('value')], [value]),
+                ],
+              ),
           ),
           h.div(
             [h.Class('metric')],
@@ -720,7 +756,12 @@ const shownSimulationCost = (lesson: LessonDefinition, model: Model): number =>
 
 const opText = (op: BoardOp): string =>
   BoardOp.match(op, {
-    AddNode: ({ id, kind }) => `AddNode ${id} · ${kind}`,
+    AddNode: ({ id, kind, maybeCapacity, maybeRegion }) =>
+      [
+        `AddNode ${id} · ${kind}`,
+        ...Option.toArray(Option.map(maybeCapacity, rps => `${rps} rps`)),
+        ...Option.toArray(maybeRegion),
+      ].join(' · '),
     RemoveNode: ({ id }) => `RemoveNode ${id}`,
     MoveNode: ({ id, x, y }) => `MoveNode ${id} → (${x}, ${y})`,
     Connect: ({ from, to }) => `Connect ${from} → ${to}`,
@@ -728,6 +769,8 @@ const opText = (op: BoardOp): string =>
     SetLoad: ({ rps }) => `SetLoad ${rps} rps`,
     FailNode: ({ id }) => `FailNode ${id}`,
     RecoverNode: ({ id }) => `RecoverNode ${id}`,
+    FailRegion: ({ region }) => `FailRegion ${region}`,
+    RecoverRegion: ({ region }) => `RecoverRegion ${region}`,
   })
 
 const stageText = (item: StageItem): string =>
@@ -842,6 +885,10 @@ const boardInputs = (
       ? Option.some(ghostPlan(doc, spec.solution))
       : Option.none(),
   )
+  const order = Option.match(findLesson(lesson.slug), {
+    onNone: () => 0,
+    onSome: found => found.meta.order,
+  })
 
   return {
     locale: inputs.locale,
@@ -852,9 +899,11 @@ const boardInputs = (
         ? 'Replay'
         : 'View',
     palette: Option.match(task, {
-      onNone: () => ['lb', 'server'],
+      onNone: () => lessonPalette(lesson),
       onSome: ({ spec }) => spec.palette,
     }),
+    newKinds: newInLesson(courseLessons, order),
+    later: laterInCourse(courseLessons, order),
     halos: [...stageHalos, ...focusHalos],
     annotations,
     focusEdges: Option.match(failed, {

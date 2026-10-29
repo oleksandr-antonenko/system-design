@@ -1,4 +1,4 @@
-import { Option } from 'effect'
+import { Array, Option } from 'effect'
 import {
   Command,
   Mount,
@@ -27,6 +27,8 @@ import type { BoardOp } from './domain/board'
 import type { Locale } from './i18n/locale'
 import { addNode, connect } from './lesson/dsl'
 import * as Player from './lesson/player'
+import { lessonTextFor } from './lessons/assemble'
+import { lessons } from './lessons/registry'
 import {
   AppRoute,
   Flags,
@@ -95,21 +97,35 @@ describe('header', () => {
   })
 })
 
+// Уроки открываются по мере написания (add-course-lessons), поэтому число
+// ссылок берётся из самих уроков, а не из константы.
+const ukTitle = (lesson: (typeof lessons)[number]) =>
+  lessonTextFor(lesson, 'uk').text.title
+
 describe('home', () => {
   test('lists all 13 lessons; only available ones are links', () => {
+    const available = Array.filter(lessons, lesson => lesson.meta.available)
+    const unavailable = Array.filter(lessons, lesson => !lesson.meta.available)
     scene(
       { update, view },
       given(at(AppRoute.Home({ locale: 'uk' }), 'uk')),
       expect(role('heading', { name: 'Програма курсу' })).toExist(),
       expect(text('13 уроків')).toExist(),
       expectAll(all.role('listitem')).toHaveCount(17),
-      expectAll(all.selector('main a')).toHaveCount(1),
+      expectAll(all.selector('main a')).toHaveCount(available.length),
       expect(role('link', { name: 'Балансувальник навантаження' })).toHaveAttr(
         'href',
         '/uk/lessons/load-balancer',
       ),
-      expect(text('Один сервер')).toExist(),
-      expect(role('link', { name: 'Один сервер' })).toBeAbsent(),
+      ...Array.map(available, lesson =>
+        expect(role('link', { name: ukTitle(lesson) })).toHaveAttr(
+          'href',
+          `/uk/lessons/${lesson.meta.slug}`,
+        ),
+      ),
+      ...Array.map(unavailable, lesson =>
+        expect(role('link', { name: ukTitle(lesson) })).toBeAbsent(),
+      ),
     )
   })
 })

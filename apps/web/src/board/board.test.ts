@@ -126,6 +126,8 @@ describe('gestures', () => {
             x: 300,
             y: 400,
             locked: false,
+            maybeCapacity: Option.none(),
+            maybeRegion: Option.none(),
           }),
         }),
       ),
@@ -277,6 +279,36 @@ describe('palette click', () => {
   })
 })
 
+describe('regions', () => {
+  const regional = foldOps(doc, [
+    addNode('app-us', 'server', 520, 450, { region: 'us' }),
+  ])
+
+  const dropServerAt = (to: { x: number; y: number }) =>
+    proposedAddNode(
+      runUpdate({ doc: regional, isEditable: true }, [
+        Board.Message.PressedPointer({
+          target: Board.PointerTarget.Palette({ kind: 'server' }),
+          point: point(-60, 100),
+        }),
+        Board.Message.MovedPointer({ point: to, isOverBoard: true }),
+        Board.Message.ReleasedPointer({
+          target: Board.PointerTarget.Background(),
+          point: to,
+          isOverBoard: true,
+        }),
+      ]),
+    )
+
+  test('a server placed into the us zone belongs to us', () => {
+    expect(dropServerAt(point(470, 410)).maybeRegion).toEqual(Option.some('us'))
+  })
+
+  test('a block placed outside every zone has no region', () => {
+    expect(dropServerAt(point(300, 130)).maybeRegion).toEqual(Option.none())
+  })
+})
+
 describe('moving a block', () => {
   const dragApp1To = (to: { x: number; y: number }) =>
     runUpdate({ doc, isEditable: true }, [
@@ -338,6 +370,8 @@ describe('particles', () => {
       doc: loaded,
       mode: 'View',
       palette: [],
+      newKinds: [],
+      later: [],
       halos: [],
       annotations: [],
       focusEdges: [],

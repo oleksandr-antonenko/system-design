@@ -1,4 +1,7 @@
+import { Array, Option } from 'effect'
+
 import type { BoardNode } from './board'
+import { type Region, regions } from './catalog'
 
 export const BOARD_WIDTH = 900
 export const BOARD_HEIGHT = 560
@@ -30,7 +33,7 @@ const curveWithLift = (start: Point, end: Point, lift: number): Curve => {
 }
 
 const crossesNode = (curve: Curve, obstacle: Point): boolean =>
-  Array.from({ length: 19 }, (_, index) => (index + 1) / 20).some(t => {
+  Array.makeBy(19, index => (index + 1) / 20).some(t => {
     const point = pointOnCurve(curve, t)
     return (
       Math.abs(point.x - obstacle.x) < NODE_WIDTH / 2 + OBSTACLE_MARGIN &&
@@ -103,3 +106,78 @@ export const isSpotFree = (
   nodes: ReadonlyArray<BoardNode>,
   spot: Point,
 ): boolean => nodes.every(node => !overlaps(nodeCenter(node), spot))
+
+// REGION ZONES
+
+export type Zone = Readonly<{
+  region: Region
+  x: number
+  y: number
+  width: number
+  height: number
+}>
+
+const ZONE_PADDING = 14
+const ZONE_LABEL_HEIGHT = 20
+const ZONE_MARGIN = 2
+
+/** Зона региона — прямоугольник вокруг его блоков с местом под подпись
+    сверху (D6). Блоки без региона зоны не имеют. */
+export const regionZones = (
+  nodes: ReadonlyArray<BoardNode>,
+): ReadonlyArray<Zone> =>
+  Array.getSomes(
+    Array.map(regions, region =>
+      Array.match(
+        Array.filter(nodes, node =>
+          Option.exists(node.maybeRegion, nodeRegion => nodeRegion === region),
+        ),
+        {
+          onEmpty: () => Option.none(),
+          onNonEmpty: members => {
+            const xs = Array.map(members, node => node.x)
+            const ys = Array.map(members, node => node.y)
+            const left = Math.max(
+              ZONE_MARGIN,
+              Math.min(...xs) - NODE_WIDTH / 2 - ZONE_PADDING,
+            )
+            const right = Math.min(
+              BOARD_WIDTH - ZONE_MARGIN,
+              Math.max(...xs) + NODE_WIDTH / 2 + ZONE_PADDING,
+            )
+            const top = Math.max(
+              ZONE_MARGIN,
+              Math.min(...ys) -
+                NODE_HEIGHT / 2 -
+                ZONE_PADDING -
+                ZONE_LABEL_HEIGHT,
+            )
+            const bottom = Math.min(
+              BOARD_HEIGHT - ZONE_MARGIN,
+              Math.max(...ys) + NODE_HEIGHT / 2 + ZONE_PADDING,
+            )
+            return Option.some({
+              region,
+              x: left,
+              y: top,
+              width: right - left,
+              height: bottom - top,
+            })
+          },
+        },
+      ),
+    ),
+  )
+
+export const zoneAt = (
+  zones: ReadonlyArray<Zone>,
+  point: Point,
+): Option.Option<Zone> =>
+  Array.findFirst(
+    zones,
+    zone =>
+      point.x >= zone.x &&
+      point.x <= zone.x + zone.width &&
+      point.y >= zone.y &&
+      point.y <= zone.y + zone.height,
+  )

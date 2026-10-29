@@ -4,6 +4,6 @@ export default defineLessonMeta({
   slug: 'separate-database',
   module: 'foundations',
   order: 2,
-  available: false,
+  available: true,
   locales: ['uk', 'ru', 'en', 'lt'],
 })

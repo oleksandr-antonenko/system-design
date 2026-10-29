@@ -1,3 +1,6 @@
+import { Array } from 'effect'
+
+import type { ComponentKind } from '../../domain/catalog'
 import { formatNumber } from '../format'
 import { plural } from '../plural'
 import type { UiStrings } from './types'
@@ -11,13 +14,33 @@ const inLanguage: UiStrings['inLanguage'] = {
 
 const kindName: UiStrings['kindName'] = {
   client: 'Користувачі',
+  cdn: 'CDN',
+  limiter: 'Обмежувач',
   lb: 'Балансувальник',
   server: 'Сервер',
+  cache: 'Кеш',
+  queue: 'Черга',
+  events: 'Шина подій',
+  worker: 'Обробник',
   db: 'База даних',
+  replica: 'Репліка бази',
+  search: 'Пошуковий індекс',
+}
+
+const regionName: UiStrings['regionName'] = {
+  eu: 'Європа',
+  us: 'США',
+  asia: 'Азія',
 }
 
 const n = (value: number) => formatNumber('uk', Math.round(value))
 const percent = (ratio: number) => `${n(ratio * 100)}%`
+const perHour = (dollars: number) =>
+  `${dollars.toFixed(2).replace('.', ',')} $/год`
+const kindList = (kinds: ReadonlyArray<ComponentKind>) =>
+  kinds.map(kind => kindName[kind]).join(', ')
+const idList = (lead: string, ids: ReadonlyArray<string>) =>
+  Array.isReadonlyArrayNonEmpty(ids) ? `${lead}${ids.join(', ')}.` : ''
 
 export const uk = {
   courseTitle: 'System Design',
@@ -27,6 +50,7 @@ export const uk = {
   languageSwitcherLabel: 'Мова',
   inLanguage,
   kindName,
+  regionName,
   home: {
     heading: 'Програма курсу',
     lessonCount: count =>
@@ -60,12 +84,6 @@ export const uk = {
     laterTitle: 'Пізніше в курсі',
     paletteClosed: 'Відкриється в задачі',
     paletteHint: 'Перетягніть на дошку або натисніть, щоб додати',
-    upcomingName: {
-      cache: 'Кеш',
-      cdn: 'CDN',
-      queue: 'Черга',
-      shard: 'Шарди',
-    },
     lockedUntilLesson: order => `урок ${order}`,
     newBadge: 'нове',
     capacityTag: rps => `до ${n(rps)} rps`,
@@ -78,6 +96,9 @@ export const uk = {
     nodeLoad: (rps, utilization) => `${n(rps)} rps · ${percent(utilization)}`,
     clientsLoad: rps => `${n(rps)} rps →`,
     nodeDown: 'недоступний',
+    queueGrowing: rps => `росте +${n(rps)}/с`,
+    rejecting: rps => `відхилено ${n(rps)}/с`,
+    zoneDown: region => `${regionName[region]} · регіон недоступний`,
     edgeFlow: rps => `${n(rps)} rps`,
     ghost: kind => `сюди: ${kindName[kind]}`,
   },
@@ -86,11 +107,14 @@ export const uk = {
     errors: 'Помилки',
     p95: 'p95 відповіді',
     database: 'Запити до бази',
+    rejected: 'Відхилено',
+    backlog: 'Черга росте',
     cost: 'Ціна',
     rps: value => `${n(value)} rps`,
+    growth: value => `+${n(value)} rps`,
     ms: value => `${n(value)} мс`,
     percent,
-    perHour: dollars => `${dollars.toFixed(2).replace('.', ',')} $/год`,
+    perHour,
     pause: 'Пауза',
     play: 'Трафік',
     speed: 'Швидкість',
@@ -176,5 +200,31 @@ export const uk = {
       `Немає зв’язку від «${kindName[from]}» до блока «${kindName[via]}»: запитам нікуди йти.`,
     GoalTooManyErrors: ({ load, errorRate, overloaded }) =>
       `При ${n(load)} rps втрачається ${percent(errorRate)} запитів. Втрачають запити: ${overloaded.join(', ')}.`,
+    ConnectFromSink: ({ from }) =>
+      `На блоці «${kindName[from]}» шлях запиту закінчується: далі він нічого не передає.`,
+    ConnectNotAllowed: ({ from, to, allowed }) =>
+      `«${kindName[from]}» не передає запити блоку «${kindName[to]}». Допустимі зв’язки: ${kindList(allowed)}.`,
+    InvalidCapacity: ({ id }) =>
+      `Блоку ${id} потрібна пропускна здатність більша за нуль.`,
+    RegionHasNoBlocks: ({ region }) =>
+      `У регіоні «${regionName[region]}» немає блоків.`,
+    GoalSlowResponse: ({ load, p95, max, hottest }) =>
+      `При ${n(load)} rps p95 — ${n(p95)} мс, вище порогу ${n(max)} мс.${idList(' Найбільш завантажений блок: ', hottest)}`,
+    GoalOverUtilized: ({ kind, load, utilization, max, nodes }) =>
+      `При ${n(load)} rps блоки «${kindName[kind]}» завантажені до ${percent(utilization)}, вище порогу ${percent(max)}: ${nodes.join(', ')}.`,
+    GoalBacklogGrowing: ({ load, backlog, max, nodes }) =>
+      `При ${n(load)} rps черги ростуть на ${n(backlog)} rps, допустимо ${n(max)} rps.${idList(' Не встигають: ', nodes)}`,
+    GoalTooExpensive: ({ cost, max }) =>
+      `Система коштує ${perHour(cost)}, це дорожче за бюджет ${perHour(max)}.`,
+    GoalFailureNotSurvived: ({ id, kind, load, errorRate, max }) =>
+      `Після відмови ${id} («${kindName[kind]}») при навантаженні ${n(load)} rps втрачається ${percent(errorRate)} запитів, допустимо не більше ${percent(max)}.`,
+    GoalRegionFailureNotSurvived: ({
+      region,
+      load,
+      errorRate,
+      max,
+      overloaded,
+    }) =>
+      `Після відмови регіону «${regionName[region]}» при навантаженні ${n(load)} rps втрачається ${percent(errorRate)} запитів, допустимо не більше ${percent(max)}.${idList(' Втрачають запити: ', overloaded)}`,
   },
 } satisfies UiStrings

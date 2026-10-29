@@ -5,7 +5,13 @@ import { modifyFields } from 'foldkit/struct'
 
 import { type BoardDoc, BoardOp, findNode, nextNodeId } from '../domain/board'
 import { ComponentKind } from '../domain/catalog'
-import { type Point, clampToBoard, isSpotFree } from '../domain/geometry'
+import {
+  type Point,
+  clampToBoard,
+  isSpotFree,
+  regionZones,
+  zoneAt,
+} from '../domain/geometry'
 import { BoardPoint, Message, OutMessage, PointerTarget } from './message'
 
 export { BoardPoint, Message, OutMessage, PointerTarget } from './message'
@@ -93,6 +99,39 @@ const defaultSpots: Readonly<Record<ComponentKind, ReadonlyArray<Point>>> = {
     { x: 790, y: 430 },
     { x: 790, y: 130 },
   ],
+  cdn: [
+    { x: 230, y: 130 },
+    { x: 230, y: 430 },
+  ],
+  limiter: [
+    { x: 230, y: 280 },
+    { x: 230, y: 430 },
+  ],
+  cache: [
+    { x: 660, y: 200 },
+    { x: 660, y: 360 },
+    { x: 660, y: 515 },
+  ],
+  queue: [
+    { x: 660, y: 515 },
+    { x: 660, y: 130 },
+  ],
+  events: [
+    { x: 660, y: 515 },
+    { x: 660, y: 130 },
+  ],
+  worker: [
+    { x: 790, y: 515 },
+    { x: 790, y: 130 },
+  ],
+  replica: [
+    { x: 790, y: 130 },
+    { x: 790, y: 515 },
+  ],
+  search: [
+    { x: 790, y: 515 },
+    { x: 790, y: 130 },
+  ],
 }
 
 const freeSpot = (doc: BoardDoc, kind: ComponentKind): Point =>
@@ -114,6 +153,11 @@ const addNodeAt = (
     x: spot.x,
     y: spot.y,
     locked: false,
+    maybeCapacity: Option.none(),
+    maybeRegion: Option.map(
+      zoneAt(regionZones(doc.nodes), spot),
+      zone => zone.region,
+    ),
   })
 }
 

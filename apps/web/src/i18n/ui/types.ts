@@ -1,4 +1,4 @@
-import type { ComponentKind } from '../../domain/catalog'
+import type { ComponentKind, Region } from '../../domain/catalog'
 import type { ModuleId } from '../../lessons/model'
 import type { DomainMessageTexts } from '../domainMessage'
 import type { Locale } from '../locale'
@@ -10,6 +10,7 @@ export type UiStrings = Readonly<{
   languageSwitcherLabel: string
   inLanguage: Readonly<Record<Locale, string>>
   kindName: Readonly<Record<ComponentKind, string>>
+  regionName: Readonly<Record<Region, string>>
   home: Readonly<{
     heading: string
     lessonCount: (count: number) => string
@@ -32,7 +33,6 @@ export type UiStrings = Readonly<{
     laterTitle: string
     paletteClosed: string
     paletteHint: string
-    upcomingName: Readonly<Record<'cache' | 'cdn' | 'queue' | 'shard', string>>
     lockedUntilLesson: (order: number) => string
     newBadge: string
     capacityTag: (rps: number) => string
@@ -45,6 +45,9 @@ export type UiStrings = Readonly<{
     nodeLoad: (rps: number, utilization: number) => string
     clientsLoad: (rps: number) => string
     nodeDown: string
+    queueGrowing: (rps: number) => string
+    rejecting: (rps: number) => string
+    zoneDown: (region: Region) => string
     edgeFlow: (rps: number) => string
     ghost: (kind: ComponentKind) => string
   }>
@@ -53,8 +56,11 @@ export type UiStrings = Readonly<{
     errors: string
     p95: string
     database: string
+    rejected: string
+    backlog: string
     cost: string
     rps: (value: number) => string
+    growth: (value: number) => string
     ms: (value: number) => string
     percent: (ratio: number) => string
     perHour: (dollars: number) => string
