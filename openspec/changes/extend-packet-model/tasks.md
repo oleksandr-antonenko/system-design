@@ -1,6 +1,6 @@
 ## 1. Тексты сообщений
 
-- [ ] 1.1 Модуль `net/text/`: тип `NetTexts` по тегам `NetMessage`, словари uk, ru, en, lt, `renderNetMessage` с подписями устройств. Проверка: `pnpm exec tsc --noEmit --pretty false` без ошибок; тест «каждый код на каждом языке» зелёный.
+- [x] 1.1 Модуль `net/text/`: тип `NetTexts` по тегам `NetMessage`, словари uk, ru, en, lt, `renderNetMessage` с подписями устройств. Проверка: `pnpm exec tsc --noEmit --pretty false` без ошибок; тест «каждый код на каждом языке» зелёный.
 
 ## 2. Модуль 1 по новому плану (уроки 1–7)
 
