@@ -1,0 +1,116 @@
+import { Schema } from 'effect'
+import { defineTaggedUnion } from 'foldkit/schema'
+
+import {
+  DeviceId,
+  Ip,
+  LinkId,
+  Mac,
+  Medium,
+  NatProto,
+  Port,
+  Proto,
+  WifiBand,
+} from './model'
+
+/** Коды сообщений модели пакетов с параметрами. Модель не пишет текстов:
+    тексты на четырёх языках собирает слой i18n (отдельное изменение). */
+export const NetMessage = defineTaggedUnion({
+  // Отказы операций документа
+  UnknownDevice: { id: DeviceId },
+  DuplicateDeviceId: { id: DeviceId },
+  InvalidMac: { value: Schema.String },
+  DuplicateMac: { mac: Mac, owner: DeviceId },
+  InvalidIp: { value: Schema.String },
+  InvalidPrefix: { value: Schema.Number },
+  AddressNotUsable: { ip: Ip, prefix: Schema.Number },
+  GatewayOutsideSubnet: { gateway: Ip, ip: Ip, prefix: Schema.Number },
+  OnlyOneInternet: {},
+  ConnectSelf: { id: DeviceId },
+  AlreadyLinked: { a: DeviceId, b: DeviceId },
+  UnknownLink: { a: DeviceId, b: DeviceId },
+  PortBusy: { device: DeviceId },
+  RadioNeedsAccessPoint: { a: DeviceId, b: DeviceId },
+  NoWifiOnDevice: { device: DeviceId },
+  InternetNeedsRouter: { device: DeviceId },
+  SecondWanLink: { router: DeviceId },
+  LinkMakesLoop: { a: DeviceId, b: DeviceId },
+  NotAHost: { id: DeviceId },
+  NotARouter: { id: DeviceId },
+  NotAnAccessPoint: { id: DeviceId },
+  DhcpPoolOutsideSubnet: {
+    start: Ip,
+    end: Ip,
+    network: Ip,
+    prefix: Schema.Number,
+  },
+  DhcpPoolReversed: { start: Ip, end: Ip },
+  DhcpPoolIncludesRouter: { ip: Ip },
+  ReservationOutsideSubnet: { mac: Mac, ip: Ip },
+  ReservationTaken: { ip: Ip, mac: Mac },
+  EmptySsid: {},
+  WifiPasswordTooShort: { min: Schema.Number },
+  InvalidChannel: { band: WifiBand, channel: Schema.Number },
+  InvalidPort: { value: Schema.Number },
+  EmptyName: {},
+
+  // Почему устройство не в Wi-Fi
+  WifiOff: { ap: DeviceId },
+  NoWifiProfile: { device: DeviceId },
+  WrongSsid: { device: DeviceId, ssid: Schema.String, ap: DeviceId },
+  WrongPassword: { device: DeviceId, ssid: Schema.String },
+  BandUnsupported: { device: DeviceId, band: WifiBand },
+  OutOfRange: { device: DeviceId, ap: DeviceId },
+
+  // Что устройство сделало с кадром на хопе
+  FrameReceived: { device: DeviceId },
+  FrameNotForMe: { device: DeviceId },
+  FrameForwarded: { device: DeviceId, link: LinkId },
+  FrameFlooded: { device: DeviceId, links: Schema.Array(LinkId) },
+  FrameBroadcast: { device: DeviceId, links: Schema.Array(LinkId) },
+  FrameFiltered: { device: DeviceId },
+  PacketRouted: { device: DeviceId },
+  PacketIgnored: { device: DeviceId },
+  ArpIsMine: { device: DeviceId, ip: Ip },
+  ArpNotMine: { device: DeviceId, ip: Ip },
+  DhcpServerOff: { router: DeviceId },
+
+  // Почему пакет не дошёл
+  NoLink: { device: DeviceId },
+  LinkDown: { device: DeviceId, link: LinkId },
+  NoAddress: { device: DeviceId },
+  UsesStaticAddress: { device: DeviceId },
+  NoGateway: { device: DeviceId, ip: Ip },
+  NoDnsServer: { device: DeviceId },
+  ArpNoReply: { device: DeviceId, ip: Ip },
+  NoDhcpServer: { device: DeviceId },
+  DhcpPoolExhausted: { router: DeviceId },
+  TtlExpired: { device: DeviceId },
+  NoRouteToHost: { ip: Ip },
+  PrivateAddressNotRoutable: { ip: Ip },
+  NoWanLink: { router: DeviceId },
+  NatNoMapping: { router: DeviceId, proto: NatProto, port: Port },
+  PortClosed: { device: DeviceId, proto: Proto, port: Port },
+  ListensOnlyOnLoopback: { device: DeviceId, port: Port },
+  NameNotFound: { name: Schema.String },
+  InvalidUrl: { url: Schema.String },
+  FrameLost: { device: DeviceId },
+
+  // Невыполненные цели
+  GoalNotLinked: { a: DeviceId, b: DeviceId },
+  GoalWrongMedium: { a: DeviceId, b: DeviceId, want: Medium },
+  GoalLinkDown: { a: DeviceId, b: DeviceId },
+  GoalNoRadioLink: { device: DeviceId, ap: DeviceId },
+  GoalWrongAddress: { device: DeviceId, have: Ip, want: Ip },
+  AddressConflict: { ip: Ip, devices: Schema.Array(DeviceId) },
+  GoalReachable: { from: DeviceId, at: DeviceId },
+  GoalNotListening: { device: DeviceId, proto: Proto, port: Port },
+  GoalListeningOnWrongAddress: {
+    device: DeviceId,
+    port: Port,
+    bind: Ip,
+    want: Ip,
+  },
+  GoalResolvesElsewhere: { name: Schema.String, have: Ip, want: Ip },
+})
+export type NetMessage = typeof NetMessage.Type
