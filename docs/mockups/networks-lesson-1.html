@@ -1,0 +1,2132 @@
+<title>Сети: урок 1</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Literata:opsz,wght@7..72,400;7..72,600&family=Unbounded:wght@500&display=swap">
+<style>
+/* Layout: учебник слева, сетевая доска справа, лента шагов сверху, транспорт пакета и поверхности (конверт, роутер, терминал, браузер) под доской */
+:root {
+  --bg: #EDF0EF;
+  --page: #FAFBF9;
+  --board: #F4F7F8;
+  --grid: #E0E7EA;
+  --ink: #17202A;
+  --muted: #5A6774;
+  --line: #D2DAE0;
+  --node: #FFFFFF;
+  --node-line: #8D9BA8;
+  --accent: #2B4BD4;
+  --accent-soft: #E2E7FB;
+  --ok: #148A55;
+  --warn: #C27C05;
+  --bad: #CF3F36;
+  --bad-soft: #FBE6E4;
+  --ok-soft: #E0F3E9;
+  --on-warn: #1A1406;
+  --zone-home: #E9F0F5;
+  --zone-net: #EEF0F4;
+  --l-link: #0B7A85;
+  --l-ip: #2B4BD4;
+  --l-tp: #B0570C;
+  --l-app: #A3318E;
+  --p-dns: #7445C9;
+  --p-tcp: #2B4BD4;
+  --p-dhcp: #0B7A85;
+  --term-bg: #121920;
+  --term-ink: #DCE4EC;
+  --term-dim: #7E8C99;
+  --term-ok: #6BD39A;
+  --term-acc: #9DB0FF;
+  --term-bad: #FF8A80;
+  --f-display: "Unbounded", "Arial Black", system-ui, sans-serif;
+  --f-prose: "Literata", "PT Serif", Georgia, serif;
+  --f-ui: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0E1318; --page: #131A21; --board: #0F151B; --grid: #1A232C; --ink: #E3E9EF; --muted: #93A0AD;
+    --line: #27323C; --node: #18202A; --node-line: #536475; --accent: #8EA3FF; --accent-soft: #1E2850;
+    --ok: #3DC48B; --warn: #E8AA3C; --bad: #F2675C; --bad-soft: #3A1715; --ok-soft: #12301F;
+    --zone-home: #121C26; --zone-net: #141920;
+    --l-link: #45C1CC; --l-ip: #8EA3FF; --l-tp: #F0A35E; --l-app: #E585D3;
+    --p-dns: #B79BFF; --p-tcp: #8EA3FF; --p-dhcp: #45C1CC;
+    --term-bg: #0A0F14;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0E1318; --page: #131A21; --board: #0F151B; --grid: #1A232C; --ink: #E3E9EF; --muted: #93A0AD;
+  --line: #27323C; --node: #18202A; --node-line: #536475; --accent: #8EA3FF; --accent-soft: #1E2850;
+  --ok: #3DC48B; --warn: #E8AA3C; --bad: #F2675C; --bad-soft: #3A1715; --ok-soft: #12301F;
+  --zone-home: #121C26; --zone-net: #141920;
+  --l-link: #45C1CC; --l-ip: #8EA3FF; --l-tp: #F0A35E; --l-app: #E585D3;
+  --p-dns: #B79BFF; --p-tcp: #8EA3FF; --p-dhcp: #45C1CC;
+  --term-bg: #0A0F14;
+  color-scheme: dark;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html, body { height: 100%; }
+body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--f-ui); font-size: 13px; line-height: 1.45; -webkit-font-smoothing: antialiased; }
+button, input, select { font: inherit; color: inherit; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+code { font-family: var(--f-ui); font-size: .84em; background: var(--accent-soft); border-radius: 4px; padding: 1px 5px; white-space: nowrap; }
+
+.app { height: 100%; display: grid; grid-template-rows: auto minmax(0, 1fr); }
+
+/* ---------- верхняя лента ---------- */
+.top {
+  display: flex; align-items: center; flex-wrap: wrap; gap: 8px 24px;
+  padding-block: 8px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  background: var(--page); border-bottom: 1px solid var(--line);
+}
+.crumb { font-size: 12px; color: var(--muted); white-space: nowrap; display: flex; gap: 10px; align-items: baseline; }
+.crumb .brand { font-family: var(--f-display); font-weight: 500; font-size: 12.5px; color: var(--ink); }
+.crumb b { color: var(--ink); font-weight: 600; }
+.timeline { flex: 1 1 340px; display: flex; align-items: center; justify-content: center; gap: 14px; min-width: 0; }
+.tl-steps { display: flex; align-items: center; gap: 4px; }
+.tl { appearance: none; border: 0; background: none; padding: 9px 0; cursor: pointer; display: grid; place-items: center; }
+.tl .bar { display: block; width: 34px; height: 5px; border-radius: 3px; background: var(--line); transition: background .2s, height .2s; }
+.tl.done .bar { background: var(--accent); opacity: .5; }
+.tl.current .bar { background: var(--accent); height: 8px; }
+.tl.is-task .bar { width: 11px; height: 11px; border-radius: 2px; transform: rotate(45deg); margin-inline: 5px; }
+.tl.is-task.current .bar { height: 11px; }
+.tl.is-quiz .bar { width: 13px; height: 13px; border-radius: 50%; margin-inline: 4px; background: transparent; border: 2.5px solid var(--line); }
+.tl.is-quiz.done .bar { border-color: var(--accent); background: transparent; }
+.tl.is-quiz.current .bar { height: 13px; border-color: var(--accent); background: var(--accent-soft); opacity: 1; }
+.tl.is-quiz.first .bar { border-color: var(--ok); background: var(--ok); opacity: 1; }
+.tl.is-quiz.shown .bar { border-color: var(--warn); background: transparent; opacity: 1; }
+.tl:disabled { cursor: not-allowed; }
+.tl-label { font-size: 12px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+.tl-label b { color: var(--ink); font-weight: 600; }
+.top-note { font-size: 10.5px; color: var(--muted); letter-spacing: .08em; text-transform: uppercase; white-space: nowrap; }
+
+/* ---------- раскладка ---------- */
+.main { display: grid; grid-template-columns: minmax(340px, 38%) minmax(0, 1fr); min-height: 0; }
+
+.theory { display: flex; flex-direction: column; min-height: 0; min-width: 0; background: var(--page); border-right: 1px solid var(--line); }
+.theory-scroll {
+  position: relative; flex: 1; overflow-y: auto;
+  padding-block: 26px 32px;
+  padding-left: max(28px, env(safe-area-inset-left, 0px));
+  padding-right: 28px;
+}
+.eyebrow { font-size: 10.5px; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
+h1 { font-family: var(--f-display); font-weight: 500; font-size: 23px; line-height: 1.22; margin: 8px 0 6px; text-wrap: balance; letter-spacing: -.01em; }
+.meta { font-size: 12px; color: var(--muted); }
+.lesson-head { padding-bottom: 18px; }
+
+.beat { padding-block: 18px; border-top: 1px solid var(--line); }
+.beat h2 { margin: 0 0 10px; font-size: 11px; font-weight: 600; letter-spacing: .09em; text-transform: uppercase; color: var(--muted); display: flex; gap: 10px; align-items: baseline; }
+.beat h2 .n { color: var(--accent); font-variant-numeric: tabular-nums; }
+.beat.past { opacity: .5; cursor: pointer; transition: opacity .15s; }
+.beat.past:hover { opacity: .8; }
+.beat.past .prose { font-size: 15px; }
+.prose { font-family: var(--f-prose); font-size: 16.5px; line-height: 1.62; max-width: 62ch; }
+.prose p { margin: 0; }
+.prose p + p { margin-top: .75em; }
+.prose strong { font-weight: 600; }
+.ref { font-weight: 600; border-bottom: 1.5px dashed var(--accent); cursor: help; border-radius: 2px; }
+.ref:hover, .ref:focus-visible, .ref.on { background: var(--accent-soft); }
+.ref.env-link { border-bottom-color: var(--l-link); }
+.ref.env-ip { border-bottom-color: var(--l-ip); }
+.ref.env-tcp { border-bottom-color: var(--l-tp); }
+.ref.env-http { border-bottom-color: var(--l-app); }
+.ref.act { cursor: pointer; }
+.simpl { display: inline-block; font-family: var(--f-ui); font-size: 10px; letter-spacing: .06em; text-transform: uppercase; color: var(--warn); border: 1px solid var(--warn); border-radius: 999px; padding: 0 6px; vertical-align: 2px; }
+.task-done { margin: 12px 0 0; font-size: 12px; color: var(--ok); font-weight: 600; }
+.task-done.shown { color: var(--warn); }
+.finish { margin-top: 6px; padding-top: 18px; border-top: 1px solid var(--line); display: grid; gap: 8px; }
+.finish p { margin: 0; font-family: var(--f-prose); font-size: 15.5px; }
+.ask-ai { border: 1px solid var(--line); border-radius: 12px; background: var(--node); padding: 14px 16px; display: grid; gap: 8px; }
+.ask-ai .eyebrow { color: var(--accent); font-weight: 600; }
+.ask-ai blockquote { margin: 0; font-family: var(--f-prose); font-size: 15px; line-height: 1.55; border-left: 3px solid var(--accent); padding-left: 12px; }
+.ask-ai .row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; font-size: 11.5px; color: var(--muted); }
+
+/* ---------- карточки задачи и вопроса ---------- */
+.task { margin-top: 16px; border: 1.5px solid var(--accent); border-radius: 12px; background: var(--node); padding: 16px; display: grid; gap: 12px; }
+.task.solved { border-color: var(--ok); }
+.task.revealed { border-color: var(--warn); }
+.task-head { display: flex; align-items: center; gap: 9px; font-size: 11px; font-weight: 700; letter-spacing: .09em; text-transform: uppercase; color: var(--accent); }
+.task.solved .task-head { color: var(--ok); }
+.task.revealed .task-head { color: var(--warn); }
+.task-head .dia { width: 9px; height: 9px; background: currentColor; transform: rotate(45deg); border-radius: 1px; flex: none; }
+.task-head .ring { width: 11px; height: 11px; border: 2.5px solid currentColor; border-radius: 50%; flex: none; }
+.task-head .att { margin-left: auto; font-weight: 500; color: var(--muted); letter-spacing: .04em; text-transform: none; }
+.task-goal { font-family: var(--f-prose); font-size: 16px; line-height: 1.5; font-weight: 600; margin: 0; }
+.task-how { font-size: 12px; color: var(--muted); margin: 0; }
+.remember { display: grid; grid-template-columns: auto 1fr; gap: 3px 12px; margin: 0; font-size: 12px; background: var(--accent-soft); border-radius: 8px; padding: 9px 12px; }
+.remember dt { color: var(--muted); }
+.remember dd { margin: 0; font-weight: 600; }
+.remember .cap { grid-column: 1 / -1; color: var(--muted); font-size: 11px; letter-spacing: .06em; text-transform: uppercase; }
+.checks { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.checks li { display: grid; grid-template-columns: 18px 1fr; gap: 8px; font-size: 12.5px; align-items: start; }
+.checks .mk { width: 16px; height: 16px; border-radius: 50%; border: 1.5px solid var(--node-line); display: grid; place-items: center; font-size: 10px; line-height: 1; margin-top: 1px; font-weight: 700; transition: background .25s, border-color .25s; }
+.checks li.ok .mk { background: var(--ok); border-color: var(--ok); color: var(--page); }
+.checks li.fail .mk { background: var(--bad); border-color: var(--bad); color: var(--page); }
+.checks li.wait .mk { border-style: dashed; border-color: var(--accent); }
+.checks .why { display: block; font-size: 11.5px; color: var(--muted); margin-top: 2px; }
+.checks li.fail .why { color: var(--bad); }
+.fb { border-radius: 8px; padding: 10px 12px; font-size: 12.5px; }
+.fb.fail { background: var(--bad-soft); border: 1px solid var(--bad); }
+.fb.ok { background: var(--ok-soft); border: 1px solid var(--ok); }
+.fb p { margin: 0; }
+.fb p + p { margin-top: 6px; }
+.explain { font-family: var(--f-prose); font-size: 15px; line-height: 1.5; margin: 0; }
+.mark { display: inline-flex; align-items: center; gap: 6px; font-size: 11.5px; font-weight: 600; border-radius: 999px; padding: 3px 10px; justify-self: start; }
+.mark.first { color: var(--ok); background: var(--ok-soft); }
+.mark.shown { color: var(--warn); border: 1px solid var(--warn); }
+.hints { margin: 0; padding-left: 20px; font-size: 12.5px; display: grid; gap: 4px; }
+.hints li::marker { color: var(--accent); }
+.task-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.result { display: grid; grid-template-columns: auto 1fr; gap: 4px 14px; margin: 0; font-size: 12.5px; font-variant-numeric: tabular-nums; }
+.result dt { color: var(--muted); }
+.result dd { margin: 0; font-weight: 600; }
+
+/* ---------- кнопки ---------- */
+.btn { appearance: none; border: 1px solid var(--line); background: var(--node); color: var(--ink); border-radius: 8px; padding: 7px 11px; font-size: 12px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
+.btn:hover:not(:disabled) { border-color: var(--node-line); }
+.btn:disabled { opacity: .42; cursor: not-allowed; }
+.btn.primary { background: var(--accent); border-color: var(--accent); color: var(--page); font-weight: 600; }
+.btn.link { border-color: transparent; background: transparent; color: var(--accent); padding-inline: 4px; }
+.btn.sm { padding: 4px 9px; font-size: 11.5px; }
+
+.theory-nav {
+  display: flex; justify-content: space-between; align-items: center; gap: 10px;
+  padding-block: 12px;
+  padding-left: max(28px, env(safe-area-inset-left, 0px)); padding-right: 28px;
+  border-top: 1px solid var(--line); background: var(--page);
+}
+.theory-nav .nav-text { font-size: 11.5px; color: var(--muted); text-align: center; flex: 1; min-width: 0; }
+
+/* ---------- доска ---------- */
+.boardside { display: flex; flex-direction: column; min-width: 0; min-height: 0; }
+.stage {
+  position: relative; flex: 1; min-height: 240px; overflow: hidden;
+  background-color: var(--board);
+  background-image: linear-gradient(var(--grid) 1px, transparent 1px), linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+  background-size: 24px 24px;
+  touch-action: manipulation; user-select: none; -webkit-user-select: none;
+}
+.stage svg { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+.stage.flash { animation: flash 1.3s ease-out; }
+@keyframes flash { 0% { box-shadow: inset 0 0 0 5px var(--ok); } 100% { box-shadow: inset 0 0 0 0 var(--ok); } }
+.mode-chip { position: absolute; top: 12px; right: max(12px, env(safe-area-inset-right, 0px)); font-size: 11px; padding: 5px 10px; border-radius: 999px; background: var(--page); border: 1px solid var(--line); color: var(--muted); pointer-events: none; }
+.mode-chip.edit { color: var(--accent); border-color: var(--accent); font-weight: 600; }
+.mode-chip.quiz { color: var(--accent); border-color: var(--accent); font-weight: 600; }
+.toast { position: absolute; bottom: 14px; left: 50%; transform: translateX(-50%); width: max-content; max-width: min(460px, calc(100% - 24px)); background: var(--ink); color: var(--page); border-radius: 10px; padding: 9px 14px; font-size: 12.5px; z-index: 5; }
+
+#board text { pointer-events: none; }
+#board .zone { stroke: var(--line); stroke-width: 1.2; stroke-dasharray: 2 5; stroke-linecap: round; }
+#board .zone.home { fill: var(--zone-home); }
+#board .zone.net { fill: var(--zone-net); }
+#board .zone-label { font: 600 10px var(--f-ui); letter-spacing: .1em; fill: var(--muted); }
+#board .zone-label tspan.addr { font-weight: 500; letter-spacing: .02em; }
+#board .link { fill: none; stroke: var(--node-line); stroke-width: 2; stroke-linecap: round; transition: stroke .25s; }
+#board .link.radio { stroke-width: 1.8; stroke-dasharray: 4 3.5; }
+#board .link.lit { stroke: var(--accent); stroke-width: 2.6; }
+#board .link.cur { stroke-width: 3.4; }
+#board .link.dim { opacity: .35; }
+#board .link.new { animation: draw 1.1s ease-out; }
+@keyframes draw { from { opacity: 0; } to { opacity: 1; } }
+#board .link-hl { fill: none; stroke: var(--l-link); stroke-width: 10; stroke-opacity: .28; stroke-linecap: round; pointer-events: none; }
+#board .no-link { fill: none; stroke: var(--bad); stroke-width: 2.4; stroke-dasharray: 7 6; animation: dash 1s linear infinite; pointer-events: none; }
+@keyframes dash { to { stroke-dashoffset: -26; } }
+#board .tag rect { fill: var(--page); stroke: var(--line); }
+#board .tag text { font: 500 10px var(--f-ui); fill: var(--muted); font-variant-numeric: tabular-nums; }
+#board .tag.nat rect { stroke: var(--l-ip); }
+#board .tag.nat text { fill: var(--l-ip); font-weight: 600; }
+#board .node .body { fill: var(--node); stroke: var(--node-line); stroke-width: 1.5; transition: stroke .2s; }
+#board .node.cloud .body { fill: var(--page); }
+#board .node.hl .body, #board .node.ref-hover .body { stroke: var(--accent); stroke-width: 2.5; }
+#board .node.off .body { stroke-dasharray: 5 4; }
+#board .node.off .icon, #board .node.off .title { opacity: .55; }
+#board .node.appear { animation: appear .5s ease-out both; }
+@keyframes appear { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+#board .icon { fill: none; stroke: var(--ink); stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+#board .title { font: 600 12.5px var(--f-ui); fill: var(--ink); }
+#board .sub { font: 400 11px var(--f-ui); fill: var(--muted); font-variant-numeric: tabular-nums; }
+#board .cand { cursor: pointer; }
+#board .cand:focus { outline: none; }
+#board .cand .body { stroke: var(--accent); stroke-width: 2; }
+#board .cand:hover .body, #board .cand:focus-visible .body { stroke-width: 3; fill: var(--accent-soft); }
+#board .halo { fill: none; stroke-width: 3; pointer-events: none; }
+#board .halo.pulse { animation: pulse 1.4s ease-in-out infinite; }
+#board .halo.info { stroke: var(--accent); }
+#board .halo.ok { stroke: var(--ok); }
+#board .halo.bad { stroke: var(--bad); }
+#board .halo.warn { stroke: var(--warn); }
+@keyframes pulse { 0%, 100% { stroke-opacity: .25; } 50% { stroke-opacity: 1; } }
+#board .ann { pointer-events: none; }
+#board .ann rect { fill: var(--ink); }
+#board .ann text { font: 600 11px var(--f-ui); fill: var(--page); }
+#board .ann .stem { stroke: var(--ink); stroke-width: 1.5; }
+#board .ann.bad rect { fill: var(--bad); }
+#board .ann.bad .stem { stroke: var(--bad); }
+#board .ann.ok rect { fill: var(--ok); }
+#board .ann.ok .stem { stroke: var(--ok); }
+#board .ann.info rect { fill: var(--accent); }
+#board .ann.info .stem { stroke: var(--accent); }
+#board .ann.warn rect { fill: var(--warn); }
+#board .ann.warn text { fill: var(--on-warn); }
+#board .ann.warn .stem { stroke: var(--warn); }
+#board .ring { fill: none; stroke-width: 1.5; stroke-dasharray: 3 5; pointer-events: none; }
+#board .ring.b5 { stroke: var(--l-app); }
+#board .ring.b24 { stroke: var(--l-link); }
+#board .ring-fill.b5 { fill: var(--l-app); fill-opacity: .05; }
+#board .ring-fill.b24 { fill: var(--l-link); fill-opacity: .05; }
+#board .ring-label { font: 600 10px var(--f-ui); }
+#board .ring-label.b5 { fill: var(--l-app); }
+#board .ring-label.b24 { fill: var(--l-link); }
+#board .port { fill: var(--page); stroke: var(--accent); stroke-width: 2; cursor: crosshair; }
+#board .port:hover, #board .port.armed { fill: var(--accent); }
+#board .port-label { font: 600 9.5px var(--f-ui); fill: var(--accent); letter-spacing: .06em; }
+#board .plug { cursor: grab; touch-action: none; }
+#board .port { touch-action: none; }
+#board .plug rect { fill: var(--node-line); }
+#board .plug.armed rect { fill: var(--accent); }
+#board .loose { fill: none; stroke: var(--node-line); stroke-width: 2; stroke-linecap: round; }
+#board .ghost-edge { fill: none; stroke: var(--accent); stroke-width: 2; stroke-dasharray: 6 5; pointer-events: none; }
+#board .rubber { fill: none; stroke: var(--accent); stroke-width: 2; stroke-dasharray: 5 4; pointer-events: none; }
+#board .pkt { cursor: pointer; }
+#board .pkt .hit { fill: transparent; }
+#board .pkt .env { stroke: var(--page); stroke-width: 1.4; }
+#board .pkt .flap { fill: none; stroke: var(--page); stroke-width: 1.3; stroke-linejoin: round; }
+#board .pkt.sel .env { stroke: var(--ink); stroke-width: 2; }
+#board .pkt.dropped { opacity: .45; }
+#board .pkt-ring { fill: none; stroke-width: 2; pointer-events: none; }
+
+/* ---------- транспорт пакета ---------- */
+.transport {
+  background: var(--page); border-top: 1px solid var(--line);
+  padding-block: 9px 10px;
+  padding-left: 16px; padding-right: max(16px, env(safe-area-inset-right, 0px));
+  display: grid; gap: 7px;
+}
+.t-row { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.t-row .sep { width: 1px; height: 22px; background: var(--line); margin-inline: 4px; }
+.tbtn { appearance: none; border: 1px solid var(--line); background: var(--node); border-radius: 8px; padding: 6px 10px; font-size: 12px; cursor: pointer; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.tbtn:hover:not(:disabled) { border-color: var(--node-line); }
+.tbtn:disabled { opacity: .42; cursor: not-allowed; }
+.tbtn.primary { background: var(--accent); border-color: var(--accent); color: var(--page); font-weight: 600; min-width: 92px; }
+.seg { display: inline-flex; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
+.seg button { appearance: none; border: 0; background: var(--node); padding: 6px 9px; font-size: 12px; cursor: pointer; font-variant-numeric: tabular-nums; }
+.seg button[aria-pressed="true"] { background: var(--accent); color: var(--page); font-weight: 600; }
+.seg button:disabled { opacity: .42; cursor: not-allowed; }
+.t-count { font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; margin-left: 4px; }
+.t-count b { color: var(--ink); }
+.legend { display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 11px; color: var(--muted); margin-left: auto; }
+.legend i { display: inline-block; width: 11px; height: 8px; border-radius: 2px; margin-right: 6px; vertical-align: 0; }
+.t-caption { margin: 0; font-size: 12.5px; display: flex; gap: 9px; align-items: baseline; min-height: 19px; }
+.t-caption .dot { width: 9px; height: 9px; border-radius: 2px; flex: none; transform: translateY(1px); background: var(--node-line); }
+.t-caption .where { font-weight: 600; white-space: nowrap; }
+.t-caption .what { color: var(--muted); font-family: var(--f-prose); font-size: 14px; line-height: 1.4; }
+.t-caption.bad .where { color: var(--bad); }
+.t-caption.ok .where { color: var(--ok); }
+
+/* ---------- поверхности под доской ---------- */
+.dock { height: 296px; display: flex; flex-direction: column; background: var(--page); border-top: 1px solid var(--line); min-height: 0; }
+.dock.tall { height: 360px; }
+.dock-tabs { display: flex; gap: 2px; padding-left: 12px; padding-right: max(12px, env(safe-area-inset-right, 0px)); border-bottom: 1px solid var(--line); overflow-x: auto; scrollbar-width: none; flex: none; }
+.dock-tab { appearance: none; border: 0; background: none; padding: 10px 10px 9px; font-size: 12px; color: var(--muted); cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -1px; white-space: nowrap; display: inline-flex; gap: 6px; align-items: center; }
+.dock-tab[aria-selected="true"] { color: var(--ink); font-weight: 600; border-bottom-color: var(--accent); }
+.dock-tab .new { font-size: 9.5px; letter-spacing: .08em; text-transform: uppercase; color: var(--accent); font-weight: 700; }
+.dock-tab .dotst { width: 7px; height: 7px; border-radius: 50%; background: var(--bad); }
+.dock-tab .dotst.ok { background: var(--ok); }
+.dock-body { flex: 1; min-height: 0; overflow: auto; }
+.pane { padding-block: 12px 14px; padding-left: 16px; padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+.pane-empty { color: var(--muted); font-size: 12.5px; display: grid; gap: 6px; max-width: 60ch; }
+.pane-empty b { color: var(--ink); }
+
+/* конверт */
+.env-head { display: flex; flex-wrap: wrap; gap: 4px 14px; align-items: baseline; margin-bottom: 9px; font-size: 12px; }
+.env-head .ttl { font-weight: 600; }
+.env-head .pk { display: inline-flex; align-items: center; gap: 6px; }
+.env-head .pk i { width: 11px; height: 8px; border-radius: 2px; display: inline-block; }
+.env-head .chg { color: var(--muted); font-size: 11.5px; }
+.env-head .chg b { color: var(--ink); font-weight: 600; }
+.layer { --lc: var(--l-link); border: 1.5px solid var(--lc); border-radius: 10px; background: color-mix(in srgb, var(--lc) 7%, var(--node)); padding: 6px 8px 8px 10px; display: grid; gap: 6px; transition: box-shadow .2s, opacity .2s; }
+.layer.k-link { --lc: var(--l-link); }
+.layer.k-ip { --lc: var(--l-ip); }
+.layer.k-tp { --lc: var(--l-tp); }
+.layer.k-app { --lc: var(--l-app); }
+.layer.fresh { animation: fresh 1.2s ease-out; }
+@keyframes fresh { 0% { box-shadow: 0 0 0 5px color-mix(in srgb, var(--lc) 45%, transparent); } 100% { box-shadow: 0 0 0 0 transparent; } }
+.layer.hl { box-shadow: 0 0 0 3px color-mix(in srgb, var(--lc) 35%, transparent); }
+.layer.good { box-shadow: 0 0 0 3px var(--ok); border-color: var(--ok); }
+.layer.wrong { box-shadow: 0 0 0 3px var(--bad); border-color: var(--bad); }
+.env.fade .layer:not(.hl) > .lrow { opacity: .45; }
+.lrow { display: flex; flex-wrap: wrap; align-items: baseline; gap: 3px 12px; font-size: 12px; font-variant-numeric: tabular-nums; }
+.lname { color: var(--lc); font-weight: 700; min-width: 76px; display: inline-flex; gap: 6px; align-items: baseline; }
+.lname small { font-weight: 500; font-size: 10px; letter-spacing: .06em; text-transform: uppercase; opacity: .85; }
+.fld { display: inline-flex; gap: 5px; align-items: baseline; border-radius: 5px; padding: 0 3px; }
+.fld .k { color: var(--muted); font-size: 11px; }
+.fld .v { font-weight: 600; }
+.fld .was { color: var(--muted); text-decoration: line-through; font-weight: 400; }
+.fld.changed .v { color: var(--lc); }
+.fld .badge { font-size: 9.5px; font-weight: 700; letter-spacing: .06em; border-radius: 4px; padding: 0 4px; color: var(--page); background: var(--lc); }
+.fld.ask { outline: 2px solid var(--accent); outline-offset: 1px; background: var(--accent-soft); animation: askpulse 1.4s ease-in-out infinite; }
+@keyframes askpulse { 0%, 100% { outline-color: color-mix(in srgb, var(--accent) 35%, transparent); } 50% { outline-color: var(--accent); } }
+.fld.ask.done { animation: none; outline-color: var(--ok); background: var(--ok-soft); }
+.lbadge { font-size: 9.5px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; border-radius: 4px; padding: 1px 5px; color: var(--page); background: var(--lc); }
+.chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; align-items: center; }
+.chips .q { font-size: 12px; font-weight: 600; margin-right: 4px; }
+.chip { appearance: none; border: 1.5px solid var(--line); background: var(--node); border-radius: 999px; padding: 6px 12px; font-size: 12px; cursor: pointer; display: inline-flex; gap: 6px; align-items: center; }
+.chip i { width: 9px; height: 9px; border-radius: 50%; display: inline-block; }
+.chip:hover:not(:disabled) { border-color: var(--accent); }
+.chip:disabled { cursor: default; }
+.chip.right { border-color: var(--ok); background: var(--ok-soft); font-weight: 600; }
+.chip.wrong { border-color: var(--bad); background: var(--bad-soft); }
+.env-note { margin: 9px 0 0; font-size: 11.5px; color: var(--muted); }
+
+/* панель роутера */
+.rp { display: grid; grid-template-columns: 150px minmax(0, 1fr); border: 1px solid var(--line); border-radius: 12px; background: var(--node); overflow: hidden; }
+.rp-top { grid-column: 1 / -1; display: flex; gap: 12px; align-items: center; padding: 8px 12px; border-bottom: 1px solid var(--line); font-size: 11.5px; color: var(--muted); }
+.rp-top b { color: var(--ink); }
+.rp-top .addr { margin-left: auto; border: 1px solid var(--line); border-radius: 6px; padding: 2px 8px; font-variant-numeric: tabular-nums; }
+.rp-nav { display: flex; flex-direction: column; gap: 2px; padding: 8px; border-right: 1px solid var(--line); background: var(--page); }
+.rp-tab { appearance: none; border: 0; background: none; text-align: left; padding: 7px 10px; border-radius: 7px; font-size: 12px; cursor: pointer; display: flex; justify-content: space-between; gap: 6px; align-items: center; }
+.rp-tab[aria-selected="true"] { background: var(--accent-soft); color: var(--accent); font-weight: 600; }
+.rp-tab .dotst { width: 7px; height: 7px; border-radius: 50%; background: var(--bad); }
+.rp-tab .dotst.ok { background: var(--ok); }
+.rp-body { padding: 12px 14px; display: grid; gap: 11px; align-content: start; min-width: 0; }
+.rp-h { margin: 0; font-size: 11px; letter-spacing: .09em; text-transform: uppercase; color: var(--muted); font-weight: 600; }
+.kv { display: grid; grid-template-columns: minmax(110px, auto) 1fr; gap: 5px 14px; margin: 0; font-size: 12.5px; font-variant-numeric: tabular-nums; }
+.kv dt { color: var(--muted); }
+.kv dd { margin: 0; font-weight: 600; min-width: 0; overflow-wrap: anywhere; }
+.pill { display: inline-flex; align-items: center; gap: 6px; font-size: 11.5px; font-weight: 600; border-radius: 999px; padding: 1px 9px; }
+.pill::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
+.pill.ok { color: var(--ok); background: var(--ok-soft); }
+.pill.bad { color: var(--bad); background: var(--bad-soft); }
+.pill.idle { color: var(--muted); background: var(--bg); }
+.form { display: grid; grid-template-columns: minmax(110px, auto) minmax(0, 1fr); gap: 9px 14px; align-items: center; }
+.form label, .form .lbl { font-size: 12px; color: var(--muted); }
+.form .ctl { min-width: 0; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.form .help { grid-column: 2; font-size: 11px; color: var(--muted); margin-top: -4px; }
+.inp { border: 1px solid var(--line); background: var(--page); border-radius: 7px; padding: 6px 9px; font-size: 12.5px; width: 100%; max-width: 240px; min-width: 0; font-variant-numeric: tabular-nums; }
+.inp:focus { outline: 2px solid var(--accent); outline-offset: 0; border-color: var(--accent); }
+.inp.short { max-width: 140px; }
+.ctl.ghost > .inp, .ctl.ghost > .seg { outline: 2px dashed var(--accent); outline-offset: 4px; }
+.err-msg { grid-column: 1 / -1; font-size: 11.5px; color: var(--bad); margin: 0; }
+.rp-actions { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.rp-actions .dirty { font-size: 11.5px; color: var(--warn); }
+.rp-actions .saved { font-size: 11.5px; color: var(--ok); }
+.tbl { width: 100%; border-collapse: collapse; font-size: 12px; font-variant-numeric: tabular-nums; }
+.tbl th { text-align: left; font-weight: 500; color: var(--muted); font-size: 10.5px; letter-spacing: .06em; text-transform: uppercase; padding: 3px 10px 5px 0; border-bottom: 1px solid var(--line); }
+.tbl td { padding: 5px 10px 5px 0; border-bottom: 1px solid var(--line); white-space: nowrap; }
+.tbl tr.flash td { animation: rowflash 1.6s ease-out; }
+@keyframes rowflash { 0% { background: var(--ok-soft); } 100% { background: transparent; } }
+.tbl-wrap { overflow-x: auto; }
+.toggle { display: inline-flex; align-items: center; gap: 8px; cursor: pointer; font-size: 12.5px; }
+.toggle input { width: 16px; height: 16px; accent-color: var(--accent); }
+
+/* терминал */
+.term { background: var(--term-bg); color: var(--term-ink); border-radius: 10px; border: 1px solid var(--line); display: flex; flex-direction: column; min-height: 0; height: 100%; }
+.term-top { display: flex; gap: 10px; align-items: center; padding: 6px 12px; border-bottom: 1px solid color-mix(in srgb, var(--term-ink) 14%, transparent); font-size: 11px; color: var(--term-dim); }
+.term-top b { color: var(--term-ink); font-weight: 600; }
+.term-top .r { margin-left: auto; }
+.term-out { flex: 1; min-height: 90px; overflow: auto; padding: 8px 12px 4px; font-size: 12px; line-height: 1.5; white-space: pre-wrap; overflow-wrap: anywhere; font-variant-numeric: tabular-nums; }
+.term-out .cmd { color: var(--term-ink); font-weight: 600; }
+.term-out .cmd::before { content: "ноутбук:~$ "; color: var(--term-ok); font-weight: 500; }
+.term-out .o { color: var(--term-ink); opacity: .88; }
+.term-out .dim { color: var(--term-dim); }
+.term-out .bad { color: var(--term-bad); }
+.term-out .acc { color: var(--term-acc); }
+.term-in { display: flex; gap: 8px; align-items: center; padding: 4px 12px 8px; }
+.term-in label { color: var(--term-ok); font-size: 12px; white-space: nowrap; }
+.term-in input { flex: 1; min-width: 0; background: transparent; border: 0; color: var(--term-ink); font-size: 12.5px; padding: 4px 0; caret-color: var(--term-ok); }
+.term-in input:focus { outline: none; }
+.term-in input::placeholder { color: var(--term-dim); }
+.term:focus-within { border-color: var(--accent); }
+.term-quick { display: flex; flex-wrap: wrap; gap: 6px; padding: 0 12px 10px; }
+.term-quick button { appearance: none; border: 1px solid color-mix(in srgb, var(--term-ink) 22%, transparent); background: transparent; color: var(--term-ink); border-radius: 6px; padding: 3px 8px; font-size: 11.5px; cursor: pointer; }
+.term-quick button:hover { border-color: var(--term-acc); color: var(--term-acc); }
+.pane.term-pane { height: 100%; display: flex; flex-direction: column; }
+
+/* браузер телефона */
+.br-wrap { display: grid; grid-template-columns: minmax(0, 330px) minmax(0, 1fr); gap: 18px; align-items: start; }
+.phone { border: 2px solid var(--node-line); border-radius: 22px; background: var(--node); padding: 8px; display: grid; gap: 6px; }
+.phone .sbar { display: flex; justify-content: space-between; font-size: 10.5px; color: var(--muted); padding: 0 8px; font-variant-numeric: tabular-nums; }
+.phone .sbar .net.bad { color: var(--bad); font-weight: 600; }
+.phone .sbar .net.ok { color: var(--ok); font-weight: 600; }
+.addr-bar { display: flex; align-items: center; gap: 8px; border: 1px solid var(--line); border-radius: 999px; padding: 5px 10px; font-size: 12px; background: var(--page); }
+.addr-bar svg { width: 12px; height: 12px; stroke: var(--muted); fill: none; stroke-width: 2; flex: none; }
+.addr-bar .u { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.addr-bar .rl { appearance: none; border: 0; background: none; cursor: pointer; padding: 0 2px; font-size: 14px; line-height: 1; color: var(--muted); }
+.progress { height: 3px; border-radius: 2px; background: var(--line); overflow: hidden; }
+.progress i { display: block; height: 100%; background: var(--accent); width: 0; transition: width .3s; }
+.screen { border-radius: 14px; background: var(--page); border: 1px solid var(--line); min-height: 150px; padding: 14px; display: grid; gap: 8px; align-content: start; }
+.shop-h { font-family: var(--f-display); font-weight: 500; font-size: 15px; margin: 0; }
+.shop-sub { font-size: 11.5px; color: var(--muted); margin: 0; }
+.shop-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.shop-card { border: 1px solid var(--line); border-radius: 10px; padding: 8px; display: grid; gap: 4px; font-size: 11.5px; }
+.shop-card .pic { height: 38px; border-radius: 6px; background: repeating-linear-gradient(135deg, var(--accent-soft) 0 6px, var(--node) 6px 12px); }
+.shop-card b { font-variant-numeric: tabular-nums; }
+.br-err { display: grid; gap: 6px; }
+.br-err svg { width: 34px; height: 34px; stroke: var(--muted); fill: none; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+.br-err h4 { margin: 0; font-family: var(--f-prose); font-size: 16px; font-weight: 600; }
+.br-err p { margin: 0; font-size: 12px; color: var(--muted); }
+.br-err .code { font-size: 11.5px; font-weight: 600; color: var(--ink); letter-spacing: .02em; }
+.br-side { display: grid; gap: 8px; font-size: 12px; color: var(--muted); max-width: 46ch; }
+.br-side b { color: var(--ink); }
+.br-side ul { margin: 0; padding-left: 18px; display: grid; gap: 3px; }
+
+/* ---------- узкий экран ---------- */
+@media (max-width: 880px) {
+  html, body { height: auto; }
+  .app { height: auto; display: block; }
+  .main { display: flex; flex-direction: column; }
+  .boardside { order: -1; }
+  .theory { border-right: 0; border-top: 1px solid var(--line); }
+  .theory-scroll { overflow: visible; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+  .theory-nav { position: sticky; bottom: 0; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); z-index: 4; }
+  .stage { aspect-ratio: 900 / 540; width: 100%; max-width: 100%; flex: none; min-height: 0; }
+  .transport { padding-left: max(16px, env(safe-area-inset-left, 0px)); }
+  .legend { margin-left: 0; width: 100%; }
+  .dock, .dock.tall { height: auto; }
+  .dock-tabs { padding-left: max(12px, env(safe-area-inset-left, 0px)); }
+  .dock-body { overflow: visible; }
+  .pane { padding-left: max(16px, env(safe-area-inset-left, 0px)); }
+  .term { height: auto; }
+  .term-out { max-height: 230px; }
+  .top-note { display: none; }
+}
+@media (max-width: 600px) {
+  .stage { aspect-ratio: 400 / 470; }
+  .rp { grid-template-columns: minmax(0, 1fr); }
+  .rp-nav { flex-direction: row; border-right: 0; border-bottom: 1px solid var(--line); overflow-x: auto; }
+  .rp-tab { white-space: nowrap; }
+  .form, .kv { grid-template-columns: minmax(0, 1fr); gap: 4px; }
+  .form .help { grid-column: 1; margin-top: -2px; }
+  .form label, .form .lbl { margin-top: 6px; }
+  .inp { font-size: 16px; max-width: none; }
+  .inp.short { max-width: none; }
+  .br-wrap { grid-template-columns: minmax(0, 1fr); }
+  .tl .bar { width: 22px; }
+  .tl-steps { gap: 3px; }
+  .timeline { flex-wrap: wrap; gap: 4px 12px; }
+  .dock-tab .long { display: none; }
+  .term-in input { font-size: 16px; }
+  .tbtn.primary { min-width: 0; }
+  .mode-chip { top: 8px; right: 8px; font-size: 10.5px; padding: 3px 8px; }
+  .t-caption { flex-wrap: wrap; row-gap: 2px; }
+  .t-caption .where { white-space: normal; flex: 1 1 0; min-width: 0; }
+  .t-caption .what { flex-basis: 100%; padding-left: 18px; }
+  .rp-top { flex-wrap: wrap; }
+  .rp-top .mid, .term-top .r { display: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  #board .halo.pulse, #board .no-link, #board .node.appear, #board .link.new { animation: none; }
+  .stage.flash, .layer.fresh, .fld.ask, .tbl tr.flash td { animation: none; }
+  .tl .bar, .checks .mk, .progress i { transition: none; }
+}
+</style>
+
+<div class="app">
+  <header class="top">
+    <div class="crumb"><span class="brand">Сети для вайбкодеров</span><span>Урок <b>1</b> из 16</span></div>
+    <nav class="timeline" id="timeline" aria-label="Шаги урока"></nav>
+    <div class="top-note">Макет · адреса документационные</div>
+  </header>
+
+  <main class="main">
+    <section class="theory" aria-label="Теория">
+      <div class="theory-scroll" id="theory-scroll">
+        <div class="lesson-head">
+          <div class="eyebrow">Модуль 1 · Локальная сеть</div>
+          <h1>Что происходит, когда открываешь сайт</h1>
+          <div class="meta">≈ 15 минут · 8 шагов · 2 вопроса · 1 задача</div>
+        </div>
+        <div id="beats"></div>
+      </div>
+      <div class="theory-nav" id="theory-nav"></div>
+    </section>
+
+    <section class="boardside" aria-label="Доска">
+      <div class="stage" id="stage">
+        <svg id="board" viewBox="0 0 900 540" preserveAspectRatio="xMidYMid meet" aria-label="Схема сети">
+          <defs><clipPath id="clip-home"><rect id="clip-home-rect" x="0" y="0" width="0" height="0"/></clipPath></defs>
+          <g id="g-zones"></g>
+          <g id="g-rings" clip-path="url(#clip-home)"></g>
+          <g id="g-links"></g>
+          <g id="g-nodes"></g>
+          <g id="g-over"></g>
+          <g id="g-pkt"></g>
+          <path id="rubber" class="rubber" d=""/>
+        </svg>
+        <div class="mode-chip" id="mode-chip"></div>
+        <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+      </div>
+
+      <div class="transport" id="transport">
+        <div class="t-row">
+          <button class="tbtn" type="button" id="t-first" title="К началу трассы" aria-label="К началу трассы">|◀</button>
+          <button class="tbtn" type="button" id="t-back" title="Хоп назад">◀ шаг</button>
+          <button class="tbtn primary" type="button" id="t-play">▶ Пуск</button>
+          <button class="tbtn" type="button" id="t-step" title="Хоп вперёд">шаг ▶</button>
+          <div class="seg" role="group" aria-label="Скорость">
+            <button type="button" data-speed="0.25" aria-pressed="false" title="Замедление">×¼</button>
+            <button type="button" data-speed="1" aria-pressed="true">×1</button>
+          </div>
+          <span class="t-count" id="t-count"></span>
+          <div class="legend" aria-label="Цвет пакета">
+            <span><i style="background: var(--p-dns)"></i>DNS</span>
+            <span><i style="background: var(--p-tcp)"></i>TCP · HTTPS</span>
+            <span><i style="background: var(--p-dhcp)"></i>DHCP</span>
+          </div>
+        </div>
+        <p class="t-caption" id="t-caption" aria-live="polite"></p>
+      </div>
+
+      <div class="dock" id="dock">
+        <div class="dock-tabs" role="tablist" id="dock-tabs" aria-label="Поверхности"></div>
+        <div class="dock-body" id="dock-body">
+          <div class="pane" id="pane-env" role="tabpanel" hidden></div>
+          <div class="pane" id="pane-router" role="tabpanel" hidden></div>
+          <div class="pane term-pane" id="pane-term" role="tabpanel" hidden>
+            <div class="term">
+              <div class="term-top"><b>ноутбук</b><span id="term-if">en0 · Wi-Fi · 192.168.1.42</span><span class="r">упрощённый вывод</span></div>
+              <div class="term-out" id="term-out" aria-live="polite"></div>
+              <form class="term-in" id="term-form" autocomplete="off">
+                <label for="term-input">ноутбук:~$</label>
+                <input id="term-input" type="text" spellcheck="false" autocapitalize="off" placeholder="команда, например ping 192.168.1.1">
+              </form>
+              <div class="term-quick" id="term-quick">
+                <button type="button" data-cmd="ip a">ip a</button>
+                <button type="button" data-cmd="ipconfig">ipconfig</button>
+                <button type="button" data-cmd="ping 192.0.2.10">ping 192.0.2.10</button>
+                <button type="button" data-cmd="nslookup shop.example">nslookup shop.example</button>
+                <button type="button" data-cmd="help">help</button>
+              </div>
+            </div>
+          </div>
+          <div class="pane" id="pane-browser" role="tabpanel" hidden></div>
+        </div>
+      </div>
+    </section>
+  </main>
+</div>
+
+<script>
+(() => {
+'use strict';
+
+const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+const narrowMQ = window.matchMedia('(max-width: 600px)');
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+const $ = id => document.getElementById(id);
+
+// ---------- адреса: только документационные диапазоны и зона .example ----------
+const A = {
+  phone: { ip: '192.168.1.23', mac: '3c:22:fb:4a:10:23' },
+  laptop: { ip: '192.168.1.42', mac: '3c:22:fb:7e:00:42' },
+  routerLan: { ip: '192.168.1.1', mac: 'a4:91:b1:00:00:01' },
+  routerWan: { ip: '203.0.113.7', mac: 'a4:91:b1:00:00:02' },
+  ispGw: { ip: '203.0.113.1', mac: '00:1b:21:aa:00:01' },
+  netEdge: { mac: 'c8:4c:75:00:00:9e' },
+  dns: { ip: '192.0.2.10', mac: '52:54:00:0a:00:35' },
+  shop: { ip: '198.51.100.10', mac: '52:54:00:0b:01:bb' },
+};
+const BCAST = 'ff:ff:ff:ff:ff:ff';
+const REMEMBERED = { ssid: 'Дом', pass: 'tishina-2026' };
+const FACTORY = { ssid: 'Router-A7C1', sec: 'wpa2', pass: '7Kp2-91xQ', band: '5' };
+
+// ---------- устройства и раскладки доски ----------
+const DEV = {
+  phone: { kind: 'phone', title: 'Телефон', sub: ['192.168.1.23'], name: 'телефон' },
+  laptop: { kind: 'laptop', title: 'Ноутбук', sub: ['192.168.1.42'], name: 'ноутбук' },
+  router: { kind: 'router', title: 'Wi-Fi-роутер', sub: ['LAN 192.168.1.1', 'WAN 203.0.113.7'], name: 'роутер' },
+  internet: { kind: 'cloud', title: 'Интернет', sub: ['тысячи роутеров'], name: 'интернет' },
+  dns: { kind: 'dns', title: 'DNS-резолвер', sub: ['192.0.2.10'], name: 'резолвер' },
+  shop: { kind: 'server', title: 'shop.example', sub: ['198.51.100.10'], name: 'сервер' },
+};
+const SIZE = { phone: [150, 52], laptop: [150, 52], router: [154, 68], internet: [176, 76], dns: [150, 52], shop: [150, 52] };
+const ICON = {
+  phone: '<rect x="6.5" y="2.5" width="11" height="19" rx="2.2"/><path d="M10.5 18.5h3"/>',
+  laptop: '<rect x="4.5" y="4.5" width="15" height="10" rx="1.3"/><path d="M2.5 18.5h19M4.5 14.5l-2 4M19.5 14.5l2 4"/>',
+  router: '<rect x="3" y="12.5" width="18" height="7" rx="1.6"/><path d="M7 12.5 6 7.5M17 12.5l1-5M7 16h.01M10 16h.01"/><path d="M9.3 6.4a4 4 0 0 1 5.4 0M7.3 4.2a6.8 6.8 0 0 1 9.4 0"/>',
+  server: '<rect x="3" y="3.5" width="18" height="7" rx="1.6"/><rect x="3" y="13.5" width="18" height="7" rx="1.6"/><path d="M7 7h.01M7 17h.01M11 7h6M11 17h6"/>',
+  dns: '<rect x="4" y="3" width="16" height="18" rx="1.8"/><path d="M8 7.5h8M8 11.5h8M8 15.5h5"/><path d="M4 7H2.5M4 12H2.5M4 17H2.5"/>',
+};
+const CLOUD = 'M-70,30 C-94,30 -94,-4 -67,-6 C-66,-30 -31,-38 -19,-21 C-10,-46 35,-48 41,-19 C63,-33 94,-11 77,9 C96,17 87,30 70,30 Z';
+const LAYOUTS = {
+  wide: {
+    w: 900, h: 540,
+    pos: { phone: [115, 175], laptop: [115, 395], router: [340, 290], internet: [592, 290], dns: [592, 100], shop: [792, 290] },
+    kitchen: [115, 92],
+    zones: { home: [18, 30, 414, 490], net: [450, 30, 432, 490] },
+    rings: { b5: 205, b24: 360 },
+    kitchenLabel: 'below',
+  },
+  narrow: {
+    w: 400, h: 470,
+    pos: { phone: [96, 72], laptop: [304, 72], router: [200, 186], internet: [200, 304], dns: [96, 418], shop: [304, 418] },
+    kitchen: [92, 66],
+    zones: { home: [8, 8, 384, 240], net: [8, 258, 384, 204] },
+    rings: { b5: 122, b24: 215 },
+    kitchenLabel: 'below',
+  },
+};
+const LINKS = {
+  'phone-router': { a: 'phone', b: 'router' },
+  'laptop-router': { a: 'laptop', b: 'router' },
+  'router-internet': { a: 'router', b: 'internet' },
+  'internet-dns': { a: 'internet', b: 'dns' },
+  'internet-shop': { a: 'internet', b: 'shop' },
+};
+const lk = (a, b) => (LINKS[`${a}-${b}`] ? `${a}-${b}` : `${b}-${a}`);
+const LAN = new Set(['phone-router', 'laptop-router']);
+
+function macOn(dev, link) {
+  if (dev === 'router') return link === 'router-internet' ? A.routerWan.mac : A.routerLan.mac;
+  if (dev === 'internet') return link === 'router-internet' ? A.ispGw.mac : A.netEdge.mac;
+  return A[dev].mac;
+}
+
+// ---------- пакеты: трасса — это список хопов, у каждого хопа свой конверт ----------
+const F = (f, k, v, nat = false) => ({ f, k, v: String(v), nat });
+const LAYER_SMALL = { link: 'канальный', ip: 'сетевой', tp: 'транспортный', app: 'прикладной' };
+
+function pkt(s) {
+  const hops = [], n = s.path.length - 1;
+  for (let j = 0; j < n; j++) {
+    const from = s.path[j], to = s.path[j + 1], link = lk(from, to), lan = LAN.has(link);
+    const cIp = lan ? A.phone.ip : A.routerWan.ip, cPort = lan ? s.cport : s.nport;
+    const sIp = A[s.server].ip, sPort = s.sport;
+    const [ipS, ipD, pS, pD] = s.up ? [cIp, sIp, cPort, sPort] : [sIp, cIp, sPort, cPort];
+    const env = [
+      { k: 'link', name: link === 'phone-router' ? 'Wi-Fi' : 'Ethernet', fields: [F('link.src', 'от', macOn(from, link)), F('link.dst', 'кому', macOn(to, link))] },
+      { k: 'ip', name: 'IP', fields: [F('ip.src', 'от', ipS, s.up), F('ip.dst', 'кому', ipD, !s.up), F('ip.ttl', 'TTL', 64 - j)] },
+      { k: 'tp', name: s.l4, fields: [F('tp.sport', 'порт от', pS, s.up), F('tp.dport', 'порт кому', pD, !s.up)].concat(s.flags ? [F('tp.flags', 'флаги', s.flags)] : []) },
+    ];
+    if (s.app) env.push({ k: 'app', name: s.app.name, note: s.app.note, fields: s.app.fields.map(([k, v], i) => F('app.' + i, k, v)) });
+    hops.push({ pkt: s.id, label: s.label, proto: s.proto, from, to, link, env, note: Array.isArray(s.notes) ? s.notes[j] : s.notes, j, n });
+  }
+  return hops;
+}
+
+function dhcp(id, label, up, fields, note, extra = {}) {
+  const env = [
+    { k: 'link', name: 'Wi-Fi', fields: [F('link.src', 'от', up ? A.phone.mac : A.routerLan.mac), F('link.dst', 'кому', up ? BCAST : A.phone.mac)] },
+    { k: 'ip', name: 'IP', fields: [F('ip.src', 'от', up ? '0.0.0.0' : A.routerLan.ip), F('ip.dst', 'кому', up ? '255.255.255.255' : A.phone.ip), F('ip.ttl', 'TTL', 64)] },
+    { k: 'tp', name: 'UDP', fields: [F('tp.sport', 'порт от', up ? 68 : 67), F('tp.dport', 'порт кому', up ? 67 : 68)] },
+    { k: 'app', name: 'DHCP', fields: fields.map(([k, v], i) => F('app.' + i, k, v)) },
+  ];
+  return [{ pkt: id, label, proto: 'dhcp', from: up ? 'phone' : 'router', to: up ? 'router' : 'phone', link: 'phone-router', env, note, j: 0, n: 1, ...extra }];
+}
+
+const HTTP_NOTE = 'на самом деле зашифрован TLS';
+const SPEC = {
+  dnsQ: { id: 'dns-q', label: 'DNS-вопрос', proto: 'dns', up: true, server: 'dns', path: ['phone', 'router', 'internet', 'dns'], cport: 51513, nport: 40001, sport: 53, l4: 'UDP',
+    app: { name: 'DNS', fields: [['вопрос', 'A shop.example ?']] },
+    notes: ['Телефон не знает адреса shop.example и спрашивает резолвер. Пакет уходит роутеру по радио.',
+      'Роутер меняет кадр Wi-Fi на Ethernet и подставляет свой внешний адрес 203.0.113.7 вместо 192.168.1.23. Это NAT.',
+      'Роутеры интернета передают пакет дальше, пока он не дойдёт до 192.0.2.10.'] },
+  dnsA: { id: 'dns-a', label: 'DNS-ответ', proto: 'dns', up: false, server: 'dns', path: ['dns', 'internet', 'router', 'phone'], cport: 51513, nport: 40001, sport: 53, l4: 'UDP',
+    app: { name: 'DNS', fields: [['ответ', 'shop.example = 198.51.100.10']] },
+    notes: ['Резолвер нашёл запись: shop.example = 198.51.100.10.',
+      'Ответ адресован 203.0.113.7, то есть домашнему роутеру.',
+      'Роутер по своей таблице NAT понимает, что это ответ телефону. Телефон запоминает адрес.'] },
+  get: { id: 'get', label: 'HTTP-запрос', proto: 'tcp', up: true, server: 'shop', path: ['phone', 'router', 'internet', 'shop'], cport: 51514, nport: 40002, sport: 443, l4: 'TCP', flags: 'PSH, ACK',
+    app: { name: 'HTTP', note: HTTP_NOTE, fields: [['метод', 'GET'], ['путь', '/'], ['Host', 'shop.example']] },
+    notes: ['Запрос страницы на 198.51.100.10. Получатель не в домашней сети, поэтому пакет уходит шлюзу, то есть роутеру.',
+      'Новый внешний конверт: кадр Ethernet. Адрес отправителя подменён (NAT), адрес получателя 198.51.100.10 не меняется.',
+      'Пакет у сервера. Порт 443 говорит, какой программе на сервере его отдать.'] },
+  ok: { id: 'ok', label: 'HTTP-ответ', proto: 'tcp', up: false, server: 'shop', path: ['shop', 'internet', 'router', 'phone'], cport: 51514, nport: 40002, sport: 443, l4: 'TCP', flags: 'PSH, ACK',
+    app: { name: 'HTTP', note: HTTP_NOTE, fields: [['статус', '200 OK'], ['тип', 'text/html'], ['размер', '14 КБ']] },
+    notes: ['Сервер отвечает 200 OK и кладёт в ответ страницу.',
+      'Ответ едет обратно на 203.0.113.7, тем же путём.',
+      'Роутер возвращает ответ телефону по таблице NAT. Страница открывается.'] },
+};
+const tcpSpec = (id, label, up, flags, app, note) => ({ ...SPEC.get, id, label, up, flags, app, notes: note,
+  path: up ? SPEC.get.path : SPEC.ok.path });
+const FULL_SPECS = [
+  { ...SPEC.dnsQ, notes: 'DNS-вопрос: какой адрес у shop.example?' },
+  { ...SPEC.dnsA, notes: 'DNS-ответ: 198.51.100.10.' },
+  tcpSpec('syn', 'TCP SYN', true, 'SYN', null, 'TCP SYN: телефон просит сервер открыть соединение на порт 443.'),
+  tcpSpec('synack', 'TCP SYN-ACK', false, 'SYN, ACK', null, 'TCP SYN-ACK: сервер согласен.'),
+  tcpSpec('ack', 'TCP ACK', true, 'ACK', null, 'TCP ACK: соединение открыто.'),
+  tcpSpec('chello', 'TLS ClientHello', true, 'PSH, ACK', { name: 'TLS', fields: [['сообщение', 'ClientHello'], ['имя', 'shop.example']] }, 'TLS: телефон предлагает шифрование и называет имя сайта.'),
+  tcpSpec('shello', 'TLS ServerHello', false, 'PSH, ACK', { name: 'TLS', fields: [['сообщение', 'ServerHello + сертификат'], ['имя', 'shop.example']] }, 'TLS: сервер показывает сертификат на shop.example.'),
+  { ...SPEC.get, notes: 'HTTP GET / внутри зашифрованного канала.' },
+  { ...SPEC.ok, notes: 'HTTP 200 OK: страница пришла.' },
+];
+
+const T_DNS = [...pkt(SPEC.dnsQ), ...pkt(SPEC.dnsA)];
+const T_HTTP = [...pkt(SPEC.get), ...pkt(SPEC.ok)];
+const T_FULL = FULL_SPECS.flatMap(pkt);
+const T_DHCP = [
+  ...dhcp('d1', 'DHCP Discover', true, [['сообщение', 'Discover'], ['вопрос', 'кто раздаёт адреса?']], 'Телефон подключился к «Дом», но адреса у него нет. Он кричит всем: кто раздаёт адреса?'),
+  ...dhcp('d2', 'DHCP Offer', false, [['сообщение', 'Offer'], ['адрес', '192.168.1.23']], 'Роутер отвечает: могу дать 192.168.1.23.'),
+  ...dhcp('d3', 'DHCP Request', true, [['сообщение', 'Request'], ['беру', '192.168.1.23']], 'Телефон: беру 192.168.1.23.'),
+  ...dhcp('d4', 'DHCP Ack', false, [['сообщение', 'Ack'], ['адрес', '192.168.1.23/24'], ['шлюз', '192.168.1.1'], ['DNS', '192.0.2.10']], 'Роутер подтверждает адрес и сообщает шлюз и DNS. Теперь у телефона есть 192.168.1.23.', { setsIp: true }),
+];
+const withDrop = (hop, reason, note) => ({ ...hop, drop: reason, note: note || hop.note });
+
+// ---------- сценарий урока ----------
+const R = (id, text) => {
+  const cls = id.startsWith('env:') ? ` env-${id.slice(4)}` : id === 'term' ? ' act' : '';
+  return `<span class="ref${cls}" data-ref="${id}" tabindex="0">${text}</span>`;
+};
+const ENV_REF = { 'env:link': 'link', 'env:ip': 'ip', 'env:tcp': 'tp', 'env:http': 'app' };
+
+const STEPS = [
+  { id: 'your-network', title: 'Ваша сеть',
+    html: () => `<p>Вы набираете в телефоне shop.example, и через полсекунды открывается страница. За эти полсекунды между ${R('phone', 'телефоном')} и ${R('shop', 'сервером магазина')} пробегает около десятка пакетов.</p>
+      <p>На доске всё, что в этом участвует: телефон, ${R('router', 'Wi-Fi-роутер')} у вас дома, ${R('internet', 'интернет')} (на самом деле тысячи чужих роутеров) и сервер. Волнистая пунктирная линия — радио, сплошная — кабель.</p>
+      <p>У каждого устройства есть адрес, он подписан на карточке. Ноутбук покажет свой сам: откройте ${R('term', 'терминал ноутбука')} под доской и наберите <code>ip a</code>. А к уроку 7 вы откроете с телефона собственный dev-сервер.</p>` },
+  { id: 'name-to-number', title: 'Имя превращается в адрес',
+    html: () => `<p>Сети не понимают имён, только числа: IP-адреса. Поэтому сначала телефон спрашивает ${R('dns', 'DNS-резолвер')}: какой адрес у shop.example? Ответ: <strong>198.51.100.10</strong>. Это как найти номер в телефонной книге перед звонком.</p>
+      <p>Ответ телефон запомнит и в следующий раз спрашивать не будет. Тот же вопрос можно задать из ${R('term', 'терминала')}: <code>nslookup shop.example</code>. Подробно про DNS — урок 10.</p>` },
+  { id: 'hop-by-hop', title: 'Хоп за хопом',
+    html: () => `<p>Теперь телефон отправляет запрос страницы на 198.51.100.10. Пакет не летит напрямую: телефон отдаёт его ${R('router', 'роутеру')}, роутер — роутеру провайдера, и так далее. Каждый узел знает только, кому передать дальше, как почтовое отделение знает соседнее отделение, а не весь путь письма.</p>
+      <p>Нажмите «шаг ▶», чтобы провести пакет вручную, или включите замедление ×¼. Пакет можно нажать: откроется его конверт.</p>` },
+  { id: 'first-hop', title: 'Вопрос: первый шаг', quiz: 'first-hop',
+    html: () => `<p>Проверим, что картина сложилась. Телефон отправляет пакет серверу магазина. На какое устройство пакет попадёт первым? Кликните его на доске.</p>` },
+  { id: 'envelope', title: 'Конверт в конверте',
+    html: () => `<p>Остановим пакет на роутере и откроем его. Внутри несколько вложенных конвертов.</p>
+      <p>Снаружи ${R('env:link', 'кадр Wi-Fi')}: он адресован от MAC телефона к MAC роутера, и на следующем хопе его сменит новый. Глубже ${R('env:ip', 'IP')}: от 192.168.1.23 к 198.51.100.10. Адрес получателя доезжает до сервера без изменений, а адрес отправителя роутер подменит на свой внешний 203.0.113.7. Это NAT, о нём урок 9.</p>
+      <p>Ещё глубже ${R('env:tcp', 'TCP')} с портом 443: это номер программы на сервере. В середине ${R('env:http', 'HTTP')}: «дай страницу /». Каждый слой занимается своим делом и не заглядывает в чужие конверты, об этом урок 2.</p>
+      <p>Нажмите «шаг ▶»: на следующем хопе сменится внешний конверт и сработает NAT.</p>
+      <p><span class="simpl">упрощено</span> На самом деле HTTP едет внутри TLS в зашифрованном виде, и роутер его не видит. Здесь конверт открыт для наглядности, подробно — урок 11.</p>` },
+  { id: 'which-layer', title: 'Вопрос: чей это номер', quiz: 'which-layer',
+    html: () => `<p>В конверте подсвечено поле <strong>443</strong>. Какой слой отвечает за него? Выберите слой под конвертом.</p>` },
+  { id: 'connect-it', title: 'Задача: подключите телефон', task: true,
+    html: () => `<p>Вы переехали. Провайдер поставил новый ${R('router', 'роутер')}, ${R('laptop', 'ноутбук')} подключён к нему кабелем, и с ноутбука уже открыта панель роутера. Кабель провайдера в роутер ещё не воткнут, а ${R('phone', 'телефон')} лежит на кухне и не находит знакомой сети. В браузере телефона ошибка.</p>` },
+  { id: 'summary', title: 'Итог',
+    html: () => `<p>Открыть страницу — это четыре вещи: имя превращается в адрес (DNS), пакеты идут хоп за хопом через роутер и интернет, у каждого пакета конверты слоёв, ответ возвращается тем же путём.</p>
+      <p>На доске полный прогон: DNS, рукопожатие TCP, TLS и HTTP. Это и есть «около десятка пакетов» из первого шага.</p>
+      <p>Дальше разберём каждый конверт отдельно: слои (урок 2), MAC и коммутатор (3), Wi-Fi (4), IP-адреса (5).</p>` },
+];
+const TASK = 6;
+
+const QUIZ = {
+  'first-hop': {
+    answer: 'router', cands: ['router', 'laptop', 'internet', 'shop'],
+    wrong: {
+      laptop: 'Ноутбук в той же сети, но пакет адресован не ему.',
+      internet: 'До интернета телефон не достаёт: между ними роутер.',
+      shop: 'Напрямую нельзя: между телефоном и сервером нет связи.',
+    },
+    tag: { laptop: 'пакет не ему', internet: 'напрямую не достать', shop: 'напрямую связи нет' },
+    explain: 'Всё, что не в своей сети, телефон отдаёт шлюзу, то есть роутеру.',
+  },
+  'which-layer': {
+    answer: 'tp',
+    options: [['link', 'Канальный', 'Wi-Fi, Ethernet'], ['ip', 'Сетевой', 'IP'], ['tp', 'Транспортный', 'TCP, UDP'], ['app', 'Прикладной', 'HTTP']],
+    wrong: {
+      link: 'В кадре Wi-Fi только MAC-адреса соседей по радио. Номеров программ там нет.',
+      ip: 'В IP-заголовке адреса машин, а не номера программ.',
+      app: 'HTTP говорит, что нужно («дай /»), но не какой программе на сервере это отдать.',
+    },
+    explain: 'Порт выбирает программу на устройстве: 443 — HTTPS, 5173 — ваш dev-сервер.',
+  },
+};
+
+// ---------- состояние ----------
+const S = {
+  step: 0, maxStep: 0, tab: 'browser', layout: narrowMQ.matches ? 'narrow' : 'wide',
+  quiz: { 'first-hop': null, 'which-layer': null },
+  envHl: null, appear: 'all', flashPath: null, gesture: null, armed: null, summaryDone: false,
+};
+const T = {
+  wan: false, wifi: { ...FACTORY }, draft: { ...FACTORY },
+  dhcp: { on: true, from: '192.168.1.20', to: '192.168.1.99' }, dhcpDraft: { on: true, from: '192.168.1.20', to: '192.168.1.99' },
+  assoc: false, phoneIp: null, reached: false, solved: false, help: false, hint: 0, fails: 0,
+  rpTab: 'status', running: false, outcome: null, browser: { code: 'ERR_INTERNET_DISCONNECTED' },
+  saved: null, errors: {}, demo: false, flashRow: null,
+};
+const resetTask = () => Object.assign(T, {
+  wan: false, wifi: { ...FACTORY }, draft: { ...FACTORY },
+  dhcp: { on: true, from: '192.168.1.20', to: '192.168.1.99' }, dhcpDraft: { on: true, from: '192.168.1.20', to: '192.168.1.99' },
+  assoc: false, phoneIp: null, reached: false, solved: false, help: false, fails: 0,
+  running: false, outcome: null, browser: { code: 'ERR_INTERNET_DISCONNECTED' }, saved: null, errors: {}, flashRow: null,
+});
+
+// ---------- проигрыватель трассы: дискретные хопы, пауза на каждом ----------
+const PL = {
+  trace: [], stop: 0, t: 0, phase: 'rest', playing: false, speed: 1,
+  fly: 900, dwell: 450, wait: 0, pauseAt: null, stopAfter: null, counter: 'hop', locked: false,
+  onStop: null, onEnd: null, sel: false,
+};
+const NH = () => PL.trace.length;
+function load(trace, o = {}) {
+  Object.assign(PL, {
+    trace, stop: o.at || 0, t: 0, phase: 'rest', playing: !!o.autoplay,
+    fly: o.fly || 900, dwell: reduce ? Math.max(o.dwell ?? 450, 1000) : (o.dwell ?? 450),
+    wait: o.delay ?? 500, pauseAt: o.pauseAt ?? null, stopAfter: null, counter: o.counter || 'hop',
+    locked: !!o.locked, onStop: o.onStop || null, onEnd: o.onEnd || null, sel: false,
+  });
+}
+function curHop() {
+  if (!NH()) return null;
+  const i = PL.phase === 'fly' ? PL.stop : Math.max(0, PL.stop - 1);
+  return { i, h: PL.trace[i], arrived: PL.phase === 'rest' && PL.stop > 0, atStart: PL.phase === 'rest' && PL.stop === 0 };
+}
+function arrive() {
+  PL.stop++;
+  PL.phase = 'rest'; PL.t = 0; PL.wait = PL.dwell;
+  const h = PL.trace[PL.stop - 1];
+  if (PL.onStop) PL.onStop(PL.stop, h);
+  if (PL.stop >= NH() || h.drop) {
+    PL.stop = Math.min(PL.stop, NH());
+    PL.playing = false;
+    if (PL.onEnd) { const f = PL.onEnd; f(h); }
+  } else if (PL.pauseAt === PL.stop || PL.stopAfter === PL.stop) {
+    PL.playing = false; PL.stopAfter = null;
+  }
+}
+function tick(dt) {
+  if (!PL.playing || !NH()) return false;
+  if (PL.phase === 'rest') {
+    if (PL.stop >= NH()) { PL.playing = false; return true; }
+    PL.wait -= dt * PL.speed;
+    if (PL.wait > 0) return false;
+    if (reduce) { arrive(); return true; }
+    PL.phase = 'fly'; PL.t = 0;
+    return true;
+  }
+  PL.t += dt * PL.speed / PL.fly;
+  if (PL.t >= 1) { arrive(); return true; }
+  return false;
+}
+function stepFwd() {
+  if (!NH() || PL.locked) return;
+  if (PL.phase === 'fly') { PL.stopAfter = null; PL.pauseAt = null; arrive(); PL.playing = false; }
+  else if (PL.stop < NH()) {
+    if (reduce) { arrive(); PL.playing = false; }
+    else { PL.phase = 'fly'; PL.t = 0; PL.playing = true; PL.stopAfter = PL.stop + 1; }
+  }
+  sync();
+}
+function stepBack() {
+  if (!NH() || PL.locked) return;
+  PL.playing = false; PL.stopAfter = null;
+  if (PL.phase === 'fly') { PL.phase = 'rest'; PL.t = 0; }
+  else if (PL.stop > 0) PL.stop--;
+  sync();
+}
+function toFirst() {
+  if (!NH() || PL.locked) return;
+  PL.playing = false; PL.stop = 0; PL.phase = 'rest'; PL.t = 0; PL.stopAfter = null;
+  sync();
+}
+function togglePlay() {
+  if (!NH() || PL.locked) return;
+  if (PL.playing) PL.playing = false;
+  else {
+    if (PL.stop >= NH() || (PL.trace[PL.stop - 1] && PL.trace[PL.stop - 1].drop)) { PL.stop = 0; PL.phase = 'rest'; }
+    PL.pauseAt = null; PL.stopAfter = null;
+    PL.playing = true; PL.wait = Math.min(PL.wait, 250);
+  }
+  sync();
+}
+
+// ---------- сцена шага ----------
+function enterStep(i) {
+  S.step = i;
+  S.maxStep = Math.max(S.maxStep, i);
+  S.gesture = null; S.armed = null; S.envHl = null;
+  $('rubber').setAttribute('d', '');
+  if (i === 0) { load([]); S.tab = 'browser'; }
+  else if (i === 1) { load(T_DNS, { autoplay: true, delay: 700, dwell: 500 }); S.tab = 'browser'; }
+  else if (i === 2) { load(T_HTTP, { autoplay: true, delay: 700, dwell: 900 }); S.tab = 'browser'; }
+  else if (i === 3) { const q = S.quiz['first-hop']; load(T_HTTP, { at: q ? 1 : 0, locked: !q }); }
+  else if (i === 4) { load(T_HTTP, { autoplay: !reduce, at: reduce ? 1 : 0, pauseAt: 1, delay: 500 }); S.tab = 'env'; }
+  else if (i === 5) { const q = S.quiz['which-layer']; load(T_HTTP, { at: 1, locked: !q }); S.tab = 'env'; }
+  else if (i === TASK) { load(T.solved ? taskTrace().hops : [], { at: T.solved ? 999 : 0 }); if (T.solved) PL.stop = NH(); S.tab = 'router'; }
+  else if (i === 7) {
+    S.summaryDone = false;
+    load(T_FULL, { autoplay: true, delay: 600, fly: 420, dwell: 80, counter: 'packet', onEnd: () => { S.summaryDone = true; renderCard(); } });
+    S.tab = 'browser';
+  }
+  if (i === 1 && S.maxStep === 1 && !S.seenDns) { S.appear = 'dns'; S.seenDns = true; }
+}
+
+function net() {
+  const i = S.step, task = i >= TASK;
+  const devices = ['phone', 'laptop', 'router', 'internet', 'shop'];
+  if (i >= 1) devices.push('dns');
+  const links = [];
+  if (!task || T.assoc) links.push({ id: 'phone-router', m: 'radio' });
+  links.push({ id: 'laptop-router', m: task ? 'cable' : 'radio' });
+  if (!task || T.wan) links.push({ id: 'router-internet', m: 'cable' });
+  if (i >= 1) links.push({ id: 'internet-dns', m: 'cable' });
+  links.push({ id: 'internet-shop', m: 'cable' });
+  return { devices, links, kitchen: task, rings: i === TASK && !T.solved, loose: task && !T.wan };
+}
+
+// ---------- геометрия доски ----------
+const svg = $('board');
+let NET = net();
+const LAY = () => LAYOUTS[S.layout];
+const RING_LABEL = { wide: { b5: [148, 236], b24: [30, 470] }, narrow: { b5: [84, 152], b24: [14, 244] } };
+function posOf(id) { return id === 'phone' && NET.kitchen ? LAY().kitchen : LAY().pos[id]; }
+function edgePt(id, tx, ty, pad = 3) {
+  const [cx, cy] = posOf(id), [w, h] = SIZE[id], dx = tx - cx, dy = ty - cy;
+  if (!dx && !dy) return [cx, cy];
+  if (id === 'internet') {
+    const rx = 86 + pad, ry = 34 + pad, k = 1 / Math.sqrt(dx * dx / (rx * rx) + dy * dy / (ry * ry));
+    return [cx + dx * k, cy + dy * k];
+  }
+  const k = Math.min((w / 2 + pad) / Math.abs(dx || 1e-9), (h / 2 + pad) / Math.abs(dy || 1e-9));
+  return [cx + dx * k, cy + dy * k];
+}
+function linkEnds(id, pad = 3) {
+  const { a, b } = LINKS[id], pa = posOf(a), pb = posOf(b);
+  return [edgePt(a, pb[0], pb[1], pad), edgePt(b, pa[0], pa[1], pad)];
+}
+const P = p => `${p[0].toFixed(1)},${p[1].toFixed(1)}`;
+function wavePath(p0, p1) {
+  const dx = p1[0] - p0[0], dy = p1[1] - p0[1], len = Math.hypot(dx, dy), ux = dx / len, uy = dy / len;
+  const pts = [];
+  for (let s = 0; s < len; s += 2) {
+    const o = 4 * Math.min(1, s / 10, (len - s) / 10) * Math.sin(2 * Math.PI * s / 13);
+    pts.push(P([p0[0] + ux * s - uy * o, p0[1] + uy * s + ux * o]));
+  }
+  pts.push(P(p1));
+  return 'M' + pts.join(' L');
+}
+function portPt() { const c = posOf('internet'); return edgePt('router', c[0], c[1], 0); }
+function looseEnd() {
+  const r = posOf('router'), c0 = edgePt('internet', r[0], r[1], 0), pp = portPt();
+  const e = [c0[0] + (pp[0] - c0[0]) * 0.42, c0[1] + (pp[1] - c0[1]) * 0.42];
+  const droop = S.layout === 'wide' ? [0, 26] : [30, 0];
+  return { c0, e: [e[0] + droop[0], e[1] + droop[1]], ctl: [(c0[0] + e[0]) / 2 + droop[0] * .2, (c0[1] + e[1]) / 2 + droop[1] * 1.3 + (S.layout === 'wide' ? 0 : 0)] };
+}
+
+// ---------- что показывает доска на этом шаге ----------
+function marks() {
+  const ann = {}, halo = {}, cands = [], noLink = [];
+  const i = S.step, ch = curHop();
+  if (i === 0) ann.phone = ['вы здесь', 'info'];
+  if (i === 1 && PL.stop >= NH()) ann.phone = ['shop.example = 198.51.100.10', 'ok'];
+  if (i === 2 && PL.stop >= NH()) ann.phone = ['страница получена', 'ok'];
+  if (i === 3) {
+    const q = S.quiz['first-hop'], Q = QUIZ['first-hop'];
+    if (!q) Q.cands.forEach(id => { cands.push(id); halo[id] = ['info', true]; });
+    else {
+      halo.router = ['ok', false];
+      ann.router = [q.pick === 'router' ? 'верно: шлюз' : 'правильный ответ', 'ok'];
+      if (q.pick !== 'router') {
+        halo[q.pick] = ['bad', false];
+        ann[q.pick] = [Q.tag[q.pick], 'bad'];
+        if (q.pick === 'shop') noLink.push(['phone', 'shop']);
+      }
+    }
+  }
+  if ((i === 4 || i === 5) && PL.phase === 'rest' && PL.stop === 1) ann.router = ['пакет остановлен здесь', 'info'];
+  if (i === TASK) {
+    if (!T.wan) ann.router = ['WAN: нет кабеля', 'warn'];
+    const wide = S.layout === 'wide';
+    if (!T.assoc) { if (wide) ann.phone = ['нет сети Wi-Fi', 'bad']; }
+    else if (T.solved) ann.phone = ['страница открылась', 'ok'];
+    else if (!T.phoneIp && !T.running && wide) ann.phone = ['нет адреса', 'bad'];
+    if (S.armed === 'port') halo.internet = ['info', true];
+    if (S.armed === 'plug') halo.router = ['info', true];
+  }
+  if (i === 7 && S.summaryDone) ann.shop = ['200 OK', 'ok'];
+  if (ch && ch.arrived && ch.h.drop) { ann[ch.h.to] = [ch.h.drop, 'bad']; halo[ch.h.to] = ['bad', false]; }
+  return { ann, halo, cands, noLink };
+}
+
+function nodeSvg(id, o) {
+  const [cx, cy] = posOf(id), [w, h] = SIZE[id], d = DEV[id];
+  const cls = ['node', id === 'internet' ? 'cloud' : '', o.hl ? 'hl' : '', o.off ? 'off' : '', o.cand ? 'cand' : '', o.appear ? 'appear' : '', S.refHl === id ? 'ref-hover' : ''].filter(Boolean).join(' ');
+  const attrs = o.focus ? ` tabindex="0" role="button" aria-label="${esc(o.focus)}"` : '';
+  const style = o.appear ? ` style="animation-delay:${o.delay}ms"` : '';
+  if (id === 'internet') {
+    return `<g class="${cls}" data-node="${id}"${attrs}${style}><path class="body" transform="translate(${cx},${cy + 5})" d="${CLOUD}"/>
+      <text class="title" x="${cx}" y="${cy + 1}" text-anchor="middle">${d.title}</text><text class="sub" x="${cx}" y="${cy + 17}" text-anchor="middle">${d.sub[0]}</text></g>`;
+  }
+  const subs = o.sub || d.sub, x0 = cx - w / 2, y0 = cy - h / 2;
+  const top = h / 2 - ((1 + subs.length) * 15) / 2 + 11;
+  return `<g class="${cls}" data-node="${id}"${attrs}${style}>
+    <rect class="body" x="${x0}" y="${y0}" width="${w}" height="${h}" rx="10"/>
+    <g class="icon" transform="translate(${x0 + 11},${cy - 12})">${ICON[d.kind]}</g>
+    <text class="title" x="${x0 + 43}" y="${y0 + top}">${esc(d.title)}</text>
+    ${subs.map((s, k) => `<text class="sub" x="${x0 + 43}" y="${y0 + top + 15 * (k + 1)}">${esc(s)}</text>`).join('')}
+  </g>`;
+}
+function haloSvg(id, tone, pulse) {
+  const [cx, cy] = posOf(id), [w, h] = SIZE[id], c = `halo ${tone}${pulse ? ' pulse' : ''}`;
+  if (id === 'internet') return `<ellipse class="${c}" cx="${cx}" cy="${cy}" rx="${w / 2 + 10}" ry="${h / 2 + 8}"/>`;
+  return `<rect class="${c}" x="${cx - w / 2 - 7}" y="${cy - h / 2 - 7}" width="${w + 14}" height="${h + 14}" rx="15"/>`;
+}
+function annSvg(id, text, tone) {
+  const lay = LAY(), [cx, cy] = posOf(id), [, h] = SIZE[id];
+  const tw = text.length * 6.7 + 20;
+  let x = clamp(cx - tw / 2, 6, lay.w - tw - 6);
+  let y = cy - h / 2 - 34, s0 = y + 22, s1 = cy - h / 2 - 1;
+  const zoneTop = (cy > lay.zones.net[1] && S.layout === 'narrow' ? lay.zones.net[1] : lay.zones.home[1]) + 20;
+  if (y < zoneTop) { y = cy + h / 2 + 30; s0 = y; s1 = cy + h / 2 + 1; x = clamp(cx - tw * 0.8, 6, lay.w - tw - 6); }
+  else if (S.layout === 'narrow' && id === 'router') x = clamp(cx - 20, 6, lay.w - tw - 6);
+  return `<g class="ann ${tone}"><path class="stem" d="M${cx},${s0} V${s1}"/><rect x="${x}" y="${y}" width="${tw}" height="22" rx="6"/><text x="${x + tw / 2}" y="${y + 15}" text-anchor="middle">${esc(text)}</text></g>`;
+}
+
+function litLinks() {
+  const lit = new Set();
+  let cur = null;
+  for (let k = 0; k < Math.min(PL.stop, NH()); k++) lit.add(PL.trace[k].link);
+  if (PL.phase === 'fly' && PL.trace[PL.stop]) { cur = PL.trace[PL.stop].link; lit.add(cur); }
+  if (S.flashPath && S.flashPath.until > performance.now()) S.flashPath.links.forEach(l => lit.add(l));
+  return { lit, cur };
+}
+
+function renderBoard() {
+  NET = net();
+  const lay = LAY();
+  svg.setAttribute('viewBox', `0 0 ${lay.w} ${lay.h}`);
+  const [hx, hy, hw, hh] = lay.zones.home, [nx, ny, nw, nh] = lay.zones.net;
+  const cr = $('clip-home-rect');
+  cr.setAttribute('x', hx); cr.setAttribute('y', hy); cr.setAttribute('width', hw); cr.setAttribute('height', hh);
+  $('g-zones').innerHTML = `<rect class="zone home" x="${hx}" y="${hy}" width="${hw}" height="${hh}" rx="16"/>
+    <rect class="zone net" x="${nx}" y="${ny}" width="${nw}" height="${nh}" rx="16"/>
+    <text class="zone-label" x="${hx + 14}" y="${hy + 18}">ДОМ <tspan class="addr">· 192.168.1.0/24</tspan></text>
+    <text class="zone-label" x="${nx + 14}" y="${ny + 18}">ИНТЕРНЕТ</text>`;
+
+  // кольца Wi-Fi в задаче: какой диапазон докуда достаёт
+  let rings = '', ringLabels = '';
+  if (NET.rings) {
+    const [rx, ry] = posOf('router'), b = T.wifi.band, show = b === 'both' ? ['b24', 'b5'] : [b === '5' ? 'b5' : 'b24'];
+    show.forEach(k => {
+      rings += `<circle class="ring-fill ${k}" cx="${rx}" cy="${ry}" r="${lay.rings[k]}"/><circle class="ring ${k}" cx="${rx}" cy="${ry}" r="${lay.rings[k]}"/>`;
+      const [lx, ly] = RING_LABEL[S.layout][k];
+      ringLabels += `<text class="ring-label ${k}" x="${lx}" y="${ly}">${k === 'b5' ? '5 ГГц' : '2.4 ГГц'}</text>`;
+    });
+  }
+  $('g-rings').innerHTML = rings;
+
+  const { ann, halo, cands, noLink } = marks();
+  const { lit, cur } = litLinks();
+  const ch = curHop();
+  let L = '';
+  noLink.forEach(([a, b]) => {
+    const pa = posOf(a), pb = posOf(b);
+    L += `<path class="no-link" d="M${P(edgePt(a, pb[0], pb[1], 6))} L${P(edgePt(b, pa[0], pa[1], 6))}"/>`;
+  });
+  for (const l of NET.links) {
+    const [p0, p1] = linkEnds(l.id), radio = l.m === 'radio';
+    const d = radio ? wavePath(p0, p1) : `M${P(p0)} L${P(p1)}`;
+    if (S.envHl === 'link' && ch && ch.h.link === l.id) L += `<path class="link-hl" d="M${P(p0)} L${P(p1)}"/>`;
+    const fresh = S.appear === 'all' || (S.appear === 'dns' && l.id === 'internet-dns') || S.newLink === l.id;
+    L += `<path class="link${radio ? ' radio' : ''}${lit.has(l.id) ? ' lit' : ''}${cur === l.id ? ' cur' : ''}${fresh ? ' new' : ''}" d="${d}" data-link="${l.id}"><title>${radio ? 'радио (Wi-Fi)' : 'кабель'}</title></path>`;
+  }
+  if (NET.loose) {
+    const { c0, e, ctl } = looseEnd();
+    L += `<path class="loose" d="M${P(c0)} Q${P(ctl)} ${P(e)}"/>`;
+  }
+  $('g-links').innerHTML = L;
+
+  // устройства
+  const hl = new Set();
+  if (ch) {
+    if (PL.phase === 'fly') { hl.add(ch.h.from); hl.add(ch.h.to); }
+    else hl.add(ch.atStart ? ch.h.from : ch.h.to);
+  }
+  if (S.envHl === 'ip' && ch) envDevices(ch.h).forEach(id => hl.add(id));
+  if ((S.envHl === 'tp' || S.envHl === 'app') && ch) hl.add(serverOf(ch.h));
+  const editTask = S.step === TASK && !T.solved && !T.demo;
+  let N = '';
+  NET.devices.forEach((id, k) => {
+    const appear = S.appear === 'all' || (S.appear === 'dns' && id === 'dns');
+    const o = { hl: hl.has(id), appear, delay: S.appear === 'all' ? k * 170 + 80 : 0 };
+    if (cands.includes(id)) { o.cand = true; o.focus = DEV[id].title; }
+    if (id === 'phone' && S.step >= TASK) {
+      if (!T.assoc) { o.off = true; o.sub = ['нет сети']; }
+      else o.sub = [T.phoneIp || 'ждёт адрес'];
+    }
+    if (editTask && S.armed === 'port' && id === 'internet') o.focus = 'Подключить кабель к облаку «Интернет»';
+    if (editTask && S.armed === 'plug' && id === 'router') o.focus = 'Подключить кабель в порт WAN роутера';
+    N += nodeSvg(id, o);
+  });
+  $('g-nodes').innerHTML = N;
+  S.appear = null; S.newLink = null;
+
+  // поверх: ореолы, порты, подписи
+  let O = '';
+  for (const id in halo) if (NET.devices.includes(id)) O += haloSvg(id, halo[id][0], halo[id][1] && !reduce);
+  O += ringLabels;
+  if (NET.kitchen) {
+    const [kx, ky] = posOf('phone'), [w, h] = SIZE.phone;
+    O += S.layout === 'wide' ? `<text class="sub" x="${kx + w / 2 + 8}" y="${ky + 4}">кухня, за двумя стенами</text>` : `<text class="sub" x="${kx - w / 2 + 4}" y="${ky + h / 2 + 16}">кухня</text>`;
+  }
+  if (NET.loose) {
+    const pp = portPt(), { e } = looseEnd();
+    if (editTask && T.hint >= 3) O += `<path class="ghost-edge" d="M${P(pp)} L${P(edgePt('internet', posOf('router')[0], posOf('router')[1], 0))}"/>`;
+    const lbl = S.layout === 'wide' ? [pp[0] + 10, pp[1] - 12] : [pp[0] + 12, pp[1] + 4];
+    O += `<text class="port-label" x="${lbl[0]}" y="${lbl[1]}">WAN</text>`;
+    if (editTask) O += `<circle class="port${S.armed === 'port' ? ' armed' : ''}" cx="${pp[0]}" cy="${pp[1]}" r="8" data-port="router" tabindex="0" role="button" aria-label="Порт WAN роутера: потяните кабель к облаку"><title>Порт WAN: потяните отсюда к облаку «Интернет»</title></circle>`;
+    O += `<g class="plug${S.armed === 'plug' ? ' armed' : ''}" data-plug="1"${editTask ? ' tabindex="0" role="button" aria-label="Кабель провайдера: воткните в порт WAN роутера"' : ''} transform="translate(${P(e)})"><circle r="16" fill="transparent"/><rect x="-7" y="-5" width="14" height="10" rx="2"/><title>Кабель провайдера</title></g>`;
+  }
+  for (const id in ann) if (NET.devices.includes(id)) O += annSvg(id, ann[id][0], ann[id][1]);
+  $('g-over').innerHTML = O;
+
+  // пакет
+  if (NH() > 0 && ch) {
+    const color = ch.arrived && ch.h.drop ? 'var(--bad)' : `var(--p-${ch.h.proto})`;
+    $('g-pkt').innerHTML = `<g class="pkt${PL.sel ? ' sel' : ''}${ch.arrived && ch.h.drop ? ' dropped' : ''}" id="pkt" data-pkt="1" tabindex="0" role="button" aria-label="Пакет ${esc(ch.h.label)}: открыть конверт">
+      ${PL.sel ? '<circle class="pkt-ring" r="17" style="stroke:var(--ink)"/>' : ''}
+      <circle class="hit" r="20"/><rect class="env" x="-12" y="-8.5" width="24" height="17" rx="3" style="fill:${color}"/><path class="flap" d="M-11,-7.5 L0,1.5 L11,-7.5"/>
+      <title>${esc(ch.h.label)} · нажмите, чтобы открыть конверт</title></g>`;
+    placePacket();
+  } else $('g-pkt').innerHTML = '';
+}
+
+function envDevices(h) {
+  const ip = h.env.find(l => l.k === 'ip');
+  const who = v => v === A.phone.ip ? 'phone' : v === A.routerWan.ip || v === A.routerLan.ip ? 'router' : v === A.dns.ip ? 'dns' : v === A.shop.ip ? 'shop' : null;
+  return ip.fields.filter(f => f.f !== 'ip.ttl').map(f => who(f.v)).filter(Boolean);
+}
+function serverOf(h) { return h.pkt.startsWith('dns') ? 'dns' : h.proto === 'dhcp' ? 'router' : 'shop'; }
+
+function hopPts(i) {
+  const h = PL.trace[i], pt = posOf(h.to), pf = posOf(h.from);
+  const s = edgePt(h.from, pt[0], pt[1], 12), e = edgePt(h.to, pf[0], pf[1], 12);
+  const prev = PL.trace[i - 1];
+  if (prev && prev.to === h.from) { const pe = hopPts(i - 1); return [pe[pe.length - 1], s, e]; }
+  return [s, e];
+}
+function along(pts, t) {
+  const seg = [];
+  let total = 0;
+  for (let k = 1; k < pts.length; k++) { const l = Math.hypot(pts[k][0] - pts[k - 1][0], pts[k][1] - pts[k - 1][1]); seg.push(l); total += l; }
+  let d = t * total;
+  for (let k = 0; k < seg.length; k++) {
+    if (d <= seg[k] || k === seg.length - 1) { const r = seg[k] ? clamp(d / seg[k], 0, 1) : 1; return [pts[k][0] + (pts[k + 1][0] - pts[k][0]) * r, pts[k][1] + (pts[k + 1][1] - pts[k][1]) * r]; }
+    d -= seg[k];
+  }
+  return pts[pts.length - 1];
+}
+function packetXY() {
+  if (!NH()) return null;
+  if (PL.phase === 'fly') {
+    const t = PL.t < .5 ? 2 * PL.t * PL.t : 1 - Math.pow(-2 * PL.t + 2, 2) / 2;
+    return along(hopPts(PL.stop), t);
+  }
+  if (PL.stop === 0) return hopPts(0)[0];
+  const p = hopPts(PL.stop - 1);
+  return p[p.length - 1];
+}
+function placePacket() {
+  const g = $('pkt'), p = packetXY();
+  if (g && p) g.setAttribute('transform', `translate(${p[0].toFixed(1)},${p[1].toFixed(1)})`);
+}
+
+// ---------- лента шагов, теория, навигация ----------
+const LC = { link: 'var(--l-link)', ip: 'var(--l-ip)', tp: 'var(--l-tp)', app: 'var(--l-app)' };
+const NAME = id => DEV[id].name;
+function stepDone(i) { const st = STEPS[i]; return st.quiz ? !!S.quiz[st.quiz] : st.task ? T.solved : true; }
+function canGo(i) {
+  if (i < 0 || i >= STEPS.length || i > S.maxStep + 1) return false;
+  for (let j = 0; j < i; j++) if (!stepDone(j)) return false;
+  return true;
+}
+
+function renderTimeline() {
+  const steps = STEPS.map((b, i) => {
+    const q = b.quiz && S.quiz[b.quiz];
+    const cls = ['tl', i < S.step ? 'done' : '', i === S.step ? 'current' : '', b.task ? 'is-task' : '', b.quiz ? 'is-quiz' : '', q ? (q.first ? 'first' : 'shown') : ''].filter(Boolean).join(' ');
+    const note = q ? (q.first ? ' · верно с первой попытки' : ' · ответ показан') : b.task && T.solved ? ' · решено' : '';
+    return `<button type="button" class="${cls}" data-goto="${i}" ${canGo(i) ? '' : 'disabled'} title="${esc(b.title + note)}" aria-label="Шаг ${i + 1}: ${esc(b.title + note)}" ${i === S.step ? 'aria-current="step"' : ''}><span class="bar"></span></button>`;
+  }).join('');
+  $('timeline').innerHTML = `<div class="tl-steps">${steps}</div><div class="tl-label">Шаг ${S.step + 1} из ${STEPS.length} · <b>${esc(STEPS[S.step].title)}</b></div>`;
+}
+
+function pastTail(b) {
+  if (b.quiz) {
+    const q = S.quiz[b.quiz];
+    return q ? `<p class="task-done${q.first ? '' : ' shown'}">${q.first ? '✓ Верно с первой попытки' : '● Ответ показан'}</p>` : '';
+  }
+  if (b.task) return `<p class="task-done">✓ Задача решена${T.help ? ' с показом решения' : ''}</p>`;
+  return '';
+}
+
+function renderTheory() {
+  const parts = [];
+  for (let i = 0; i <= S.step; i++) {
+    const b = STEPS[i], past = i < S.step;
+    const label = b.task ? '◆ Задача' : b.quiz ? '● Вопрос' : `Шаг ${i + 1}`;
+    const tail = past ? pastTail(b) : '<div id="card"></div>';
+    parts.push(`<article class="beat ${past ? 'past' : 'current'}" id="beat-${i}" ${past ? `data-goto="${i}" title="Вернуться к этому шагу"` : ''}>
+      <h2><span class="n">${label}</span>${esc(b.title.replace(/^(Задача|Вопрос): /, ''))}</h2>
+      <div class="prose">${b.html()}</div>${tail}</article>`);
+  }
+  if (S.step === STEPS.length - 1) {
+    parts.push(`<div class="finish">
+      <div class="eyebrow">Урок 1 пройден</div>
+      <div class="ask-ai">
+        <div class="eyebrow">Как спросить ИИ</div>
+        <blockquote id="ask-text">Сайт shop.example не открывается с телефона, а с ноутбука открывается. Телефон в той же Wi-Fi. Ошибка в браузере: ERR_NAME_NOT_RESOLVED.</blockquote>
+        <div class="row"><button class="btn sm" type="button" data-action="copy" id="copy-ask">Скопировать шаблон</button><span>Точный текст ошибки — уже половина диагноза.</span></div>
+      </div>
+      <p>Дальше урок 2 «Слои: OSI и TCP/IP». В этом макете его нет.</p>
+    </div>`);
+  }
+  $('beats').innerHTML = parts.join('');
+  const sc = $('theory-scroll'), cur = $('beat-' + S.step);
+  if (cur && getComputedStyle(sc).overflowY === 'auto') sc.scrollTo({ top: Math.max(0, cur.offsetTop - 16), behavior: reduce ? 'auto' : 'smooth' });
+}
+
+function quizCard(id) {
+  const Q = QUIZ[id], q = S.quiz[id];
+  const one = id === 'first-hop';
+  const ask = one ? 'На какое устройство пакет попадёт первым?' : 'Какой слой отвечает за поле 443?';
+  let body;
+  if (!q) {
+    body = `<p class="task-how">${one ? 'Кандидаты подсвечены на доске: роутер, ноутбук, интернет и сервер. Нажмите один.' : 'Варианты под конвертом на доске: канальный, сетевой, транспортный, прикладной.'} Попытка одна, после неё покажем ответ и объяснение.</p>`;
+  } else {
+    const right = one ? 'роутер' : 'транспортный (TCP)';
+    const pickName = one ? DEV[q.pick].title.toLowerCase() : Q.options.find(o => o[0] === q.pick)[1].toLowerCase();
+    body = q.first
+      ? `<div class="fb ok"><p>Верно: ${right}.</p></div>`
+      : `<div class="fb fail"><p>Вы выбрали: ${esc(pickName)}. ${Q.wrong[q.pick]}</p><p>Правильный ответ: <strong>${right}</strong>.</p></div>`;
+    body += `<p class="explain">${Q.explain}</p>
+      <span class="mark ${q.first ? 'first' : 'shown'}">${q.first ? '✓ Верно с первой попытки' : '● Ответ показан · в прогресс без отметки'}</span>
+      <div class="task-actions"><button class="btn primary" type="button" data-action="next" id="card-next">Дальше →</button></div>`;
+  }
+  const st = q ? (q.first ? ' solved' : ' revealed') : '';
+  return `<div class="task${st}"><div class="task-head"><span class="ring" aria-hidden="true"></span>Вопрос на доске<span class="att">одна попытка</span></div>
+    <p class="task-goal">${ask}</p>${body}</div>`;
+}
+
+function taskGoals() {
+  const w = T.wifi;
+  let why2 = '';
+  if (w.ssid !== REMEMBERED.ssid) why2 = `Телефон ищет сеть «Дом», а роутер раздаёт «${w.ssid}».`;
+  else if (w.sec === 'open') why2 = 'Телефон помнит «Дом» как сеть с паролем и к открытой не подключится.';
+  else if (w.pass !== REMEMBERED.pass) why2 = 'Сеть «Дом» видна, но пароль не тот, что помнит телефон.';
+  else if (w.band === '5') why2 = 'Сеть «Дом» только на 5 ГГц, а этот диапазон не достаёт до кухни.';
+  let why3 = '', st3 = '';
+  if (T.reached) st3 = 'ok';
+  else if (T.running) { st3 = 'wait'; why3 = 'Телефон открывает страницу, смотрите на доску.'; }
+  else if (!T.assoc) why3 = 'Сначала телефону нужна сеть.';
+  else if (T.outcome === 'nodhcp') { st3 = 'fail'; why3 = 'Телефон не получил адрес: DHCP-сервер на роутере выключен.'; }
+  else if (T.outcome === 'nowan') { st3 = 'fail'; why3 = 'DNS-вопрос погиб на роутере: нет связи с интернетом. В браузере ERR_NAME_NOT_RESOLVED.'; }
+  return [
+    { st: T.wan ? 'ok' : '', label: 'Роутер подключён к интернету кабелем', why: T.wan ? '' : 'Порт WAN роутера пуст.' },
+    { st: T.assoc ? 'ok' : '', label: 'Телефон подключён к Wi-Fi роутера', why: T.assoc ? `«Дом» · ${w.band === 'both' ? '2.4 и 5' : '2.4'} ГГц` : why2 },
+    { st: st3, label: 'shop.example открывается на телефоне', why: why3 },
+  ];
+}
+
+const HINTS = [
+  'Пакет должен пройти цепочку «телефон → роутер → интернет → сервер». Где она рвётся? Загляните во вкладку «Состояние» панели роутера.',
+  'Роутер подключается к интернету кабелем провайдера. Телефон подключится сам к сети, которую помнит, если она до него достаёт.',
+  'На доске пунктиром показан кабель от порта WAN к облаку. В панели роутера пунктиром обведены поля, которые надо поменять: имя, пароль и диапазон. До кухни достаёт только 2.4 ГГц.',
+];
+
+function taskCard() {
+  const goals = taskGoals();
+  const items = goals.map(g => `<li class="${g.st}"><span class="mk" aria-hidden="true">${g.st === 'ok' ? '✓' : g.st === 'fail' ? '✕' : ''}</span><span>${g.label}${g.why ? `<span class="why">${esc(g.why)}</span>` : ''}</span></li>`).join('');
+  let body;
+  if (T.solved) {
+    body = `<div class="fb ok">Телефон в сети «Дом», получил адрес 192.168.1.23, и страница открылась.</div>
+      <dl class="result"><dt>Путь</dt><dd>телефон → роутер → интернет → сервер</dd><dt>DNS</dt><dd>shop.example = 198.51.100.10</dd><dt>Ответ</dt><dd>200 OK</dd></dl>
+      <div class="task-actions"><button class="btn primary" type="button" data-action="next" id="card-next">Дальше: итог →</button></div>`;
+  } else {
+    const hints = T.hint ? `<ol class="hints">${HINTS.slice(0, T.hint).map(t => `<li>${t}</li>`).join('')}</ol>` : '';
+    const showSol = T.fails >= 2 || T.hint >= 2;
+    body = `${hints}<div class="task-actions">
+      <button class="btn" type="button" data-action="hint" id="task-hint" ${T.hint >= 3 || T.demo ? 'disabled' : ''}>Подсказка · ${T.hint} из 3</button>
+      ${showSol ? `<button class="btn link" type="button" data-action="solution" id="task-solution" ${T.demo ? 'disabled' : ''}>Показать решение</button>` : ''}
+      <button class="btn link" type="button" data-action="reset" id="task-reset" ${T.demo ? 'disabled' : ''}>Сбросить</button></div>`;
+  }
+  return `<div class="task${T.solved ? ' solved' : ''}">
+    <div class="task-head"><span class="dia" aria-hidden="true"></span>${T.solved ? `Решено${T.help ? ' с показом решения' : ''}` : 'Задача на доске и в панели роутера'}</div>
+    <p class="task-goal">Сделайте так, чтобы shop.example снова открылся на телефоне.</p>
+    ${T.solved ? '' : `<p class="task-how">Кабель тянется на доске: от порта WAN роутера к облаку «Интернет» (или нажмите порт, потом облако). Wi-Fi настраивается во вкладке «Роутер» под доской. Цели проверяются сами после каждого изменения.</p>
+    <dl class="remember"><span class="cap">Телефон помнит</span><dt>сеть</dt><dd>Дом</dd><dt>пароль</dt><dd>tishina-2026</dd><dt>где лежит</dt><dd>на кухне, за двумя стенами</dd></dl>`}
+    <ul class="checks">${items}</ul>${body}</div>`;
+}
+
+function summaryCard() {
+  if (!S.summaryDone) return `<p class="task-how" style="margin-top:14px">Идёт полный прогон: пакетов будет 9.</p>`;
+  return `<div class="task solved"><div class="task-head"><span class="dia" aria-hidden="true"></span>Счётчики прогона</div>
+    <dl class="result"><dt>Пакетов</dt><dd>9: DNS ×2, TCP ×3, TLS ×2, HTTP ×2</dd><dt>Хопов</dt><dd>3 у каждого: телефон → роутер → интернет → сервер</dd><dt>Время</dt><dd>192 мс: 4 раза туда и обратно по 48 мс</dd><dt>Сервер</dt><dd>200 OK</dd></dl>
+    <p class="task-how"><span class="simpl">упрощено</span> Задержки — константы: Wi-Fi 3 мс, кабель 1 мс, интернет 20 мс.</p></div>`;
+}
+
+function renderCard() {
+  const el = $('card');
+  if (el) {
+    const fid = document.activeElement && document.activeElement.id;
+    const st = STEPS[S.step];
+    el.innerHTML = st.quiz ? quizCard(st.quiz) : st.task ? taskCard() : S.step === 7 ? summaryCard() : '';
+    if (fid) { const f = document.getElementById(fid); if (f && !f.disabled && el.contains(f)) f.focus(); }
+  }
+  renderNav();
+  renderTimeline();
+}
+
+function renderNav() {
+  const fid = document.activeElement && document.activeElement.id;
+  const st = STEPS[S.step], done = stepDone(S.step), last = S.step === STEPS.length - 1;
+  const text = !done ? (st.quiz ? 'Ответьте на вопрос, чтобы продолжить' : 'Решите задачу, чтобы продолжить') : last ? 'Конец урока' : 'Стрелки ← → тоже работают';
+  $('theory-nav').innerHTML = `<button class="btn" type="button" id="nav-prev" ${S.step === 0 ? 'disabled' : ''}>← Назад</button>
+    <span class="nav-text">${text}</span>
+    <button class="btn primary" type="button" id="nav-next" ${!done || last ? 'disabled' : ''}>Далее →</button>`;
+  if (fid === 'nav-prev' || fid === 'nav-next') { const f = $(fid); if (f && !f.disabled) f.focus(); }
+}
+
+// ---------- транспорт и подпись к хопу ----------
+function caption() {
+  const i = S.step;
+  if (i === 3 && !S.quiz['first-hop']) return ['info', 'Вопрос', 'На какое устройство пакет попадёт первым? Кликните его на доске.'];
+  if (i === 5 && !S.quiz['which-layer']) return ['info', 'Вопрос', 'В конверте подсвечено поле 443. Какой это слой? Варианты под конвертом.'];
+  const ch = curHop();
+  if (!ch) {
+    if (i === 0) return ['', 'Пакетов пока нет', 'Это схема вашей сети. Пакеты побегут на следующем шаге.'];
+    if (T.solved) return ['ok', 'Готово', 'Страница открылась.'];
+    if (!T.assoc) return ['bad', 'Телефон не в сети', 'Он помнит только сеть «Дом» и не видит её. Пакетам некуда идти.'];
+    return ['', 'Телефон в сети', 'Обновите страницу в браузере телефона.'];
+  }
+  const h = ch.h, dot = `var(--p-${h.proto})`, route = `${NAME(h.from)} → ${NAME(h.to)}`;
+  if (ch.atStart) return [dot, `${h.label} · готов к отправке`, 'Нажмите «▶ Пуск» или «шаг ▶». Пакет можно нажать, чтобы открыть конверт.'];
+  if (ch.arrived && h.drop) return ['bad', `${h.label} · потерян: ${h.to === 'router' ? 'роутер' : NAME(h.to)} дальше не передал`, h.note];
+  if (ch.arrived && PL.stop >= NH()) {
+    if (S.step === 7) return ['ok', 'Доставлено', 'Пакетов 9, у каждого 3 хопа, всего 192 мс. На сервере 200 OK.'];
+    return ['ok', `Доставлено · ${route}`, h.note];
+  }
+  return [dot, `${h.label} · ${route}`, h.note];
+}
+
+function renderTransport() {
+  const n = NH(), has = n > 0, lock = PL.locked, atStart = PL.stop === 0 && PL.phase === 'rest';
+  $('t-first').disabled = !has || lock || atStart;
+  $('t-back').disabled = !has || lock || atStart;
+  $('t-play').disabled = !has || lock;
+  $('t-step').disabled = !has || lock || PL.stop >= n;
+  $('t-play').textContent = PL.playing ? '❚❚ Пауза' : has && PL.stop >= n ? '↻ Ещё раз' : '▶ Пуск';
+  document.querySelectorAll('[data-speed]').forEach(b => { b.setAttribute('aria-pressed', String(+b.dataset.speed === PL.speed)); });
+  let cnt = '';
+  if (has) {
+    const shown = PL.phase === 'fly' ? PL.stop + 1 : PL.stop;
+    if (PL.counter === 'packet') {
+      const ch = curHop(), ids = [...new Set(PL.trace.map(x => x.pkt))];
+      const p = ch.atStart ? 0 : ids.indexOf(ch.h.pkt) + 1;
+      cnt = `пакет <b>${p}</b> из ${ids.length} · хоп <b>${ch.atStart ? 0 : ch.h.j + 1}</b> из 3`;
+    } else cnt = `хоп <b>${shown}</b> из ${n}`;
+  } else cnt = 'хоп — из —';
+  $('t-count').innerHTML = cnt;
+  const [tone, where, what] = caption();
+  const c = $('t-caption');
+  c.className = 't-caption' + (tone === 'bad' ? ' bad' : tone === 'ok' ? ' ok' : '');
+  const bg = tone === 'bad' ? 'var(--bad)' : tone === 'ok' ? 'var(--ok)' : tone === 'info' ? 'var(--accent)' : tone || 'var(--node-line)';
+  c.innerHTML = `<span class="dot" style="background:${bg}"></span><span class="where">${esc(where)}</span><span class="what">${esc(what)}</span>`;
+}
+
+// ---------- конверт ----------
+function envChanges(h, prev) {
+  if (!prev) {
+    const n = h.env.map(l => l.name).reverse(), pairs = [];
+    for (let k = 0; k < n.length - 1; k++) pairs.push(k ? `${n[k]} в ${k === n.length - 2 ? 'кадр ' : ''}${n[k + 1]}` : `${n[k]} положили в ${n[k + 1]}`);
+    return `Собран у отправителя: ${pairs.join(', ')}.`;
+  }
+  const out = [], g = (e, f) => { for (const l of e.env) for (const x of l.fields) if (x.f === f) return x.v; return null; };
+  const L0 = prev.env[0], L1 = h.env[0];
+  out.push(L0.name !== L1.name ? `<b>новый кадр</b> ${L0.name} → ${L1.name}` : '<b>новый кадр</b>: сменились MAC-адреса');
+  if (g(prev, 'ip.src') !== g(h, 'ip.src')) out.push(`<b>NAT</b> отправитель ${g(prev, 'ip.src')}:${g(prev, 'tp.sport')} → ${g(h, 'ip.src')}:${g(h, 'tp.sport')}`);
+  if (g(prev, 'ip.dst') !== g(h, 'ip.dst')) out.push(`<b>NAT</b> получатель ${g(prev, 'ip.dst')}:${g(prev, 'tp.dport')} → ${g(h, 'ip.dst')}:${g(h, 'tp.dport')}`);
+  out.push(`TTL ${g(prev, 'ip.ttl')} → ${g(h, 'ip.ttl')}`);
+  const same = [];
+  if (g(prev, 'ip.dst') === g(h, 'ip.dst')) same.push(`IP получателя ${g(h, 'ip.dst')}`);
+  if (g(prev, 'tp.dport') === g(h, 'tp.dport')) same.push(`порт ${g(h, 'tp.dport')}`);
+  if (h.env[3]) same.push(h.env[3].name);
+  return out.join(' · ') + (same.length ? `. Не изменились: ${same.join(', ')}.` : '.');
+}
+
+function layerHtml(h, prev, idx, fresh) {
+  const L = h.env[idx];
+  if (!L) return '';
+  const PLy = prev && prev.env.find(x => x.k === L.k);
+  const q = S.step === 5 ? S.quiz['which-layer'] : null;
+  let cls = `layer k-${L.k}`, changed = false;
+  if (S.envHl === L.k) cls += ' hl';
+  if (q) { if (L.k === QUIZ['which-layer'].answer) cls += ' good'; else if (L.k === q.pick) cls += ' wrong'; }
+  const fields = L.fields.map(f => {
+    const pf = PLy && PLy.fields.find(x => x.f === f.f), ch = pf && pf.v !== f.v;
+    if (ch) changed = true;
+    const ask = S.step === 5 && f.f === 'tp.dport';
+    return `<span class="fld${ch ? ' changed' : ''}${ask ? ' ask' : ''}${ask && q ? ' done' : ''}" data-f="${f.f}"><span class="k">${esc(f.k)}</span>${ch ? `<span class="was">${esc(pf.v)}</span>→` : ''}<span class="v">${esc(f.v)}</span>${ch && f.nat ? '<span class="badge">NAT</span>' : ''}</span>`;
+  }).join('');
+  let badge = '';
+  if (L.k === 'link' && PLy) { badge = `<span class="lbadge">${PLy.name !== L.name ? 'новый кадр' : 'новые MAC'}</span>`; changed = true; }
+  if (L.note) badge += `<span class="fld"><span class="k">${esc(L.note)}</span></span>`;
+  if (fresh && changed) cls += ' fresh';
+  return `<div class="${cls}" data-layer="${L.k}"><div class="lrow"><span class="lname">${esc(L.name)}<small>${LAYER_SMALL[L.k]}</small></span>${fields}${badge}</div>${layerHtml(h, prev, idx + 1, fresh)}</div>`;
+}
+
+let envKey = '';
+function renderEnv() {
+  const pane = $('pane-env');
+  if (pane.hidden) return;
+  const ch = curHop();
+  if (!ch) {
+    pane.innerHTML = `<div class="pane-empty"><b>Конверт пуст</b><span>Конверт показывает слои пакета на текущем хопе: кадр Wi-Fi или Ethernet, IP, TCP или UDP и данные приложения. Пакеты появятся со второго шага. Нажмите на любой, и его конверт откроется здесь.</span></div>`;
+    envKey = '';
+    return;
+  }
+  const h = ch.h, prev = ch.i > 0 && PL.trace[ch.i - 1].pkt === h.pkt ? PL.trace[ch.i - 1] : null;
+  const key = `${S.step}:${ch.i}`, fresh = key !== envKey && envKey !== '';
+  envKey = key;
+  const state = ch.atStart ? 'ещё у отправителя' : PL.phase === 'fly' ? 'в пути' : h.drop ? 'потерян' : `у получателя: ${NAME(h.to)}`;
+  let html = `<div class="env-head"><span class="pk"><i style="background:var(--p-${h.proto})"></i><span class="ttl">${esc(h.label)}</span></span>
+      <span>хоп ${h.j + 1} из ${h.n} · ${NAME(h.from)} → ${NAME(h.to)} · ${state}</span></div>
+    <div class="env-head"><span class="chg">${envChanges(h, prev)}</span></div>
+    <div class="env${S.envHl ? ' fade' : ''}">${layerHtml(h, prev, 0, fresh)}</div>`;
+  if (S.step === 5) {
+    const q = S.quiz['which-layer'], Q = QUIZ['which-layer'];
+    html += `<div class="chips" role="group" aria-label="Слой поля 443"><span class="q">Поле 443 — какой слой?</span>${Q.options.map(([k, name, sub]) => {
+      const c = q ? (k === Q.answer ? ' right' : k === q.pick ? ' wrong' : '') : '';
+      return `<button type="button" class="chip${c}" data-layer-pick="${k}" ${q ? 'disabled' : ''}><i style="background:${LC[k]}"></i>${name} <span style="color:var(--muted)">· ${sub}</span></button>`;
+    }).join('')}</div>`;
+    if (q) html += `<p class="env-note">${q.first ? 'Верно.' : `${Q.wrong[q.pick]} Правильно: транспортный слой, TCP.`} ${Q.explain}</p>`;
+  } else {
+    html += `<p class="env-note">Наведите на слой или нажмите его: на доске подсветится то, к чему он относится. Кнопки транспорта двигают пакет по хопам.</p>`;
+  }
+  pane.innerHTML = html;
+}
+
+// ---------- поверхности под доской ----------
+const TAB_LABEL = {
+  env: 'Конверт',
+  router: 'Роутер<span class="long"> · 192.168.1.1</span>',
+  term: 'Терминал<span class="long"> · ноутбук</span>',
+  browser: 'Браузер<span class="long"> · телефон</span>',
+};
+const tabsFor = () => (S.step >= TASK ? ['env', 'router', 'term', 'browser'] : ['env', 'term', 'browser']);
+function renderDock() {
+  const tabs = tabsFor();
+  if (!tabs.includes(S.tab)) S.tab = tabs[0];
+  $('dock-tabs').innerHTML = tabs.map(t => `<button type="button" role="tab" class="dock-tab" id="tab-${t}" aria-selected="${S.tab === t}" aria-controls="pane-${t}" data-tab="${t}" tabindex="${S.tab === t ? 0 : -1}">${TAB_LABEL[t]}${t === 'router' && S.step === TASK && !T.solved ? '<span class="new">задача</span>' : ''}${t === 'browser' ? `<span class="dotst${browserState().ok ? ' ok' : ''}" aria-hidden="true"></span>` : ''}</button>`).join('');
+  ['env', 'router', 'term', 'browser'].forEach(t => { $('pane-' + t).hidden = S.tab !== t; });
+  $('dock').classList.toggle('tall', S.tab === 'router' || S.tab === 'env');
+  if (S.tab === 'env') renderEnv();
+  if (S.tab === 'router') renderRouter();
+  if (S.tab === 'browser') renderBrowser();
+  if (S.tab === 'term') { renderTermHeader(); termRender(); }
+}
+function updateTabDots() {
+  const d = document.querySelector('#tab-browser .dotst');
+  if (d) d.className = 'dotst' + (browserState().ok ? ' ok' : '');
+}
+function setTab(t, focusIt) {
+  S.tab = t;
+  renderDock();
+  if (focusIt) { const b = $('tab-' + t); if (b) b.focus(); }
+}
+
+// ---------- панель роутера ----------
+function bandName(b) { return b === 'both' ? '2.4 и 5 ГГц' : b === '5' ? '5 ГГц' : '2.4 ГГц'; }
+const SEC_NAME = { wpa2: 'WPA2-Personal', wpa3: 'WPA3-Personal', open: 'Открытая сеть' };
+const wifiDirty = () => ['ssid', 'sec', 'pass', 'band'].some(k => T.draft[k] !== T.wifi[k]);
+const dhcpDirty = () => ['on', 'from', 'to'].some(k => T.dhcpDraft[k] !== T.dhcp[k]);
+
+function renderRouter() {
+  const pane = $('pane-router');
+  if (pane.hidden) return;
+  const fid = document.activeElement && document.activeElement.id;
+  const lock = T.solved || T.demo, tab = T.rpTab, w = T.wifi;
+  const nav = [['status', 'Состояние', T.wan && T.assoc], ['wifi', 'Wi-Fi', T.assoc], ['lan', 'LAN и DHCP', T.dhcp.on]]
+    .map(([k, n, ok]) => `<button type="button" class="rp-tab" role="tab" id="rp-${k}" data-rp="${k}" aria-selected="${tab === k}">${n}<span class="dotst${ok ? ' ok' : ''}" aria-hidden="true"></span></button>`).join('');
+  let body = '';
+  if (tab === 'status') {
+    body = `<p class="rp-h">Интернет · порт WAN</p>
+      <dl class="kv"><dt>Кабель</dt><dd>${T.wan ? '<span class="pill ok">подключён</span>' : '<span class="pill bad">не подключён</span>'}</dd>
+        <dt>Внешний адрес</dt><dd>${T.wan ? '203.0.113.7' : '—'}</dd><dt>Шлюз провайдера</dt><dd>${T.wan ? '203.0.113.1' : '—'}</dd><dt>DNS</dt><dd>192.0.2.10</dd></dl>
+      <p class="rp-h">Wi-Fi</p>
+      <dl class="kv"><dt>Сеть</dt><dd>«${esc(w.ssid)}» · ${SEC_NAME[w.sec]} · ${bandName(w.band)}</dd></dl>
+      <p class="rp-h">Клиенты</p>
+      <div class="tbl-wrap"><table class="tbl"><thead><tr><th>Устройство</th><th>Связь</th><th>IP</th><th>MAC</th></tr></thead><tbody>
+        <tr><td>ноутбук</td><td>кабель, LAN 1</td><td>192.168.1.42</td><td>3c:22:fb:7e:00:42</td></tr>
+        ${T.assoc ? `<tr class="${T.flashRow === 'phone' ? 'flash' : ''}"><td>телефон</td><td>Wi-Fi, ${w.band === '5' ? '5' : '2.4'} ГГц</td><td>${T.phoneIp || 'получает адрес…'}</td><td>3c:22:fb:4a:10:23</td></tr>` : ''}
+      </tbody></table></div>`;
+  } else if (tab === 'wifi') {
+    const d = T.draft, ghost = !lock && T.hint >= 3;
+    const g = ok => (ghost && !ok ? ' ghost' : '');
+    body = `<p class="rp-h">Беспроводная сеть</p>
+      <div class="form">
+        <label for="wf-ssid">Имя сети (SSID)</label><div class="ctl${g(w.ssid === REMEMBERED.ssid)}"><input class="inp" id="wf-ssid" value="${esc(d.ssid)}" maxlength="32" ${lock ? 'disabled' : ''}></div>
+        <label for="wf-sec">Защита</label><div class="ctl"><select class="inp short" id="wf-sec" ${lock ? 'disabled' : ''}>${Object.keys(SEC_NAME).map(k => `<option value="${k}" ${d.sec === k ? 'selected' : ''}>${SEC_NAME[k]}</option>`).join('')}</select></div>
+        <label for="wf-pass">Пароль</label><div class="ctl${g(w.pass === REMEMBERED.pass || w.sec === 'open')}"><input class="inp" id="wf-pass" value="${esc(d.pass)}" ${lock || d.sec === 'open' ? 'disabled' : ''} spellcheck="false" autocapitalize="off"></div>
+        <span class="lbl" id="wf-band-l">Диапазон</span><div class="ctl${g(w.band !== '5')}"><div class="seg" role="group" aria-labelledby="wf-band-l">${['24', '5', 'both'].map(b => `<button type="button" id="wf-band-${b}" data-band="${b}" aria-pressed="${d.band === b}" ${lock ? 'disabled' : ''}>${bandName(b)}</button>`).join('')}</div></div>
+        <p class="help">2.4 ГГц бьёт дальше и сквозь стены, 5 ГГц быстрее, но ближе. Подробно — урок 4.</p>
+        ${T.errors.wifi ? `<p class="err-msg" role="alert">${esc(T.errors.wifi)}</p>` : ''}
+      </div>
+      <div class="rp-actions"><button class="btn primary" type="button" id="wf-save" ${lock ? 'disabled' : ''}>Сохранить</button><button class="btn" type="button" id="wf-cancel" ${lock ? 'disabled' : ''}>Отменить</button>
+        <span class="dirty" id="wf-dirty" ${wifiDirty() ? '' : 'hidden'}>Есть несохранённые изменения</span>${T.saved === 'wifi' && !wifiDirty() ? '<span class="saved">Сохранено</span>' : ''}${lock ? '<span class="saved">Задача решена, настройки зафиксированы</span>' : ''}</div>`;
+  } else {
+    const d = T.dhcpDraft;
+    body = `<p class="rp-h">Локальная сеть</p>
+      <dl class="kv"><dt>Адрес роутера</dt><dd>192.168.1.1</dd><dt>Маска</dt><dd>255.255.255.0 (/24)</dd></dl>
+      <p class="rp-h">DHCP-сервер</p>
+      <div class="form">
+        <span class="lbl">DHCP</span><div class="ctl"><label class="toggle"><input type="checkbox" id="dh-on" ${d.on ? 'checked' : ''} ${lock ? 'disabled' : ''}>раздавать адреса</label></div>
+        <label for="dh-from">Пул адресов</label><div class="ctl"><input class="inp short" id="dh-from" value="${esc(d.from)}" ${lock || !d.on ? 'disabled' : ''} aria-label="Начало пула"> – <input class="inp short" id="dh-to" value="${esc(d.to)}" ${lock || !d.on ? 'disabled' : ''} aria-label="Конец пула"></div>
+        <span class="lbl">Аренда</span><div class="ctl">24 ч</div>
+        ${T.errors.dhcp ? `<p class="err-msg" role="alert">${esc(T.errors.dhcp)}</p>` : ''}
+      </div>
+      <p class="rp-h">Закреплённые адреса</p>
+      <div class="tbl-wrap"><table class="tbl"><thead><tr><th>Устройство</th><th>MAC</th><th>IP</th></tr></thead><tbody>
+        <tr><td>ноутбук</td><td>3c:22:fb:7e:00:42</td><td>192.168.1.42</td></tr><tr><td>телефон</td><td>3c:22:fb:4a:10:23</td><td>192.168.1.23</td></tr></tbody></table></div>
+      <div class="rp-actions"><button class="btn primary" type="button" id="dh-save" ${lock ? 'disabled' : ''}>Сохранить</button><button class="btn" type="button" id="dh-cancel" ${lock ? 'disabled' : ''}>Отменить</button>
+        <span class="dirty" id="dh-dirty" ${dhcpDirty() ? '' : 'hidden'}>Есть несохранённые изменения</span>${T.saved === 'dhcp' && !dhcpDirty() ? '<span class="saved">Сохранено</span>' : ''}</div>`;
+  }
+  pane.innerHTML = `<div class="rp" aria-label="Панель роутера">
+    <div class="rp-top"><b>Панель роутера</b><span class="mid">открыта с ноутбука</span><span class="addr">http://192.168.1.1</span></div>
+    <nav class="rp-nav" role="tablist" aria-label="Разделы панели">${nav}</nav><div class="rp-body">${body}</div></div>`;
+  T.flashRow = null;
+  if (fid) { const f = document.getElementById(fid); if (f && !f.disabled && pane.contains(f)) f.focus(); }
+}
+
+const ipOk = v => { const m = /^192\.168\.1\.(\d{1,3})$/.exec(v.trim()); return m && +m[1] >= 2 && +m[1] <= 254 ? +m[1] : null; };
+function saveWifi() {
+  const d = T.draft, ssid = d.ssid.trim();
+  T.errors = {};
+  if (!ssid) T.errors.wifi = 'Имя сети не может быть пустым.';
+  else if (d.sec !== 'open' && d.pass.length < 8) T.errors.wifi = 'Пароль короче 8 символов: WPA2 и WPA3 такой не примут.';
+  if (T.errors.wifi) { renderRouter(); return; }
+  T.wifi = { ...d, ssid };
+  T.draft = { ...T.wifi };
+  T.saved = 'wifi';
+  applyNet('wifi');
+}
+function saveDhcp() {
+  const d = T.dhcpDraft, a = ipOk(d.from), b = ipOk(d.to);
+  T.errors = {};
+  if (d.on) {
+    if (a == null || b == null) T.errors.dhcp = 'Пул вне подсети роутера 192.168.1.0/24. Нужны адреса от 192.168.1.2 до 192.168.1.254.';
+    else if (a > b) T.errors.dhcp = 'Начало пула больше конца.';
+  }
+  if (T.errors.dhcp) { renderRouter(); return; }
+  T.dhcp = { ...d };
+  T.saved = 'dhcp';
+  applyNet('dhcp');
+}
+function assocNow() {
+  const w = T.wifi;
+  return w.ssid === REMEMBERED.ssid && w.sec !== 'open' && w.pass === REMEMBERED.pass && w.band !== '5';
+}
+function applyNet(what) {
+  const was = T.assoc;
+  T.assoc = assocNow();
+  if (was && !T.assoc) { T.phoneIp = null; T.outcome = null; if (T.running) { T.running = false; load([]); } }
+  if (what === 'dhcp' && !T.dhcp.on) T.phoneIp = null;
+  if (!was && T.assoc) {
+    S.newLink = 'phone-router';
+    toast('Телефон увидел сеть «Дом» и подключился сам. Теперь ему нужен адрес.');
+    runTask();
+  } else if (T.assoc && (what === 'wan' || what === 'dhcp')) runTask();
+  else if (!T.assoc && what === 'wifi') toast('Сохранено. Телефон всё ещё не в сети: ' + taskGoals()[1].why);
+  renderBoard(); renderRouter(); renderCard(); renderTransport(); renderModeChip(); updateTabDots();
+  if (S.tab === 'browser') renderBrowser();
+}
+function connectWan() {
+  if (T.wan || T.solved) return;
+  T.wan = true; S.armed = null; S.gesture = null; S.newLink = 'router-internet';
+  $('rubber').setAttribute('d', '');
+  toast('Кабель провайдера в порту WAN. Роутер получил внешний адрес 203.0.113.7.');
+  applyNet('wan');
+}
+
+function taskTrace() {
+  if (!T.assoc) return { hops: [], outcome: 'nowifi' };
+  const hops = [];
+  if (!T.phoneIp) {
+    if (!T.dhcp.on) return { hops: [withDrop(T_DHCP[0], 'DHCP выключен', 'Никто не ответил: DHCP-сервер на роутере выключен. Без адреса телефон дальше роутера не пройдёт.')], outcome: 'nodhcp' };
+    hops.push(...T_DHCP);
+  }
+  if (!T.wan) {
+    hops.push(withDrop(T_DNS[0], 'нет кабеля WAN', 'Роутеру некуда отправить пакет: кабель провайдера не подключён. Имя не превратилось в адрес.'));
+    return { hops, outcome: 'nowan' };
+  }
+  hops.push(...T_DNS, ...T_HTTP);
+  return { hops, outcome: 'ok' };
+}
+function runTask() {
+  if (S.step !== TASK || T.solved) return;
+  const tr = taskTrace();
+  T.outcome = null; T.reached = false;
+  if (!tr.hops.length) { finishTask(tr.outcome); return; }
+  T.running = true;
+  load(tr.hops, {
+    autoplay: true, delay: 450, fly: 620, dwell: 220,
+    onStop: (k, h) => { if (h.setsIp) { T.phoneIp = A.phone.ip; T.flashRow = 'phone'; if (T.rpTab === 'status') renderRouter(); } },
+    onEnd: () => finishTask(tr.outcome),
+  });
+  sync();
+}
+function finishTask(outcome) {
+  T.running = false; T.outcome = outcome;
+  if (outcome === 'ok') { T.reached = true; solve(); return; }
+  if (outcome !== 'nowifi') T.fails++;
+  T.browser = { code: outcome === 'nowan' ? 'ERR_NAME_NOT_RESOLVED' : 'ERR_INTERNET_DISCONNECTED' };
+  renderCard(); renderModeChip(); updateTabDots();
+  if (S.tab === 'browser') renderBrowser();
+}
+function solve() {
+  T.solved = true; T.demo = false;
+  const st = $('stage');
+  st.classList.remove('flash'); void st.getBoundingClientRect(); st.classList.add('flash');
+  S.tab = 'browser';
+  renderDock(); renderBoard(); renderTransport(); renderCard(); renderModeChip(); showCard();
+}
+function showSolution() {
+  if (S.step !== TASK || T.solved || T.demo) return;
+  T.demo = true; T.help = true; T.errors = {};
+  T.rpTab = 'wifi'; S.tab = 'router';
+  renderDock(); renderCard(); renderModeChip(); renderBoard();
+  const gap = reduce ? 150 : 650;
+  const steps = [
+    () => { if (!T.wan) { T.wan = true; S.newLink = 'router-internet'; T.assoc = assocNow(); renderBoard(); } },
+    () => { T.draft.ssid = REMEMBERED.ssid; renderRouter(); },
+    () => { T.draft.sec = 'wpa2'; T.draft.pass = REMEMBERED.pass; renderRouter(); },
+    () => { T.draft.band = '24'; renderRouter(); },
+    () => { T.wifi = { ...T.draft }; T.saved = 'wifi'; T.demo = false; T.help = true; if (!T.dhcp.on) { T.dhcp.on = true; T.dhcpDraft.on = true; T.phoneIp = null; } applyNet('wifi'); if (T.assoc && !T.running && !T.solved) runTask(); },
+  ];
+  const run = () => { const f = steps.shift(); if (!f) return; f(); if (steps.length) setTimeout(run, gap); };
+  setTimeout(run, 300);
+}
+
+// ---------- браузер телефона ----------
+function browserState() {
+  const i = S.step;
+  if (i === TASK) {
+    if (T.solved) return { ok: true };
+    if (T.running) return { loading: true, p: 0.1 + 0.85 * PL.stop / Math.max(1, NH()), msg: T.phoneIp ? 'Загружаю shop.example…' : 'Подключаюсь к «Дом», жду адрес…' };
+    return { err: T.browser.code };
+  }
+  if (i === 0) return { ok: true };
+  const n = NH(), f = n ? PL.stop / n : 1;
+  if (i === 1) return { loading: true, p: 0.06 + 0.3 * f, msg: PL.stop >= n ? 'Адрес найден: 198.51.100.10' : 'Ищу адрес shop.example…' };
+  if (PL.stop >= n) return { ok: true };
+  return { loading: true, p: 0.36 + 0.6 * f, msg: 'Загружаю страницу…' };
+}
+const ERRS = {
+  ERR_INTERNET_DISCONNECTED: ['Нет подключения к интернету', 'Телефон не подключён ни к одной сети.', 'ERR_INTERNET_DISCONNECTED значит, что сети у телефона нет совсем: ни Wi-Fi, ни адреса.'],
+  ERR_NAME_NOT_RESOLVED: ['Не удалось открыть сайт', 'Не найден IP-адрес сервера shop.example.', 'ERR_NAME_NOT_RESOLVED значит, что DNS не ответил: имя не превратилось в адрес. Wi-Fi при этом может работать.'],
+};
+function renderBrowser() {
+  const pane = $('pane-browser');
+  if (pane.hidden) return;
+  const b = browserState(), task = S.step >= TASK;
+  const online = !task || T.assoc, hasIp = !task || !!T.phoneIp, net = !task || T.wan;
+  let screen;
+  if (b.ok) {
+    screen = `<p class="shop-h">shop.example</p><p class="shop-sub">Учебный магазин · страница пришла с 198.51.100.10</p>
+      <div class="shop-grid"><div class="shop-card"><div class="pic"></div>Кружка «Пакет»<b>12,00 €</b></div><div class="shop-card"><div class="pic"></div>Кабель 2 м<b>7,50 €</b></div></div>`;
+  } else if (b.loading) {
+    screen = `<p class="shop-sub">${esc(b.msg)}</p><div class="shop-grid" aria-hidden="true"><div class="shop-card" style="opacity:.4"><div class="pic"></div>&nbsp;</div><div class="shop-card" style="opacity:.4"><div class="pic"></div>&nbsp;</div></div>`;
+  } else {
+    const [h, p] = ERRS[b.err];
+    screen = `<div class="br-err"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 8.5a15 15 0 0 1 20 0M5.5 12a10 10 0 0 1 13 0M9 15.5a5 5 0 0 1 6 0M12 19h.01M3 3l18 18"/></svg>
+      <h4>${h}</h4><p>${p}</p><p class="code">${b.err}</p><div><button class="btn sm" type="button" data-reload="1" id="br-reload2">Обновить</button></div></div>`;
+  }
+  const side = b.err ? `<p>${ERRS[b.err][2]}</p>` : '';
+  pane.innerHTML = `<div class="br-wrap">
+    <div class="phone" aria-label="Браузер телефона">
+      <div class="sbar"><span>9:41</span><span class="net ${online ? 'ok' : 'bad'}">${online ? `Wi-Fi «Дом»${task ? ' · 2.4 ГГц' : ''}` : 'нет сети'}</span></div>
+      <div class="addr-bar"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg><span class="u">shop.example</span><button class="rl" type="button" data-reload="1" id="br-reload" aria-label="Обновить" title="Обновить">↻</button></div>
+      ${b.loading ? `<div class="progress" aria-hidden="true"><i style="width:${Math.round(b.p * 100)}%"></i></div>` : ''}
+      <div class="screen">${screen}</div>
+    </div>
+    <div class="br-side"><b>Что знает телефон</b>
+      <ul><li>Сеть: ${online ? '«Дом», Wi-Fi' : 'нет'}</li><li>Адрес: ${hasIp && online ? '192.168.1.23/24' : 'нет'}</li><li>Шлюз: ${hasIp && online ? '192.168.1.1' : '—'}</li><li>DNS: ${hasIp && online ? '192.0.2.10' : '—'}</li>
+      <li>shop.example: ${(S.step >= 2 && !task) || (task && T.solved) || (S.step === 1 && PL.stop >= NH()) ? '198.51.100.10' : 'адрес не известен'}</li><li>Интернет: ${net ? 'есть' : 'нет'}</li></ul>${side}</div>
+  </div>`;
+}
+function reloadBrowser() {
+  if (S.step === TASK) {
+    if (T.solved || T.running) return;
+    if (!T.assoc) { toast('Телефон не в сети: обновление ничего не даст.'); T.fails++; renderCard(); return; }
+    runTask();
+    return;
+  }
+  if (NH()) { PL.stop = 0; PL.phase = 'rest'; PL.pauseAt = null; PL.playing = !PL.locked; PL.wait = 200; sync(); }
+}
+
+// ---------- терминал ноутбука ----------
+const TERM = { lines: [], hist: [], hi: 0 };
+const tp = (c, t) => TERM.lines.push([c, t]);
+function termRender() {
+  const out = $('term-out');
+  out.innerHTML = TERM.lines.map(([c, t]) => `<div class="${c}">${esc(t)}</div>`).join('');
+  out.scrollTop = out.scrollHeight;
+}
+const wired = () => S.step >= TASK;
+const inetUp = () => S.step < TASK || T.wan;
+const phoneUp = () => S.step < TASK || (T.assoc && !!T.phoneIp);
+function renderTermHeader() { $('term-if').textContent = wired() ? 'en1 · Ethernet · 192.168.1.42' : 'en0 · Wi-Fi · 192.168.1.42'; }
+function flashPath(links) { S.flashPath = { links, until: performance.now() + 1700 }; renderBoard(); }
+function pingTarget(ip) {
+  const lan = wired() ? 1 : 3;
+  if (ip === '127.0.0.1' || ip === A.laptop.ip) return { ttl: 64, rtt: 0.05, path: [] };
+  if (ip === A.routerLan.ip) return { ttl: 64, rtt: 2 * lan, path: ['laptop-router'] };
+  if (ip === A.routerWan.ip) return T.wan || S.step < TASK ? { ttl: 64, rtt: 2 * lan, path: ['laptop-router'] } : null;
+  if (ip === A.phone.ip) return phoneUp() ? { ttl: 64, rtt: 2 * (lan + 3), path: ['laptop-router', 'phone-router'] } : null;
+  if (ip === A.dns.ip || ip === A.shop.ip) return inetUp() ? { ttl: 62, rtt: 2 * (lan + 1 + 20), path: ['laptop-router', 'router-internet', ip === A.dns.ip ? 'internet-dns' : 'internet-shop'] } : null;
+  return null;
+}
+function runCmd(raw) {
+  const cmd = raw.trim().replace(/\s+/g, ' ');
+  if (!cmd) return;
+  TERM.hist.push(cmd); TERM.hi = TERM.hist.length;
+  tp('cmd', cmd);
+  const [c, ...args] = cmd.split(' '), arg = args.filter(a => !a.startsWith('-')).pop();
+  const ifn = wired() ? 'en1' : 'en0';
+  if (c === 'clear') { TERM.lines = []; }
+  else if (c === 'help') tp('dim', 'Доступно: ip a (или ipconfig), ping <адрес или имя>, nslookup <имя>, arp -a, clear.');
+  else if ((c === 'ip' && /^a(ddr)?$/.test(args[0] || '')) || c === 'ipconfig' || c === 'ifconfig') {
+    if (c !== 'ip') tp('dim', `# ${c} — синоним ip a: формат вывода в курсе один, упрощённый`);
+    tp('o', 'lo0: inet 127.0.0.1/8');
+    tp('o', `${ifn}: ${wired() ? 'Ethernet' : 'Wi-Fi "Дом"'}  status: active`);
+    tp('o', '     inet 192.168.1.42/24  brd 192.168.1.255');
+    tp('o', '     ether 3c:22:fb:7e:00:42');
+    tp('o', '     gateway 192.168.1.1  dns 192.0.2.10');
+  } else if (c === 'ping') {
+    if (!arg) tp('o', 'usage: ping <адрес или имя>');
+    else {
+      let ip = arg, name = null;
+      if (!/^\d{1,3}(\.\d{1,3}){3}$/.test(arg)) {
+        if (arg === 'localhost') ip = '127.0.0.1';
+        else if (arg === 'shop.example' && inetUp()) ip = A.shop.ip;
+        else { tp('o', `ping: cannot resolve ${arg}: Unknown host`); if (!inetUp()) tp('dim', '# DNS-резолвер недоступен: у роутера не подключён WAN.'); ip = null; }
+        name = arg;
+      }
+      if (ip) {
+        const t = pingTarget(ip);
+        tp('o', `PING ${name || ip} (${ip}): 56 data bytes`);
+        for (let k = 0; k < 3; k++) tp(t ? 'o' : 'bad', t ? `64 bytes from ${ip}: icmp_seq=${k} ttl=${t.ttl} time=${t.rtt.toFixed(t.rtt < 1 ? 3 : 1)} ms` : `Request timeout for icmp_seq ${k}`);
+        tp('o', `--- ${name || ip} ping statistics ---`);
+        tp('o', `3 packets transmitted, ${t ? 3 : 0} packets received, ${t ? '0.0' : '100.0'}% packet loss`);
+        if (!t && (ip === A.dns.ip || ip === A.shop.ip) && !inetUp()) tp('dim', '# Дальше роутера пакеты не уходят: кабель WAN не подключён.');
+        else if (!t && ip === A.phone.ip) tp('dim', '# Телефона нет в сети.');
+        else if (!t) tp('dim', '# На доске нет устройства с таким адресом.');
+        if (t && t.path.length) flashPath(t.path);
+      }
+    }
+  } else if (c === 'nslookup') {
+    if (!arg) tp('o', 'usage: nslookup <имя>');
+    else if (!inetUp()) { tp('bad', ';; connection timed out; no servers could be reached'); tp('dim', '# Резолвер 192.0.2.10 за роутером, а WAN не подключён.'); }
+    else {
+      tp('o', 'Server:\t\t192.0.2.10');
+      tp('o', 'Address:\t192.0.2.10#53');
+      tp('o', '');
+      if (arg === 'shop.example') { tp('o', 'Non-authoritative answer:'); tp('o', 'Name:\tshop.example'); tp('acc', 'Address: 198.51.100.10'); }
+      else tp('bad', `** server can't find ${arg}: NXDOMAIN`);
+      flashPath(['laptop-router', 'router-internet', 'internet-dns']);
+    }
+  } else if (c === 'arp' && args[0] === '-a') {
+    tp('o', `? (192.168.1.1) at a4:91:b1:00:00:01 on ${ifn} [ethernet]`);
+    if (phoneUp()) tp('o', `? (192.168.1.23) at 3c:22:fb:4a:10:23 on ${ifn} [ethernet]`);
+  } else tp('dim', `Команды «${c}» в этом уроке нет. Доступно: ip a, ipconfig, ping, nslookup, arp -a, clear.`);
+  termRender();
+}
+
+// ---------- общий рендер ----------
+let toastTimer;
+function toast(msg) {
+  const el = $('toast');
+  el.textContent = msg; el.hidden = false;
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => { el.hidden = true; }, 3200);
+}
+function renderModeChip() {
+  const c = $('mode-chip'), st = STEPS[S.step];
+  let t = 'Доска следует за текстом', k = '';
+  if (st.quiz && !S.quiz[st.quiz]) { t = st.quiz === 'first-hop' ? 'Вопрос · кликните устройство' : 'Вопрос · выберите слой'; k = 'quiz'; }
+  if (st.task) { t = T.solved ? 'Задача решена' : T.demo ? 'Показываю решение…' : 'Задача · доска и роутер ваши'; k = T.solved ? '' : 'edit'; }
+  c.className = 'mode-chip' + (k ? ' ' + k : '');
+  c.textContent = t;
+}
+function focusKey(el) {
+  if (!el || !el.closest || !svg.contains(el)) return null;
+  if (el.dataset.pkt) return '[data-pkt]';
+  if (el.dataset.port) return '[data-port]';
+  if (el.dataset.plug) return '[data-plug]';
+  if (el.dataset.node) return `[data-node="${el.dataset.node}"]`;
+  return null;
+}
+const _renderBoard = renderBoard;
+renderBoard = function () {
+  const fk = focusKey(document.activeElement);
+  _renderBoard();
+  if (fk) { const el = svg.querySelector(fk); if (el && el.getAttribute('tabindex') != null) el.focus({ preventScroll: true }); }
+};
+function sync() {
+  renderBoard();
+  renderTransport();
+  if (S.tab === 'env') renderEnv();
+  if (S.tab === 'browser') renderBrowser();
+  if (S.step === TASK) renderCard();
+  updateTabDots();
+}
+function renderAll() {
+  renderTheory();
+  renderCard();
+  renderDock();
+  renderBoard();
+  renderTransport();
+  renderModeChip();
+}
+function goTo(n) {
+  if (n === S.step || !canGo(n)) return;
+  enterStep(n);
+  renderAll();
+  if (STEPS[n].quiz || STEPS[n].task) setTimeout(showCard, 450);
+}
+
+// ---------- ответы на вопросы ----------
+function showCard() {
+  const c = $('card'), sc = $('theory-scroll');
+  if (c && getComputedStyle(sc).overflowY === 'auto') setTimeout(() => c.scrollIntoView({ block: 'nearest', behavior: reduce ? 'auto' : 'smooth' }), 60);
+}
+function answerFirstHop(id) {
+  if (S.step !== 3 || S.quiz['first-hop']) return;
+  const Q = QUIZ['first-hop'];
+  if (!Q.cands.includes(id)) return;
+  S.quiz['first-hop'] = { pick: id, first: id === Q.answer };
+  PL.locked = false;
+  stepFwd();
+  renderCard(); renderModeChip(); renderTransport(); showCard();
+}
+function answerLayer(k) {
+  if (S.step !== 5 || S.quiz['which-layer']) return;
+  S.quiz['which-layer'] = { pick: k, first: k === QUIZ['which-layer'].answer };
+  PL.locked = false;
+  renderEnv(); renderCard(); renderModeChip(); renderTransport(); renderBoard(); showCard();
+}
+function openEnvelope() {
+  PL.playing = false; PL.sel = true;
+  setTab('env');
+  sync();
+  if (window.matchMedia('(max-width: 880px)').matches) $('dock').scrollIntoView({ block: 'nearest', behavior: reduce ? 'auto' : 'smooth' });
+}
+
+// ---------- указатель на доске ----------
+function svgPt(e) {
+  const m = svg.getScreenCTM();
+  if (!m) return { x: 0, y: 0 };
+  const p = svg.createSVGPoint();
+  p.x = e.clientX; p.y = e.clientY;
+  return p.matrixTransform(m.inverse());
+}
+const editTask = () => S.step === TASK && !T.solved && !T.demo;
+function arm(from) {
+  S.armed = from;
+  toast(from === 'port' ? 'Теперь нажмите облако «Интернет».' : 'Теперь нажмите роутер.');
+  renderBoard();
+}
+function tryConnect(target) {
+  if (!target || !target.closest) return false;
+  const g = S.gesture ? S.gesture.from : S.armed;
+  if (g === 'port' && target.closest('[data-node="internet"], [data-plug]')) { connectWan(); return true; }
+  if (g === 'plug' && target.closest('[data-node="router"], [data-port]')) { connectWan(); return true; }
+  return false;
+}
+svg.addEventListener('pointerdown', e => {
+  if (e.button !== 0) return;
+  const t = e.target;
+  if (t.closest('[data-pkt]')) { e.preventDefault(); openEnvelope(); return; }
+  const cand = t.closest('.cand');
+  if (cand) { answerFirstHop(cand.dataset.node); return; }
+  if (!editTask()) return;
+  const port = t.closest('[data-port]'), plug = t.closest('[data-plug]');
+  if (port || plug) {
+    e.preventDefault();
+    const from = port ? 'port' : 'plug';
+    if (S.armed && S.armed !== from) { connectWan(); return; }
+    S.gesture = { from, sx: e.clientX, sy: e.clientY, moved: false };
+    return;
+  }
+  if (S.armed) { if (!tryConnect(t)) { S.armed = null; renderBoard(); } }
+});
+document.addEventListener('pointermove', e => {
+  const g = S.gesture;
+  if (!g) return;
+  if (!g.moved && Math.hypot(e.clientX - g.sx, e.clientY - g.sy) < 6) return;
+  g.moved = true;
+  const o = g.from === 'port' ? portPt() : looseEnd().e, p = svgPt(e);
+  $('rubber').setAttribute('d', `M${P(o)} L${p.x.toFixed(1)},${p.y.toFixed(1)}`);
+});
+document.addEventListener('pointerup', e => {
+  const g = S.gesture;
+  if (!g) return;
+  $('rubber').setAttribute('d', '');
+  if (!g.moved) { S.gesture = null; arm(g.from); return; }
+  const el = document.elementFromPoint(e.clientX, e.clientY);
+  if (!tryConnect(el)) toast(g.from === 'port' ? 'Кабель не дотянули: отпустите его над облаком «Интернет».' : 'Кабель не дотянули: отпустите его над роутером.');
+  S.gesture = null;
+});
+document.addEventListener('pointercancel', () => { S.gesture = null; $('rubber').setAttribute('d', ''); });
+svg.addEventListener('keydown', e => {
+  if (e.key !== 'Enter' && e.key !== ' ') return;
+  const t = e.target;
+  if (t.dataset.pkt) { e.preventDefault(); openEnvelope(); return; }
+  if (t.classList.contains('cand')) { e.preventDefault(); answerFirstHop(t.dataset.node); return; }
+  if (!editTask()) return;
+  if (t.dataset.port || t.dataset.plug) { e.preventDefault(); const from = t.dataset.port ? 'port' : 'plug'; if (S.armed && S.armed !== from) connectWan(); else arm(from); return; }
+  if (S.armed && t.dataset.node) { e.preventDefault(); tryConnect(t); }
+});
+
+// ---------- теория: ссылки, кнопки ----------
+function hoverRef(e, on) {
+  const r = e.target.closest && e.target.closest('.ref');
+  if (!r) return;
+  const id = r.dataset.ref;
+  if (ENV_REF[id]) {
+    S.envHl = on ? ENV_REF[id] : null;
+    document.querySelectorAll('#pane-env [data-layer]').forEach(l => l.classList.toggle('hl', l.dataset.layer === S.envHl));
+    const env = document.querySelector('#pane-env .env');
+    if (env) env.classList.toggle('fade', !!S.envHl);
+  } else if (DEV[id]) S.refHl = on ? id : null;
+  else return;
+  renderBoard();
+}
+$('beats').addEventListener('pointerover', e => hoverRef(e, true));
+$('beats').addEventListener('pointerout', e => hoverRef(e, false));
+$('beats').addEventListener('focusin', e => hoverRef(e, true));
+$('beats').addEventListener('focusout', e => hoverRef(e, false));
+$('beats').addEventListener('click', e => {
+  const a = e.target.closest('[data-action]');
+  if (a) {
+    const k = a.dataset.action;
+    if (k === 'next') goTo(S.step + 1);
+    else if (k === 'hint') { T.hint = Math.min(3, T.hint + 1); if (T.hint >= 3) { T.rpTab = 'wifi'; S.tab = 'router'; renderDock(); } renderCard(); renderBoard(); }
+    else if (k === 'solution') showSolution();
+    else if (k === 'reset') { resetTask(); load([]); S.armed = null; renderDock(); renderBoard(); renderTransport(); renderCard(); renderModeChip(); }
+    else if (k === 'copy') {
+      const txt = $('ask-text').textContent;
+      const done = () => { a.textContent = 'Скопировано'; };
+      const fallback = () => { const r = document.createRange(); r.selectNodeContents($('ask-text')); const s = getSelection(); s.removeAllRanges(); s.addRange(r); a.textContent = 'Выделено, нажмите ⌘C'; };
+      try { navigator.clipboard.writeText(txt).then(done, fallback); } catch { fallback(); }
+    }
+    return;
+  }
+  const r = e.target.closest('.ref');
+  if (r) {
+    const id = r.dataset.ref;
+    if (id === 'term') { setTab('term'); $('term-input').focus({ preventScroll: true }); if (window.matchMedia('(max-width: 880px)').matches) $('dock').scrollIntoView({ block: 'nearest' }); }
+    else if (ENV_REF[id] && S.tab !== 'env') setTab('env');
+    return;
+  }
+  const past = e.target.closest('.beat.past');
+  if (past) goTo(+past.dataset.goto);
+});
+$('beats').addEventListener('keydown', e => {
+  const r = e.target.closest && e.target.closest('.ref.act');
+  if (r && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); r.click(); }
+});
+$('timeline').addEventListener('click', e => { const b = e.target.closest('[data-goto]'); if (b && !b.disabled) goTo(+b.dataset.goto); });
+$('theory-nav').addEventListener('click', e => {
+  if (e.target.closest('#nav-prev')) goTo(S.step - 1);
+  if (e.target.closest('#nav-next')) goTo(S.step + 1);
+});
+
+// ---------- транспорт ----------
+$('t-first').addEventListener('click', toFirst);
+$('t-back').addEventListener('click', stepBack);
+$('t-step').addEventListener('click', stepFwd);
+$('t-play').addEventListener('click', togglePlay);
+document.querySelectorAll('[data-speed]').forEach(b => b.addEventListener('click', () => { PL.speed = +b.dataset.speed; renderTransport(); }));
+
+// ---------- поверхности ----------
+$('dock-tabs').addEventListener('click', e => { const b = e.target.closest('[data-tab]'); if (b) setTab(b.dataset.tab); });
+$('dock-tabs').addEventListener('keydown', e => {
+  if (e.key !== 'ArrowRight' && e.key !== 'ArrowLeft') return;
+  e.preventDefault(); e.stopPropagation();
+  const t = tabsFor(), i = t.indexOf(S.tab);
+  setTab(t[(i + (e.key === 'ArrowRight' ? 1 : t.length - 1)) % t.length], true);
+});
+$('pane-env').addEventListener('click', e => { const c = e.target.closest('[data-layer-pick]'); if (c && !c.disabled) answerLayer(c.dataset.layerPick); });
+$('pane-env').addEventListener('pointerover', e => {
+  const l = e.target.closest('[data-layer]'), k = l ? l.dataset.layer : null;
+  if (k === S.envHl) return;
+  S.envHl = k;
+  document.querySelectorAll('#pane-env [data-layer]').forEach(x => x.classList.toggle('hl', x.dataset.layer === k));
+  renderBoard();
+});
+$('pane-env').addEventListener('pointerleave', () => {
+  if (!S.envHl) return;
+  S.envHl = null;
+  document.querySelectorAll('#pane-env [data-layer]').forEach(x => x.classList.remove('hl'));
+  renderBoard();
+});
+$('pane-router').addEventListener('click', e => {
+  const t = e.target;
+  const tab = t.closest('[data-rp]');
+  if (tab) { T.rpTab = tab.dataset.rp; T.errors = {}; renderRouter(); $('rp-' + T.rpTab).focus(); return; }
+  const band = t.closest('[data-band]');
+  if (band && !band.disabled) { T.draft.band = band.dataset.band; T.saved = null; renderRouter(); return; }
+  if (t.closest('#wf-save')) saveWifi();
+  else if (t.closest('#wf-cancel')) { T.draft = { ...T.wifi }; T.errors = {}; renderRouter(); }
+  else if (t.closest('#dh-save')) saveDhcp();
+  else if (t.closest('#dh-cancel')) { T.dhcpDraft = { ...T.dhcp }; T.errors = {}; renderRouter(); }
+});
+$('pane-router').addEventListener('input', e => {
+  const t = e.target;
+  if (t.id === 'wf-ssid') T.draft.ssid = t.value;
+  else if (t.id === 'wf-pass') T.draft.pass = t.value;
+  else if (t.id === 'dh-from') T.dhcpDraft.from = t.value;
+  else if (t.id === 'dh-to') T.dhcpDraft.to = t.value;
+  else return;
+  T.saved = null;
+  const a = $('wf-dirty'), b = $('dh-dirty');
+  if (a) a.hidden = !wifiDirty();
+  if (b) b.hidden = !dhcpDirty();
+  document.querySelectorAll('#pane-router .saved').forEach(x => x.remove());
+});
+$('pane-router').addEventListener('change', e => {
+  const t = e.target;
+  if (t.id === 'wf-sec') { T.draft.sec = t.value; T.saved = null; renderRouter(); }
+  if (t.id === 'dh-on') { T.dhcpDraft.on = t.checked; T.saved = null; renderRouter(); }
+});
+$('pane-router').addEventListener('keydown', e => {
+  if (e.key === 'Enter' && e.target.matches('input.inp')) { e.preventDefault(); if (T.rpTab === 'wifi') saveWifi(); else saveDhcp(); }
+});
+$('pane-browser').addEventListener('click', e => { if (e.target.closest('[data-reload]')) reloadBrowser(); });
+$('term-form').addEventListener('submit', e => { e.preventDefault(); const i = $('term-input'); runCmd(i.value); i.value = ''; });
+$('term-quick').addEventListener('click', e => { const b = e.target.closest('[data-cmd]'); if (b) { runCmd(b.dataset.cmd); } });
+$('term-input').addEventListener('keydown', e => {
+  if (e.key !== 'ArrowUp' && e.key !== 'ArrowDown') return;
+  e.preventDefault();
+  TERM.hi = clamp(TERM.hi + (e.key === 'ArrowUp' ? -1 : 1), 0, TERM.hist.length);
+  e.target.value = TERM.hist[TERM.hi] || '';
+});
+
+// ---------- клавиатура и размер ----------
+document.addEventListener('keydown', e => {
+  if (e.target.closest && e.target.closest('input, textarea, select, [role="tablist"]')) return;
+  if (e.key === 'Escape') { S.armed = null; S.gesture = null; $('rubber').setAttribute('d', ''); renderBoard(); return; }
+  if (e.metaKey || e.ctrlKey || e.altKey) return;
+  if (e.key === 'ArrowRight') goTo(S.step + 1);
+  if (e.key === 'ArrowLeft') goTo(S.step - 1);
+});
+const onLayout = () => { S.layout = narrowMQ.matches ? 'narrow' : 'wide'; renderBoard(); };
+if (narrowMQ.addEventListener) narrowMQ.addEventListener('change', onLayout); else narrowMQ.addListener(onLayout);
+
+// ---------- кадр ----------
+let last = performance.now();
+function frame(now) {
+  const dt = Math.min(now - last, 64);
+  last = now;
+  if (tick(dt)) sync();
+  else if (PL.phase === 'fly') placePacket();
+  if (S.flashPath && S.flashPath.until < now) { S.flashPath = null; renderBoard(); }
+  requestAnimationFrame(frame);
+}
+
+tp('dim', '# Терминал ноутбука. Вывод упрощён и выглядит как в Unix; ping шлёт 3 пакета.');
+tp('dim', '# Нажмите кнопку с командой ниже или наберите свою. help — список команд.');
+enterStep(0);
+renderAll();
+termRender();
+requestAnimationFrame(frame);
+})();
+</script>
