@@ -129,6 +129,7 @@ export const en = {
     step: step => `Step ${step}`,
     prev: '← Back',
     next: 'Next →',
+    nextTo: stepTitle => `Next: ${stepTitle} →`,
     navHint: 'The ← → keys work too',
     solveFirst: 'Solve the task on the board to continue',
     lessonEnd: 'End of the lesson',

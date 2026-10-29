@@ -407,6 +407,35 @@ const taskCardView = (
 
 // THEORY
 
+// Кнопка «Далее» сразу под текстом шага: на высоком мониторе нижняя панель
+// далеко от того места, где ученик дочитал. На шаге задачи её роль играет
+// кнопка в карточке решённой задачи.
+const inlineNextView = (
+  lesson: LessonDefinition,
+  model: Model,
+  texts: LooseLessonTexts,
+  ui: UiStrings,
+  h: HtmlBuilder<Message>,
+): ReadonlyArray<Html> =>
+  Option.match(Array.get(lesson.steps, model.step + 1), {
+    onNone: () => [],
+    onSome: nextStep => [
+      h.div(
+        [h.Class('step-next')],
+        [
+          h.button(
+            [
+              h.Type('button'),
+              h.Class('btn primary'),
+              h.OnClick(Message.ClickedNext()),
+            ],
+            [ui.player.nextTo(stepTitle(texts, nextStep.id))],
+          ),
+        ],
+      ),
+    ],
+  })
+
 const theoryView = (
   lesson: LessonDefinition,
   model: Model,
@@ -485,7 +514,8 @@ const theoryView = (
                   proseView(stepBody(texts, lessonStep.id, doc), h),
                   ...(index === model.step
                     ? Option.match(currentTask(lesson, model), {
-                        onNone: () => [],
+                        onNone: () =>
+                          inlineNextView(lesson, model, texts, ui, h),
                         onSome: task => [
                           taskCardView(lesson, model, task, texts, doc, ui, h),
                         ],

@@ -132,6 +132,7 @@ export const uk = {
     step: step => `Крок ${step}`,
     prev: '← Назад',
     next: 'Далі →',
+    nextTo: stepTitle => `Далі: ${stepTitle} →`,
     navHint: 'Стрілки ← → теж працюють',
     solveFirst: 'Розв’яжіть задачу на дошці, щоб продовжити',
     lessonEnd: 'Кінець уроку',

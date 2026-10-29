@@ -81,6 +81,7 @@ export type UiStrings = Readonly<{
     step: (step: number) => string
     prev: string
     next: string
+    nextTo: (stepTitle: string) => string
     navHint: string
     solveFirst: string
     lessonEnd: string

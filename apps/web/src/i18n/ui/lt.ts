@@ -131,6 +131,7 @@ export const lt = {
     step: step => `${step} žingsnis`,
     prev: '← Atgal',
     next: 'Toliau →',
+    nextTo: stepTitle => `Toliau: ${stepTitle} →`,
     navHint: 'Veikia ir klavišai ← →',
     solveFirst: 'Išspręskite užduotį lentoje, kad galėtumėte tęsti',
     lessonEnd: 'Pamokos pabaiga',

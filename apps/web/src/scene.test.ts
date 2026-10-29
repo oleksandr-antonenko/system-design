@@ -235,6 +235,31 @@ describe('lesson player', () => {
     )
   })
 
+  test('a Next button sits right under the step the student just read', () => {
+    scene(
+      { update, view },
+      given(openLesson('/ru/lessons/load-balancer?step=1')),
+      pointerReady,
+      expect(role('button', { name: 'Далее: Распродажа →' })).toExist(),
+      click(role('button', { name: 'Далее: Распродажа →' })),
+      Command.resolve(
+        Player.ScrollStepIntoView,
+        Player.Message.CompletedScrollStepIntoView(),
+      ),
+      Command.resolve(ReplaceStepUrl, Message.CompletedReplaceStepUrl()),
+      expect(role('button', { name: /^Далее: Вверх или вширь/ })).toExist(),
+    )
+  })
+
+  test('an unsolved task has no inline Next', () => {
+    scene(
+      { update, view },
+      given(openLesson('/ru/lessons/load-balancer?step=4')),
+      pointerReady,
+      expect(role('button', { name: /^Далее: / })).toBeAbsent(),
+    )
+  })
+
   test('the operation log shows the script of the step', () => {
     scene(
       { update, view },

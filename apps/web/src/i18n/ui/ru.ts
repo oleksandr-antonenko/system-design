@@ -131,6 +131,7 @@ export const ru = {
     step: step => `Шаг ${step}`,
     prev: '← Назад',
     next: 'Далее →',
+    nextTo: stepTitle => `Далее: ${stepTitle} →`,
     navHint: 'Стрелки ← → тоже работают',
     solveFirst: 'Решите задачу на доске, чтобы продолжить',
     lessonEnd: 'Конец урока',
