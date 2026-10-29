@@ -1,8 +1,8 @@
 ## 1. Репозиторий
 
 - [x] 1.1 Создать репозиторий `oleksandr-antonenko/system-design` и отправить `main`. Проверка: `git ls-remote origin main` совпадает с локальным `HEAD`.
-- [ ] 1.2 Сделать репозиторий публичным без деталей инфраструктуры в истории: прежний приватный черновик переименовать, история начинается с чистого коммита. Проверка: `gh repo view --json visibility` = `PUBLIC`, поиск по репозиторию не находит адрес сервера, ssh-порт и имя пользователя.
-- [ ] 1.3 Настройки Actions (design D1): одобрение запусков для внешних авторов, `GITHUB_TOKEN` только на чтение по умолчанию. Проверка: `gh api repos/oleksandr-antonenko/system-design/actions/permissions/workflow` и `…/fork-pr-contributor-approval` возвращают нужные значения.
+- [x] 1.2 Сделать репозиторий публичным без деталей инфраструктуры в истории: прежний приватный черновик переименовать, история начинается с чистого коммита. Проверка: `gh repo view --json visibility` = `PUBLIC`, поиск по репозиторию не находит адрес сервера, ssh-порт и имя пользователя.
+- [x] 1.3 Настройки Actions (design D1): одобрение запусков для внешних авторов, `GITHUB_TOKEN` только на чтение по умолчанию. Проверка: `gh api repos/oleksandr-antonenko/system-design/actions/permissions/workflow` и `…/fork-pr-contributor-approval` возвращают нужные значения.
 
 ## 2. Файлы выкатки в репозитории
 
