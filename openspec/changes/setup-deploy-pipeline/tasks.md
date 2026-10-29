@@ -8,15 +8,15 @@
 
 - [x] 2.1 `.github/workflows/ci.yml` с jobs `check`, `promote` и `verify` (design D2). Проверка: `actionlint` без замечаний.
 - [ ] 2.2 `deploy/poll.sh` и `deploy/release.sh` (design D3): `ls-remote`, `flock`, `state/failed`, переиспользование собранной версии, резервные копии, проверка версии, откат, чистка. Проверка: `bash -n` и `shellcheck` без замечаний; локальный прогон `release.sh` на временном каталоге с фиктивным `HOME` доходит до проверки здоровья.
-- [ ] 2.3 Unit-файлы `system-design-web.service`, `system-design-deploy.service` и `.timer` (design D3, D5). Проверка: `systemd-analyze --user verify` без ошибок.
-- [ ] 2.4 `deploy/nginx.conf` (design D6). Проверка: `nginx -t` на сервере проходит после установки (задача 3.3).
+- [x] 2.3 Unit-файлы `system-design-web.service`, `system-design-deploy.service` и `.timer` (design D3, D5). Проверка: `systemd-analyze --user verify` без ошибок.
+- [x] 2.4 `deploy/nginx.conf` (design D6). Проверка: `nginx -t` на сервере проходит после установки (задача 3.3).
 - [x] 2.5 `deploy/README.md`: как устроена выкатка, как откатиться (`git push --force origin <sha>:production`), где журналы. Без адресов и имён. Проверка: в файле нет хостов, портов и имён пользователей.
 
 ## 3. Сервер (разовая настройка, детали вне репозитория)
 
-- [ ] 3.1 Пользователь приложения без sudo с linger, каталоги из design D4, `.env` с правами 600. Проверка: `sudo -l -U <пользователь>` показывает отсутствие прав, `loginctl show-user <пользователь> -p Linger` = `yes`.
-- [ ] 3.2 Установить unit-файлы и `poll.sh`, включить таймер. Проверка: `systemctl --user list-timers` под пользователем приложения показывает таймер, журнал опросчика пишет «нет изменений».
-- [ ] 3.3 nginx-хост, `nginx -t`, `reload`, `certbot --nginx -d system-design.oleksandr-antonenko.com --redirect`. Проверка: `curl -sI http://…/uk/` даёт 301 на https, сертификат действителен.
+- [x] 3.1 Пользователь приложения без sudo с linger, каталоги из design D4, `.env` с правами 600. Проверка: `sudo -l -U <пользователь>` показывает отсутствие прав, `loginctl show-user <пользователь> -p Linger` = `yes`.
+- [x] 3.2 Установить unit-файлы и `poll.sh`, включить таймер. Проверка: `systemctl --user list-timers` под пользователем приложения показывает таймер, журнал опросчика пишет «нет изменений».
+- [x] 3.3 nginx-хост, `nginx -t`, `reload`, `certbot --nginx -d system-design.oleksandr-antonenko.com --redirect`. Проверка: `curl -sI http://…/uk/` даёт 301 на https, сертификат действителен.
 
 ## 4. Сквозная проверка
 
