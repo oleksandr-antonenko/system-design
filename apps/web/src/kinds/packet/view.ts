@@ -13,7 +13,7 @@ import { levelOf, sourceOf } from '../../net/packet'
 import { addressOf, wifiOf } from '../../net/topology'
 import type { BoardSlot, Tone } from '../contract'
 import type { PacketTypes } from '../types'
-import { addressesOf, isSealed } from './envelope'
+import { addressesOf, isAddressQuestion, isSealed } from './envelope'
 import { deviceIcons } from './icons'
 import {
   type CloudShape,
@@ -1574,21 +1574,12 @@ const letterView = <ParentMessage>(
         !Array.contains(picture.hidden, 'addresses')
       // Выдача адреса (урок 2): у спрашивающего ещё нет номера, вопрос
       // идёт всем; ответ «для всех» несёт только имя получателя.
-      const isBroadcast = Option.exists(
-        addresses,
-        found => found.to === BROADCAST,
-      )
-      // Поиск MAC тоже спрашивает всех: «у кого этот адрес?» (урок 8:
-      // ноутбук ищет чужой gateway, которого в доме нет).
-      const isArpQuestion = Option.exists(legHop, leg =>
-        Array.some(
-          leg.hop.envelope,
-          layer => layer._tag === 'Arp' && layer.kind === 'request',
-        ),
-      )
+      // Вопрос «у кого этот адрес?» (ARP) тоже идёт всем в сети.
+      const isBroadcast =
+        Option.exists(legHop, leg => isAddressQuestion(leg.hop)) ||
+        Option.exists(addresses, found => found.to === BROADCAST)
       const isAskingAll =
-        (isBroadcast || isArpQuestion) &&
-        !Option.exists(legHop, leg => leg.isReply)
+        isBroadcast && !Option.exists(legHop, leg => leg.isReply)
       const fromAddress = Option.map(addresses, found =>
         found.from === UNSET ? `(${ui.card.noAddress})` : found.from,
       )
