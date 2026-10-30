@@ -22,7 +22,7 @@ export default {
     'Read replicas, replication lag, failover і чому весь запис і далі йде в primary.',
   steps: {
     'one-database': {
-      title: 'П’ять server, одна database',
+      title: 'П’ять блоків «Server», одна database',
       body: ({ sim }) =>
         `Інтернет-магазин виріс. [[users|Users]] приходять через [[lb|load balancer]] на п’ять блоків «Server», від [[app1|app1]] до [[app5|app5]], а всі вони читають і записують дані в одну [[db|database]].
 
@@ -112,7 +112,7 @@ Failover має ціну. За асинхронної реплікації ос�
       },
       hints: [
         'Database завалена читанням, а на читання може відповісти будь-яка копія даних.',
-        'Поставте дві read replica праворуч від блоків «Server» і підключіть кожен server до обох. Зв’язки «Server → Database» залиште: лише ними йде запис.',
+        'Поставте два блоки «Read replica» праворуч від блоків «Server» і підключіть кожен server до обох. Зв’язки «Server → Database» залиште: лише ними йде запис.',
         'На дошці з’явився пунктирний контур. Поставте read replica туди й проведіть позначені зв’язки від кожного server.',
       ],
       solvedNote:

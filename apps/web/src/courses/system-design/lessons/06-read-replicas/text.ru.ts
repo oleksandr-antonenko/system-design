@@ -22,7 +22,7 @@ export default {
     'Read replicas, replication lag, failover и почему вся запись по-прежнему идёт в primary.',
   steps: {
     'one-database': {
-      title: 'Пять servers, одна database',
+      title: 'Пять блоков «Server», одна database',
       body: ({ sim }) =>
         `Интернет-магазин вырос. [[users|Users]] приходят через [[lb|load balancer]] на пять блоков «Server», от [[app1|app1]] до [[app5|app5]], а все они читают и записывают данные в одну [[db|database]].
 
@@ -112,7 +112,7 @@ Replicas **масштабируют чтение**: каждая берёт св
       },
       hints: [
         'Database завалена чтением, а на чтение может ответить любая копия данных.',
-        'Поставьте две read replicas справа от блоков «Server» и подключите каждый server к обеим. Связи «Server → Database» оставьте: только по ним идёт запись.',
+        'Поставьте два блока «Read replica» справа от блоков «Server» и подключите каждый server к обоим. Связи «Server → Database» оставьте: только по ним идёт запись.',
         'На доске появился пунктирный контур. Поставьте replicas туда и проведите отмеченные связи от каждого блока «Server».',
       ],
       solvedNote:

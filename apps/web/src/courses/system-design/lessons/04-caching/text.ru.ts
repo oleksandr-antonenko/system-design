@@ -28,7 +28,7 @@ export default {
   summary: 'Cache-aside, hit rate и TTL: как снять нагрузку с database.',
   steps: {
     'five-servers': {
-      title: 'Пять servers, одна database',
+      title: 'Пять блоков «Server», одна database',
       body: `Интернет-магазин из урока 3 вырос. [[users|Users]] приходят через [[lb|load balancer]] на пять блоков «Server», от [[app1|app1]] до [[app5|app5]], и все они работают с одной [[db|database]]. Сейчас приходит 1200 rps.
 
 Каждому server достаётся по 240 rps — 60% его мощности. Database тяжелее: в неё сходятся запросы от всех блоков «Server», поэтому она получает все 1200 rps из 1500 возможных. Это 80%, самый загруженный блок на доске.`,

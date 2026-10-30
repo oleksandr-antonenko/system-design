@@ -8,7 +8,7 @@ const percent = (ratio: number) => `${n(ratio * 100)} %`
 export default {
   title: 'Load balancer',
   summary:
-    'Horizontalus plėtimas: keli server už vieno įėjimo taško, health check ir N+1 taisyklė.',
+    'Horizontalus plėtimas: keli „Server“ blokai už vieno įėjimo taško, health check ir N+1 taisyklė.',
   steps: {
     'one-server': {
       title: 'Vienas server',
@@ -26,7 +26,7 @@ Atsako laikas pablogėja dar prieš apkrovai pasiekiant 100 %. Jau virš 80 % u�
       title: 'Aukštyn ar į plotį',
       body: `Galima nusipirkti galingesnį server. Tai **vertikalus plėtimas** (vertical scaling). Jis paprastas, bet turi lubas, kaina auga greičiau nei galia, o server lieka single point of failure.
 
-Kitas kelias – **horizontalus plėtimas** (horizontal scaling): paleisti kelis vienodus server. Pridėjome [[app2|app2]] ir [[app3|app3]]. Jie prijungti prie database, bet stovi be darbo, nes users žino tik [[app1|app1]] adresą.`,
+Kitas kelias – **horizontalus plėtimas** (horizontal scaling): paleisti kelis vienodus „Server“ blokus. Pridėjome [[app2|app2]] ir [[app3|app3]]. Jie prijungti prie database, bet stovi be darbo, nes users žino tik [[app1|app1]] adresą.`,
     },
     'place-lb': {
       title: 'Užduotis: load balancer',
@@ -53,7 +53,7 @@ Iš čia **N+1** taisyklė: blokų „Server“ turi užtekti didžiausiai apkro
       title: 'Santrauka',
       body: `Stateless server kartu su load balancer suteikia horizontalų plėtimą. Norint atlaikyti didesnę apkrovą, pakanka pridėti dar vieną server už load balancer.
 
-Tačiau visi server kreipiasi į tą pačią [[db|database]], ir ji taps kitu siauru kakleliu. 4 pamokoje prieš ją pastatysime **cache** (lietuviškai – podėlis, greita atmintis dažnai skaitomiems duomenims).`,
+Tačiau visi „Server“ blokai kreipiasi į tą pačią [[db|database]], ir ji taps kitu siauru kakleliu. 4 pamokoje prieš ją pastatysime **cache** (lietuviškai – podėlis, greita atmintis dažnai skaitomiems duomenims).`,
     },
   },
   annotations: {
@@ -64,7 +64,7 @@ Tačiau visi server kreipiasi į tą pačią [[db|database]], ir ji taps kitu si
     excluded: () => 'app2 neatsako → pašalintas',
     survivorLoad: sim =>
       `${n(sim.nodes['app1']?.incoming ?? 0)} rps · ${percent(sim.nodes['app1']?.utilization ?? 0)}`,
-    databaseLoad: sim => `${n(sim.databaseLoad)} rps iš visų server`,
+    databaseLoad: sim => `${n(sim.databaseLoad)} rps iš visų „Server“ blokų`,
   },
   tasks: {
     'place-lb': {

@@ -65,7 +65,8 @@ Server размера M обрабатывает около **400 запросо
     excluded: () => 'app2 не отвечает → исключён',
     survivorLoad: sim =>
       `${n(sim.nodes['app1']?.incoming ?? 0)} rps · ${percent(sim.nodes['app1']?.utilization ?? 0)}`,
-    databaseLoad: sim => `${n(sim.databaseLoad)} rps · сюда ходят все servers`,
+    databaseLoad: sim =>
+      `${n(sim.databaseLoad)} rps · сюда ходят все блоки «Server»`,
   },
   tasks: {
     'place-lb': {

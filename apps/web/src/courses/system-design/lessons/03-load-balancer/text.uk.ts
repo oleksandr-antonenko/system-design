@@ -8,7 +8,7 @@ const percent = (ratio: number) => `${n(ratio * 100)}%`
 export default {
   title: 'Load balancer',
   summary:
-    'Горизонтальне масштабування (horizontal scaling): кілька server за одним входом, health check і правило N+1.',
+    'Горизонтальне масштабування (horizontal scaling): кілька блоків «Server» за одним входом, health check і правило N+1.',
   steps: {
     'one-server': {
       title: 'Один server',
@@ -26,7 +26,7 @@ Server розміру M обробляє близько **400 запитів н�
       title: 'Угору чи вшир',
       body: `Можна купити потужніший server. Це **вертикальне масштабування** (vertical scaling). Воно просте, але має стелю, ціна зростає швидше за потужність, а server лишається single point of failure.
 
-Інший шлях — **горизонтальне масштабування** (horizontal scaling): поставити кілька однакових server. Ми додали [[app2|app2]] і [[app3|app3]]. Вони підключені до database, але простоюють, бо users знають лише адресу [[app1|app1]].`,
+Інший шлях — **горизонтальне масштабування** (horizontal scaling): поставити кілька однакових блоків «Server». Ми додали [[app2|app2]] і [[app3|app3]]. Вони підключені до database, але простоюють, бо users знають лише адресу [[app1|app1]].`,
     },
     'place-lb': {
       title: 'Задача: load balancer',
@@ -65,7 +65,7 @@ Server розміру M обробляє близько **400 запитів н�
     excluded: () => 'app2 не відповідає → виключено',
     survivorLoad: sim =>
       `${n(sim.nodes['app1']?.incoming ?? 0)} rps · ${percent(sim.nodes['app1']?.utilization ?? 0)}`,
-    databaseLoad: sim => `${n(sim.databaseLoad)} rps від усіх server`,
+    databaseLoad: sim => `${n(sim.databaseLoad)} rps від усіх блоків «Server»`,
   },
   tasks: {
     'place-lb': {

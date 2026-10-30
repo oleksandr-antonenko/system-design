@@ -104,9 +104,9 @@ export const ru = {
     load: 'Нагрузка',
     errors: 'Ошибки',
     p95: 'p95 ответа',
-    database: 'Запросы к Database',
+    database: 'Запросы к database',
     rejected: 'Отклонено',
-    backlog: 'Очередь растёт',
+    backlog: 'Queue растёт',
     cost: 'Цена',
     rps: value => `${n(value)} rps`,
     growth: value => `+${n(value)} rps`,
@@ -165,7 +165,7 @@ export const ru = {
     showSolution: 'Показать решение',
     resultErrors: 'Ошибки',
     resultP95: 'p95 ответа',
-    resultServers: 'Загрузка Server',
+    resultServers: 'Загрузка servers',
     resultCost: 'Цена',
     continueLesson: 'Дальше →',
     surfaces: 'Где решать задачу',
@@ -235,7 +235,7 @@ export const ru = {
     GoalOverUtilized: ({ kind, load, utilization, max, nodes }) =>
       `При ${n(load)} rps блоки «${componentName[kind]}» загружены до ${percent(utilization)}, выше порога ${percent(max)}: ${nodes.join(', ')}.`,
     GoalBacklogGrowing: ({ load, backlog, max, nodes }) =>
-      `При ${n(load)} rps очереди растут на ${n(backlog)} rps, допустимо ${n(max)} rps.${idList(' Не успевают: ', nodes)}`,
+      `При ${n(load)} rps queues растут на ${n(backlog)} rps, допустимо ${n(max)} rps.${idList(' Не успевают: ', nodes)}`,
     GoalTooExpensive: ({ cost, max }) =>
       `Система стоит ${perHour(cost)}, это дороже бюджета ${perHour(max)}.`,
     GoalFailureNotSurvived: ({ id, kind, load, errorRate, max }) =>

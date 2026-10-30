@@ -19,7 +19,7 @@ export default {
   steps: {
     'shop-front': {
       title: 'Įėjimas į parduotuvę',
-      body: `Grįžkime prie internetinės parduotuvės. [[users|Users]] per [[lb|load balancer]] patenka į tris server – [[app1|app1]], [[app2|app2]] ir [[app3|app3]], o server blokai dirba su [[db|database]]. Kad prie įėjimo liktų vietos, cache iš 4 pamokos šioje lentoje nerodomas.
+      body: `Grįžkime prie internetinės parduotuvės. [[users|Users]] per [[lb|load balancer]] patenka į tris „Server“ blokus – [[app1|app1]], [[app2|app2]] ir [[app3|app3]], o server blokai dirba su [[db|database]]. Kad prie įėjimo liktų vietos, cache iš 4 pamokos šioje lentoje nerodomas.
 
 Dabar ateina 900 rps, po 300 kiekvienam server. Tai 75 % pajėgumo: atsarga nedidelė, bet klaidų nėra.`,
     },

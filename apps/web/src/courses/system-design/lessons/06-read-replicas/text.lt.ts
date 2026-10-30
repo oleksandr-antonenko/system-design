@@ -22,9 +22,9 @@ export default {
     'Read replicas, replication lag, failover ir kodėl visi įrašai vis tiek keliauja į primary.',
   steps: {
     'one-database': {
-      title: 'Penki server, viena database',
+      title: 'Penki „Server“ blokai, viena database',
       body: ({ sim }) =>
-        `Internetinė parduotuvė išaugo. [[users|Users]] per [[lb|load balancer]] patenka į penkis server, nuo [[app1|app1]] iki [[app5|app5]], o visi jie skaito ir rašo duomenis į vieną [[db|database]].
+        `Internetinė parduotuvė išaugo. [[users|Users]] per [[lb|load balancer]] patenka į penkis „Server“ blokus, nuo [[app1|app1]] iki [[app5|app5]], o visi jie skaito ir rašo duomenis į vieną [[db|database]].
 
 Server blokai yra stateless (2 pamoka), todėl juos pridėti lengva (3 pamoka). Su database kitaip: ji viena ir atlaiko apie **${n(1500)} rps**. Dabar į ją ateina ${n(incoming(sim, 'db'))} rps, taigi ji jau apkrauta ${percent(utilization(sim, 'db'))}.
 
@@ -48,7 +48,7 @@ Rašoma **tik į primary**. Jei dvi kopijos priimtų įrašus nepriklausomai, jo
     },
     'add-replicas': {
       title: 'Užduotis: read replicas',
-      body: `Paletėje atsirado blokas „Read replica“. **Read replica** (lietuviškai – skaitymo replika) – replica, kuri atsako tik į skaitymo užklausas. Server, prijungtas ir prie database, ir prie read replica blokų, įrašus siunčia tik į database, o skaitymą po lygiai dalija tarp database ir visų savo replica.
+      body: `Paletėje atsirado blokas „Read replica“. **Read replica** (lietuviškai – skaitymo replika) – replica, kuri atsako tik į skaitymo užklausas. Server, prijungtas ir prie database, ir prie read replica blokų, įrašus siunčia tik į database, o skaitymą po lygiai dalija tarp database ir visų savo „Read replica“ blokų.
 
 Replica – irgi server, ir ji gali sugesti. Jei vienintelė replica sugenda, visas jos skaitymas grįžta į primary, ir ji vėl perkraunama. Prisiminkite **N+1** taisyklę iš 3 pamokos.`,
     },
@@ -69,7 +69,7 @@ Ona pateikia užsakymą, ir įrašas keliauja į primary. Kita jos užklausa, �
 
 Tačiau kiekviena replica turi visą kopiją. Sistema pastebi, kad primary neatsako, ir **paaukština** (promote) vieną replica: ji tampa nauja primary ir priima įrašus, kitos replica ima sekti ją, o server blokai persijungia į ją. Tai vadinama **failover** (lietuviškai – perjungimas gedimo atveju). ${
           sim.errorRate > 0.01
-            ? `Tiesa, persijungti pavyko ne visiems server: klaidų ${percent(sim.errorRate)}. Server, neprijungtas nė prie vienos replica, neturi kur rašyti ir praranda savo užklausas.`
+            ? `Tiesa, persijungti pavyko ne visiems „Server“ blokams: klaidų ${percent(sim.errorRate)}. Server, neprijungtas nė prie vienos replica, neturi kur rašyti ir praranda savo užklausas.`
             : `Klaidų ${percent(sim.errorRate)}: replica blokai atlaiko visus ${n(sim.load)} rps.`
         }
 

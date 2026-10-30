@@ -28,10 +28,10 @@ export default {
   summary: 'Cache-aside, hit rate ir TTL: kaip sumažinti database apkrovą.',
   steps: {
     'five-servers': {
-      title: 'Penki server, viena database',
-      body: `Internetinė parduotuvė iš 3 pamokos išaugo. [[users|Users]] per [[lb|load balancer]] patenka į penkis server, nuo [[app1|app1]] iki [[app5|app5]], ir visi jie dirba su viena [[db|database]]. Dabar ateina 1200 rps.
+      title: 'Penki „Server“ blokai, viena database',
+      body: `Internetinė parduotuvė iš 3 pamokos išaugo. [[users|Users]] per [[lb|load balancer]] patenka į penkis „Server“ blokus, nuo [[app1|app1]] iki [[app5|app5]], ir visi jie dirba su viena [[db|database]]. Dabar ateina 1200 rps.
 
-Kiekvienam server tenka po 240 rps – 60 % jo pajėgumo. Database apkrauta labiau: į ją suplaukia visų server užklausos, todėl ji gauna visą srautą – 1200 rps iš 1500 galimų. Tai 80 %: labiausiai apkrautas lentos blokas.`,
+Kiekvienam server tenka po 240 rps – 60 % jo pajėgumo. Database apkrauta labiau: į ją suplaukia visų „Server“ blokų užklausos, todėl ji gauna visą srautą – 1200 rps iš 1500 galimų. Tai 80 %: labiausiai apkrautas lentos blokas.`,
     },
     'db-overload': {
       title: 'Database užspringsta',
@@ -130,7 +130,7 @@ Dabar labiausiai apkrauti blokai – [[app3|server]], 80 %. Nemaža jų darbo da
       hints: [
         'Dauguma užklausų į database – pasikartojantys skaitymai. Atsakymus į juos galima laikyti arčiau, greitoje atmintyje.',
         'Pastatykite bloką „Cache“ tarp server blokų ir database. Prie jo prijunkite kiekvieną server, o patį cache – prie database, kad būtų kur siųsti miss. Server ryšių su database netrinkite: jais keliauja rašymas.',
-        'Lentoje atsirado punktyrinis kontūras. Pastatykite ten bloką „Cache“ ir nutieskite pažymėtus ryšius: nuo kiekvieno iš penkių server iki cache ir nuo cache iki database.',
+        'Lentoje atsirado punktyrinis kontūras. Pastatykite ten bloką „Cache“ ir nutieskite pažymėtus ryšius: nuo kiekvieno iš penkių „Server“ blokų iki cache ir nuo cache iki database.',
       ],
       solvedNote:
         'Keturis skaitymus iš penkių dabar aptarnauja cache, o database turi atsargą.',

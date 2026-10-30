@@ -109,7 +109,7 @@ export const lt = {
     p95: 'p95 atsakas',
     database: 'Database apkrova',
     rejected: 'Atmesta',
-    backlog: 'Eilė auga',
+    backlog: 'Queue auga',
     cost: 'Kaina',
     rps: value => `${n(value)} rps`,
     growth: value => `+${n(value)} rps`,
@@ -240,7 +240,7 @@ export const lt = {
     GoalOverUtilized: ({ kind, load, utilization, max, nodes }) =>
       `Esant ${n(load)} rps, blokai „${componentName[kind]}“ apkrauti iki ${percent(utilization)} – daugiau nei riba ${percent(max)}: ${nodes.join(', ')}.`,
     GoalBacklogGrowing: ({ load, backlog, max, nodes }) =>
-      `Esant ${n(load)} rps, eilės auga ${n(backlog)} rps, leidžiama ${n(max)} rps.${idList(' Nespėja: ', nodes)}`,
+      `Esant ${n(load)} rps, queues auga ${n(backlog)} rps, leidžiama ${n(max)} rps.${idList(' Nespėja: ', nodes)}`,
     GoalTooExpensive: ({ cost, max }) =>
       `Sistema kainuoja ${perHour(cost)} – daugiau nei biudžetas ${perHour(max)}.`,
     GoalFailureNotSurvived: ({ id, kind, load, errorRate, max }) =>
