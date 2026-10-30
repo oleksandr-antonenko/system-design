@@ -1,7 +1,7 @@
 import { Array, Option, Result } from 'effect'
 
 import { vpnSettings } from '../../../../net/build'
-import { findHost } from '../../../../net/doc'
+import { findHost, findRouter } from '../../../../net/doc'
 import type { NetMessage } from '../../../../net/message'
 import type { DeviceId, Host, VpnClient } from '../../../../net/model'
 import type { PacketDoc } from '../../doc'
@@ -23,6 +23,10 @@ import {
 // Настройки VPN-клиента `vpn:<устройство>` (урок 13): подключение, что
 // отправлять в туннель (весь трафик или только рабочие сети) и список
 // рабочих сетей. Шлюз, адрес в туннеле и DNS офиса только показываются.
+//
+// NOTE: `read` не зависит от подписей устройств: плеер обновляет панель без
+// текстов урока, а черновик живёт, пока `read` в обновлении и в виде
+// совпадает. Поэтому шлюз показан своим внешним адресом, а не подписью.
 
 const FULL = 'full'
 const SPLIT = 'split'
@@ -105,7 +109,10 @@ const settingsTab: PanelTab = {
         values(
           {
             connected: onOff(vpn.connected),
-            gateway: context.name(vpn.gateway),
+            gateway: Option.match(findRouter(context.world.doc, vpn.gateway), {
+              onNone: () => vpn.gateway,
+              onSome: router => router.wan.ip,
+            }),
             address: vpn.address,
             mode: vpn.mode,
           },

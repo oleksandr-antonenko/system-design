@@ -275,6 +275,49 @@ export const letterOf = (
 ): Readonly<{ from: string; to: string }> =>
   endpointsOf(trace, hop.packet, ownerOf)
 
+const isTunnelHop = (hop: Hop): boolean =>
+  Array.some(hop.envelope, layer => layer._tag === 'Tunnel')
+
+/** Концы туннеля, по которому идёт хоп: первый и последний хоп его пакета
+    на непрерывном отрезке в туннеле (клиент VPN и шлюз). */
+const tunnelEndsOf = (
+  trace: Trace,
+  hop: Hop,
+): Option.Option<Readonly<{ from: string; to: string }>> => {
+  const hops = Array.filter(trace.hops, other => other.packet === hop.packet)
+  return isTunnelHop(hop)
+    ? Option.map(
+        Array.findFirstIndex(hops, other => other === hop),
+        position => {
+          const before = Array.takeWhile(
+            Array.reverse(Array.take(hops, position)),
+            isTunnelHop,
+          )
+          const after = Array.takeWhile(
+            Array.drop(hops, position + 1),
+            isTunnelHop,
+          )
+          return {
+            from: Option.getOrElse(Array.last(before), () => hop).from,
+            to: Option.getOrElse(Array.last(after), () => hop).to,
+          }
+        },
+      )
+    : Option.none()
+}
+
+/** Что написано снаружи конверта хопа. В туннеле (урок 13) внешний
+    конверт адресован концам туннеля — от клиента VPN шлюзу и обратно, — а
+    кому на самом деле, видно только во внутреннем, запечатанном. */
+export const outerLetterOf = (
+  trace: Trace,
+  hop: Hop,
+  ownerOf: OwnerOf = noOwner,
+): Readonly<{ from: string; to: string }> =>
+  Option.getOrElse(tunnelEndsOf(trace, hop), () =>
+    letterOf(trace, hop, ownerOf),
+  )
+
 const mediumOf = (world: World, link: string): Medium =>
   Option.match(
     Array.findFirst(world.doc.links, candidate => candidate.id === link),
