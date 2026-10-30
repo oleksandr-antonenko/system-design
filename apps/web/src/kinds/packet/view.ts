@@ -1564,8 +1564,17 @@ const letterView = <ParentMessage>(
         addresses,
         found => found.to === BROADCAST,
       )
+      // Поиск MAC тоже спрашивает всех: «у кого этот адрес?» (урок 8:
+      // ноутбук ищет чужой gateway, которого в доме нет).
+      const isArpQuestion = Option.exists(legHop, leg =>
+        Array.some(
+          leg.hop.envelope,
+          layer => layer._tag === 'Arp' && layer.kind === 'request',
+        ),
+      )
       const isAskingAll =
-        isBroadcast && !Option.exists(legHop, leg => leg.isReply)
+        (isBroadcast || isArpQuestion) &&
+        !Option.exists(legHop, leg => leg.isReply)
       const fromAddress = Option.map(addresses, found =>
         found.from === UNSET ? `(${ui.card.noAddress})` : found.from,
       )

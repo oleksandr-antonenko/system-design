@@ -9,7 +9,7 @@ import {
 export default {
   title: 'Maršrutizavimas ir gateway',
   summary:
-    'Viską, kas skirta ne jūsų namams, įrenginys atiduoda gateway, o routers perduoda voką toliau pagal savo lenteles. traceroute parodo tą kelią. Grąžinkite internetą nešiojamajam kompiuteriui su svetimu gateway.',
+    'Viską, kas „ne mūsų namams“, įrenginys atiduoda gateway, o traceroute parodo, per kuriuos routers vokas keliauja toliau. Grąžinkite internetą kompiuteriui su svetimu gateway.',
   labels: {
     phone: { name: 'Phone', note: 'jūsų rankoje' },
     laptop: { name: 'Laptop', note: 'ant stalo' },
@@ -47,7 +47,7 @@ Paspauskite „Paleisti“: kiekviename sustojime atverta to router, prie kurio 
 
 Skaitiklis voke vadinamas TTL (time to live, „gyvavimo laikas“). Kompiuteris nustato 64, kiekvienas router atima vienetą. Žvaigždutės – ne visada nutrūkimas: kai kurie routers neatsako traceroute, bet vokus praleidžia. Jei po žvaigždučių eilutės vėl atsiranda, kelias sveikas.
 
-Windows sistemoje komanda vadinasi \`tracert\`. Be to, routing table būna daugiau nei dvi eilutės, pavyzdžiui, „10.0.0.0/8 – per biuro router“. Tokia eilutė vadinama static route (statinis maršrutas), ją sutiksite pamokoje apie VPN.`,
+Windows sistemoje komanda vadinasi tracert. Be to, routing table būna daugiau nei dvi eilutės, pavyzdžiui, „10.0.0.0/8 – per biuro router“. Tokia eilutė vadinama static route (statinis maršrutas), ją sutiksite pamokoje apie VPN.`,
       },
     },
     'where-it-breaks': {
@@ -101,7 +101,7 @@ Toliau, 9 pamoka: kodėl iš lauko negalima pasibelsti į jūsų namus ir kaip v
       },
       hints: [
         'Spausdintuvas veikia, o internetas ne. Vadinasi, namuose viskas gerai, o vokai „ne mūsų namams“ nepasiekia gateway. Kam kompiuteris juos atiduoda?',
-        'Paleiskite `ping 192.168.1.1` – router atsako. Dabar `traceroute 198.51.100.10` – pačioje pirmoje eilutėje pats kompiuteris ir !H („nepasiekiama“): neatsakė nė vienas paštas. Palyginkite lauką „Router“ kompiuterio tinklo informacijoje su jūsų router IP address.',
+        'Paleiskite ping 192.168.1.1 – router atsako. Dabar traceroute 198.51.100.10 – pačioje pirmoje eilutėje pats kompiuteris ir !H („nepasiekiama“): neatsakė nė vienas paštas. Palyginkite lauką „Router“ kompiuterio tinklo informacijoje su jūsų router IP address.',
         'Tinklo informacijoje apibrėžtas laukas, kurį reikia pataisyti. Įrašykite ten savo router IP address iš lentos ir paspauskite „Išsaugoti“.',
       ],
       solvedNote:

@@ -9,7 +9,7 @@ import {
 export default {
   title: 'Routing and the gateway',
   summary:
-    'Everything not addressed to your home a device hands to the gateway, and routers pass the envelope on by their tables. traceroute shows that way. Bring the internet back to a laptop with a wrong gateway.',
+    'Everything “not for our home” a device hands to the gateway, and traceroute shows which routers the envelope passes next. Bring the internet back to a laptop with a wrong gateway.',
   labels: {
     phone: { name: 'Phone', note: 'in your hand' },
     laptop: { name: 'Laptop', note: 'on the desk' },
@@ -47,7 +47,7 @@ Press “Run”: at every stop the table of the router holding the envelope is o
 
 The counter in the envelope is called TTL (time to live). The laptop sets 64, and each router subtracts one. Stars are not always a break: some routers do not answer traceroute but let the envelopes through. If lines appear again after the stars, the way is intact.
 
-On Windows the command is called \`tracert\`. And a routing table can have more than two lines, for example “10.0.0.0/8 — via the office router”. Such a line is called a static route; you will meet it in the lesson about VPN.`,
+On Windows the command is called tracert. And a routing table can have more than two lines, for example “10.0.0.0/8 — via the office router”. Such a line is called a static route; you will meet it in the lesson about VPN.`,
       },
     },
     'where-it-breaks': {
@@ -101,7 +101,7 @@ Next, lesson 9: why nobody outside can knock on your home’s door, and how to l
       },
       hints: [
         'The printer works, but the internet does not. So everything inside the home is fine, and the envelopes “not for our home” do not reach the gateway. Whom does the laptop hand them to?',
-        'Run `ping 192.168.1.1` — the router answers. Now `traceroute 198.51.100.10` — the very first line is the laptop itself with !H (“cannot reach”): no post office answered. Compare the “Router” field in the laptop’s network details with the IP address of your router.',
+        'Run ping 192.168.1.1 — the router answers. Now traceroute 198.51.100.10 — the very first line is the laptop itself with !H (“cannot reach”): no post office answered. Compare the “Router” field in the laptop’s network details with the IP address of your router.',
         'In the network details the field you need to fix is outlined. Type the IP address of your router from the board there and press “Save”.',
       ],
       solvedNote:

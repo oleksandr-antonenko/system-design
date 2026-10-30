@@ -182,6 +182,20 @@ describe('lesson 8: routing and the gateway', () => {
     )
   })
 
+  test('ru: a ping in the terminal first asks everyone at home who has the foreign gateway', () => {
+    scene(
+      sceneIn('ru'),
+      given(atTask()),
+      ...command('ping 198.51.100.10'),
+      click(role('button', { name: /Пуск|Ещё раз/ })),
+      expect(
+        role('button', {
+          name: /^Открыть конверт: от: Laptop 192\.168\.1\.42, кому: всем в сети$/,
+        }),
+      ).toExist(),
+    )
+  })
+
   test('ru: the laptop card shows its gateway', () => {
     scene(
       sceneIn('ru'),
