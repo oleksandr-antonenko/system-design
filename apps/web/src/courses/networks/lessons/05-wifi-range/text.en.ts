@@ -2,7 +2,7 @@ import type { LessonTexts } from '../../../../lesson/dsl'
 import type lesson from './lesson'
 
 export default {
-  title: 'Why the Wi-Fi is weak',
+  title: 'Wi-Fi. Why the signal is weak',
   summary:
     'Range, walls and two bands: 2.4 and 5 GHz. Set up the Wi-Fi so it reaches the kitchen.',
   labels: {
@@ -66,7 +66,7 @@ Under the board the router panel has opened — its settings. So far it has one 
 - The router has two bands. **5 GHz** is faster but reaches less far. **2.4 GHz** is slower, but it reaches farther and goes through walls.
 - Turn on both: devices will pick by themselves. And some smart devices only understand 2.4 GHz.
 
-Next, lesson 6: ports are flats in one building. We will start our own site on the laptop and open it from the phone.`,
+Next, lesson 6, “Ports and localhost. Flats in one building”. We will start our own site on the laptop and open it from the phone.`,
     },
   },
   annotations: {

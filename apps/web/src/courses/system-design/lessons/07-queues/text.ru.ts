@@ -15,7 +15,7 @@ const app1Load = (sim: SimResult) => sim.nodes['app1']?.utilization ?? 0
 const queuePoint = `В этом смысл queue: workers держат под обычную нагрузку, а не под пиковую, а пик queue сглаживает. Но только если между пиками она успевает опустеть. Если нагрузка долго выше того, что успевают workers, queue растёт без конца, и помогут только новые workers.`
 
 export default {
-  title: 'Queue и фоновая обработка',
+  title: 'Queue. Тяжёлая работа уходит в фон',
   summary:
     'Как вынести медленную работу из запроса: queue, workers, рост queue, пики и доставка at-least-once.',
   steps: {

@@ -20,7 +20,7 @@ const writesInto = (sim: SimResult, id: string) =>
 const missesInto = (sim: SimResult, id: string) => edge(sim, 'cache-1', id)
 
 export default {
-  title: 'Sharding',
+  title: 'Sharding. Данные по частям',
   summary:
     'Как разделить данные между независимыми databases: shard key, hot shards, запросы через все shards и resharding.',
   steps: {

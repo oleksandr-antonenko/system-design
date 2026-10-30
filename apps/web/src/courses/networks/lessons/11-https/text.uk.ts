@@ -6,7 +6,7 @@ const missesWww = (name: string, names: ReadonlyArray<string>): boolean =>
   name.startsWith('www.') && names.includes(name.slice('www.'.length))
 
 export default {
-  title: 'HTTP, HTTPS і certificates',
+  title: 'HTTPS і certificates. Замок в адресному рядку',
   summary: 'Що захищає замок у браузері і чому certificate буває недійсним.',
   labels: {
     phone: { name: 'Phone', note: 'у вас у руці, у кав’ярні' },

@@ -92,7 +92,9 @@ describe('header', () => {
           'en',
         ),
       ),
-      expect(role('heading', { name: 'Load balancer' })).toExist(),
+      expect(
+        role('heading', { name: 'Load balancer. Sharing the load' }),
+      ).toExist(),
       expect(role('link', { name: 'Interactive courses' })).toHaveAttr(
         'href',
         '/en/',
@@ -174,10 +176,9 @@ describe('course map', () => {
       expect(text('13 уроків')).toExist(),
       expectAll(all.selector('main li')).toHaveCount(13),
       expectAll(all.selector('main a')).toHaveCount(available.length),
-      expect(role('link', { name: 'Load balancer' })).toHaveAttr(
-        'href',
-        '/uk/system-design/lessons/load-balancer',
-      ),
+      expect(
+        role('link', { name: 'Load balancer. Навантаження ділиться порівну' }),
+      ).toHaveAttr('href', '/uk/system-design/lessons/load-balancer'),
       ...Array.map(available, lesson =>
         expect(role('link', { name: ukTitle(lesson) })).toHaveAttr(
           'href',
@@ -214,12 +215,13 @@ describe('course map', () => {
       expectAll(all.text('Скоро')).toHaveCount(
         lessons.length - available.length,
       ),
-      expect(role('link', { name: 'Ports: квартиры в одном доме' })).toHaveAttr(
-        'href',
-        '/ru/networks/lessons/ports-and-localhost',
-      ),
       expect(
-        role('heading', { name: 'Как телефон попадает в интернет' }),
+        role('link', { name: 'Port и localhost. Квартиры в одном доме' }),
+      ).toHaveAttr('href', '/ru/networks/lessons/ports-and-localhost'),
+      expect(
+        role('heading', {
+          name: 'Router. Как телефон попадает в интернет',
+        }),
       ).toExist(),
     )
   })
@@ -318,7 +320,9 @@ describe('lesson player', () => {
       given(openLesson('/ru/system-design/lessons/load-balancer?step=1')),
       pointerReady,
       expect(label('Теория')).toExist(),
-      expect(role('heading', { name: 'Load balancer' })).toExist(),
+      expect(
+        role('heading', { name: 'Load balancer. Нагрузка делится поровну' }),
+      ).toExist(),
       expect(role('img', { name: /^Server app1/ })).toExist(),
       expect(role('img', { name: /^Users users/ })).toExist(),
       expect(label('Приборы')).toExist(),

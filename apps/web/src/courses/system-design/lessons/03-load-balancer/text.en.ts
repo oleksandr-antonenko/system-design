@@ -6,7 +6,7 @@ const n = (value: number) => formatNumber('en', Math.round(value))
 const percent = (ratio: number) => `${n(ratio * 100)}%`
 
 export default {
-  title: 'Load balancer',
+  title: 'Load balancer. Sharing the load',
   summary:
     'Horizontal scaling: several servers behind one entry point, health checks and the N+1 rule.',
   steps: {

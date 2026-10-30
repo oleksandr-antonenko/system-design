@@ -2,7 +2,7 @@ import type { LessonTexts } from '../../../../lesson/dsl'
 import type lesson from './lesson'
 
 export default {
-  title: 'Kaip telefonas patenka į internetą',
+  title: 'Router. Kaip telefonas patenka į internetą',
   summary:
     'Namų įrenginiai kalbasi per router, o internetas — tai daug tinklų. Prijunkite telefoną prie namų Wi-Fi.',
   labels: {
@@ -36,7 +36,7 @@ Svetainė gyvena ne jūsų namuose, todėl router voko pats neatiduoda, o perduo
 
 Parduotuvės puslapis į vieną packet netelpa: svetainė jį siunčia šimtais dalių, kiekviena dalis — atskiras packet, o telefonas jas sudeda iš eilės. To paties puslapio dalys gali keliauti net skirtingais keliais.
 
-Tikras packet vietoj vardų nešioja skaičius — adresus, apie juos 2 pamoka. O tai, kad viduje packet slepia dar kelis vokus, išnagrinėsime 7 pamokoje „Po gaubtu“.`,
+Tikras packet vietoj vardų nešioja skaičius — adresus, apie juos 2 pamoka. O tai, kad viduje packet slepia dar kelis vokus, išnagrinėsime 7 pamokoje „TCP/IP. Vokas voke“.`,
       },
     },
     'many-networks': {
@@ -63,7 +63,7 @@ Prijunkite jį telefono ekrane, Wi-Fi nustatymuose. Jūsų tinklo pavadinimas (a
 - **Internetas** — tai daug tarpusavyje sujungtų tinklų. Router — durys iš namų į internetą.
 - Kad telefonas patektų į internetą, jis prijungiamas prie „Router“ Wi-Fi: savas tinklas ir slaptažodis nuo lipduko.
 
-Toliau, 2 pamoka: kiekvienas turi savo adresą. Šiandien ant vokų buvo vardai, bet router vardų neskaito. Sužinosime, kokie adresai rašomi ant tikrų vokų ir kas juos išduoda.`,
+Toliau, 2 pamoka „IP address. Kiekvienas įrenginys turi savo adresą“. Šiandien ant vokų buvo vardai, bet router vardų neskaito. Sužinosime, kokie adresai rašomi ant tikrų vokų ir kas juos išduoda.`,
     },
   },
   annotations: {},

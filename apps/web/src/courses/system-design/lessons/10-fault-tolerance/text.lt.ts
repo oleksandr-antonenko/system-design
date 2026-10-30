@@ -7,7 +7,7 @@ const percent = (ratio: number) => `${n(ratio * 100)} %`
 const dollars = (value: number) => `${value.toFixed(2).replace('.', ',')} $`
 
 export default {
-  title: 'Atsparumas gedimams',
+  title: 'Failover. Sistema išgyvena gedimą',
   summary:
     'SPOF, vienintelis gedimo taškas: antras load balancer, read replica, kuri pakeičia database, health check, failover ir skirtumas tarp availability ir durability.',
   steps: {

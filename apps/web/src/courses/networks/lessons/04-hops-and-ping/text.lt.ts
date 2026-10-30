@@ -5,7 +5,7 @@ const ONLY_PING =
   'Šioje pamokoje terminale viena komanda – ping. Po jos surinkite adresą arba vardą, pavyzdžiui: ping 192.168.1.1'
 
 export default {
-  title: 'Vokas keliauja per kelis paštus',
+  title: 'Ping ir hops. Voko kelias per routers grandinę',
   summary:
     'Kelias iki svetainės – routers grandinė, o ping patikrina ryšį. Raskite atkarpą, kurioje dingo ryšys.',
   labels: {
@@ -71,7 +71,7 @@ Po lenta atsidarė nešiojamojo kompiuterio terminalas. Jame kol kas viena koman
 - **Ping** siunčia voką „Ar tu čia?“ ir laukia atsakymo. Atsakymas atėjo – ryšys iki adresato yra.
 - Tikrinkite nuo artimiausios atkarpos: pirma router, paskui svetainę. Kur atsakymai baigiasi, ten ir trūkis.
 
-Toliau, 5 pamoka: kodėl Wi-Fi prastai gaudo. Virtuvėje telefonas praranda tinklą – išsiaiškinsime, kuo čia dėtos sienos ir dvi juostos.`,
+Toliau, 5 pamoka „Wi-Fi. Kodėl signalas silpnas“. Virtuvėje telefonas praranda tinklą – išsiaiškinsime, kuo čia dėtos sienos ir dvi juostos.`,
     },
   },
   annotations: {

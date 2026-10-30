@@ -2,7 +2,7 @@ import type { LessonTexts } from '../../../../lesson/dsl'
 import type lesson from './lesson'
 
 export default {
-  title: 'Everyone has an address',
+  title: 'IP address. Every device has its own',
   summary:
     'Every device on the network has its own address — an IP address — and the router hands it out. Find the laptop’s address and connect a printer.',
   labels: {
@@ -34,7 +34,7 @@ The router remembers which numbers are taken, so addresses never repeat within o
 
 An address can change. The router hands out a number for a while and usually gives a familiar device the same one: it keeps 192.168.1.42 for the laptop. But if the router is restarted, the number may change. How to tie an address to a device for good is also shown in lesson 9.
 
-Handing out addresses in networks is called **DHCP**. How it works step by step is the topic of lesson 7, “Under the hood”.`,
+Handing out addresses in networks is called **DHCP**. How it works step by step is the topic of lesson 7, “TCP/IP. An envelope in an envelope”.`,
       },
     },
     'who-gave': {
@@ -55,7 +55,7 @@ Then connect the new [[printer|printer]]. It has no Wi-Fi, only a cable: run a c
 - The router hands out an address when a device connects and makes sure numbers never repeat.
 - To send something to a device, you need its address. It is written in the device’s card.
 
-Next, lesson 3: a website’s name and its address. You type shop.example in the browser, not 198.51.100.10. We will find out who turns a name into an address.`,
+Next, lesson 3, “DNS. A site’s name and its address”. You type shop.example in the browser, not 198.51.100.10. We will find out who turns a name into an address.`,
     },
   },
   annotations: {

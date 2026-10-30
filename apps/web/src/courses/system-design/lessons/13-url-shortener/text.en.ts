@@ -14,7 +14,7 @@ const incoming = (sim: SimResult, id: string) => sim.nodes[id]?.incoming ?? 0
 const usd = (value: number) => `$${value.toFixed(2)}`
 
 export default {
-  title: 'Capstone: a URL shortener',
+  title: 'URL shortener. Final project',
   summary:
     'Design a whole system from scratch: requirements, estimates, API, then a design that holds the peak, survives failures and fits the budget.',
   steps: {

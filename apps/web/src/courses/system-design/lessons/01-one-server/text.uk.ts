@@ -12,7 +12,7 @@ const p95 = (sim: SimResult) =>
 const utilization = (sim: SimResult) => sim.nodes['app1']?.utilization ?? 0
 
 export default {
-  title: 'Single server',
+  title: 'Single server. Усе на одній машині',
   summary:
     'Запит і відповідь, RPS, затримка (latency), межа потужності одного server і single point of failure.',
   steps: {

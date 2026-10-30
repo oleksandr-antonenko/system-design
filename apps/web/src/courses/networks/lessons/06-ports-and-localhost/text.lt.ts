@@ -2,7 +2,7 @@ import type { LessonTexts } from '../../../../lesson/dsl'
 import type lesson from './lesson'
 
 export default {
-  title: 'Ports: butai viename name',
+  title: 'Port ir localhost. Butai viename name',
   summary:
     'Viename kompiuteryje veikia daug programų, ir kiekviena turi savo numerį — port. Atidarykite savo dev server telefone.',
   labels: {
@@ -68,7 +68,7 @@ Kompiuterio terminale paleiskite dev server iš naujo taip, kad jis atidarytų d
 - **localhost** — visada „aš pats“. Iš telefono localhost veda į telefoną, o ne į kompiuterį.
 - Dev server pagal nutylėjimą įleidžia tik patį kompiuterį. Su --host jis atidaro duris namų tinklui, ir telefonas užeina per kompiuterio IP address.
 
-Toliau, 7 pamoka: po gaubtu. Vokas, kuris skraidė po lentą šešias pamokas, iš tikrųjų yra keli vienas į kitą įdėti vokai. Išsiaiškinsime, kam reikalingas kiekvienas.`,
+Toliau, 7 pamoka „TCP/IP. Vokas voke“. Vokas, kuris skraidė po lentą šešias pamokas, iš tikrųjų yra keli vienas į kitą įdėti vokai. Išsiaiškinsime, kam reikalingas kiekvienas.`,
     },
   },
   annotations: {

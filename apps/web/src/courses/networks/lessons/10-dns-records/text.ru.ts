@@ -2,7 +2,7 @@ import type { LessonTexts } from '../../../../lesson/dsl'
 import type lesson from './lesson'
 
 export default {
-  title: 'DNS records и свой domain',
+  title: 'DNS records. Свой domain для сайта',
   summary:
     'Domain направляют на сервер с помощью DNS records, а справочные помнят старый ответ, пока не выйдет его TTL. Направьте свой domain на свой сервер.',
   labels: {

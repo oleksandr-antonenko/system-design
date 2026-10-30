@@ -6,7 +6,7 @@ const n = (value: number) => formatNumber('uk', Math.round(value))
 const percent = (ratio: number) => `${n(ratio * 100)}%`
 
 export default {
-  title: 'Separate database',
+  title: 'Separate database. Дані на окремій машині',
   summary: 'Чому stateless server простіше масштабувати і куди перенести дані.',
   steps: {
     'all-in-one': {

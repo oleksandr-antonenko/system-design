@@ -24,7 +24,7 @@ const quizReads = LOAD - quizWrites
 const quizMisses = quizReads * (1 - cacheHitShare)
 
 export default {
-  title: 'Кеширование',
+  title: 'Cache. Быстрые ответы из памяти',
   summary: 'Cache-aside, hit rate и TTL: как снять нагрузку с database.',
   steps: {
     'five-servers': {

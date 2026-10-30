@@ -14,7 +14,7 @@ const utilization = (sim: SimResult, id: string) =>
   sim.nodes[id]?.utilization ?? 0
 
 export default {
-  title: 'Rate limiter: захист від перевантаження',
+  title: 'Rate limiter. Захист від перевантаження',
   summary:
     'Rate limiter перед load balancer: швидка відповідь 429 замість перевантаження, ліміти на клієнта, backpressure і retries без лавини.',
   steps: {

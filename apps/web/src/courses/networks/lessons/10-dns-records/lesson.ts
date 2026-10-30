@@ -30,7 +30,7 @@ import {
 import { goals } from '../../../../net/goals'
 import { Intent } from '../../../../net/packet'
 
-// Урок 10 «DNS: записи и свой домен» по сценарию
+// Урок 10 «DNS records. Свой domain для сайта» по сценарию
 // docs/plans/networks-lessons/10-dns-records.md: domain направляют на сервер
 // DNS records у DNS-провайдера, а справочные помнят ответ, пока не выйдет его
 // TTL, поэтому новый адрес доходит до всех не сразу.

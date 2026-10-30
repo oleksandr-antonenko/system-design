@@ -15,7 +15,7 @@ const app1Load = (sim: SimResult) => sim.nodes['app1']?.utilization ?? 0
 const queuePoint = `That is the point of a queue: workers are sized for the usual load, not for the peak, and the queue smooths the peak out. But only if the queue drains between peaks. If load stays above what the workers can do, the queue grows without end, and the only cure is more workers.`
 
 export default {
-  title: 'Queues and background work',
+  title: 'Queue. Heavy work goes to the background',
   summary:
     'Moving slow work out of the request: a queue, workers, queue growth, bursts and at-least-once delivery.',
   steps: {

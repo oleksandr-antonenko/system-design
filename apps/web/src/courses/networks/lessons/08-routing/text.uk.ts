@@ -7,7 +7,7 @@ import {
 } from './lesson'
 
 export default {
-  title: 'Маршрутизація і gateway',
+  title: 'Routing і gateway. Як конверт знаходить дорогу',
   summary:
     'Усе «не в наш дім» пристрій віддає gateway, а traceroute показує, через які routers конверт іде далі. Поверніть інтернет ноутбуку з чужим gateway.',
   labels: {

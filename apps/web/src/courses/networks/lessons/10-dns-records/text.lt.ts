@@ -2,7 +2,7 @@ import type { LessonTexts } from '../../../../lesson/dsl'
 import type lesson from './lesson'
 
 export default {
-  title: 'DNS records ir savas domain',
+  title: 'DNS records. Savas domain svetainei',
   summary:
     'Domain nukreipiamas į serverį per DNS records, o informacijos tarnybos prisimena seną atsakymą, kol nesibaigia jo TTL. Nukreipkite savo domain į savo serverį.',
   labels: {

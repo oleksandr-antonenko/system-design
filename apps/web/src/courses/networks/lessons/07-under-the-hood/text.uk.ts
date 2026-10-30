@@ -2,7 +2,7 @@ import type { LessonTexts } from '../../../../lesson/dsl'
 import type lesson from './lesson'
 
 export default {
-  title: 'Під капотом: конверт у конверті',
+  title: 'TCP/IP. Конверт у конверті',
   summary:
     'Конверт із першого уроку складається з кількох вкладених конвертів: шари та MAC addresses. Розберіть шлях конверта за шарами.',
   labels: {

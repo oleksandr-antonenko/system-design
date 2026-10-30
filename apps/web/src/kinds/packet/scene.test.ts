@@ -32,7 +32,7 @@ const entry: Lesson = {
     {
       locale: 'en',
       text: {
-        title: 'How a phone gets online',
+        title: 'Router. How a phone gets online',
         summary: 'The phone talks to the internet through the router.',
         labels: { phone: { name: 'Phone' }, router: { name: 'Router' } },
         steps: {

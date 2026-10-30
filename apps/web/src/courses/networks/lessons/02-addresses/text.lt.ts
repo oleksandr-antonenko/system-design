@@ -2,7 +2,7 @@ import type { LessonTexts } from '../../../../lesson/dsl'
 import type lesson from './lesson'
 
 export default {
-  title: 'Kiekvienas turi savo adresą',
+  title: 'IP address. Kiekvienas įrenginys turi savo adresą',
   summary:
     'Kiekvienas tinklo įrenginys turi savo adresą – IP address, – ir jį suteikia router. Raskite nešiojamojo kompiuterio adresą ir prijunkite spausdintuvą.',
   labels: {
@@ -31,7 +31,7 @@ Router atsimena, kurie numeriai jau užimti, todėl tuose pačiuose namuose adre
 
 Adresas gali pasikeisti. Router suteikia numerį laikinai ir pažįstamam įrenginiui paprastai duoda tą patį: nešiojamajam kompiuteriui jis saugo 192.168.1.42. Bet jei router perkrausite, numeris gali tapti kitu. Kaip visam laikui priskirti adresą įrenginiui, taip pat parodysime 9 pamokoje.
 
-Adresų dalijimas tinkluose vadinamas **DHCP**. Kaip jis veikia žingsnis po žingsnio, aptarsime 7 pamokoje „Po gaubtu“.`,
+Adresų dalijimas tinkluose vadinamas **DHCP**. Kaip jis veikia žingsnis po žingsnio, aptarsime 7 pamokoje „TCP/IP. Vokas voke“.`,
       },
     },
     'who-gave': {
@@ -52,7 +52,7 @@ Paskui prijunkite naują [[printer|spausdintuvą]]. Wi-Fi jis neturi, tik kabel�
 - Adresą suteikia router, kai įrenginys prisijungia, ir prižiūri, kad numeriai nesikartotų.
 - Norint ką nors nusiųsti įrenginiui, reikia jo adreso. Jis parašytas įrenginio kortelėje.
 
-Toliau, 3 pamoka: svetainės vardas ir jos adresas. Naršyklėje rašote shop.example, o ne 198.51.100.10. Sužinosime, kas paverčia vardą adresu.`,
+Toliau, 3 pamoka „DNS. Svetainės vardas ir adresas“. Naršyklėje rašote shop.example, o ne 198.51.100.10. Sužinosime, kas paverčia vardą adresu.`,
     },
   },
   annotations: {

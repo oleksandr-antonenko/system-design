@@ -7,7 +7,7 @@ const percent = (ratio: number) => `${n(ratio * 100)}%`
 const dollars = (value: number) => `${value.toFixed(2).replace('.', ',')} $`
 
 export default {
-  title: 'Відмовостійкість',
+  title: 'Failover. Система переживає поломку',
   summary:
     'SPOF, єдині точки відмови: другий load balancer, read replica, яка замінює database, health check, failover і різниця між availability та durability.',
   steps: {

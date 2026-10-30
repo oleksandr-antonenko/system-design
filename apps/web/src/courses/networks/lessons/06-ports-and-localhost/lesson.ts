@@ -20,7 +20,7 @@ import {
 import { Goal, goals } from '../../../../net/goals'
 import { Intent } from '../../../../net/packet'
 
-// Урок 6 «Порты: квартиры в одном доме» по сценарию
+// Урок 6 «Port и localhost. Квартиры в одном доме» по сценарию
 // docs/plans/networks-lessons/06-ports-and-localhost.md: на одном компьютере
 // много программ, у каждой своя квартира-порт; dev-сервер по умолчанию
 // открыт только изнутри, и телефон открывает его после `--host`.

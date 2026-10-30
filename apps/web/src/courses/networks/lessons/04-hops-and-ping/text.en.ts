@@ -5,7 +5,7 @@ const ONLY_PING =
   'In this lesson the terminal has one command — ping. Type an address or a name after it, for example: ping 192.168.1.1'
 
 export default {
-  title: 'An envelope passes through several post offices',
+  title: 'Ping and hops. An envelope’s way through several routers',
   summary:
     'The way to a site is a chain of routers, and ping checks the connection. Find the stretch where the connection is lost.',
   labels: {
@@ -71,7 +71,7 @@ The laptop’s terminal has opened under the board. So far it has one command �
 - **Ping** sends an envelope “Are you there?” and waits for the reply. The reply came — the connection to the addressee works.
 - Check from the nearest stretch: first the router, then the site. Where the replies stop, there is the break.
 
-Next, lesson 5: why the Wi-Fi is weak. In the kitchen the phone loses the network — we will see what walls and the two bands have to do with it.`,
+Next, lesson 5, “Wi-Fi. Why the signal is weak”. In the kitchen the phone loses the network — we will see what walls and the two bands have to do with it.`,
     },
   },
   annotations: {

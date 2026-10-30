@@ -2,7 +2,7 @@ import type { LessonTexts } from '../../../../lesson/dsl'
 import type lesson from './lesson'
 
 export default {
-  title: 'NAT and port forwarding',
+  title: 'NAT and port forwarding. One address for the whole home',
   summary:
     'The whole home goes online under one router address — that is NAT. Let a friend into the game on your computer with port forwarding.',
   labels: {
