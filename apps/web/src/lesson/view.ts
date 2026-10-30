@@ -499,16 +499,27 @@ const candidateName = <T extends KindTypes>(
 }
 
 /** Почему неверны выбранные варианты: у квиза с несколькими ответами —
-    каждый лишний вариант, у `Match` — каждый чип не на своём месте. */
-const wrongParts = (picked: string, answer: string): ReadonlyArray<string> => {
+    каждый лишний вариант и каждый пропущенный верный (`withMissed`), у
+    `Match` — каждый чип не на своём месте. */
+const wrongParts = (
+  picked: string,
+  answer: string,
+  withMissed: boolean,
+): ReadonlyArray<string> => {
   const expected = pickParts(answer)
-  return Array.getSomes(
-    Array.map(pickParts(picked), part =>
-      Array.contains(expected, part)
-        ? Option.none()
-        : Option.some(part.includes('=') ? pairOf(part)[1] : part),
+  const chosen = pickParts(picked)
+  return [
+    ...Array.getSomes(
+      Array.map(chosen, part =>
+        Array.contains(expected, part)
+          ? Option.none()
+          : Option.some(part.includes('=') ? pairOf(part)[1] : part),
+      ),
     ),
-  )
+    ...(withMissed
+      ? Array.filter(expected, part => !Array.contains(chosen, part))
+      : []),
+  ]
 }
 
 const choicesView = <T extends KindTypes>(
@@ -606,11 +617,17 @@ const quizCardView = <T extends KindTypes>(
               ...(isCorrect || isCorrectPick(picked, answer)
                 ? []
                 : Array.getSomes(
-                    Array.map(wrongParts(picked, answer), part =>
-                      Option.map(
-                        Option.fromNullishOr(quizTexts?.wrong?.[part]),
-                        wrong => h.p([h.Class('quiz-wrong')], [wrong]),
+                    Array.map(
+                      wrongParts(
+                        picked,
+                        answer,
+                        isMultiPick(quiz.spec) && quiz.spec.slots === undefined,
                       ),
+                      part =>
+                        Option.map(
+                          Option.fromNullishOr(quizTexts?.wrong?.[part]),
+                          wrong => h.p([h.Class('quiz-wrong')], [wrong]),
+                        ),
                     ),
                   )),
               h.p(

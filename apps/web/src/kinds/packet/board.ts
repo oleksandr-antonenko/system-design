@@ -490,6 +490,8 @@ export const update =
               send(Intent.Raw({ from, url, order: model.headers })),
             ])
           : { model },
+      ClickedPlace: ({ ops }) =>
+        input.mode === 'Edit' ? propose(model, ops) : { model },
     })
 
 export const pressDelete =

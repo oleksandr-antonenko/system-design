@@ -224,6 +224,7 @@ export const packetBoardLt: PacketBoardStrings = {
   },
   fog: 'rūkas',
   draft: 'juodraštis',
+  place: 'paspauskite, kad pastatytumėte',
   builder: {
     title: 'Surinkite voką',
     hint: 'Sudėkite antraštes iš išorės į vidų: nutempkite arba paspauskite antraštę, paskui vietą.',

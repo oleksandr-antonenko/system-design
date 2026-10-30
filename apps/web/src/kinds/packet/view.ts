@@ -3,6 +3,7 @@ import { Mount } from 'foldkit'
 import type { Html, HtmlBuilder } from 'foldkit/html'
 
 import { scanPorts } from '../../net/answers'
+import type { NetOp } from '../../net/doc'
 import {
   type DeviceId,
   type DeviceKind,
@@ -24,6 +25,7 @@ import {
   anchorOf,
   centreOf,
   doublePath,
+  metricsFor,
   shapeOf,
 } from './layout'
 import { Message } from './message'
@@ -506,6 +508,9 @@ const linkView = <ParentMessage>(
     isShownDown(picture, link) ? 'down' : '',
     link.isActive ? '' : 'idle',
     isHiddenLink ? 'unknown' : '',
+    Array.some(picture.context.doc.doc.links, each => each.id === link.id)
+      ? ''
+      : 'draft',
     Option.match(mark, {
       onNone: () => '',
       onSome: found => `mark-${found.tone}`,
@@ -926,6 +931,7 @@ const nodeView = <ParentMessage>(
           isCand ? 'cand' : '',
           movable ? 'movable' : '',
           Option.isSome(click) ? 'clickable' : '',
+          Option.isNone(deviceOf(picture, node.id)) ? 'draft' : '',
         ].join(' '),
       ),
       h.DataAttribute('node', node.id),
@@ -1425,6 +1431,17 @@ const scanViews = <ParentMessage>(
   )
 }
 
+/** Устройство, у которого черновик рисует строку операции. */
+const draftDevice = (op: NetOp): string =>
+  'device' in op && typeof op.device === 'string'
+    ? op.device
+    : 'router' in op && typeof op.router === 'string'
+      ? op.router
+      : ''
+
+/** Черновик сцены (`preview`): новые устройства и кабели черновика стоят на
+    доске пунктиром, а остальные операции — строки под своим устройством,
+    одна под другой. Устройство и кабель строк не получают: их видно и так. */
 const draftViews = <ParentMessage>(
   draw: Draw<ParentMessage>,
 ): ReadonlyArray<Html> => {
@@ -1440,15 +1457,14 @@ const draftViews = <ParentMessage>(
         onSome: found => ` mark-${found.tone}`,
       })
       const device =
-        op._tag === 'AddDevice'
-          ? op.device.id
-          : 'device' in op && typeof op.device === 'string'
-            ? op.device
-            : 'router' in op && typeof op.router === 'string'
-              ? op.router
-              : op._tag === 'Connect'
-                ? op.a
-                : ''
+        op._tag === 'AddDevice' || op._tag === 'Connect' ? '' : draftDevice(op)
+      const row = Array.filter(
+        Array.take(ops, index),
+        earlier =>
+          earlier._tag !== 'AddDevice' &&
+          earlier._tag !== 'Connect' &&
+          draftDevice(earlier) === device,
+      ).length
       return Option.map(
         Option.flatMap(visibleIdOptional(picture, device), shapeId =>
           shapeOf(picture.layout, shapeId),
@@ -1457,12 +1473,16 @@ const draftViews = <ParentMessage>(
           const centre = centreOf(shape)
           const text = picture.context.maybeQuiz.pipe(
             Option.flatMap(quiz => Option.fromNullishOr(quiz.names[id])),
+            Option.orElse(() =>
+              Option.map(picture.context.label(id), label => label.name),
+            ),
             Option.getOrElse(
               () => `${picture.context.ui.packetBoard.draft}: ${op._tag}`,
             ),
           )
           const width = Math.min(text.length * 6.4 + 18, 260)
-          const y = centre.y + 40 + (index % 3) * 22
+          const below = shape._tag === 'Box' ? shape.node.h / 2 + 6 : 40
+          const y = centre.y + below + row * 22
           return h.keyed('g')(
             `draft-${index}`,
             [
@@ -1484,6 +1504,95 @@ const draftViews = <ParentMessage>(
         },
       )
     }),
+  )
+}
+
+/** Готовый блок сцены (`place`): пунктирное место, где встанет устройство.
+    Нажатие ставит блок; пока задача не начата или блок уже на доске, места
+    нет. С третьей подсказкой место пульсирует, как призрак. */
+const placeViews = <ParentMessage>(
+  draw: Draw<ParentMessage>,
+): ReadonlyArray<Html> => {
+  const { h, picture, send } = draw
+  if (picture.context.mode !== 'Edit' || !picture.isOpen('board.sandbox')) {
+    return []
+  }
+  const metrics = metricsFor(picture.layout.isNarrow)
+  const isGhost = Option.exists(
+    picture.context.maybeTask,
+    task => task.isGhostShown,
+  )
+  return Array.flatMap(picture.context.stage, item =>
+    item._tag !== 'Place'
+      ? []
+      : Option.match(
+          Array.findFirst(item.ops, op =>
+            op._tag === 'AddDevice' ? Option.some(op.device) : Option.none(),
+          ),
+          {
+            onNone: () => [],
+            onSome: device => {
+              if (Option.isSome(deviceOf(picture, device.id))) {
+                return []
+              }
+              const at = picture.layout.place({ x: device.x, y: device.y })
+              const title = picture.name(device.id)
+              const hint = picture.context.ui.packetBoard.place
+              const width = Math.max(
+                metrics.minNodeWidth,
+                Math.max(title.length, hint.length) * metrics.charWidth * 0.86 +
+                  metrics.textInset,
+              )
+              const x0 = at.x - width / 2
+              const y0 = at.y - metrics.nodeHeight / 2
+              const icon = picture.layout.isNarrow ? 9 : 11
+              const textX = x0 + (picture.layout.isNarrow ? 34 : 42)
+              return [
+                h.keyed('g')(
+                  `place-${device.id}`,
+                  [
+                    h.Class(
+                      `pb-place${isGhost ? ` ghost${picture.context.isReducedMotion ? '' : ' pulse'}` : ''}`,
+                    ),
+                    h.DataAttribute('place', device.id),
+                    ...button(
+                      draw,
+                      `${title}: ${hint}`,
+                      send(Message.ClickedPlace({ ops: item.ops })),
+                    ),
+                  ],
+                  [
+                    h.rect([
+                      h.Class('pb-body'),
+                      h.Attribute('x', n(x0)),
+                      h.Attribute('y', n(y0)),
+                      h.Attribute('width', n(width)),
+                      h.Attribute('height', n(metrics.nodeHeight)),
+                      h.Attribute('rx', '11'),
+                    ]),
+                    iconView(h, kindOf(device), x0 + icon, at.y - 12),
+                    h.text(
+                      [
+                        h.Class('pb-title'),
+                        h.Attribute('x', n(textX)),
+                        h.Attribute('y', n(at.y - 2)),
+                      ],
+                      [title],
+                    ),
+                    h.text(
+                      [
+                        h.Class('pb-sub'),
+                        h.Attribute('x', n(textX)),
+                        h.Attribute('y', n(at.y + 13)),
+                      ],
+                      [hint],
+                    ),
+                  ],
+                ),
+              ]
+            },
+          },
+        ),
   )
 }
 
@@ -1829,6 +1938,7 @@ const svgView = <ParentMessage>(draw: Draw<ParentMessage>): Html => {
           ...Array.map(layout.nodes, node => nodeView(draw, node)),
           ...stickerView(draw),
           ...draftViews(draw),
+          ...placeViews(draw),
           ...scanViews(draw),
         ],
       ),

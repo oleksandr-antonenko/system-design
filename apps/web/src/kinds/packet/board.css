@@ -694,6 +694,47 @@
   stroke: var(--bad);
   stroke-width: 2.4;
 }
+.pb-draft.mark-warn rect {
+  stroke: var(--warn);
+  stroke-width: 2.4;
+}
+/* Устройства и кабели черновика сцены — пунктиром. */
+.pb-node.draft .pb-body {
+  fill: var(--page);
+  stroke: var(--accent);
+  stroke-dasharray: 6 4;
+}
+.pb-link.draft {
+  stroke-dasharray: 6 4;
+}
+/* Пунктирное место готового блока (`place`). */
+.pb-place {
+  cursor: pointer;
+}
+.pb-place .pb-body {
+  fill: var(--page);
+  stroke: var(--accent);
+  stroke-width: 1.8;
+  stroke-dasharray: 7 5;
+}
+.pb-place .pb-icon,
+.pb-place .pb-title {
+  opacity: 0.75;
+}
+.pb-place:hover .pb-body,
+.pb-place:focus-visible .pb-body {
+  fill: var(--accent-soft);
+  stroke-width: 2.4;
+}
+.pb-place:focus-visible {
+  outline: none;
+}
+.pb-place.ghost .pb-body {
+  stroke-width: 2.6;
+}
+.pb-place.pulse {
+  animation: pb-pulse 1.4s ease-in-out infinite;
+}
 .pb-fog {
   fill: var(--board);
   opacity: 0.82;
@@ -1087,6 +1128,22 @@
   color: var(--bad);
   font-weight: 600;
 }
+/* Закрытое, как и задумано, — серым: зелёным только то, что открывается. */
+.pb-run-all tr.ok.blocked td:nth-child(2) {
+  color: var(--muted);
+}
+.pb-run-target {
+  font-weight: 600;
+  color: var(--ink);
+}
+.pb-run-target::after {
+  content: ' · ';
+  font-weight: 400;
+  color: var(--muted);
+}
+.pb-run-path {
+  color: var(--muted);
+}
 
 /* ---------- лоток квиза и сборка ---------- */
 .pb-tray {
@@ -1467,6 +1524,7 @@
   .pb-halo.pulse,
   .pb-halo.bad,
   .pb-sticker-halo.pulse,
+  .pb-place.pulse,
   .pb-letter.stuck .pb-letter-in,
   .pb-play.nudge,
   .pb-card-table tr.changed td {
