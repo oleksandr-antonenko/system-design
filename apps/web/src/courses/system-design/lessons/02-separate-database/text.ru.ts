@@ -9,6 +9,9 @@ export default {
   title: 'Separate database. Данные на своей машине',
   summary:
     'Почему server без состояния (stateless) проще масштабировать и куда вынести данные.',
+  preview: {
+    alt: 'Схема: stateless server не хранит своих данных и по одной связи отправляет чтения и записи в отдельную database на своей машине.',
+  },
   steps: {
     'all-in-one': {
       title: 'Server хранит всё',

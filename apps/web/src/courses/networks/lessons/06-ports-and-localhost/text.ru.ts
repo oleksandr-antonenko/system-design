@@ -5,6 +5,9 @@ export default {
   title: 'Port и localhost. Квартиры в одном доме',
   summary:
     'На одном компьютере много программ, и у каждой свой номер — port. Откройте свой dev server с телефона.',
+  preview: {
+    alt: 'Схема: компьютер в виде дома, где каждая дверь — port; за дверями слушают программы, а телефон подключается к port, на котором работает dev server.',
+  },
   labels: {
     phone: { name: 'Phone', note: 'у вас в руке' },
     laptop: { name: 'Laptop', note: 'на нём вы пишете сайт' },

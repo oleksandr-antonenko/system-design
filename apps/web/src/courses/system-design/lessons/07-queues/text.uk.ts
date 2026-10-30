@@ -18,6 +18,9 @@ export default {
   title: 'Queue. Важка робота йде у фон',
   summary:
     'Як винести повільну роботу із запиту: queue, workers, зростання queue, піки й доставка at-least-once.',
+  preview: {
+    alt: 'Схема: server кладе важкі завдання в queue й одразу відповідає, а workers на іншому кінці забирають їх по одному й обробляють у фоні.',
+  },
   steps: {
     'in-request': {
       title: 'Усе всередині запиту',

@@ -5,6 +5,9 @@ export default {
   title: 'Router. Kaip telefonas patenka į internetą',
   summary:
     'Namų įrenginiai kalbasi per router, o internetas — tai daug tinklų. Prijunkite telefoną prie namų Wi-Fi.',
+  preview: {
+    alt: 'Schema: telefonas jungiasi prie namų Wi-Fi, o router kabeliu sujungia namų tinklą su internetu – daugybe tarpusavyje sujungtų tinklų.',
+  },
   labels: {
     phone: { name: 'Phone', note: 'jūsų rankoje' },
     laptop: { name: 'Laptop', note: 'ant stalo' },

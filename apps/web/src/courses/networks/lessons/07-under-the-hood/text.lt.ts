@@ -5,6 +5,9 @@ export default {
   title: 'TCP/IP. Vokas voke',
   summary:
     'Pirmosios pamokos vokas iš tikrųjų yra keli vienas į kitą įdėti vokai: sluoksniai ir MAC addresses. Išnagrinėkite voko kelią sluoksnis po sluoksnio.',
+  preview: {
+    alt: 'Schema: TCP/IP packet išskaidytas į sluoksnius, kurių kiekvienas įdėtas į kitą tarsi vokas į voką, o centre – patys duomenys.',
+  },
   labels: {
     phone: { name: 'Phone', note: 'jūsų rankoje' },
     laptop: { name: 'Laptop', note: 'jame kuriate svetainę' },

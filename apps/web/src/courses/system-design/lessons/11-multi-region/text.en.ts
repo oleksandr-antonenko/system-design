@@ -17,6 +17,9 @@ export default {
   title: 'Multi-region and CAP. When a whole region goes down',
   summary:
     'A second region for distant users and for the loss of a data center, asynchronous replication and the choice between consistency and availability.',
+  preview: {
+    alt: 'Diagram of a multi-region system: one region has gone dark, its traffic is rerouted to the other, and data is replicated asynchronously, a CAP trade-off.',
+  },
   steps: {
     'one-region': {
       title: 'Users across the ocean',

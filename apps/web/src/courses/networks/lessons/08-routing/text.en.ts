@@ -10,6 +10,9 @@ export default {
   title: 'Routing and gateway. How an envelope finds its way',
   summary:
     'Everything “not for our home” a device hands to the gateway, and traceroute shows which routers the envelope passes next. Bring the internet back to a laptop with a wrong gateway.',
+  preview: {
+    alt: 'Diagram of routing: a laptop hands its packet to the default gateway, the routing table picks the next hop, and traceroute lights the path through routers.',
+  },
   labels: {
     phone: { name: 'Phone', note: 'in your hand' },
     laptop: { name: 'Laptop', note: 'on the desk' },

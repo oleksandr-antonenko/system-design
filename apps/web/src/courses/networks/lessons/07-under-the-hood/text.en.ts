@@ -5,6 +5,9 @@ export default {
   title: 'TCP/IP. An envelope in an envelope',
   summary:
     'The envelope from lesson 1 is really several nested envelopes: layers and MAC addresses. Take the envelope’s journey apart layer by layer.',
+  preview: {
+    alt: 'Diagram of TCP/IP: one packet pulled apart into nested layers, each wrapped inside the next like an envelope in an envelope, with the data at the core.',
+  },
   labels: {
     phone: { name: 'Phone', note: 'in your hand' },
     laptop: { name: 'Laptop', note: 'where you build your site' },

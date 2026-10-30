@@ -18,6 +18,9 @@ export default {
   title: 'Queue. Sunkus darbas perkeliamas į foną',
   summary:
     'Kaip iškelti lėtą darbą iš užklausos: queue, workers, queue augimas, apkrovos šuoliai ir pristatymas at-least-once.',
+  preview: {
+    alt: 'Schema: server deda sunkias užduotis į queue ir iškart atsako, o workers kitame gale jas ima po vieną ir apdoroja fone.',
+  },
   steps: {
     'in-request': {
       title: 'Viskas užklausos viduje',

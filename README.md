@@ -27,7 +27,7 @@ pnpm dev
 
 Open <http://localhost:5173>. No `.env` and no external services are needed.
 
-The app is a static single-page site. `pnpm build` writes it to `apps/web/dist`; any static host can serve that folder, as long as it answers unknown paths with `index.html` so that links to lessons open directly.
+The app is a static single-page site. `pnpm build` writes it to `apps/web/dist`; any static host can serve that folder, as long as it answers unknown paths with `index.html` so that links to lessons open directly. The build also writes a page with its own title, description, canonical and language links, Open Graph tags and a `<noscript>` summary for every catalogue, course and lesson address (`<path>/index.html`), plus `sitemap.xml` and `robots.txt`; set `SITE_URL` (for example `SITE_URL=https://example.org pnpm build`) so their links point at your site. A host that serves `<path>/index.html` for `<path>` gives search engines and link previews the right page.
 
 ## Commands
 

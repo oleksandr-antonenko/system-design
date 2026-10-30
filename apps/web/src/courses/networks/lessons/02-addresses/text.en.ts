@@ -5,6 +5,9 @@ export default {
   title: 'IP address. Every device has its own',
   summary:
     'Every device on the network has its own address — an IP address — and the router hands it out. Find the laptop’s address and connect a printer.',
+  preview: {
+    alt: 'Diagram: the home router hands each device its own IP address, shown as a separate tag on the laptop, the phone, the computer and the printer.',
+  },
   labels: {
     phone: { name: 'Phone', note: 'in your hand' },
     laptop: { name: 'Laptop', note: 'on the desk' },

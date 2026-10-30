@@ -10,6 +10,9 @@ export default {
   title: 'Routing и gateway. Как конверт находит дорогу',
   summary:
     'Всё «не в наш дом» устройство отдаёт gateway, а traceroute показывает, через какие routers конверт идёт дальше. Верните интернет ноутбуку с чужим gateway.',
+  preview: {
+    alt: 'Схема routing: ноутбук отдаёт packet в default gateway, routing table выбирает следующий hop, а traceroute подсвечивает путь через routers.',
+  },
   labels: {
     phone: { name: 'Phone', note: 'у вас в руке' },
     laptop: { name: 'Laptop', note: 'на столе' },

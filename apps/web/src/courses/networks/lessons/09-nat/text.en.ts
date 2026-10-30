@@ -5,6 +5,9 @@ export default {
   title: 'NAT and port forwarding. One address for the whole home',
   summary:
     'The whole home goes online under one router address — that is NAT. Let a friend into the game on your computer with port forwarding.',
+  preview: {
+    alt: 'Diagram of NAT: home devices go online through the router’s one public IP, and port forwarding lets an incoming connection reach one computer.',
+  },
   labels: {
     phone: { name: 'Phone', note: 'in your hand' },
     laptop: { name: 'Laptop', note: 'on the desk' },

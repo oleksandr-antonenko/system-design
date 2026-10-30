@@ -152,6 +152,7 @@ const longLesson: LessonDefinition<FlowTypes> = defineLesson(flow, {
 const longLessonEntry = fixtureEntry('system-design', 'long-lesson', {
   title: 'Long lesson. Sixteen steps',
   summary: 'A lesson as long as an advanced one.',
+  preview: { alt: 'A long lesson.' },
   steps: Record.fromEntries(
     Array.map(longLesson.steps, ({ id }) => [id, { title: id, body: id }]),
   ),

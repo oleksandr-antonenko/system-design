@@ -5,9 +5,16 @@ import tailwindcss from '@tailwindcss/vite'
 
 import { lessonChunkCheck, lessonChunkName } from './build/lessonChunks.ts'
 import { lessonIndex } from './build/lessonIndex.ts'
+import { prerender } from './build/prerender.ts'
 
 export default defineConfig({
-  plugins: [lessonIndex(), tailwindcss(), foldkit(), lessonChunkCheck()],
+  plugins: [
+    lessonIndex(),
+    tailwindcss(),
+    foldkit(),
+    lessonChunkCheck(),
+    prerender({ plugins: [lessonIndex()] }),
+  ],
   optimizeDeps: {
     entries: ['src/entry.ts'],
   },

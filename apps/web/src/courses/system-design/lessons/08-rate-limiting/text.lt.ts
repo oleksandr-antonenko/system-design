@@ -17,6 +17,9 @@ export default {
   title: 'Rate limiter. Apsauga nuo perkrovos',
   summary:
     'Rate limiter prieš load balancer: greitas atsakymas 429 vietoj perkrovos, limitai kiekvienam klientui, backpressure ir retries be griūties.',
+  preview: {
+    alt: 'Schema: rate limiter prieš load balancer praleidžia tolygų užklausų srautą, o perteklių iškart atmeta atsakymu 429, ir servers dirba ramiai.',
+  },
   steps: {
     'normal-day': {
       title: 'Įprasta diena',

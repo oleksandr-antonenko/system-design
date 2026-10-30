@@ -17,6 +17,9 @@ export default {
   title: 'URL shortener. Підсумковий проєкт',
   summary:
     'Спроєктуйте систему з нуля: вимоги, оцінки, API, а потім схема, яка тримає пік, переживає відмови й вкладається в бюджет.',
+  preview: {
+    alt: 'Схема URL shortener: довгий заплутаний ланцюг стає коротким, а за ним стоять load balancer, servers, cache і database, що тримають пік.',
+  },
   steps: {
     requirements: {
       title: 'Вимоги',

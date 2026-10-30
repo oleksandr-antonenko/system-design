@@ -18,6 +18,9 @@ export default {
   title: 'Queue. Тяжёлая работа уходит в фон',
   summary:
     'Как вынести медленную работу из запроса: queue, workers, рост queue, пики и доставка at-least-once.',
+  preview: {
+    alt: 'Схема: server кладёт тяжёлые задачи в queue и сразу отвечает, а workers на другом конце забирают их по одной и обрабатывают в фоне.',
+  },
   steps: {
     'in-request': {
       title: 'Всё внутри запроса',

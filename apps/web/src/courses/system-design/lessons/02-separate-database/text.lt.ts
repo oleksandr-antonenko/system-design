@@ -9,6 +9,9 @@ export default {
   title: 'Separate database. Duomenys atskiroje mašinoje',
   summary:
     'Kodėl stateless server lengviau plėsti ir kodėl duomenims reikia atskiros database.',
+  preview: {
+    alt: 'Schema: stateless server nelaiko savų duomenų ir viena jungtimi siunčia skaitymus bei įrašus į atskirą database savoje mašinoje.',
+  },
   steps: {
     'all-in-one': {
       title: 'Vienas server viskam',

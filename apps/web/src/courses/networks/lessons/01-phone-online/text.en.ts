@@ -5,6 +5,9 @@ export default {
   title: 'Router. How a phone gets online',
   summary:
     'Devices at home talk through the router, and the internet is many networks joined together. Connect a phone to the home Wi-Fi.',
+  preview: {
+    alt: 'Diagram: a phone joins the home Wi-Fi, and the router links the home network by cable to the internet, drawn as many networks joined together.',
+  },
   labels: {
     phone: { name: 'Phone', note: 'in your hand' },
     laptop: { name: 'Laptop', note: 'on the desk' },

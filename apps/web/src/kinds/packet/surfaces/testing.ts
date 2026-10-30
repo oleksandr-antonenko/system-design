@@ -221,6 +221,7 @@ export const devicesEntry: LessonEntry = {
       text: {
         title: 'Devices',
         summary: 'Surfaces of devices.',
+        preview: { alt: 'Surfaces.' },
         labels: {
           phone: { name: 'Phone' },
           laptop: { name: 'Laptop' },

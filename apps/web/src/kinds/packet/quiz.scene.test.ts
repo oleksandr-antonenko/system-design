@@ -114,6 +114,7 @@ const entryWith = (
       text: {
         title: 'Quiz kinds',
         summary: 'Quiz kinds on the network board.',
+        preview: { alt: 'Quiz kinds.' },
         steps: { quiz: { title: 'Quiz', body: 'Answer on the board.' } },
         quizzes: {
           quiz: { question: 'Which one?', explain: 'Because.', options, slots },

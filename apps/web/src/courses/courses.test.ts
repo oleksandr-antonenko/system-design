@@ -211,6 +211,7 @@ const courseText = (title: string): CourseText => ({
 const text = (title: string): LessonText => ({
   title,
   summary: `${title} summary`,
+  preview: { alt: `${title} preview` },
 })
 
 const meta = (overrides: Partial<LessonMeta> = {}): LessonMeta => ({
@@ -314,7 +315,11 @@ describe('assembleCatalog', () => {
           }),
         },
         {
-          './demo/lessons/1-intro/text.en.ts': { title: ' ', summary: 'ok' },
+          './demo/lessons/1-intro/text.en.ts': {
+            title: ' ',
+            summary: 'ok',
+            preview: { alt: 'ok' },
+          },
           './demo/lessons/02-copy/text.en.ts': text('copy'),
           './demo/lessons/02-copy/text.ru.ts': text('копия'),
           './demo/lessons/03-copy/text.en.ts': text('copy'),

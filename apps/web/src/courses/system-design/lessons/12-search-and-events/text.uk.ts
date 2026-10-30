@@ -11,6 +11,9 @@ export default {
   title: 'Search index і event bus. Пошук і події',
   summary:
     'Event bus доставляє кожну зміну в search index і в аналітику: publish/subscribe, lag subscriber і eventual consistency.',
+  preview: {
+    alt: 'Схема: server публікує зміни в event bus, а підписники — search index, аналітика й database — отримують кожну подію з невеликим lag.',
+  },
   steps: {
     catalog: {
       title: 'Каталог',

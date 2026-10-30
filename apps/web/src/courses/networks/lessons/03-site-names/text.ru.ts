@@ -5,6 +5,9 @@ export default {
   title: 'DNS. Имя сайта и его адрес',
   summary:
     'DNS превращает имя сайта в адрес, как контакты в телефоне. Почините сайт, который «не открывается».',
+  preview: {
+    alt: 'Схема: ноутбук сначала спрашивает DNS server, получает по имени сайта его IP address и только потом идёт к server сайта.',
+  },
   labels: {
     phone: { name: 'Phone', note: 'у вас в руке' },
     laptop: { name: 'Laptop', note: 'на столе' },

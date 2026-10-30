@@ -17,6 +17,9 @@ export default {
   title: 'Multi-region ir CAP. Kai išsijungia visas regionas',
   summary:
     'Antrasis regionas tolimiems naudotojams ir duomenų centro praradimo atvejui, asinchroninė replikacija ir pasirinkimas tarp consistency ir availability.',
+  preview: {
+    alt: 'Schema: multi-region sistemoje vienas regionas išsijungė, srautas nukreiptas į kitą, o duomenys tarp regionų kopijuojami asinchroniškai (CAP).',
+  },
   steps: {
     'one-region': {
       title: 'Naudotojai už vandenyno',

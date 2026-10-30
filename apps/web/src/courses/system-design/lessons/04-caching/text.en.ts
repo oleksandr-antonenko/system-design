@@ -26,6 +26,9 @@ const quizMisses = quizReads * (1 - cacheHitShare)
 export default {
   title: 'Cache. Fast answers from memory',
   summary: 'Cache-aside, hit rate and TTL: taking load off the database.',
+  preview: {
+    alt: 'Diagram: a cache next to the server answers most reads straight from memory, and only cache misses travel on to the lightly loaded database.',
+  },
   steps: {
     'five-servers': {
       title: 'Five servers, one database',

@@ -8,6 +8,9 @@ const missesWww = (name: string, names: ReadonlyArray<string>): boolean =>
 export default {
   title: 'HTTPS і certificates. Замок в адресному рядку',
   summary: 'Що захищає замок у браузері і чому certificate буває недійсним.',
+  preview: {
+    alt: 'Схема HTTPS: server пред’являє браузеру certificate, браузер перевіряє його й показує замок, а дані йдуть зашифрованим каналом.',
+  },
   labels: {
     phone: { name: 'Phone', note: 'у вас у руці, у кав’ярні' },
     laptop: { name: 'Laptop', note: 'удома на столі' },

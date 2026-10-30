@@ -11,6 +11,9 @@ export default {
   title: 'Search index ir event bus. Paieška ir įvykiai',
   summary:
     'Event bus pristato kiekvieną pakeitimą į search index ir į analitiką: publish/subscribe, subscriber lag ir eventual consistency.',
+  preview: {
+    alt: 'Schema: server skelbia pakeitimus į event bus, o prenumeratoriai – search index, analitika ir database – gauna kiekvieną įvykį su nedideliu lag.',
+  },
   steps: {
     catalog: {
       title: 'Katalogas',

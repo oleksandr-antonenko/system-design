@@ -32,6 +32,7 @@ const entry: LessonEntry = {
       text: {
         title: 'Router. How a phone gets online',
         summary: 'The phone talks to the internet through the router.',
+        preview: { alt: 'A phone and a router.' },
         labels: { phone: { name: 'Phone' }, router: { name: 'Router' } },
         steps: {
           home: {

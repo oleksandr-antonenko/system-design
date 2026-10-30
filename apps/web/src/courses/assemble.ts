@@ -1,6 +1,7 @@
 import { Array, Option, Order, String, pipe } from 'effect'
 
 import { type Locale, isLocale } from '../i18n/locale'
+import type { PreviewText } from '../lesson/dsl'
 import type { CourseDefinition, CourseText, LessonMeta } from './model'
 
 // Реестр курсов (design D2): курсы и их уроки собираются из модулей папок,
@@ -9,7 +10,12 @@ import type { CourseDefinition, CourseText, LessonMeta } from './model'
 export type LocalizedText<Text> = Readonly<{ locale: Locale; text: Text }>
 
 /** What the course map shows of a lesson before it is loaded. */
-export type LessonSummary = Readonly<{ title: string; summary: string }>
+export type LessonSummary = Readonly<{
+  title: string
+  summary: string
+  /** Подпись картинки урока: её показывает карта курса. */
+  preview: PreviewText
+}>
 
 export type Lesson = Readonly<{
   course: string

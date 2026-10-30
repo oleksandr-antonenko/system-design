@@ -7,7 +7,7 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "typecheck": "tsc --noEmit --pretty false",
+    "typecheck": "tsc --noEmit --pretty false && tsc --noEmit --pretty false -p tsconfig.node.json",
     "format": "oxfmt",
     "lint": "oxlint --quiet src && effect-tsgo patch --no-typescript --oxlint && oxlint --quiet --config .oxlintrc.effect.json --deny-warnings src"
   },
@@ -27,6 +27,7 @@
     "@foldkit/oxlint-plugin": "0.15.3",
     "@foldkit/vite-plugin": "0.28.0",
     "@tailwindcss/vite": "4.3.3",
+    "@types/node": "26.6.6",
     "happy-dom": "20.14.6",
     "oxfmt": "0.66.0",
     "oxlint": "1.85.0",

@@ -10,6 +10,9 @@ export default {
   title: 'Failover. Surviving a failure',
   summary:
     'Single points of failure: a second load balancer, a read replica that takes over the database, health checks, failover, and availability versus durability.',
+  preview: {
+    alt: 'Diagram of failover: a load balancer and a database have failed, and traffic flows on through their standby pair, leaving no single point of failure.',
+  },
   steps: {
     'count-spares': {
       title: 'Count the spares',

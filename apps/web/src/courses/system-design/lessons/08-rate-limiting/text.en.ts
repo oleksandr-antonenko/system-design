@@ -17,6 +17,9 @@ export default {
   title: 'Rate limiter. Protection from overload',
   summary:
     'A rate limiter in front of the load balancer: a fast 429 instead of overload, per-client limits, backpressure and retries without a storm.',
+  preview: {
+    alt: 'Diagram: a rate limiter in front of the load balancer lets an even stream of requests through and rejects the excess at once with a 429.',
+  },
   steps: {
     'normal-day': {
       title: 'An ordinary day',

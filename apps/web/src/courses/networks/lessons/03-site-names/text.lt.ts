@@ -5,6 +5,9 @@ export default {
   title: 'DNS. Svetainės vardas ir adresas',
   summary:
     'DNS paverčia svetainės vardą adresu, kaip kontaktai telefone. Sutaisykite svetainę, kuri „neatsidaro“.',
+  preview: {
+    alt: 'Schema: kompiuteris pirmiausia klausia DNS server, pagal svetainės vardą gauna jos IP address ir tik tada eina į svetainės server.',
+  },
   labels: {
     phone: { name: 'Phone', note: 'jūsų rankoje' },
     laptop: { name: 'Laptop', note: 'ant stalo' },

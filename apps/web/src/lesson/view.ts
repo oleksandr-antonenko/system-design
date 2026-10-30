@@ -4,6 +4,7 @@ import type { Html, HtmlBuilder } from 'foldkit/html'
 
 import { type LocalizedText, lessonTextFor, textFor } from '../courses/assemble'
 import type { LessonMeta, LessonText } from '../courses/model'
+import { previewOf } from '../courses/previews'
 import {
   courseLessons,
   coursePaletteMode,
@@ -22,6 +23,7 @@ import type {
   KindTypes,
 } from '../kinds/contract'
 import type { KindMessage } from '../kinds/state'
+import { lessonHeroView } from '../previewView'
 import { courseUrl, lessonUrl } from '../route'
 import { laterInCourse, newInLesson } from './course'
 import {
@@ -818,7 +820,8 @@ const theoryView = <T extends KindTypes>(
   h: HtmlBuilder<Message>,
 ): Html => {
   const { lesson, model, texts, locale, ui } = page
-  const order = Option.match(findLesson(model.course, lesson.slug), {
+  const maybeEntry = findLesson(model.course, lesson.slug)
+  const order = Option.match(maybeEntry, {
     onNone: () => 0,
     onSome: found => found.meta.order,
   })
@@ -838,6 +841,11 @@ const theoryView = <T extends KindTypes>(
             [h.Href(courseUrl(locale, model.course)), h.Class('back-link')],
             [`← ${ui.lesson.backToCourse}`],
           ),
+          Option.match(Option.flatMap(maybeEntry, previewOf), {
+            onNone: () => h.empty,
+            onSome: preview =>
+              lessonHeroView(preview, texts.preview.alt, shownIn, h),
+          }),
           h.p([h.Class('eyebrow')], [ui.home.lessonNumber(order)]),
           h.h1([h.Lang(shownIn), h.Class('lesson-title')], [texts.title]),
           isFallback

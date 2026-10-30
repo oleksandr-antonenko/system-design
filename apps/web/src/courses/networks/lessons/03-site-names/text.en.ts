@@ -5,6 +5,9 @@ export default {
   title: 'DNS. A site’s name and its address',
   summary:
     'DNS turns a site’s name into an address, like the contacts on your phone. Fix a site that “won’t open”.',
+  preview: {
+    alt: 'Diagram: a laptop first asks a DNS server, gets the site’s IP address for its name and only then goes to the site’s server.',
+  },
   labels: {
     phone: { name: 'Phone', note: 'in your hand' },
     laptop: { name: 'Laptop', note: 'on the desk' },

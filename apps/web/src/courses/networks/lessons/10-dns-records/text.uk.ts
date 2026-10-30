@@ -5,6 +5,9 @@ export default {
   title: 'DNS records. Свій domain для сайту',
   summary:
     'Domain спрямовують на сервер за допомогою DNS records, а довідкові пам’ятають стару відповідь, доки не мине її TTL. Спрямуйте свій domain на свій сервер.',
+  preview: {
+    alt: 'Схема: DNS record спрямовує domain на новий server, а довідкові ще пам’ятають стару відповідь, доки не мине її TTL, — це показують пісочні годинники.',
+  },
   labels: {
     phone: { name: 'Phone', note: 'у вас у руці' },
     laptop: { name: 'Laptop', note: 'на столі' },

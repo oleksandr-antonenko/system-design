@@ -5,6 +5,9 @@ export default {
   title: 'Port ir localhost. Butai viename name',
   summary:
     'Viename kompiuteryje veikia daug programų, ir kiekviena turi savo numerį — port. Atidarykite savo dev server telefone.',
+  preview: {
+    alt: 'Schema: kompiuteris kaip namas, kurio kiekvienos durys – port; už jų klauso programos, o telefonas jungiasi prie port, kuriame veikia dev server.',
+  },
   labels: {
     phone: { name: 'Phone', note: 'jūsų rankoje' },
     laptop: {

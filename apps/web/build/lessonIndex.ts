@@ -102,7 +102,11 @@ const parse = (file: string): Node => {
 /** `title` and `summary` of a lesson's `text.<locale>.ts`. */
 export const readSummary = (
   file: string,
-): Readonly<{ title: string; summary: string }> => {
+): Readonly<{
+  title: string
+  summary: string
+  preview: Readonly<{ alt: string }>
+}> => {
   const program = parse(file)
   const body = program['body']
   const exported = Array.isArray(body)
@@ -119,22 +123,39 @@ export const readSummary = (
   if (!Array.isArray(properties)) {
     throw new Error(`${file}: the default export must be an object literal`)
   }
-  const field = (name: string): string => {
-    const property = properties.find(
+  const valueIn = (within: ReadonlyArray<unknown>, name: string): unknown =>
+    within.find(
       (candidate): candidate is Node =>
         isNode(candidate) &&
         candidate.type === 'Property' &&
         keyName(candidate) === name,
-    )
-    const value = stringOf(property?.['value'])
-    if (value === undefined) {
+    )?.['value']
+  const literal = (value: unknown, name: string): string => {
+    const text = stringOf(value)
+    if (text === undefined) {
       throw new Error(
         `${file}: \`${name}\` must be a string literal (it is shown on the course map before the lesson loads)`,
       )
     }
-    return value
+    return text
   }
-  return { title: field('title'), summary: field('summary') }
+  const preview = unwrap(valueIn(properties, 'preview'))
+  const previewProperties =
+    isNode(preview) && preview.type === 'ObjectExpression'
+      ? preview['properties']
+      : undefined
+  return {
+    title: literal(valueIn(properties, 'title'), 'title'),
+    summary: literal(valueIn(properties, 'summary'), 'summary'),
+    preview: {
+      alt: literal(
+        Array.isArray(previewProperties)
+          ? valueIn(previewProperties, 'alt')
+          : undefined,
+        'preview.alt',
+      ),
+    },
+  }
 }
 
 /** Every block or device a lesson's tasks offer (`palette`), or that it

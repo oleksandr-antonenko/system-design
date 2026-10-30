@@ -15,6 +15,9 @@ export default {
   title: 'Single server. Everything on one machine',
   summary:
     'Requests and responses, RPS, latency, the capacity limit of one server and a single point of failure.',
+  preview: {
+    alt: 'Diagram: request streams from many users’ devices converge on a single server, which runs at its limit and is the single point of failure.',
+  },
   steps: {
     'no-answer': {
       title: 'Requests with no answer',

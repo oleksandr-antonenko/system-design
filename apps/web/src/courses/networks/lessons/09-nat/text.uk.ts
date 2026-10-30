@@ -5,6 +5,9 @@ export default {
   title: 'NAT і port forwarding. Одна адреса на весь дім',
   summary:
     'Увесь дім виходить в інтернет під однією адресою router — це NAT. Впустіть друга в гру на своєму комп’ютері через port forwarding.',
+  preview: {
+    alt: 'Схема NAT: пристрої вдома виходять в інтернет під спільною public IP router, а port forwarding пропускає вхідне з’єднання до потрібного комп’ютера.',
+  },
   labels: {
     phone: { name: 'Phone', note: 'у вас у руці' },
     laptop: { name: 'Laptop', note: 'на столі' },

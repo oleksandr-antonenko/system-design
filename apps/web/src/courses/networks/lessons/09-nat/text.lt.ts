@@ -5,6 +5,9 @@ export default {
   title: 'NAT ir port forwarding. Vienas adresas visiems namams',
   summary:
     'Visi namai išeina į internetą vienu router adresu – tai NAT. Įleiskite draugą į žaidimą savo kompiuteryje per port forwarding.',
+  preview: {
+    alt: 'Schema: NAT – namų įrenginiai išeina į internetą bendru router public IP, o port forwarding praleidžia įeinantį ryšį į reikiamą kompiuterį.',
+  },
   labels: {
     phone: { name: 'Phone', note: 'jūsų rankoje' },
     laptop: { name: 'Laptop', note: 'ant stalo' },

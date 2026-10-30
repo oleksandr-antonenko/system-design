@@ -23,6 +23,9 @@ export default {
   title: 'Sharding. Duomenys dalimis',
   summary:
     'Kaip padalyti duomenis tarp nepriklausomų databases: shard key, hot shards, užklausos per visus shards ir resharding.',
+  preview: {
+    alt: 'Schema: sharding padalija didelę database į shards, router pagal shard key siunčia užklausą į reikiamą shard, o hot shard apkrautas labiausiai.',
+  },
   steps: {
     'one-primary': {
       title: 'Prekyvietė su viena database',

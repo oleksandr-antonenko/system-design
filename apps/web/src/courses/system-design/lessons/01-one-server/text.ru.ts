@@ -15,6 +15,9 @@ export default {
   title: 'Single server. Всё на одной машине',
   summary:
     'Запрос и ответ, RPS, задержка (latency), предел мощности, когда server всего один, и single point of failure.',
+  preview: {
+    alt: 'Схема: запросы с устройств пользователей сходятся в single server, который работает на пределе и остаётся single point of failure.',
+  },
   steps: {
     'no-answer': {
       title: 'Запросы без ответа',

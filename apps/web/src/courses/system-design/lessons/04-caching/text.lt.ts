@@ -26,6 +26,9 @@ const quizMisses = quizReads * (1 - cacheHitShare)
 export default {
   title: 'Cache. Greiti atsakymai iš atminties',
   summary: 'Cache-aside, hit rate ir TTL: kaip sumažinti database apkrovą.',
+  preview: {
+    alt: 'Schema: cache šalia server atsako į daugumą skaitymų iš atminties, o į database keliauja tik užklausos po cache miss, todėl ji beveik laisva.',
+  },
   steps: {
     'five-servers': {
       title: 'Penki „Server“ blokai, viena database',

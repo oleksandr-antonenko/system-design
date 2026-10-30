@@ -11,6 +11,9 @@ export default {
   title: 'Search index and event bus. Search and events',
   summary:
     'An event bus delivers every change to the search index and to analytics: publish/subscribe, subscriber lag and eventual consistency.',
+  preview: {
+    alt: 'Diagram: a server publishes changes to an event bus, and subscribers such as the search index, analytics and a database get each event with a small lag.',
+  },
   steps: {
     catalog: {
       title: 'The catalog',

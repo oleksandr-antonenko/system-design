@@ -9,6 +9,9 @@ export default {
   title: 'Load balancer. Навантаження ділиться порівну',
   summary:
     'Горизонтальне масштабування (horizontal scaling): кілька блоків «Server» за одним входом, health check і правило N+1.',
+  preview: {
+    alt: 'Схема: load balancer розподіляє запити користувачів між servers і виводить із ротації той, що впав і не пройшов health check.',
+  },
   steps: {
     'one-server': {
       title: 'Один server',

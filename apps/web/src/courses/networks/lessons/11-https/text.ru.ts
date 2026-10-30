@@ -9,6 +9,9 @@ export default {
   title: 'HTTPS и certificates. Замок в адресной строке',
   summary:
     'Что защищает замок в браузере и почему certificate бывает недействительным.',
+  preview: {
+    alt: 'Схема HTTPS: server предъявляет браузеру certificate, браузер проверяет его и показывает замок, а данные идут по зашифрованному каналу.',
+  },
   labels: {
     phone: { name: 'Phone', note: 'у вас в руке, в кафе' },
     laptop: { name: 'Laptop', note: 'дома на столе' },

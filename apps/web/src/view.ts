@@ -8,6 +8,7 @@ import {
   courseTextFor,
   lessonTextFor,
 } from './courses/assemble'
+import { previewOf } from './courses/previews'
 import {
   courses,
   findCourse,
@@ -20,6 +21,8 @@ import { type Locale, localeEndonym, locales } from './i18n/locale'
 import { type UiStrings, uiFor } from './i18n/ui'
 import * as Player from './lesson/view'
 import { LessonLoad, Message, type Model, currentSession } from './main'
+import { pageTitle } from './pageTitle'
+import { lessonHeroView, lessonThumbnailView } from './previewView'
 import {
   AppRoute,
   courseOf,
@@ -244,6 +247,8 @@ const lessonCardView = (
     [h.Class('text-[11px] uppercase tracking-[0.09em] text-muted')],
     [ui.home.lessonNumber(lesson.meta.order)],
   )
+  // NOTE: ::after ссылки накрывает всю строку, поэтому урок открывается и по
+  // картинке, без второй ссылки на него.
   const title = lesson.meta.available
     ? h.a(
         [
@@ -255,7 +260,9 @@ const lessonCardView = (
               step: Option.none(),
             }),
           ),
-          h.Class('text-accent underline-offset-4 hover:underline'),
+          h.Class(
+            'text-accent underline-offset-4 after:absolute after:inset-0 after:content-[""] hover:underline',
+          ),
         ],
         [text.title],
       )
@@ -265,16 +272,25 @@ const lessonCardView = (
     lesson.meta.slug,
     [
       h.Class(
-        'grid gap-1 border-t border-line py-4 first:border-t-0 sm:grid-cols-[110px_1fr_auto] sm:gap-4',
+        'relative grid gap-3 border-t border-line py-5 first:border-t-0 sm:grid-cols-[200px_minmax(0,1fr)] sm:gap-5',
       ),
     ],
     [
-      number,
+      Option.match(previewOf(lesson), {
+        onNone: () => h.div([h.Class('max-sm:hidden')]),
+        onSome: preview =>
+          lessonThumbnailView(preview, text.preview.alt, shownIn, h),
+      }),
       h.div(
         [h.Lang(shownIn), h.Class('min-w-0')],
         [
+          number,
           h.h3(
-            [h.Class('m-0 font-prose text-[18px] font-semibold leading-snug')],
+            [
+              h.Class(
+                'm-0 mt-1 font-prose text-[18px] font-semibold leading-snug',
+              ),
+            ],
             [title],
           ),
           h.p(
@@ -285,18 +301,18 @@ const lessonCardView = (
             ],
             [text.summary],
           ),
+          lesson.meta.available
+            ? h.empty
+            : h.span(
+                [
+                  h.Class(
+                    'mt-2 inline-block rounded-full border border-line px-2 py-0.5 text-[11px] text-muted',
+                  ),
+                ],
+                [ui.home.comingSoon],
+              ),
         ],
       ),
-      lesson.meta.available
-        ? h.empty
-        : h.span(
-            [
-              h.Class(
-                'self-start justify-self-start rounded-full border border-line px-2 py-0.5 text-[11px] text-muted',
-              ),
-            ],
-            [ui.home.comingSoon],
-          ),
     ],
   )
 }
@@ -467,6 +483,16 @@ const lessonView = (
             ],
             [`← ${ui.lesson.backToCourse}`],
           ),
+          Option.match(previewOf(lesson), {
+            onNone: () => h.empty,
+            onSome: preview =>
+              lessonHeroView(
+                preview,
+                choice.text.preview.alt,
+                choice.shownIn,
+                h,
+              ),
+          }),
           h.p(
             [
               h.Class(
@@ -561,36 +587,6 @@ const notFoundView = (
   )
 
 // DOCUMENT
-
-const titled = (page: string, context: string): string => `${page} · ${context}`
-
-const courseTitleIn = (course: string, locale: Locale): Option.Option<string> =>
-  Option.map(
-    findCourse(course),
-    found => courseTextFor(found, locale).text.title,
-  )
-
-const pageTitle = (route: AppRoute, locale: Locale, ui: UiStrings): string =>
-  AppRoute.match(route, {
-    Home: () => ui.siteTitle,
-    Course: ({ course }) =>
-      Option.match(courseTitleIn(course, locale), {
-        onNone: () => titled(ui.notFound.title, ui.siteTitle),
-        onSome: title => titled(ui.home.heading, title),
-      }),
-    Lesson: ({ course, slug }) =>
-      Option.match(
-        Option.all([findLesson(course, slug), courseTitleIn(course, locale)]),
-        {
-          onNone: () => titled(ui.notFound.title, ui.siteTitle),
-          onSome: ([lesson, title]) =>
-            titled(lessonTextFor(lesson, locale).text.title, title),
-        },
-      ),
-    LegacyLesson: () => ui.siteTitle,
-    NotFound: () => titled(ui.notFound.title, ui.siteTitle),
-    Unlocalized: () => ui.siteTitle,
-  })
 
 const unknownView = (
   locale: Locale,

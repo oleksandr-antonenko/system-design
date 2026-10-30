@@ -24,7 +24,7 @@ const lessons = Array.flatMap(courses, course =>
 
 describe('lesson index', () => {
   test.each(lessons)(
-    '%s: the map shows the lesson’s own title and summary',
+    '%s: the map shows the lesson’s own title, summary and picture alt',
     (_, lesson) => {
       const texts = Option.getOrThrow(
         loadedLesson(lesson.course, lesson.meta.slug),
@@ -39,6 +39,7 @@ describe('lesson index', () => {
           locale,
           title: text.title,
           summary: text.summary,
+          preview: { alt: text.preview.alt },
         })),
       )
     },

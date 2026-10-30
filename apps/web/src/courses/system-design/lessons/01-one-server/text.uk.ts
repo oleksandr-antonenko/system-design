@@ -15,6 +15,9 @@ export default {
   title: 'Single server. Усе на одній машині',
   summary:
     'Запит і відповідь, RPS, затримка (latency), межа потужності одного server і single point of failure.',
+  preview: {
+    alt: 'Схема: запити з пристроїв користувачів сходяться в single server, що працює на межі й лишається single point of failure.',
+  },
   steps: {
     'no-answer': {
       title: 'Запити без відповіді',

@@ -10,6 +10,9 @@ export default {
   title: 'Failover. Sistema išgyvena gedimą',
   summary:
     'SPOF, vienintelis gedimo taškas: antras load balancer, read replica, kuri pakeičia database, health check, failover ir skirtumas tarp availability ir durability.',
+  preview: {
+    alt: 'Schema: failover – sugedus load balancer ir database, srautas eina per atsarginę porą, ir neliko single point of failure.',
+  },
   steps: {
     'count-spares': {
       title: 'Suskaičiuokime atsarginius',

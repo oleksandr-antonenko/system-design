@@ -18,6 +18,9 @@ export default {
   title: 'Queue. Heavy work goes to the background',
   summary:
     'Moving slow work out of the request: a queue, workers, queue growth, bursts and at-least-once delivery.',
+  preview: {
+    alt: 'Diagram: the server puts heavy jobs into a queue and answers at once, while workers at the far end take the jobs one by one in the background.',
+  },
   steps: {
     'in-request': {
       title: 'Everything inside the request',
