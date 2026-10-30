@@ -17,7 +17,7 @@ export default {
     stranger: { name: 'Сусід', note: 'ноутбук за сусіднім столиком' },
     internet: { name: 'Internet', note: 'багато мереж' },
     dns: { name: 'DNS server', note: 'довідкова провайдера' },
-    vps: { name: 'Ваш сервер', note: 'myapp.example' },
+    vps: { name: 'VPS', note: 'ваш сервер для myapp.example' },
     shop: { name: 'Сайт магазину', note: 'shop.example' },
     ca: {
       name: 'Certificate authority',

@@ -93,7 +93,7 @@ describe('lesson 11: HTTPS and a certificate for your site', () => {
       expect(
         text(/его certificate выдан на vps-20\.hosting\.example/),
       ).toExist(),
-      click(role('tab', { name: 'Server: Ваш сервер' })),
+      click(role('tab', { name: 'Server: VPS' })),
       click(role('tab', { name: 'Certificate новое' })),
       expect(
         text(
@@ -138,7 +138,7 @@ describe('lesson 11: HTTPS and a certificate for your site', () => {
     scene(
       sceneIn('ru'),
       given(atTask()),
-      click(role('tab', { name: 'Server: Ваш сервер' })),
+      click(role('tab', { name: 'Server: VPS' })),
       change(label('Web server, http, port 80'), 'everyone'),
       click(role('button', { name: 'Сохранить' })),
       click(role('tab', { name: 'Certificate новое' })),

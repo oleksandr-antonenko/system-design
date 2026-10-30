@@ -18,7 +18,7 @@ export default {
     stranger: { name: 'Kaimynas', note: 'nešiojamasis prie gretimo staliuko' },
     internet: { name: 'Internet', note: 'daug tinklų' },
     dns: { name: 'DNS server', note: 'tiekėjo informacijos tarnyba' },
-    vps: { name: 'Jūsų serveris', note: 'myapp.example' },
+    vps: { name: 'VPS', note: 'jūsų serveris, skirtas myapp.example' },
     shop: { name: 'Parduotuvės svetainė', note: 'shop.example' },
     ca: {
       name: 'Certificate authority',

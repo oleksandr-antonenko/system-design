@@ -19,7 +19,7 @@ export default {
     stranger: { name: 'Neighbour', note: 'a laptop at the next table' },
     internet: { name: 'Internet', note: 'many networks' },
     dns: { name: 'DNS server', note: 'your provider’s directory' },
-    vps: { name: 'Your server', note: 'myapp.example' },
+    vps: { name: 'VPS', note: 'your server for myapp.example' },
     shop: { name: 'Shop website', note: 'shop.example' },
     ca: {
       name: 'Certificate authority',
