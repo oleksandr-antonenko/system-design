@@ -150,7 +150,7 @@ describe('quiz modes on the network board', () => {
       sceneFor(lesson),
       given(start(lesson)),
       expect(role('img', { name: /Drag the envelope/ })).toExist(),
-      click(role('button', { name: /^Provider router/ })),
+      click(role('button', { name: /^ISP router/ })),
       expect(text(/Correct/)).toExist(),
     )
   })
@@ -181,7 +181,7 @@ describe('quiz modes on the network board', () => {
     )
   })
 
-  test('PickRule: the rows of the barrier are the candidates', () => {
+  test('PickRule: the rows of the firewall are the candidates', () => {
     const lesson = lessonWith({
       kind: 'PickRule',
       candidates: ['rule:shop:1', 'rule:shop:0'],
@@ -195,7 +195,7 @@ describe('quiz modes on the network board', () => {
     scene(
       sceneFor(lesson),
       given(start(lesson)),
-      expect(text('Barrier of “Server”')).toExist(),
+      expect(text('Firewall rules: “Server”')).toExist(),
       click(role('button', { name: /everything else/ })),
       expect(text(/Correct/)).toExist(),
     )
@@ -231,7 +231,7 @@ describe('quiz modes on the network board', () => {
     scene(
       sceneFor(lesson),
       given(start(lesson)),
-      click(role('button', { name: /^Router — Provider router/ })),
+      click(role('button', { name: /^Router — ISP router/ })),
       click(role('button', { name: 'Done' })),
       expect(text(/Correct/)).toExist(),
     )

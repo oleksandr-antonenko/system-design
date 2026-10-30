@@ -44,7 +44,7 @@ const layoutOf = (world: World, overrides: Partial<LayoutInput> = {}) =>
     maybeFog: Option.none(),
     rooms: [],
     moved: {},
-    text: id => ({ title: id, sub: '' }),
+    text: id => ({ title: id, sub: '', hint: '' }),
     ...overrides,
   })
 

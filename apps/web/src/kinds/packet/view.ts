@@ -3,7 +3,12 @@ import { Mount } from 'foldkit'
 import type { Html, HtmlBuilder } from 'foldkit/html'
 
 import { scanPorts } from '../../net/answers'
-import { type DeviceId, type DeviceKind, kindOf } from '../../net/model'
+import {
+  type DeviceId,
+  type DeviceKind,
+  deviceKindName,
+  kindOf,
+} from '../../net/model'
 import { sourceOf } from '../../net/packet'
 import { wifiOf } from '../../net/topology'
 import type { BoardSlot, Tone } from '../contract'
@@ -235,9 +240,10 @@ const cloudView = <ParentMessage>(
   const ui = picture.context.ui.packetBoard
   const label = picture.context.label(cloud.id)
   const title = Option.match(label, {
-    onNone: () => ui.zone.internet,
+    onNone: () => deviceKindName.internet,
     onSome: found => found.name,
   })
+  const hint = `${deviceKindName.internet} — ${ui.kindHint.internet}`
   const sub = cloud.isOpen
     ? ui.zone.internetOpenSub
     : Option.match(label, {
@@ -280,6 +286,7 @@ const cloudView = <ParentMessage>(
         `pb-cloud${isFlying ? ' hl' : ''}${isHovered ? ' ref-hover' : ''}${cloud.isOpen ? ' open' : ''}${isPick ? ' cand' : ''}`,
       ),
       h.DataAttribute('node', cloud.id),
+      h.AriaDescription(hint),
       ...(isPick
         ? button(draw, title, send(candidateMessage(picture, pickId)))
         : canToggle
@@ -291,6 +298,7 @@ const cloudView = <ParentMessage>(
           : [h.Role('img'), h.AriaLabel(`${title}: ${sub}`)]),
     ],
     [
+      h.title([], [hint]),
       ...ellipses('pb-cloud-edge'),
       ...ellipses('pb-cloud-fill'),
       ...(cloud.isOpen
@@ -804,6 +812,7 @@ const nodeView = <ParentMessage>(
         ].join(' '),
       ),
       h.DataAttribute('node', node.id),
+      ...(node.text.hint === '' ? [] : [h.AriaDescription(node.text.hint)]),
       ...(movable
         ? [
             h.Role('button'),
@@ -856,6 +865,7 @@ const nodeView = <ParentMessage>(
         : []),
     ],
     [
+      ...(node.text.hint === '' ? [] : [h.title([], [node.text.hint])]),
       h.rect([
         h.Class('pb-body'),
         h.Attribute('x', n(x0)),

@@ -74,7 +74,9 @@ export const placeWith =
 
 // INPUT
 
-export type NodeText = Readonly<{ title: string; sub: string }>
+/** `hint` — всплывающая подсказка и доступное описание устройства: его
+    английское имя вида с родным названием и пояснением. */
+export type NodeText = Readonly<{ title: string; sub: string; hint: string }>
 
 export type LayoutInput = Readonly<{
   doc: NetDoc
