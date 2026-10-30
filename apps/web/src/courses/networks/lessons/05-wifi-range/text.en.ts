@@ -6,12 +6,12 @@ export default {
   summary:
     'Range, walls and two bands: 2.4 and 5 GHz. Set up the Wi-Fi so it reaches the kitchen.',
   labels: {
-    router: { name: 'Wi-Fi router', note: 'stands in the living room' },
+    router: { name: 'Router', note: 'stands in the living room' },
     phone: { name: 'Phone', note: 'in your hand' },
     laptop: { name: 'Laptop', note: 'on the desk in the living room' },
     printer: { name: 'Printer', note: 'on a cable, no Wi-Fi needed' },
     bulb: {
-      name: 'Light bulb',
+      name: 'Smart bulb',
       note: 'a smart bulb in the kitchen: it only understands 2.4 GHz',
     },
     'zone:room': { name: 'Living room' },
@@ -104,7 +104,7 @@ Next, lesson 6: ports are flats in one building. We will start our own site on t
       hints: [
         'Look at the rings: which band reaches the kitchen? And which one does the bulb understand?',
         'Only 2.4 GHz reaches the kitchen, and the bulb only understands that one. Turn on 2.4 GHz, but do not turn off 5 GHz: let the laptop next to the router stay fast.',
-        'In the “Wi-Fi” tab choose “2.4 and 5 GHz” and press “Save”. Do not change the network name or the password.',
+        'In the “Wi-Fi” tab choose “2.4 and 5 GHz” and press “Save”. Do not change the SSID or the password.',
       ],
       solvedNote:
         '2.4 GHz now reaches the kitchen: the phone and the bulb are online. The laptop in the living room stayed on the fast 5 GHz.',

@@ -178,7 +178,7 @@ describe('lesson 7: an envelope in an envelope', () => {
         maybeFog: Option.none(),
         rooms: [],
         moved: {},
-        text: id => ({ title: id, sub: '' }),
+        text: id => ({ title: id, sub: '', hint: '' }),
       }),
       unlocked,
     })

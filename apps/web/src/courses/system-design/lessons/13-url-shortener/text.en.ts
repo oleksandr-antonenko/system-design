@@ -50,7 +50,7 @@ The data fits one table, **links**: code (the primary key), long_url, owner_id, 
     },
     design: {
       title: 'Task: the design',
-      body: `Your turn. The palette holds every block from the course: CDN, load balancer, server, cache and replica. The [[db|database]] is already on the board, and one is enough for our writes.
+      body: `Your turn. The palette holds every block from the course: CDN, load balancer, server, cache and read replica. The [[db|database]] is already on the board, and one is enough for our writes.
 
 The requirements have become the goals under the board. The budget is counted live; the rest is checked by simulation when you press Check. Do the sums before you draw: how many servers do 2,000 rps need, and what do they cost?`,
     },
@@ -79,7 +79,7 @@ The requirements have become the goals under the board. The budget is counted li
               : ''
         const data =
           review.replicas > 0
-            ? 'If the [[db|database]] fails, the replica is promoted and takes the writes; with asynchronous replication the last few writes may be lost (lesson 11).'
+            ? 'If the [[db|database]] fails, the read replica is promoted and takes the writes; with asynchronous replication the last few writes may be lost (lesson 11).'
             : ''
         const cache =
           review.caches > 0
@@ -133,8 +133,8 @@ That is the end of the course. You started with one server and finished with a s
         budget: 'Costs at most $4 an hour',
       },
       hints: [
-        'Do the sums first. If every request reached the servers, 2,000 rps would need five servers plus a spare. That is $2.40, and with the database, a replica and two load balancers you are already over budget. Most of the traffic has to be answered before it reaches the servers.',
-        'Put a CDN at the entrance: it answers popular redirects at the edge, 60% of requests, so only 800 rps reach the servers. Behind it: two load balancers, three servers (two carry the load, the third is the spare) and a replica. Link every server to both the database and the replica, so the replica can take over the writes.',
+        'Do the sums first. If every request reached the servers, 2,000 rps would need five servers plus a spare. That is $2.40, and with the database, a read replica and two load balancers you are already over budget. Most of the traffic has to be answered before it reaches the servers.',
+        'Put a CDN at the entrance: it answers popular redirects at the edge, 60% of requests, so only 800 rps reach the servers. Behind it: two load balancers, three servers (two carry the load, the third is the spare) and a read replica. Link every server to both the database and the read replica, so the read replica can take over the writes.',
         'A dashed outline appeared on the board. Place the blocks there and draw the marked connections.',
       ],
       solvedNote:

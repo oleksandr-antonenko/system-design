@@ -1,7 +1,15 @@
 import { Option } from 'effect'
-import { expectOutMessage, given, message, model, story } from 'foldkit/story'
+import {
+  expectNoOutMessage,
+  expectOutMessage,
+  given,
+  message,
+  model,
+  story,
+} from 'foldkit/story'
 import { describe, expect, test } from 'vitest'
 
+import { DomainMessage } from '../../i18n/domainMessage'
 import { cable, move, send } from '../../net/build'
 import { Intent } from '../../net/packet'
 import { emptyWorld } from '../../net/world'
@@ -232,6 +240,28 @@ describe('board tools', () => {
       ),
     )
   })
+
+  test.each(['laptop', 'ноутбук', '192.168.142', '192.168.1.300'])(
+    'the card sends only to an IP address: “%s” is refused, nothing is sent',
+    typed => {
+      story(
+        update(input('Edit')),
+        given(Board.initialModel),
+        message(Board.Message.ClickedDevice({ id: 'phone' })),
+        message(Board.Message.UpdatedSendAddress({ value: typed })),
+        message(Board.Message.SubmittedSend({ from: 'phone', what: 'photo' })),
+        expectNoOutMessage(),
+        model(next => {
+          expect(next.maybeSendRefusal).toEqual(
+            Option.some(DomainMessage.SendNeedsIp()),
+          )
+          expect(next.sendAddress).toBe(typed)
+        }),
+        message(Board.Message.UpdatedSendAddress({ value: '192.168.1.42' })),
+        model(next => expect(next.maybeSendRefusal).toEqual(Option.none())),
+      )
+    },
+  )
 
   test('a dragged device is moved where it is dropped', () => {
     story(

@@ -58,16 +58,18 @@ describe('lesson 7: an envelope in an envelope', () => {
       expect(text('Подсвеченное поле — из какого слоя?')).toExist(),
       expect(text('443')).toExist(),
       expect(text(/SYN|DATA/)).not.toExist(),
-      expect(role('button', { name: 'TCP или UDP · port' })).toExist(),
-      click(role('button', { name: 'IP · адрес' })),
+      expect(role('button', { name: 'Transport · TCP или UDP' })).toExist(),
+      click(role('button', { name: 'Network · IP' })),
       expect(text(/dst/)).toExist(),
       expect(text(/ttl/)).not.toExist(),
       expect(text(/flags/)).not.toExist(),
       expect(text(/А 443 — квартира в нём, программа сайта/)).toExist(),
-      expect(text('Правильный ответ: TCP или UDP · port')).toExist(),
+      expect(text('Правильный ответ: Transport · TCP или UDP')).toExist(),
       expect(selector('.pb-layer.answer')).toHaveText(/443/),
       expect(selector('.pb-layer.picked')).toHaveText(/198\.51\.100\.10/),
-      expect(role('button', { name: 'TCP или UDP · port' })).toBeDisabled(),
+      expect(
+        role('button', { name: 'Transport · TCP или UDP' }),
+      ).toBeDisabled(),
     )
   })
 
@@ -75,9 +77,9 @@ describe('lesson 7: an envelope in an envelope', () => {
     scene(
       sceneIn('en'),
       given(atQuiz()),
-      click(role('button', { name: 'TCP or UDP · the port' })),
+      click(role('button', { name: 'Transport · TCP or UDP' })),
       expect(text(/Correct/)).toExist(),
-      expect(text(/Ports live in TCP or UDP/)).toExist(),
+      expect(text(/Flat numbers are the Transport layer/)).toExist(),
       expect(selector('.pb-layer.answer')).toHaveText(/443/),
       expect(selector('.pb-layer.picked')).not.toExist(),
     )

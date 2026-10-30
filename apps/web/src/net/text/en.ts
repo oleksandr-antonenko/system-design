@@ -56,10 +56,11 @@ export const en: NetTexts = {
   DuplicateDeviceId: ({ id }, c) => `${q(id, c)} is already on the board.`,
   InvalidMac: ({ value }) =>
     `“${value}” is not a MAC address: it needs six pairs of characters separated by colons.`,
-  DuplicateMac: ({ mac, owner }, c) => `${q(owner, c)} already has MAC ${mac}.`,
+  DuplicateMac: ({ mac, owner }, c) =>
+    `${q(owner, c)} already has MAC address ${mac}.`,
   InvalidIp: ({ value }) =>
     `“${value}” is not an address: it needs four numbers from 0 to 255 separated by dots.`,
-  InvalidPrefix: ({ value }) => `The mask /${value} does not fit.`,
+  InvalidPrefix: ({ value }) => `The subnet mask /${value} does not fit.`,
   AddressNotUsable: ({ ip, prefix }) =>
     `${ip}/${prefix} cannot go to a device: it is the address of the network itself or the “everyone” address.`,
   GatewayOutsideSubnet: ({ gateway, ip, prefix }) =>
@@ -200,7 +201,7 @@ export const en: NetTexts = {
     `A mobile link connects a phone to its operator, not ${q(a, c)} to ${q(b, c)}.`,
   VirtualNeedsContainer: ({ a, b }, c) =>
     `The Docker bridge connects a container only to its host, not ${q(a, c)} to ${q(b, c)}.`,
-  NotATransit: ({ id }, c) => `${q(id, c)} is not a provider router.`,
+  NotATransit: ({ id }, c) => `${q(id, c)} is not an ISP router.`,
   NotAVpnGateway: ({ id }, c) => `${q(id, c)} is not a VPN gateway.`,
   NotADockerHost: ({ id }, c) => `Docker is not running on ${q(id, c)}.`,
   NoVpnClient: ({ device }, c) => `${q(device, c)} has no VPN set up.`,

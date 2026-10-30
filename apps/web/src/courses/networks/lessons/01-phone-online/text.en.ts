@@ -8,7 +8,7 @@ export default {
   labels: {
     phone: { name: 'Phone', note: 'in your hand' },
     laptop: { name: 'Laptop', note: 'on the desk' },
-    router: { name: 'Wi-Fi router', note: 'your home post office' },
+    router: { name: 'Router', note: 'your home post office' },
     internet: { name: 'Internet', note: 'the whole world' },
     shop: { name: 'Shop website', note: 'somewhere far away' },
   },
@@ -51,7 +51,7 @@ The **internet** is many networks connected to each other. An envelope is passed
       title: 'Task: connect the phone',
       body: `You have a new phone. It does not know the home Wi-Fi yet: there is no wavy line to the router, and envelopes from the phone go nowhere.
 
-Connect it in the Wi-Fi settings on the phone screen. The name of your network and the password are written on the [[sticker|sticker]] on the router.`,
+Connect it in the Wi-Fi settings on the phone screen. The name of your network (SSID) and the password are written on the [[sticker|sticker]] on the router.`,
     },
     summary: {
       title: 'Summary',
@@ -86,14 +86,14 @@ Next, lesson 2: everyone has an address. Today the envelopes carried names, but 
   tasks: {
     'join-wifi': {
       prompt:
-        'Connect the new phone to the home Wi-Fi. The network name and the password are on the router sticker.',
+        'Connect the new phone to the home Wi-Fi. The network name (SSID) and the password are on the router sticker.',
       goals: {
         wifi: 'The phone is on your router’s Wi-Fi',
         opens: 'The shop website opens on the phone',
       },
       hints: [
         'Where is the home Wi-Fi password usually written? Look at the router itself: press the sticker on the board.',
-        'The sticker shows the network name. Find exactly the same name in the list: the neighbour’s network looks similar, but the digits differ.',
+        'The sticker shows the network name, SSID. Find exactly the same name in the list: the neighbour’s network looks similar, but the digits differ.',
         'Press “Router-7C21”, type the password from the sticker and press “Join”. In the list this network has a dashed outline, and the sticker on the board blinks.',
       ],
       solvedNote:

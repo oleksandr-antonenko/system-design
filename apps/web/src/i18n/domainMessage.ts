@@ -8,6 +8,8 @@ export const DomainMessage = defineTaggedUnion({
   UnknownCourse: { course: Schema.String },
   UnknownLesson: { slug: Schema.String },
   LessonNotTranslated: { shownIn: Locale },
+  /** Карточка устройства (курс сетей): «отправить на адрес» ждёт IP. */
+  SendNeedsIp: {},
   ConnectSelf: {},
   ConnectDuplicate: {},
   ConnectIntoClients: {},
@@ -98,6 +100,7 @@ export const renderDomainMessage = (
     UnknownCourse: params => texts.UnknownCourse(params),
     UnknownLesson: params => texts.UnknownLesson(params),
     LessonNotTranslated: params => texts.LessonNotTranslated(params),
+    SendNeedsIp: params => texts.SendNeedsIp(params),
     ConnectSelf: params => texts.ConnectSelf(params),
     ConnectDuplicate: params => texts.ConnectDuplicate(params),
     ConnectIntoClients: params => texts.ConnectIntoClients(params),

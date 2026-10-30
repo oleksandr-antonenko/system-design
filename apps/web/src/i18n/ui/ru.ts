@@ -1,11 +1,11 @@
 import { Array } from 'effect'
 
-import type { ComponentKind } from '../../domain/catalog'
+import { type ComponentKind, componentName } from '../../domain/catalog'
 import { formatNumber } from '../format'
 import { plural } from '../plural'
 import { deviceRu } from './device/ru'
-import { panelRu } from './panel/ru'
 import { packetBoardRu } from './packetBoard/ru'
+import { panelRu } from './panel/ru'
 import type { UiStrings } from './types'
 
 const inLanguage: UiStrings['inLanguage'] = {
@@ -15,19 +15,19 @@ const inLanguage: UiStrings['inLanguage'] = {
   lt: 'на литовском',
 }
 
-const kindName: UiStrings['kindName'] = {
-  client: 'Пользователи',
-  cdn: 'CDN',
-  limiter: 'Ограничитель',
-  lb: 'Балансировщик',
-  server: 'Сервер',
-  cache: 'Кеш',
-  queue: 'Очередь',
-  events: 'Шина событий',
-  worker: 'Обработчик',
-  db: 'База данных',
-  replica: 'Реплика базы',
-  search: 'Поисковый индекс',
+const kindHint: UiStrings['kindHint'] = {
+  client: 'Пользователи: люди и программы, которые отправляют запросы',
+  cdn: 'Сеть доставки контента: отдаёт статические файлы с серверов рядом с пользователем',
+  limiter: 'Ограничитель частоты запросов: отклоняет запросы сверх лимита',
+  lb: 'Балансировщик нагрузки: раздаёт запросы между серверами',
+  server: 'Сервер приложения: выполняет код и отвечает на запросы',
+  cache: 'Кеш: хранит частые ответы в памяти и разгружает базу данных',
+  queue: 'Очередь сообщений: копит задачи, пока их не заберут обработчики',
+  events: 'Шина событий: доставляет каждое событие всем подписчикам',
+  worker: 'Фоновый обработчик: выполняет задачи из очереди',
+  db: 'База данных: хранит данные системы',
+  replica: 'Реплика для чтения: копия базы данных, которая отвечает на чтение',
+  search: 'Поисковый индекс: быстро находит записи по тексту',
 }
 
 const regionName: UiStrings['regionName'] = {
@@ -41,7 +41,7 @@ const percent = (ratio: number) => `${n(ratio * 100)}%`
 const perHour = (dollars: number) =>
   `${dollars.toFixed(2).replace('.', ',')} $/ч`
 const kindList = (kinds: ReadonlyArray<ComponentKind>) =>
-  kinds.map(kind => kindName[kind]).join(', ')
+  kinds.map(kind => componentName[kind]).join(', ')
 const idList = (lead: string, ids: ReadonlyArray<string>) =>
   Array.isReadonlyArrayNonEmpty(ids) ? `${lead}${ids.join(', ')}.` : ''
 
@@ -51,7 +51,7 @@ export const ru = {
   courseSwitcherLabel: 'Курс',
   languageSwitcherLabel: 'Язык',
   inLanguage,
-  kindName,
+  kindHint,
   regionName,
   home: {
     heading: 'Программа курса',
@@ -96,7 +96,7 @@ export const ru = {
     rejecting: rps => `отклонено ${n(rps)}/с`,
     zoneDown: region => `${regionName[region]} · регион недоступен`,
     edgeFlow: rps => `${n(rps)} rps`,
-    ghost: kind => `сюда: ${kindName[kind]}`,
+    ghost: kind => `сюда: ${componentName[kind]}`,
     modePick: 'Вопрос · выберите на доске',
     loadHidden: 'нагрузка скрыта до ответа',
   },
@@ -104,9 +104,9 @@ export const ru = {
     load: 'Нагрузка',
     errors: 'Ошибки',
     p95: 'p95 ответа',
-    database: 'Запросы к базе',
+    database: 'Запросы к database',
     rejected: 'Отклонено',
-    backlog: 'Очередь растёт',
+    backlog: 'Queue растёт',
     cost: 'Цена',
     rps: value => `${n(value)} rps`,
     growth: value => `+${n(value)} rps`,
@@ -165,7 +165,7 @@ export const ru = {
     showSolution: 'Показать решение',
     resultErrors: 'Ошибки',
     resultP95: 'p95 ответа',
-    resultServers: 'Загрузка серверов',
+    resultServers: 'Загрузка servers',
     resultCost: 'Цена',
     continueLesson: 'Дальше →',
     surfaces: 'Где решать задачу',
@@ -197,49 +197,51 @@ export const ru = {
     UnknownLesson: ({ slug }) => `Урока «${slug}» нет в курсе.`,
     LessonNotTranslated: ({ shownIn }) =>
       `Этот урок ещё не переведён на русский, поэтому показываем его ${inLanguage[shownIn]}.`,
+    SendNeedsIp: () =>
+      'Впишите IP address: четыре числа через точку, например 192.168.1.10.',
     ConnectSelf: () => 'Блок нельзя соединить с самим собой.',
     ConnectDuplicate: () => 'Такая связь уже есть.',
     ConnectIntoClients: () =>
-      'В пользователей запросы не входят: они источник трафика.',
+      'В блок «Users» запросы не входят: это источник трафика.',
     ConnectClientsToDatabase: () =>
-      'Пользователи не ходят в базу напрямую. Между ними должен стоять сервер.',
+      '«Users» не ходят в «Database» напрямую. Между ними должен стоять «Server».',
     ConnectServerToServer: () =>
-      'Серверы не передают запросы друг другу. Распределять нагрузку должен балансировщик.',
+      'Блоки «Server» не передают запросы друг другу. Распределять нагрузку должен «Load balancer».',
     ConnectBalancerToDatabase: () =>
-      'Балансировщик раздаёт запросы серверам, а не базе.',
+      '«Load balancer» раздаёт запросы блокам «Server», а не «Database».',
     ConnectWrongDirection: () =>
-      'Запросы идут слева направо: пользователи, балансировщик, серверы, база.',
+      'Запросы идут слева направо: Users, Load balancer, Server, Database.',
     NodeIsPartOfTask: ({ id }) =>
       `Блок ${id} входит в условие задачи, его нельзя удалить.`,
     UnknownNode: ({ id }) => `Блока ${id} нет на доске.`,
     DuplicateNodeId: ({ id }) => `Блок с именем ${id} уже есть.`,
     GoalMissingKind: ({ kind }) =>
-      `На доске пока нет блока «${kindName[kind]}». Он в палитре слева.`,
+      `На доске пока нет блока «${componentName[kind]}». Он в палитре слева.`,
     GoalTooFewTargets: ({ from, to, have, need }) =>
-      `Связей от «${kindName[from]}» к блокам «${kindName[to]}»: ${n(have)} из ${n(need)}. Протяните недостающие.`,
+      `Связей от «${componentName[from]}» к блокам «${componentName[to]}»: ${n(have)} из ${n(need)}. Протяните недостающие.`,
     GoalDirectPath: ({ from, via, targets }) =>
-      `«${kindName[from]}» ходят на ${targets.join(', ')} напрямую, мимо блока «${kindName[via]}». Нажмите на подсвеченную связь и удалите её.`,
+      `«${componentName[from]}» ходят на ${targets.join(', ')} напрямую, мимо блока «${componentName[via]}». Нажмите на подсвеченную связь и удалите её.`,
     GoalNotConnected: ({ from, via }) =>
-      `Нет связи от «${kindName[from]}» к блоку «${kindName[via]}»: запросам некуда идти.`,
+      `Нет связи от «${componentName[from]}» к блоку «${componentName[via]}»: запросам некуда идти.`,
     GoalTooManyErrors: ({ load, errorRate, overloaded }) =>
       `При ${n(load)} rps теряется ${percent(errorRate)} запросов. Теряют запросы: ${overloaded.join(', ')}.`,
     ConnectFromSink: ({ from }) =>
-      `На блоке «${kindName[from]}» путь запроса заканчивается: дальше он ничего не передаёт.`,
+      `На блоке «${componentName[from]}» путь запроса заканчивается: дальше он ничего не передаёт.`,
     ConnectNotAllowed: ({ from, to, allowed }) =>
-      `«${kindName[from]}» не передаёт запросы блоку «${kindName[to]}». Допустимые связи: ${kindList(allowed)}.`,
+      `«${componentName[from]}» не передаёт запросы блоку «${componentName[to]}». Допустимые связи: ${kindList(allowed)}.`,
     InvalidCapacity: ({ id }) => `Блоку ${id} нужна ёмкость больше нуля.`,
     RegionHasNoBlocks: ({ region }) =>
       `В регионе «${regionName[region]}» нет блоков.`,
     GoalSlowResponse: ({ load, p95, max, hottest }) =>
       `При ${n(load)} rps p95 — ${n(p95)} мс, выше порога ${n(max)} мс.${idList(' Самый загруженный блок: ', hottest)}`,
     GoalOverUtilized: ({ kind, load, utilization, max, nodes }) =>
-      `При ${n(load)} rps блоки «${kindName[kind]}» загружены до ${percent(utilization)}, выше порога ${percent(max)}: ${nodes.join(', ')}.`,
+      `При ${n(load)} rps блоки «${componentName[kind]}» загружены до ${percent(utilization)}, выше порога ${percent(max)}: ${nodes.join(', ')}.`,
     GoalBacklogGrowing: ({ load, backlog, max, nodes }) =>
-      `При ${n(load)} rps очереди растут на ${n(backlog)} rps, допустимо ${n(max)} rps.${idList(' Не успевают: ', nodes)}`,
+      `При ${n(load)} rps queues растут на ${n(backlog)} rps, допустимо ${n(max)} rps.${idList(' Не успевают: ', nodes)}`,
     GoalTooExpensive: ({ cost, max }) =>
       `Система стоит ${perHour(cost)}, это дороже бюджета ${perHour(max)}.`,
     GoalFailureNotSurvived: ({ id, kind, load, errorRate, max }) =>
-      `При отказе ${id} («${kindName[kind]}») и нагрузке ${n(load)} rps теряется ${percent(errorRate)} запросов, допустимо не больше ${percent(max)}.`,
+      `При отказе ${id} («${componentName[kind]}») и нагрузке ${n(load)} rps теряется ${percent(errorRate)} запросов, допустимо не больше ${percent(max)}.`,
     GoalRegionFailureNotSurvived: ({
       region,
       load,

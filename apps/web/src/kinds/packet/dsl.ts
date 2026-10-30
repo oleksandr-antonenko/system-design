@@ -72,8 +72,15 @@ export type PacketAnnotate<Key extends string = string> = Readonly<{
 export type PlayShow = 'letters' | 'request' | 'all'
 
 /** Проиграть трассу намерения на доске. Состояние сети не меняется: это
-    показ, а не операция (её делает `send`). */
-export type Play = Readonly<{ _tag: 'Play'; intent: Intent; show?: PlayShow }>
+    показ, а не операция (её делает `send`). `after` — операции, после
+    которых считается трасса: так ход ученика «кабель» показывает, как
+    устройство на новом кабеле просит адрес. */
+export type Play = Readonly<{
+  _tag: 'Play'
+  intent: Intent
+  show?: PlayShow
+  after?: ReadonlyArray<NetOp>
+}>
 
 /** Остановить проигрывание, когда пакет дошёл до устройства. */
 export type PauseAt = Readonly<{ _tag: 'PauseAt'; device: DeviceId }>

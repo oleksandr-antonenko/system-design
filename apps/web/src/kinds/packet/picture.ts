@@ -7,7 +7,9 @@ import { applyAll } from '../../net/doc'
 import {
   type Device,
   type DeviceId,
+  type DeviceKind,
   type NetState,
+  deviceKindName,
   kindOf,
 } from '../../net/model'
 import {
@@ -103,20 +105,29 @@ export type Picture = Readonly<{
 
 // TEXT
 
+const kindOfId = (context: Context, id: string): Option.Option<DeviceKind> =>
+  Option.map(
+    Array.findFirst(context.doc.doc.devices, device => device.id === id),
+    kindOf,
+  )
+
+/** Подпись устройства: из урока, иначе английское имя вида. */
 const deviceName = (context: Context, id: string): string =>
   Option.match(context.label(id), {
     onSome: label => label.name,
     onNone: () =>
-      Option.match(
-        Array.findFirst(context.doc.doc.devices, device => device.id === id),
-        {
-          onNone: () => id,
-          onSome: device =>
-            device._tag === 'Internet'
-              ? context.ui.packetBoard.zone.internet
-              : context.ui.packetBoard.kindName[kindOf(device)],
-        },
-      ),
+      Option.match(kindOfId(context, id), {
+        onNone: () => id,
+        onSome: kind => deviceKindName[kind],
+      }),
+  })
+
+/** Подсказка к устройству: «Router — роутер, маршрутизатор: …». */
+const deviceHint = (context: Context, id: string): string =>
+  Option.match(kindOfId(context, id), {
+    onNone: () => '',
+    onSome: kind =>
+      `${deviceKindName[kind]} — ${context.ui.packetBoard.kindHint[kind]}`,
   })
 
 const isUnlocked = (context: Context, feature: string): boolean =>
@@ -166,7 +177,7 @@ const nodeText =
         : Array.contains(hidden, id)
           ? context.ui.packetBoard.quiz.hiddenUntilAnswer
           : note
-    return { title, sub }
+    return { title, sub, hint: deviceHint(context, id) }
   }
 
 // STATE ON THE WAY
