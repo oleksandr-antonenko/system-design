@@ -9,62 +9,62 @@ const dollars = (value: number) => `${value.toFixed(2).replace('.', ',')} $`
 export default {
   title: 'Atsparumas gedimams',
   summary:
-    'Vienintelis gedimo taškas: antras balansuotuvas, replika, kuri pakeičia bazę, sveikatos patikra, perjungimas ir skirtumas tarp prieinamumo ir duomenų patvarumo.',
+    'SPOF, vienintelis gedimo taškas: antras load balancer, read replica, kuri pakeičia database, health check, failover ir skirtumas tarp availability ir durability.',
   steps: {
     'count-spares': {
       title: 'Suskaičiuokime atsarginius',
-      body: `Vėl parduotuvė: [[users|naudotojai]] per [[lb-1|balansuotuvą]] kreipiasi į tris serverius, o serveriai laiko duomenis [[db|duomenų bazėje]]. Apkrova 600 rps, viskas žalia.
+      body: `Vėl parduotuvė: [[users|Users]] per [[lb-1|load balancer]] kreipiasi į tris servers, o servers duomenis rašo į [[db|database]]. Apkrova 600 rps, viskas žalia.
 
-3 pamokoje serveriams pritaikėme **N+1** taisyklę: jų yra trys, o šiai apkrovai pakanka dviejų. Jei bet kuris sugenda, jo dalį perima likę. Dabar pažiūrėkite į kitus blokus. Balansuotuvas vienas ir bazė viena, ir atsarginių jie neturi.`,
+3 pamokoje servers gavo **N+1** taisyklę: jų yra trys, o šiai apkrovai pakanka dviejų. Jei bet kuris sugenda, jo dalį perima likę. Dabar pažiūrėkite į kitus blokus. Load balancer vienas ir database viena, ir atsarginių jie neturi.`,
     },
     'balancer-down': {
-      title: 'Sugedo balansuotuvas',
-      body: `Balansuotuvas irgi yra serveris, tik su kita programa. Naktį įdiegta nevykusi konfigūracija, atnaujintas branduolys, sudegė tinklo plokštė – ir [[lb-1|lb-1]] nustojo atsakinėti.
+      title: 'Sugedo load balancer',
+      body: `Load balancer irgi yra server, tik su kita programa. Naktį įdiegta nevykusi konfigūracija, atnaujintas branduolys, sudegė tinklo plokštė – ir [[lb-1|lb-1]] nustojo atsakinėti.
 
-Visi trys serveriai tvarkingi, bet stovi be darbo: naudotojai žino vieną adresą, ir juo niekas neatsako. Klaidos 100 %. Sveikatos patikra čia irgi nepadės: sugedo būtent tas blokas, kuris ją atlieka.`,
+Visi trys servers tvarkingi, bet stovi be darbo: naudotojai žino vieną adresą, ir juo niekas neatsako. Klaidos 100 %. **Health check** (sveikatos patikra) čia irgi nepadės: sugedo būtent tas blokas, kuris ją atlieka.`,
     },
     'database-down': {
-      title: 'Sugedo bazė',
-      body: `Balansuotuvas grįžo. Dabar sugenda [[db|duomenų bazė]]: diske baigėsi vieta, mašina persikrovė po atnaujinimo arba duomenų centre visa spinta liko be elektros.
+      title: 'Sugedo database',
+      body: `Load balancer grįžo. Dabar sugenda [[db|database]]: diske baigėsi vieta, mašina persikrovė po atnaujinimo arba duomenų centre visa spinta liko be elektros.
 
-Serveriai ir toliau gauna užklausas, bet neturi kur skaityti ir rašyti: savų duomenų jie nelaiko (2 pamoka). Kiekviena užklausa baigiasi klaida, ir klaidų vėl 100 %. Trys serveriai ir balansuotuvas be savo vienintelės bazės yra bevertiai.
+Servers ir toliau gauna užklausas, bet neturi kur skaityti ir rašyti: savų duomenų jie nelaiko (2 pamoka). Kiekviena užklausa baigiasi klaida, ir klaidų vėl 100 %. Trys servers ir load balancer be savo vienintelės database yra bevertiai.
 
 Yra kai kas blogiau už prastovą. Jei miršta pats diskas, o kopijos nėra, parduotuvės užsakymai dingsta visam laikui. Netekti prieigos valandai ir netekti duomenų visam laikui – dvi skirtingos bėdos, ir prie to dar grįšime.`,
     },
     'add-spares': {
       title: 'Užduotis: atsarginiai',
-      body: `Blokas, kurio gedimas sustabdo visą sistemą, vadinamas **vieninteliu gedimo tašku**. Tai gydoma **dubliavimu** (redundancy): antru kiekvieno tokio bloko egzemplioriumi ir būdu į jį persijungti.
+      body: `Blokas, kurio gedimas sustabdo visą sistemą, vadinamas **SPOF** (single point of failure, lietuviškai – vienintelis gedimo taškas). Tai gydoma **dubliavimu** (redundancy): antru kiekvieno tokio bloko egzemplioriumi ir būdu į jį persijungti.
 
-Įėjimui tai antras balansuotuvas, apie kurį taip pat žino naudotojai. Duomenims – **replika**: bazės kopija, kuri gauna kiekvieną pagrindinės bazės įrašą. Ją pažįstate iš 6 pamokos, ten ji priėmė skaitymą. Jei pagrindinė bazė sugenda, replika **paaukštinama**: ji pradeda priimti rašymą, o serveriai persijungia į ją. Tam serveriai turi būti sujungti ir su [[db|baze]], ir su replika.
+Įėjimui tai antras load balancer, apie kurį taip pat žino naudotojai. Duomenims – read replica: database kopija, kuri gauna kiekvieną įrašą iš **primary** (pagrindinės database). Read replica pažįstate iš 6 pamokos, ten ji priėmė skaitymą. Jei primary sugenda, read replica **paaukštinama** (promote): ji pradeda priimti rašymą, o servers persijungia į ją. Tam servers turi būti sujungti ir su [[db|database]], ir su read replica.
 
-Balansuotuvas ir replika jau paletėje.`,
+Load balancer ir read replica jau paletėje.`,
     },
     'balancer-failover': {
-      title: 'Balansuotuvas vėl sugenda',
+      title: 'Load balancer vėl sugenda',
       body: ({ sim }) =>
-        `Pakartokime naktį su nevykusia konfigūracija: [[lb-1|lb-1]] vėl neveikia. Dabar naudotojai eina į [[lb-2|lb-2]], ir jis vienas atlaiko visus ${n(sim.load)} rps, klaidos ${percent(sim.errorRate)}. Balansuotuvas atlaiko iki 5000 rps, tad vieno užtenka net piko metu. Tai ir yra N+1 įėjimui.
+        `Pakartokime naktį su nevykusia konfigūracija: [[lb-1|lb-1]] vėl neveikia. Dabar naudotojai eina į [[lb-2|lb-2]], ir jis vienas atlaiko visus ${n(sim.load)} rps, klaidos ${percent(sim.errorRate)}. Load balancer atlaiko iki 5000 rps, tad vieno užtenka net piko metu. Tai ir yra N+1 įėjimui.
 
-Iš kur naudotojai žino, kur eiti? Iš **sveikatos patikros** (health check). Kas kelias sekundes DNS paslauga klausia kiekvieno balansuotuvo „ar gyvas?“ ir po kelių iš eilės praleistų atsakymų nustoja dalyti jo adresą. Kelių, o ne vieno, kad vienas pamestas paketas nesukeltų perjungimo. Todėl perjungimas niekada nebūna akimirksniu: kol patikros nepavyksta ir nepasibaigia DNS podėliai, dalis užklausų dar keliauja mirusiu adresu – nuo kelių sekundžių iki minutės. Lenta rodo sistemą jau po perjungimo.`,
+Iš kur naudotojai žino, kur eiti? Iš health check. Kas kelias sekundes DNS paslauga klausia kiekvieno load balancer „ar gyvas?“ ir po kelių vienas po kito praleistų atsakymų nustoja dalyti jo adresą. Kelių, o ne vieno, kad vienas pamestas paketas nesukeltų perjungimo. Todėl perjungimas niekada nebūna akimirksniu: kol patikros nepavyksta ir nepasensta DNS cache, dalis užklausų dar keliauja mirusiu adresu – nuo kelių sekundžių iki minutės. Lenta rodo sistemą jau po perjungimo.`,
     },
     'database-failover': {
-      title: 'Replikos paaukštinimas',
+      title: 'Read replica tampa primary',
       body: ({ sim }) =>
-        `Dabar sugenda [[db|duomenų bazė]]. Serveriai nebegali į ją rašyti ir kreipiasi į [[replica-1|repliką]]: ji paaukštinama ir priima visą srautą – ir rašymą, ir skaitymą. Klaidos ${percent(sim.errorRate)}. Toks persijungimas į atsarginį bloką vadinamas **failover**.
+        `Dabar sugenda [[db|database]]. Servers nebegali į ją rašyti ir kreipiasi į [[replica-1|read replica]]: ji paaukštinama ir priima visą srautą – ir rašymą, ir skaitymą. Klaidos ${percent(sim.errorRate)}. Toks persijungimas į atsarginį bloką vadinamas **failover** (perjungimas į rezervą).
 
-Bazės perjungimas lėtesnis nei balansuotuvo. Pirmiausia reikia įsitikinti, kad pagrindinė tikrai mirusi, o ne tik lėta, kitaip atsiras dvi pagrindinės bazės, ir kiekviena priims savo įrašus. Tada replika paaukštinama, ir serveriai prisijungia iš naujo. Paprastai tai užtrunka dešimtis sekundžių, ir **perjungimo laikas** tiesiogiai atimamas iš laiko, kai sistema prieinama.
+Database failover lėtesnis nei load balancer failover. Pirmiausia reikia įsitikinti, kad primary tikrai mirusi, o ne tik lėta, kitaip atsiras dvi primary, ir kiekviena priims savo įrašus. Tada read replica paaukštinama, ir servers prisijungia iš naujo. Paprastai tai užtrunka dešimtis sekundžių, ir visas šis laikas, **failover time**, tiesiogiai atimamas iš laiko, kai sistema prieinama.
 
-Su duomenimis irgi yra kabliukas. Replika įrašus paprastai gauna su nedideliu vėlavimu (asinchroninė replikacija). Užsakymai, kuriuos pagrindinė bazė patvirtino paskutinę sekundę, bet nespėjo perduoti, dingsta. Svetainė veikia, bet kelių užsakymų nėra: sistema liko **prieinama**, bet nukentėjo duomenų **patvarumas**.`,
+Su duomenimis irgi yra kabliukas. Read replica įrašus paprastai gauna su nedideliu vėlavimu, **replication lag**: replikacija asinchroninė (asynchronous replication). Užsakymai, kuriuos primary patvirtino paskutinę sekundę, bet nespėjo perduoti, dingsta. Svetainė veikia, bet kelių užsakymų nėra: sistema išlaikė **availability** (prieinamumą), bet nukentėjo **durability** (duomenų patvarumas).`,
     },
     summary: {
       title: 'Santrauka',
       body: ({ sim }) =>
-        `Senoji pagrindinė bazė sutaisyta. Tikrovėje ji grįžta kaip naujosios pagrindinės replika, o mūsų lentoje tiesiog užima savo ankstesnę vietą.
+        `Senoji primary sutaisyta. Tikrovėje ji grįžta kaip naujosios primary read replica, o mūsų lentoje tiesiog užima savo ankstesnę vietą.
 
-Dabar kiekvienas blokas turi atsarginį: du balansuotuvai, N+1 serverių, bazė ir replika. Kaina matyti prietaise „Kaina“: ${dollars(sim.costPerHour)} per valandą vietoj 2,30 $. Dubliavimas visada kainuoja, todėl jis pirmiausia taikomas ten, kur vienas gedimas sustabdo viską.
+Dabar kiekvienas blokas turi atsarginį: du load balancers, N+1 servers, database ir read replica. Kaina matyti prietaise „Kaina“: ${dollars(sim.costPerHour)} per valandą vietoj 2,30 $. Dubliavimas visada kainuoja, todėl jis pirmiausia taikomas ten, kur vienas gedimas sustabdo viską.
 
-**Prieinamumas** (availability) – laiko dalis, kai sistema atsako. Jis skaičiuojamas „devynetais“: 99,9 % leidžia beveik 9 valandas prastovos per metus, 99,99 % – tik 53 minutes. **Patvarumas** (durability) – pažadas, kad patvirtinti duomenys niekada nedings. Replika padidina prieinamumą, bet lygiai taip pat stropiai nukopijuoja ir atsitiktinį ištrynimą. Patvarumui reikia **atsarginių kopijų**, o vertingiausiems duomenims – sinchroninės replikacijos.
+**Availability** (prieinamumas) – laiko dalis, kai sistema atsako. Jis skaičiuojamas „devynetais“: 99,9 % leidžia beveik 9 valandas prastovos per metus, 99,99 % – tik 53 minutes. **Durability** (patvarumas) – pažadas, kad patvirtinti duomenys niekada nedings. Read replica padidina availability, bet lygiai taip pat stropiai nukopijuoja ir atsitiktinį ištrynimą. Durability užtikrinti reikia **backups** (atsarginių kopijų), o vertingiausiems duomenims – sinchroninės replikacijos (synchronous replication).
 
-Mūsų atsarginiai blokai kol kas stovi viename duomenų centre. Praktikoje jie išskirstomi po **prieinamumo zonas**: atskirus pastatus su savo elektra ir tinklu. O ką daryti, kai sugenda visas regionas, aptarsime 11 pamokoje.`,
+Mūsų atsarginiai blokai kol kas stovi viename duomenų centre. Praktikoje jie išskirstomi po **availability zones** (prieinamumo zonas): atskirus pastatus su savo elektra ir tinklu. O ką daryti, kai sugenda visas regionas (region), aptarsime 11 pamokoje.`,
     },
   },
   annotations: {
@@ -77,27 +77,27 @@ Mūsų atsarginiai blokai kol kas stovi viename duomenų centre. Praktikoje jie 
       `${n(sim.nodes['app2']?.incoming ?? 0)} rps · nėra kur rašyti`,
     takesAll: sim =>
       `visi ${n(sim.load)} rps · klaidos ${percent(sim.errorRate)}`,
-    promoted: sim => `dabar pagrindinė · klaidos ${percent(sim.errorRate)}`,
+    promoted: sim => `dabar primary · klaidos ${percent(sim.errorRate)}`,
     pair: () => 'vienas iš dviejų · bet kuris susitvarkys',
-    copies: () => 'pagrindinė · replika pasiruošusi pakeisti',
+    copies: () => 'primary · read replica pasiruošusi pakeisti',
   },
   tasks: {
     'add-spares': {
       prompt:
-        'Pašalinkite vienintelius gedimo taškus: parduotuvė turi atlaikyti bet kurio balansuotuvo, serverio ar bazės gedimą.',
+        'Pašalinkite SPOF: parduotuvė turi atlaikyti bet kurio load balancer, server ar database gedimą.',
       goals: {
-        'two-balancers': 'Naudotojai sujungti su dviem balansuotuvais',
-        'replica-exists': 'Lentoje yra bazės replika',
+        'two-balancers': 'Users sujungti su dviem load balancers',
+        'replica-exists': 'Lentoje yra read replica',
         'survives-failure':
-          'Esant 600 rps, atlaiko bet kurio balansuotuvo, serverio ar bazės gedimą, kai klaidų ne daugiau nei 1 %',
+          'Esant 600 rps, atlaiko bet kurio load balancer, server ar database gedimą, kai klaidų ne daugiau nei 1 %',
       },
       hints: [
-        'Paklauskite apie kiekvieną bloką: kas nutiks, jei jis suges? Serveriai atsarginį jau turi, o balansuotuvas ir bazė – ne.',
-        'Pridėkite antrą balansuotuvą, sujunkite jį su visais trimis serveriais ir prijunkite prie jo naudotojus. Tada pridėkite repliką ir sujunkite su ja kiekvieną serverį, neištrindami ryšių su baze.',
-        'Lentoje atsirado punktyriniai kontūrai. Pastatykite ten balansuotuvą ir repliką ir nutieskite pažymėtus ryšius.',
+        'Paklauskite apie kiekvieną bloką: kas nutiks, jei jis suges? Servers atsarginį jau turi, o load balancer ir database – ne.',
+        'Pridėkite antrą load balancer, sujunkite jį su visais trimis servers ir prijunkite prie jo bloką „Users“. Tada pridėkite read replica ir sujunkite su ja kiekvieną server, neištrindami ryšių su database.',
+        'Lentoje atsirado punktyriniai kontūrai. Pastatykite ten load balancer ir read replica ir nutieskite pažymėtus ryšius.',
       ],
       solvedNote:
-        'Dabar gali sugesti bet kuris vienas blokas: naudotojai pereina į kitą balansuotuvą, o replika pakeičia bazę.',
+        'Dabar gali sugesti bet kuris vienas blokas: srautas iš Users pereina į kitą load balancer, o read replica pakeičia database.',
     },
   },
 } satisfies LessonTexts<typeof lesson>
