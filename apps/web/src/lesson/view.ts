@@ -2,13 +2,15 @@ import { Array, Option, Record, pipe } from 'effect'
 import { Submodel } from 'foldkit'
 import type { Html, HtmlBuilder } from 'foldkit/html'
 
-import { type Lesson, lessonTextFor } from '../courses/assemble'
+import { type LocalizedText, lessonTextFor, textFor } from '../courses/assemble'
+import type { LessonMeta, LessonText } from '../courses/model'
 import {
   courseLessons,
   coursePaletteMode,
   findDefinition,
   findLesson,
   lessonsOf,
+  loadedLesson,
 } from '../courses/registry'
 import { renderDomainMessage } from '../i18n/domainMessage'
 import type { Locale } from '../i18n/locale'
@@ -66,6 +68,9 @@ import {
 export type PlayerViewInputs = Readonly<{
   locale: Locale
   prefersDark: boolean
+  /** Markup the page adds after the last step of this lesson (a slot built
+      by the parent, in its own boundary). */
+  lessonEnd?: (() => Html) | undefined
 }>
 
 /** Урок, его тексты и язык страницы: то, что нужно каждой части вида. */
@@ -75,6 +80,7 @@ type Page<T extends KindTypes> = Readonly<{
   texts: TextsOf<T>
   locale: Locale
   ui: UiStrings
+  lessonEnd?: (() => Html) | undefined
 }>
 
 // TEXT
@@ -894,7 +900,12 @@ const theoryView = <T extends KindTypes>(
                       })
                     : []),
                   ...(index === lesson.steps.length - 1
-                    ? askAiView(page, h)
+                    ? [
+                        ...askAiView(page, h),
+                        ...(page.lessonEnd === undefined
+                          ? []
+                          : [page.lessonEnd()]),
+                      ]
                     : []),
                 ],
               )
@@ -1262,21 +1273,46 @@ const surfaceHostView = <T extends KindTypes>(
 
 // PLAYER
 
+/** A lesson with its texts loaded, as the player shows it. */
+export type LessonEntry = Readonly<{
+  course: string
+  meta: LessonMeta
+  texts: Array.NonEmptyReadonlyArray<LocalizedText<LessonText>>
+}>
+
+/** The lesson of the registry with its loaded texts. */
+export const loadedEntry = (
+  course: string,
+  slug: string,
+): Option.Option<LessonEntry> =>
+  Option.flatMap(
+    Option.all([findLesson(course, slug), loadedLesson(course, slug)]),
+    ([found, loaded]) =>
+      Array.isReadonlyArrayNonEmpty(loaded.texts)
+        ? Option.some({
+            course: found.course,
+            meta: found.meta,
+            texts: loaded.texts,
+          })
+        : Option.none(),
+  )
+
 export const lessonView = <T extends KindTypes>(
   lesson: LessonDefinition<T>,
-  entry: Lesson,
+  entry: LessonEntry,
   model: Model,
   inputs: PlayerViewInputs,
   h: HtmlBuilder<Message>,
 ): Html => {
   const ui = uiFor(inputs.locale)
-  const choice = lessonTextFor(entry, inputs.locale)
+  const choice = textFor(entry.texts, inputs.locale)
   const page: Page<T> = {
     lesson,
     model,
     texts: choice.text,
     locale: inputs.locale,
     ui,
+    lessonEnd: inputs.lessonEnd,
   }
   return h.main(
     [h.Class('lesson-page')],
@@ -1313,7 +1349,7 @@ export const view = Submodel.defineView<Model, Message, PlayerViewInputs>(
     pipe(
       Option.all([
         findDefinition(model.course, model.slug),
-        findLesson(model.course, model.slug),
+        loadedEntry(model.course, model.slug),
       ]),
       Option.match({
         onNone: () => h.empty,

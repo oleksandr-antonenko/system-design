@@ -23,7 +23,7 @@ import { Intent } from '../../../../net/packet'
 import { addressOf } from '../../../../net/topology'
 import { settle } from '../../../../net/trace'
 import { sendIntent } from '../../../../net/world'
-import { findCourse, findLesson, unlockedFeatures } from '../../../registry'
+import { findCourse, loadedLesson, unlockedFeatures } from '../../../registry'
 import siteNames from './lesson'
 
 // Проверки урока 3 из сценария (раздел 8 «Что проверяют тесты контента»):
@@ -235,7 +235,7 @@ describe('lesson 3: a site’s name and its address', () => {
       '192.0.2.53',
       '198.51.100.10',
     ])
-    const texts = Option.match(findLesson('networks', 'site-names'), {
+    const texts = Option.match(loadedLesson('networks', 'site-names'), {
       onNone: () => [],
       onSome: found => found.texts,
     })

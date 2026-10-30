@@ -49,6 +49,7 @@ const at = (route: AppRoute, locale: Locale) =>
     maybeSavedLocale: Option.some(locale),
     prefersDark: false,
     lessonSessions: {},
+    lessonLoads: {},
   })
 
 describe('header', () => {

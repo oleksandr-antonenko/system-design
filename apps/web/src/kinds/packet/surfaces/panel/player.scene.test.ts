@@ -15,9 +15,8 @@ import {
 import { describe, test } from 'vitest'
 
 import wifiRange from '../../../../courses/networks/lessons/05-wifi-range/lesson'
-import { findLesson } from '../../../../courses/registry'
 import * as Player from '../../../../lesson/player'
-import { lessonView } from '../../../../lesson/view'
+import { lessonView, loadedEntry } from '../../../../lesson/view'
 
 // Панель роутера в плеере на задаче урока 5: вкладка поверхности, вкладка
 // «Wi-Fi» с меткой «новое», сохранение отмечает цели, ошибки ввода у поля,
@@ -25,7 +24,7 @@ import { lessonView } from '../../../../lesson/view'
 
 const TASK_STEP = 4
 
-const entry = Option.getOrThrow(findLesson('networks', 'wifi-range'))
+const entry = Option.getOrThrow(loadedEntry('networks', 'wifi-range'))
 
 const sceneFor = {
   update: (playerModel: Player.Model, playerMessage: Player.Message) =>

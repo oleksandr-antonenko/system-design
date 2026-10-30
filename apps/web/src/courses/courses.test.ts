@@ -51,7 +51,7 @@ describe('course registry', () => {
     expect(lessons.map(lesson => lesson.meta.order)).toEqual(Array.range(1, 13))
     expect(lessons.every(lesson => lesson.meta.available)).toBe(true)
     lessons.forEach(lesson => {
-      expect(sorted(lesson.texts.map(entry => entry.locale))).toEqual(
+      expect(sorted(lesson.summaries.map(entry => entry.locale))).toEqual(
         sorted(locales),
       )
     })
@@ -100,7 +100,7 @@ describe('course registry', () => {
       ),
     ).toEqual(Option.some(true))
     lessons.forEach(lesson => {
-      expect(sorted(lesson.texts.map(entry => entry.locale))).toEqual(
+      expect(sorted(lesson.summaries.map(entry => entry.locale))).toEqual(
         sorted(locales),
       )
     })

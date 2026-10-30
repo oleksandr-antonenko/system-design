@@ -13,15 +13,14 @@ import {
 import { describe, test } from 'vitest'
 
 import phoneOnline from '../../courses/networks/lessons/01-phone-online/lesson'
-import { findLesson } from '../../courses/registry'
 import * as Player from '../../lesson/player'
-import { lessonView } from '../../lesson/view'
+import { lessonView, loadedEntry } from '../../lesson/view'
 
 // Урок 1 на доске сетей (план, раздел 5): устройства с подписями, «Пуск»,
 // конверт «от → кому», вопрос «где выход из дома» на доске, наклейка на
 // роутере и задача «подключите телефон».
 
-const entry = Option.getOrThrow(findLesson('networks', 'phone-online'))
+const entry = Option.getOrThrow(loadedEntry('networks', 'phone-online'))
 
 const sceneIn = (locale: 'en' | 'ru') => ({
   update: (playerModel: Player.Model, playerMessage: Player.Message) =>

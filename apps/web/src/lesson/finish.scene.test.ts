@@ -21,7 +21,7 @@ import urlShortener from '../courses/system-design/lessons/13-url-shortener/less
 import type { FlowTypes } from '../kinds/types'
 import type { LessonDefinition } from './dsl'
 import * as Player from './player'
-import { lessonView } from './view'
+import { lessonView, loadedEntry } from './view'
 
 // Конец урока: ссылка на следующий урок курса, а после последнего урока —
 // конец курса и дорога к программе.
@@ -29,7 +29,7 @@ import { lessonView } from './view'
 const COURSE = 'system-design'
 
 const sceneFor = (lesson: LessonDefinition<FlowTypes>) => {
-  const entry = Option.getOrThrow(findLesson(COURSE, lesson.slug))
+  const entry = Option.getOrThrow(loadedEntry(COURSE, lesson.slug))
   return {
     update: (playerModel: Player.Model, playerMessage: Player.Message) =>
       Player.updateWith(lesson)(playerModel, playerMessage),

@@ -4,10 +4,10 @@ import { describe, test } from 'vitest'
 
 import * as Board from '../board/board'
 import { BoardPointer } from '../board/pointer'
-import { findLesson } from '../courses/registry'
 import loadBalancer from '../courses/system-design/lessons/03-load-balancer/lesson'
 import * as Player from './player'
 import { playerScene } from './testing'
+import { loadedEntry } from './view'
 
 // Палитра урока в плеере: курс без `palette` в defineCourse показывает метки
 // по-прежнему — «новое» у блока, который впервые ставят в этом уроке, и
@@ -25,7 +25,7 @@ describe('palette of a progressive course', () => {
     scene(
       playerScene(
         loadBalancer,
-        Option.getOrThrow(findLesson(COURSE, 'load-balancer')),
+        Option.getOrThrow(loadedEntry(COURSE, 'load-balancer')),
       ),
       given(Player.init(COURSE, loadBalancer, 3)),
       pointerReady,

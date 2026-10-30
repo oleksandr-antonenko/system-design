@@ -35,6 +35,8 @@ apps/web/src/courses/
   networks/                “Networking for vibe coders”, same layout
 ```
 
+Each lesson loads as its own file when it is opened: the course map knows only `meta.ts`, the `title` and `summary` of each `text.<locale>.ts` and, in `lesson.ts`, the `palette` of each task and the lesson's `introduces`, which the build reads straight from the source. Write those as plain literals (`title: 'Load balancer'`, `palette: ['lb', 'server']`); the build names the file if one is not.
+
 A lesson lives at `/<locale>/<course>/lessons/<slug>`, for example `/en/system-design/lessons/load-balancer?step=2`. A lesson listed as available without a `lesson.ts` shows a placeholder page; a lesson with `available: false` is shown as “coming soon” on the course map.
 
 `course.ts` (you only need it for a new course):

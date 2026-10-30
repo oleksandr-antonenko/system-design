@@ -1,6 +1,9 @@
 import { defineConfig } from 'vitest/config'
 
+import { lessonIndex } from './build/lessonIndex.ts'
+
 export default defineConfig({
+  plugins: [lessonIndex()],
   test: {
     name: 'web',
     include: ['src/**/*.{test,spec}.ts'],

@@ -13,7 +13,12 @@ import {
 } from '../../lesson/dsl'
 import { referencedIds } from '../../lesson/markup'
 import { quizFeature, quizOf } from '../../lesson/quiz'
-import { findLesson, lessonDefinitions, unlockedFeatures } from '../registry'
+import {
+  findLesson,
+  loadedDefinitions,
+  loadedLesson,
+  unlockedFeatures,
+} from '../registry'
 import course from './course'
 
 // Интерфейс растёт вместе с учеником (план, раздел 3.4): урок пользуется
@@ -79,7 +84,7 @@ const shownBoard = (
 
 const networksLessons = Array.getSomes(
   Array.map(
-    Array.filter(lessonDefinitions, entry => entry.course === 'networks'),
+    Array.filter(loadedDefinitions(), entry => entry.course === 'networks'),
     entry =>
       entry.definition.board === 'packet'
         ? Option.some(entry.definition)
@@ -116,7 +121,7 @@ describe.each(Array.map(networksLessons, lesson => [lesson.slug, lesson]))(
   'networks lesson %s uses only what is open by it',
   (slug, lesson) => {
     const unlocked = unlockedIn(slug)
-    const texts = Option.match(findLesson('networks', slug), {
+    const texts = Option.match(loadedLesson('networks', slug), {
       onNone: () => [],
       onSome: found => found.texts,
     })

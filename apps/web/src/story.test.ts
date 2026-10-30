@@ -192,6 +192,7 @@ const onLesson = (locale: 'ru' | 'en') =>
     maybeSavedLocale: Option.some(locale),
     prefersDark: false,
     lessonSessions: {},
+    lessonLoads: {},
   })
 
 describe('update', () => {

@@ -14,14 +14,13 @@ import { describe, test } from 'vitest'
 
 import type { Locale } from '../../../../i18n/locale'
 import * as Player from '../../../../lesson/player'
-import { lessonView } from '../../../../lesson/view'
-import { findLesson } from '../../../registry'
+import { lessonView, loadedEntry } from '../../../../lesson/view'
 import lesson from './lesson'
 
 // Урок 7 глазами ученика: квиз «из какого layer поле 443» с вариантами под
 // конвертом, сборка конверта руками, неверный порядок и «Показать решение».
 
-const entry = Option.getOrThrow(findLesson('networks', 'under-the-hood'))
+const entry = Option.getOrThrow(loadedEntry('networks', 'under-the-hood'))
 
 const sceneIn = (locale: Locale) => ({
   update: (playerModel: Player.Model, playerMessage: Player.Message) =>

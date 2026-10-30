@@ -16,9 +16,8 @@ import { describe, test } from 'vitest'
 
 import type { Locale } from '../../../../i18n/locale'
 import * as Player from '../../../../lesson/player'
-import { lessonView } from '../../../../lesson/view'
+import { lessonView, loadedEntry } from '../../../../lesson/view'
 import { macFromId } from '../../../../net/address'
-import { findLesson } from '../../../registry'
 import lesson from './lesson'
 
 // Урок 9 глазами ученика: вопрос «какой адрес увидит сайт» с одной
@@ -26,7 +25,7 @@ import lesson from './lesson'
 // и пробросить port на вкладке «Ports» руками и через «Показать решение»,
 // лишний port forwarding и призрак третьей подсказки.
 
-const entry = Option.getOrThrow(findLesson('networks', 'nat'))
+const entry = Option.getOrThrow(loadedEntry('networks', 'nat'))
 
 const sceneIn = (locale: Locale) => ({
   update: (playerModel: Player.Model, playerMessage: Player.Message) =>

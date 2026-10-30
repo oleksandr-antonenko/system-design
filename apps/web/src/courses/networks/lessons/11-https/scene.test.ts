@@ -16,8 +16,7 @@ import { describe, test } from 'vitest'
 
 import type { Locale } from '../../../../i18n/locale'
 import * as Player from '../../../../lesson/player'
-import { lessonView } from '../../../../lesson/view'
-import { findLesson } from '../../../registry'
+import { lessonView, loadedEntry } from '../../../../lesson/view'
 import lesson from './lesson'
 
 // Урок 11 глазами ученика: вопрос «что видит кафе» с неверным ответом,
@@ -25,7 +24,7 @@ import lesson from './lesson'
 // порт 80, оба имени, перенаправление), замок после «Обновить» — и через
 // «Показать решение».
 
-const entry = Option.getOrThrow(findLesson('networks', 'https'))
+const entry = Option.getOrThrow(loadedEntry('networks', 'https'))
 
 const sceneIn = (locale: Locale) => ({
   update: (playerModel: Player.Model, playerMessage: Player.Message) =>
