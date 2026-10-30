@@ -4,10 +4,12 @@ import { describe, expect, test } from 'vitest'
 import addresses from '../../courses/networks/lessons/02-addresses/lesson'
 import { boardAt, foldDoc, taskOf, taskStartBoard } from '../../lesson/dsl'
 import { referencedIds } from '../../lesson/markup'
-import { cable, joinWifi, send, unplug } from '../../net/build'
+import { cable, joinWifi, run, send, unplug } from '../../net/build'
 import { Goal } from '../../net/goals'
 import { Intent } from '../../net/packet'
+import { buildWorld, chainOps } from '../../net/testing'
 import type { PacketTypes } from '../types'
+import { isAddressOpen } from './picture'
 import { phoneOnline } from './testing'
 
 // Контракт вида доски на крошечном уроке сетей (design D6): документ —
@@ -99,6 +101,38 @@ describe('packet board kind', () => {
     expect(
       Array.getSomes(Array.map(home.stage, kind.stage.annotationKey)),
     ).toEqual(['door'])
+  })
+
+  test('a ping in the terminal plays its echo once, through the open cloud of transit routers', () => {
+    const world = buildWorld(chainOps)
+    expect(kind.moveStage(world, run('laptop', 'ping shop.example'))).toEqual([
+      { _tag: 'Expand', target: 'internet' },
+      {
+        _tag: 'Play',
+        intent: Intent.Ping({ from: 'laptop', host: 'shop.example' }),
+      },
+    ])
+    expect(
+      kind.moveStage(
+        taskStartBoard(phoneOnline, TASK_STEP, {}),
+        send(Intent.Ping({ from: 'phone', host: '198.51.100.10' })),
+      ),
+    ).toEqual([
+      {
+        _tag: 'Play',
+        intent: Intent.Ping({ from: 'phone', host: '198.51.100.10' }),
+      },
+    ])
+  })
+
+  test('transit routers show their address only from lesson 8, with the route tables', () => {
+    const world = buildWorld(chainOps)
+    const open = (unlocked: ReadonlyArray<string>, id: string) =>
+      isAddressOpen({ doc: world, unlocked }, id)
+    expect(open(['board.addresses'], 'router')).toBe(true)
+    expect(open(['board.addresses'], 'isp')).toBe(false)
+    expect(open(['board.addresses', 'board.routes'], 'isp')).toBe(true)
+    expect(open([], 'router')).toBe(false)
   })
 
   test('the journal names each operation; ops round-trip through the stored union', () => {

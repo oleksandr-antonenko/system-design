@@ -5,7 +5,7 @@ export default defineLessonMeta(course, {
   slug: 'hops-and-ping',
   module: 'local',
   order: 4,
-  available: false,
+  available: true,
   locales: ['uk', 'ru', 'en', 'lt'],
   unlocks: [
     'transport.step',

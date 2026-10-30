@@ -148,6 +148,8 @@ export type PacketBoardStrings = Readonly<{
     cableHint: string
     cableFrom: (device: string) => string
     unplug: (link: string) => string
+    /** Выдернутый кабель: нажатие вставляет его обратно (урок 4). */
+    plugIn: (link: string) => string
     move: string
     locked: string
     moveHint: string
