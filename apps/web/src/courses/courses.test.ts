@@ -56,7 +56,7 @@ describe('course registry', () => {
     })
   })
 
-  test('Networking shows the 16 lessons of the programme as “coming soon”', () => {
+  test('Networking shows the 16 lessons of the programme; available ones have a script', () => {
     const lessons = lessonsOf('networks')
     expect(lessons.map(lesson => lesson.meta.slug)).toEqual([
       'phone-online',

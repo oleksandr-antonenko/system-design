@@ -4,6 +4,7 @@ import type { ComponentKind } from '../../domain/catalog'
 import { formatNumber } from '../format'
 import { plural } from '../plural'
 import { deviceUk } from './device/uk'
+import { panelUk } from './panel/uk'
 import type { UiStrings } from './types'
 
 const inLanguage: UiStrings['inLanguage'] = {
@@ -185,6 +186,7 @@ export const uk = {
     run: 'Пуск',
   },
   device: deviceUk,
+  panel: panelUk,
   notFound: {
     title: 'Сторінку не знайдено',
     body: path => `За адресою «${path}» нічого немає.`,

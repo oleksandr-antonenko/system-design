@@ -19,6 +19,7 @@ import {
   runPacket,
 } from './doc'
 import type { PacketStage } from './dsl'
+import { panelSurfaces } from './surfaces/panel/surfaces'
 import { browserPicture } from './surfaces/screen/browser'
 import { browserSurface, wifiSurface } from './surfaces/screen/surface'
 import { terminalSurface } from './surfaces/terminal/surface'
@@ -170,7 +171,7 @@ export const packet: BoardKind<PacketTypes> = {
     view: PacketBoard.view,
     instruments: PacketBoard.instruments,
   },
-  surfaces: [wifiSurface, browserSurface, terminalSurface],
+  surfaces: [wifiSurface, browserSurface, terminalSurface, ...panelSurfaces],
 
   // NOTE: `NextHop`, `PickLinks`, `PickLayer`, `PlaceChips`, `SpotFault` и
   // картинки вариантов (экраны браузера) добавляет add-network-board.

@@ -4,6 +4,7 @@ import type { ComponentKind } from '../../domain/catalog'
 import { formatNumber } from '../format'
 import { plural } from '../plural'
 import { deviceEn } from './device/en'
+import { panelEn } from './panel/en'
 import type { UiStrings } from './types'
 
 const inLanguage: UiStrings['inLanguage'] = {
@@ -184,6 +185,7 @@ export const en = {
     run: 'Run',
   },
   device: deviceEn,
+  panel: panelEn,
   notFound: {
     title: 'Page not found',
     body: path => `There is nothing at “${path}”.`,

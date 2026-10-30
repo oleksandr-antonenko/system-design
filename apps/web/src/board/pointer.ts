@@ -168,7 +168,7 @@ type PointerMessage =
 const SWALLOW_CLICK_MS = 500
 const PALETTE_DRAG_PX = 6
 
-const attach = (
+export const attach = (
   container: Element,
   emit: (message: PointerMessage) => void,
 ): (() => void) => {
@@ -240,8 +240,15 @@ const attach = (
     if (!state.fromPalette) {
       event.preventDefault()
     }
-    if (container instanceof HTMLElement) {
-      container.setPointerCapture(event.pointerId)
+    // NOTE: the browser fires pointerup and the click after it at the element
+    // holding the capture. A palette item keeps the capture itself, so a tap
+    // still clicks it; the moves of a drag bubble up to the container, and the
+    // click after a drag is swallowed in `onClickCapture`.
+    const captureTarget = state.fromPalette
+      ? closest(target, '[data-palette]')
+      : container
+    if (captureTarget instanceof HTMLElement) {
+      captureTarget.setPointerCapture(event.pointerId)
     }
     emit(
       Message.PressedPointer({

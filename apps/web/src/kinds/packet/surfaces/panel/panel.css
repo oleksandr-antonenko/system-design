@@ -1,0 +1,311 @@
+/* Панель настроек по схеме (add-settings-panel): нейтральная форма без
+   сходства с админками производителей. Слева вкладки, справа поля; на узком
+   экране вкладки — строка с прокруткой, поля во всю ширину. */
+
+.panel {
+  display: grid;
+  gap: 10px;
+}
+.panel-heading {
+  margin: 0;
+  font-size: 10.5px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.panel-body {
+  display: grid;
+  grid-template-columns: minmax(130px, 168px) minmax(0, 1fr);
+  gap: 16px;
+  align-items: start;
+}
+.panel-tabs {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding-right: 10px;
+  border-right: 1px solid var(--line);
+}
+.panel-tab {
+  appearance: none;
+  border: 1px solid transparent;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--muted);
+  padding: 7px 10px;
+  font: inherit;
+  font-size: 13px;
+  text-align: left;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+}
+.panel-tab:hover {
+  color: var(--ink);
+}
+.panel-tab.active {
+  border-color: var(--line);
+  background: var(--node);
+  color: var(--ink);
+  font-weight: 600;
+}
+.panel-tab.ghost,
+.panel-field.ghost > .panel-control,
+.panel-field.ghost > select,
+.panel-field.ghost > .panel-segmented,
+.panel-list.ghost > .panel-table,
+.panel-list.ghost > .panel-empty {
+  outline: 1.5px dashed var(--accent);
+  outline-offset: 3px;
+  border-radius: 8px;
+}
+.panel-dirty {
+  color: var(--warn);
+}
+.badge-new {
+  margin-left: auto;
+  border-radius: 999px;
+  padding: 1px 7px;
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+.panel-form {
+  display: grid;
+  gap: 12px;
+  max-width: 560px;
+  min-width: 0;
+}
+.panel-field {
+  display: grid;
+  gap: 5px;
+  min-width: 0;
+}
+.panel-label {
+  margin: 0;
+  font-size: 12px;
+  color: var(--muted);
+}
+.panel-control {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+.panel-form input:not([type='checkbox']),
+.panel-form select {
+  width: 100%;
+  min-width: 0;
+  font: inherit;
+  font-size: 14px;
+  color: var(--ink);
+  background: var(--node);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 7px 10px;
+}
+.panel-form input:focus-visible,
+.panel-form select:focus-visible,
+.panel-tab:focus-visible,
+.segment:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+.panel-form input:disabled,
+.panel-form select:disabled {
+  color: var(--muted);
+  background: var(--board);
+}
+.panel-field.invalid input,
+.panel-field.invalid select,
+.panel-table input[aria-invalid='true'] {
+  border-color: var(--bad);
+}
+.panel-reveal {
+  flex: none;
+}
+.panel-segmented {
+  display: inline-flex;
+  width: fit-content;
+  max-width: 100%;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  overflow: hidden;
+  background: var(--node);
+}
+.segment {
+  appearance: none;
+  border: 0;
+  border-right: 1px solid var(--line);
+  background: transparent;
+  color: var(--muted);
+  padding: 7px 12px;
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+}
+.segment:last-child {
+  border-right: 0;
+}
+.segment.checked {
+  background: var(--accent-soft);
+  color: var(--ink);
+  font-weight: 600;
+}
+.segment:disabled {
+  cursor: not-allowed;
+}
+.panel-check label {
+  display: inline-flex;
+  gap: 8px;
+  align-items: center;
+  font-size: 14px;
+}
+.panel-info {
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: baseline;
+  gap: 10px;
+}
+.panel-value {
+  font-size: 14px;
+  overflow-wrap: anywhere;
+}
+.panel-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+.panel-table th {
+  text-align: left;
+  font-weight: 500;
+  font-size: 11.5px;
+  color: var(--muted);
+  padding: 0 6px 4px 0;
+}
+.panel-table td {
+  padding: 3px 6px 3px 0;
+  vertical-align: top;
+}
+.panel-table.readonly td {
+  padding-block: 6px;
+  border-top: 1px solid var(--line);
+}
+.panel-table input,
+.panel-table select {
+  font-size: 13px;
+  padding: 5px 8px;
+}
+.panel-row-actions {
+  width: 1%;
+}
+.panel-empty {
+  margin: 0;
+  padding: 8px 10px;
+  font-size: 13px;
+  color: var(--muted);
+}
+.panel-add {
+  justify-self: start;
+}
+.panel-error {
+  margin: 0;
+  font-size: 12.5px;
+  color: var(--bad);
+}
+.panel-note {
+  margin: 0;
+  padding: 8px 10px;
+  border-radius: 8px;
+  font-size: 13px;
+  background: var(--board);
+  color: var(--muted);
+}
+.panel-section {
+  margin: 6px 0 0;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink);
+}
+.panel-note.warn {
+  background: var(--bad-soft);
+  color: var(--ink);
+}
+.panel-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+  align-items: center;
+  flex-wrap: wrap;
+  padding-top: 4px;
+}
+.panel-saved {
+  margin-right: auto;
+  font-size: 12.5px;
+  color: var(--ok);
+}
+
+@media (max-width: 880px) {
+  .panel-body {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 10px;
+  }
+  .panel-tabs {
+    flex-direction: row;
+    overflow-x: auto;
+    padding: 0 0 6px;
+    border-right: 0;
+    border-bottom: 1px solid var(--line);
+    scrollbar-width: thin;
+  }
+  .panel-tab {
+    flex: none;
+  }
+  .badge-new {
+    margin-left: 4px;
+  }
+  .panel-form {
+    max-width: none;
+  }
+  .panel-form input:not([type='checkbox']),
+  .panel-form select {
+    font-size: 16px;
+  }
+  .panel-table thead {
+    display: none;
+  }
+  .panel-table,
+  .panel-table tbody,
+  .panel-table tr,
+  .panel-table td {
+    display: block;
+    width: 100%;
+  }
+  .panel-table tr {
+    position: relative;
+    padding: 8px 0;
+    border-top: 1px solid var(--line);
+  }
+  .panel-table td {
+    padding: 3px 0;
+  }
+  .panel-table td[data-label]::before {
+    content: attr(data-label);
+    display: block;
+    font-size: 11px;
+    color: var(--muted);
+  }
+  .panel-table.readonly td {
+    border-top: 0;
+    padding-block: 2px;
+  }
+  .panel-row-actions {
+    position: absolute;
+    top: 4px;
+    right: 0;
+    width: auto;
+  }
+}

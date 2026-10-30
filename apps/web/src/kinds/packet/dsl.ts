@@ -10,11 +10,20 @@ export { packet } from './kind'
 
 // SURFACES
 
-/** Поверхности задачи (план 4.4). */
+/** Поверхности задачи (план 4.4). Панели настроек (add-settings-panel):
+    `router` — админка домашнего роутера, `dns-panel` — записи DNS-провайдера,
+    `server:<id>` — панель сервера, `vpn:<id>` — VPN-клиент, `mesh` — своя
+    сеть устройств, `compose:<id>` — compose.yaml хоста Docker. */
 export type PacketSurface =
   | 'board'
   | 'router'
+  | `router:${DeviceId}`
   | 'dns-panel'
+  | `dns-panel:${DeviceId}`
+  | `server:${DeviceId}`
+  | `vpn:${DeviceId}`
+  | 'mesh'
+  | `compose:${DeviceId}`
   | `wifi:${DeviceId}`
   | `terminal:${DeviceId}`
   | `browser:${DeviceId}`

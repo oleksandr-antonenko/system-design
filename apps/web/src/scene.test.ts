@@ -135,7 +135,7 @@ const ukTitle = (lesson: ReturnType<typeof lessonsOf>[number]) =>
   lessonTextFor(lesson, 'uk').text.title
 
 describe('catalogue', () => {
-  test('has a card per course with its lesson count', () => {
+  test('has a card per course; a course with open lessons is not “coming soon”', () => {
     scene(
       { update, view },
       given(at(AppRoute.Home({ locale: 'lt' }), 'lt')),
@@ -184,7 +184,7 @@ describe('course map', () => {
     )
   })
 
-  test('the networking course shows 16 lessons in three modules; ready ones are links', () => {
+  test('the networking course shows 16 lessons in three modules; only available ones are links', () => {
     const available = Array.filter(
       lessonsOf('networks'),
       lesson => lesson.meta.available,

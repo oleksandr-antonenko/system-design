@@ -13,5 +13,7 @@ export default defineLessonMeta(course, {
     'browser.certificate',
     'browser.errCert',
     'browser.form',
+    'server.site',
+    'server.cert',
   ],
 })
