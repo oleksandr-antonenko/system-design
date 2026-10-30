@@ -21,10 +21,11 @@ import * as Player from './player'
 import { playerScene } from './testing'
 import { loadedEntry } from './view'
 
-// Телефон: кнопка «Доска / Текст» в нижней панели сворачивает текст урока,
-// а задание шага остаётся над панелью. Раскладку меняет CSS узкого экрана;
-// здесь проверяется то, что от неё не зависит: состояние, подписи, связи
-// для чтения с экрана и полоса задания для обоих видов доски.
+// Телефон: виден текст шага или доска. Шаг открывается текстом, кнопка в
+// конце текста ведёт на доску, «← Текст» в нижней панели доски возвращает.
+// Раскладку меняет CSS узкого экрана; здесь проверяется то, что от неё не
+// зависит: состояние, подписи, связи для чтения с экрана и полоса задания
+// на доске для обоих видов доски.
 
 const flowScene = playerScene(
   loadBalancer,
@@ -34,6 +35,11 @@ const packetScene = playerScene(
   phoneOnline,
   Option.getOrThrow(loadedEntry('networks', 'phone-online')),
 )
+
+const onPhone = (model: Player.Model): Player.Model => ({
+  ...model,
+  isStacked: true,
+})
 
 const pointerReady = Mount.resolve(
   BoardPointer,
@@ -45,73 +51,93 @@ const measured = Command.resolve(
   Player.Message.CompletedMeasureTextScroll({ scrollY: 0 }),
 )
 
-const boardButton = role('button', { name: 'Board: hide the lesson text' })
-const textButton = role('button', { name: 'Text: show the lesson text' })
-const nav = selector('.theory-nav')
+const restored = Command.resolve(
+  Player.RestoreTextScroll,
+  Player.Message.CompletedRestoreTextScroll(),
+)
 
-describe('phone: the Board / Text toggle', () => {
-  test('hides the text, says so to screen readers and stays hidden on Next', () => {
+const toText = role('button', { name: 'Back to the step text' })
+const stepBar = selector('.step-bar')
+
+describe('phone: the step text, then the board', () => {
+  test('a theory step: text first, the board on the button, back and Next', () => {
     scene(
       flowScene,
-      given(Player.init('system-design', loadBalancer, 0)),
+      given(onPhone(Player.init('system-design', loadBalancer, 0))),
       pointerReady,
-      expect(within(nav, boardButton)).toHaveAttr('aria-expanded', 'true'),
-      expect(boardButton).toHaveAttr('aria-controls', 'lesson-text'),
+      expect(selector('.lesson-page.shows-text')).toExist(),
       expect(selector('#lesson-text')).toExist(),
-      expect(selector('#lesson-text img')).not.toExist(),
-      expect(selector('.lesson-page.text-hidden')).not.toExist(),
-      click(boardButton),
-      measured,
-      expect(selector('.lesson-page.text-hidden')).toExist(),
-      expect(textButton).toHaveAttr('aria-expanded', 'false'),
-      expect(textButton).toHaveAttr('aria-controls', 'lesson-text'),
-      click(role('button', { name: 'Next →' })),
-      expect(selector('.lesson-page.text-hidden')).toExist(),
-      expect(textButton).toExist(),
-      click(textButton),
-      Command.resolve(
-        Player.ScrollStepIntoView,
-        Player.Message.CompletedScrollStepIntoView(),
+      expect(toText).not.toExist(),
+      expect(role('button', { name: 'See it on the board →' })).toHaveAttr(
+        'aria-controls',
+        'lesson-board',
       ),
-      expect(selector('.lesson-page.text-hidden')).not.toExist(),
-      expect(boardButton).toHaveAttr('aria-expanded', 'true'),
+      expect(role('button', { name: 'See it on the board →' })).toHaveAttr(
+        'aria-expanded',
+        'false',
+      ),
+      click(role('button', { name: 'See it on the board →' })),
+      measured,
+      expect(selector('.lesson-page.shows-board')).toExist(),
+      expect(selector('#lesson-board')).toExist(),
+      expect(toText).toHaveAttr('aria-controls', 'lesson-text'),
+      expect(toText).toHaveAttr('aria-expanded', 'false'),
+      expect(toText).toHaveText('← Text'),
+      click(toText),
+      restored,
+      expect(selector('.lesson-page.shows-text')).toExist(),
+      click(role('button', { name: 'See it on the board →' })),
+      measured,
+      click(role('button', { name: 'Next →' })),
+      restored,
+      expect(selector('.lesson-page.shows-text')).toExist(),
+      expect(selector('.step.current[data-step="1"]')).toExist(),
     )
   })
 
-  test('System Design task: prompt, Check and Hint stay reachable above the bar', () => {
+  test('System Design task: «To the task», then prompt, Check and Hint on the board', () => {
     scene(
       flowScene,
-      given(Player.init('system-design', loadBalancer, 3)),
+      given(onPhone(Player.init('system-design', loadBalancer, 3))),
       pointerReady,
-      expect(selector('.step-bar')).not.toExist(),
-      click(boardButton),
-      measured,
+      expect(stepBar).not.toExist(),
       expect(
         within(
-          selector('.step-bar'),
+          selector('.task-card'),
           text(/Make every user request get spread across the three servers/),
         ),
       ).toExist(),
-      click(within(selector('.step-bar'), role('button', { name: 'Check' }))),
-      expect(within(selector('.step-bar'), role('alert'))).toExist(),
-      click(within(selector('.step-bar'), role('button', { name: /^Hint/ }))),
+      click(role('button', { name: 'To the task →' })),
+      measured,
+      expect(
+        within(
+          stepBar,
+          text(/Make every user request get spread across the three servers/),
+        ),
+      ).toExist(),
+      click(within(stepBar, role('button', { name: 'Check' }))),
+      expect(within(stepBar, role('alert'))).toExist(),
+      click(within(stepBar, role('button', { name: /^Hint/ }))),
       expect(selector('.step-bar .step-bar-hint')).toExist(),
+      expect(toText).toExist(),
     )
   })
 
-  test('networks: the board question stays above the bar while the text is hidden', () => {
+  test('networks quiz: «To the question», answered on the board, Next opens text', () => {
     scene(
       packetScene,
-      given(Player.init('networks', phoneOnline, 3)),
-      click(boardButton),
+      given(onPhone(Player.init('networks', phoneOnline, 3))),
+      expect(stepBar).not.toExist(),
+      click(role('button', { name: 'To the question →' })),
       measured,
-      expect(selector('.step-bar')).toExist(),
-      expect(
-        within(selector('.step-bar'), text(/Click the answer on the board/)),
-      ).toExist(),
+      expect(within(stepBar, text(/Click the answer on the board/))).toExist(),
       click(role('button', { name: 'Router, your home post office' })),
-      expect(within(selector('.step-bar'), text(/Correct/))).toExist(),
-      expect(role('button', { name: 'Next →' })).not.toBeDisabled(),
+      expect(within(stepBar, text(/Correct/))).toExist(),
+      click(role('button', { name: 'Next →' })),
+      restored,
+      expect(selector('.lesson-page.shows-text')).toExist(),
+      expect(stepBar).not.toExist(),
+      expect(selector('.step.current[data-step="4"] .to-board')).toExist(),
     )
   })
 })
