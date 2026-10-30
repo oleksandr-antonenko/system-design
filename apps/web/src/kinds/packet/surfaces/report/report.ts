@@ -27,13 +27,18 @@ import { Message } from './message'
 
 export const MAX_EVIDENCE = 2
 
+/** Черновик отчёта одной сети: `round` — сколько раз доска начиналась
+    заново (`Reset`) к моменту выбора. Поверхность общая для всех шагов
+    урока, поэтому черновик прошлой сети в новой не виден. */
 export const Model = Schema.Struct({
+  round: Schema.Number,
   evidence: Schema.Array(Evidence),
   maybeFault: Schema.Option(Fault),
 })
 export type Model = typeof Model.Type
 
 export const initialModel: Model = {
+  round: 0,
   evidence: [],
   maybeFault: Option.none(),
 }
@@ -183,9 +188,20 @@ const toggled = (
     ? Array.filter(evidence, picked => !isSameLine(picked, line))
     : Array.takeRight([...evidence, line], MAX_EVIDENCE)
 
+/** Сколько раз доска начиналась заново: номер текущей сети. */
+const roundOf = (context: Context): number =>
+  Array.filter(context.history, op => op._tag === 'Reset').length
+
+/** Черновик текущей сети: черновик прошлой сети начинается заново. */
+export const draftOf = (model: Model, context: Context): Model =>
+  model.round === roundOf(context)
+    ? model
+    : modifyFields(initialModel, { round: () => roundOf(context) })
+
 export const update =
   (context: Context) =>
-  (model: Model, message: Message): UpdateReturn => {
+  (stored: Model, message: Message): UpdateReturn => {
+    const model = draftOf(stored, context)
     const isEditable = context.mode === 'Edit'
     return Message.match<UpdateReturn>(message, {
       ToggledLine: ({ text, tag }) => ({

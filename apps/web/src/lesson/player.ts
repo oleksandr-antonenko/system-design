@@ -690,6 +690,7 @@ export const goToStep = <T extends KindTypes>(
       maybeToast: () => Option.none(),
       maybeHoveredRef: () => Option.none(),
       isAskAiCopied: () => false,
+      maybeSurfaceTab: () => Option.none(),
     }),
     commands: [ScrollStepIntoView({ step })],
     outMessage: OutMessage.ChangedStep({ step }),

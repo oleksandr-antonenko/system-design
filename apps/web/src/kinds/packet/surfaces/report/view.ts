@@ -12,11 +12,12 @@ import type { PacketTypes } from '../../../types'
 import { nameOf } from '../history'
 import { Message } from './message'
 import {
-  REPLY_ID,
   type Model,
+  REPLY_ID,
   type RanCommand,
   type ReportGoal,
   commandsOf,
+  draftOf,
   isSameLine,
   replyOf,
   reportGoalOf,
@@ -246,7 +247,7 @@ const replyView = <ParentMessage>(
   })
 
 export const view = <ParentMessage>(
-  model: Model,
+  stored: Model,
   context: Context,
   render: Readonly<{
     ui: UiStrings
@@ -261,6 +262,7 @@ export const view = <ParentMessage>(
     h,
   }
   const { ui } = render
+  const model = draftOf(stored, context)
   const canSend =
     context.mode === 'Edit' &&
     Option.isSome(model.maybeFault) &&

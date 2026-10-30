@@ -1597,35 +1597,37 @@
     grid-template-rows: auto;
   }
   .pb-stage > .pb-ladder {
+    order: -1;
     grid-row: auto;
     align-self: stretch;
     margin: 8px 8px 0;
-    padding: 6px;
+    padding: 5px;
   }
   .pb-ladder-title {
     display: none;
   }
   .pb-rungs {
     flex-direction: row-reverse;
+    gap: 3px;
   }
   .pb-rung {
     flex: 1;
     min-width: 0;
-    grid-template-columns: 16px minmax(0, 1fr);
-    column-gap: 4px;
-    padding: 3px 4px;
+    grid-template-columns: 14px minmax(0, 1fr);
+    column-gap: 3px;
+    padding: 3px;
   }
   .pb-rung-mark {
     grid-row: auto;
-    width: 16px;
-    height: 16px;
-    font-size: 10px;
+    width: 14px;
+    height: 14px;
+    border-width: 1.5px;
+    font-size: 9px;
   }
   .pb-rung-name {
-    overflow: hidden;
-    font-size: 10px;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+    font-size: 9.5px;
+    line-height: 1.15;
+    overflow-wrap: anywhere;
   }
   .pb-rung-cmd {
     display: none;
