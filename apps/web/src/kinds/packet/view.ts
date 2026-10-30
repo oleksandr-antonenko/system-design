@@ -1369,6 +1369,10 @@ const noteView = <ParentMessage>(
 
 // SCAN, DRAFT
 
+const SCAN_CHIP_WIDTH = 84
+
+/** Значки сканера справа от устройства; у правого края доски — слева, у
+    нижнего — выше, чтобы не уйти за край. */
 const scanViews = <ParentMessage>(
   draw: Draw<ParentMessage>,
 ): ReadonlyArray<Html> => {
@@ -1388,25 +1392,37 @@ const scanViews = <ParentMessage>(
             onNone: () => [],
             onSome: shape => {
               const centre = centreOf(shape)
+              const settled = picture.context.run.settled
               const results = scanPorts(
                 picture.context.doc.doc,
-                picture.context.run.settled,
+                settled,
                 item.from,
-                item.target,
+                Option.getOrElse(
+                  addressOf(picture.context.doc.doc, settled, item.target),
+                  () => item.target,
+                ),
                 item.ports,
+              )
+              const viewBox = picture.layout.viewBox
+              const right = centre.x + 92
+              const x =
+                right + SCAN_CHIP_WIDTH <= viewBox.x + viewBox.w - 6
+                  ? right
+                  : centre.x - 92 - SCAN_CHIP_WIDTH
+              const top = Math.min(
+                centre.y - 30,
+                viewBox.y + viewBox.h - 6 - (results.length - 1) * 19 - 16,
               )
               return Array.map(results, (result, index) =>
                 h.keyed('g')(
                   `scan-${item.target}-${result.port}`,
                   [
                     h.Class(`pb-scan ${result.status}`),
-                    h.Transform(
-                      `translate(${n(centre.x + 92)},${n(centre.y - 30 + index * 19)})`,
-                    ),
+                    h.Transform(`translate(${n(x)},${n(top + index * 19)})`),
                   ],
                   [
                     h.rect([
-                      h.Attribute('width', '84'),
+                      h.Attribute('width', `${SCAN_CHIP_WIDTH}`),
                       h.Attribute('height', '16'),
                       h.Attribute('rx', '8'),
                     ]),

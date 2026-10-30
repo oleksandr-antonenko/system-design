@@ -15,6 +15,7 @@ import {
 import {
   type Hop,
   type RouteMatch,
+  type RuleMatch,
   type StackLevel,
   TableChange,
   type Trace,
@@ -94,6 +95,10 @@ export type Picture = Readonly<{
   /** Строка маршрутов, по которой устройство у конверта отдаёт его дальше
       (у конверта в пути — то, откуда он вылетел): её подсвечивает карточка. */
   maybeRoute: Option.Option<RouteMatch>
+  /** Строка firewall rules, которая решила судьбу разговора у устройства,
+      где стоит конверт; после проигрывания — последняя сработавшая. До
+      ответа на квиз её нет: она и есть ответ `PickRule`. */
+  maybeRuleHit: Option.Option<RuleMatch>
   maybeCard: Option.Option<DeviceId>
   cardTables: ReadonlyArray<DeviceTable>
   maybeOpenLevel: Option.Option<StackLevel>
@@ -683,6 +688,22 @@ export const pictureOf = (context: Context, model: Model): Picture => {
         )
       : leg.hop.maybeRoute,
   )
+  const ruleHits = (plays: Timeline['plays']): ReadonlyArray<RuleMatch> =>
+    Array.getSomes(
+      Array.flatMap(plays, play =>
+        Array.map(play.trace.hops, hop => hop.maybeRule),
+      ),
+    )
+  const maybeRuleHit = Option.exists(quiz, marks => !marks.isAnswered)
+    ? Option.none()
+    : moment._tag === 'Resting'
+      ? Array.findLast(
+          ruleHits(Option.toArray(Array.get(timeline.plays, moment.leg.play))),
+          hit => hit.device === moment.leg.hop.to,
+        )
+      : isDone && position.hasStarted
+        ? Array.last(ruleHits(timeline.plays))
+        : Option.none()
   return {
     context,
     model,
@@ -700,6 +721,7 @@ export const pictureOf = (context: Context, model: Model): Picture => {
     state,
     changes,
     maybeRoute,
+    maybeRuleHit,
     maybeCard,
     cardTables: Array.map(stageTables, item => item.table),
     maybeOpenLevel: Option.map(

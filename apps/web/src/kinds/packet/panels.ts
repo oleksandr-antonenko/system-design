@@ -76,6 +76,26 @@ const matchedRouteIndex = (
       ),
   )
 
+/** Строка firewall rules устройства, которая решила судьбу конверта:
+    номер правила или последняя строка «все остальные». Правила хостинга
+    (`cloud`) в карточке не показаны. */
+const matchedRuleIndex = (
+  picture: Picture,
+  device: DeviceId,
+  rows: number,
+): Option.Option<number> =>
+  Option.map(
+    Option.filter(
+      picture.maybeRuleHit,
+      hit => hit.device === device && hit.scope !== 'cloud',
+    ),
+    hit =>
+      Option.match(hit.maybeRule, {
+        onNone: () => rows - 1,
+        onSome: rule => rule - 1,
+      }),
+  )
+
 const tableRows = (
   picture: Picture,
   device: Device,
@@ -433,7 +453,9 @@ const cardView = <ParentMessage>(
                 const maybeMatched =
                   table === 'routes'
                     ? matchedRouteIndex(picture, device.id)
-                    : Option.none()
+                    : table === 'rules'
+                      ? matchedRuleIndex(picture, device.id, rows.length)
+                      : Option.none()
                 return h.keyed('section')(
                   table,
                   [h.Class(`pb-card-table${isAsked ? ' asked' : ''}`)],
