@@ -71,9 +71,24 @@ export const CheckState = defineTaggedUnion({
 })
 export type CheckState = typeof CheckState.Type
 
+/** Ход из нескольких операций, сделанный одним нажатием: готовый блок на
+    доске, сохранение панели. В журнале это одна запись, и «Отменить»
+    снимает её целиком, как и «Повторить» возвращает. */
+export const Move = Schema.TaggedStruct('Move', { ops: Schema.Array(KindOp) })
+
+/** Запись журнала задачи: одна операция или ход из нескольких. */
+export const JournalEntry = Schema.Union([KindOp, Move])
+export type JournalEntry = typeof JournalEntry.Type
+
+/** Ход ученика — одна запись журнала, сколько бы операций в нём ни было. */
+export const journalEntry = (ops: ReadonlyArray<KindOp>): JournalEntry => {
+  const [first, ...rest] = ops
+  return first !== undefined && rest.length === 0 ? first : Move.make({ ops })
+}
+
 export const TaskState = Schema.Struct({
-  log: Schema.Array(KindOp),
-  redo: Schema.Array(KindOp),
+  log: Schema.Array(JournalEntry),
+  redo: Schema.Array(JournalEntry),
   attempts: Schema.Number,
   hintsShown: Schema.Number,
   check: CheckState,
@@ -214,11 +229,19 @@ const emptyTask: TaskState = {
 export const taskStateOf = (model: Model, taskId: string): TaskState =>
   model.tasks[taskId] ?? emptyTask
 
-/** Ходы задачи в типах вида доски. */
+/** Операции журнала задачи в типах вида доски, ход за ходом. */
 export const opsOf = <T extends KindTypes>(
   kind: BoardKind<T>,
-  ops: ReadonlyArray<KindOp>,
-): ReadonlyArray<T['Op']> => Array.getSomes(Array.map(ops, kind.op.unwrap))
+  entries: ReadonlyArray<JournalEntry>,
+): ReadonlyArray<T['Op']> =>
+  Array.getSomes(
+    Array.map(
+      Array.flatMap(entries, entry =>
+        entry._tag === 'Move' ? entry.ops : [entry],
+      ),
+      kind.op.unwrap,
+    ),
+  )
 
 const logsOf = <T extends KindTypes>(
   lesson: LessonDefinition<T>,
@@ -750,7 +773,10 @@ const applyStudentOps = <T extends KindTypes>(
                 lesson,
                 withTask(model, spec.id, task => ({
                   ...task,
-                  log: [...task.log, ...Array.map(ops, lesson.kind.op.wrap)],
+                  log: [
+                    ...task.log,
+                    journalEntry(Array.map(ops, lesson.kind.op.wrap)),
+                  ],
                   redo: [],
                   check:
                     task.check._tag === 'Failed'

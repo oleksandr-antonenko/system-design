@@ -19,6 +19,7 @@ import {
 import {
   type Field,
   FieldProblem,
+  type InfoField,
   type InputField,
   type InputKind,
   type ListField,
@@ -710,6 +711,7 @@ const checkControl = <ParentMessage>(
 
 const infoControl = <ParentMessage>(
   ctx: Ctx<ParentMessage>,
+  field: InfoField,
   control: Control<ParentMessage>,
   h: HtmlBuilder<ParentMessage>,
 ): Html =>
@@ -719,7 +721,13 @@ const infoControl = <ParentMessage>(
       h.Class('panel-value'),
       ...control.naming,
     ],
-    [control.value === '' ? '—' : control.value],
+    [
+      control.value === ''
+        ? '—'
+        : field.isDevice === true
+          ? ctx.context.name(control.value)
+          : control.value,
+    ],
   )
 
 const controlView = <ParentMessage>(
@@ -737,7 +745,7 @@ const controlView = <ParentMessage>(
         ? selectControl(ctx, segmented, control, h)
         : segmentedControl(ctx, segmented, control, h),
     Check: () => checkControl(ctx, control, h),
-    Info: () => infoControl(ctx, control, h),
+    Info: info => infoControl(ctx, info, control, h),
   })
 
 const scalarFieldView = <ParentMessage>(

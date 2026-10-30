@@ -3,7 +3,7 @@ import { Array, Option, Order, Record, Result, pipe } from 'effect'
 import type { Locale } from '../../i18n/locale'
 import type { UiStrings } from '../../i18n/ui'
 import { pairOf, pickParts } from '../../lesson/quiz'
-import { applyAll } from '../../net/doc'
+import { type NetOp, applyAll } from '../../net/doc'
 import {
   type Device,
   type DeviceId,
@@ -385,6 +385,37 @@ const fogVisible = (
     ])
   })
 
+/** Высота строки черновика под устройством. */
+export const DRAFT_ROW = 22
+
+/** Устройство, под которым черновик рисует строку операции; у нового
+    устройства и кабеля строки нет — их видно на доске. */
+export const draftDevice = (op: NetOp): string =>
+  op._tag === 'AddDevice' || op._tag === 'Connect'
+    ? ''
+    : 'device' in op && typeof op.device === 'string'
+      ? op.device
+      : 'router' in op && typeof op.router === 'string'
+        ? op.router
+        : ''
+
+/** Сколько места нужно под устройствами для строк черновика. */
+const draftRoom = (
+  previews: ReadonlyArray<Preview>,
+): Readonly<Record<string, number>> => {
+  const none: Readonly<Record<string, number>> = {}
+  return Array.reduce(
+    Array.flatMap(previews, preview => preview.ops),
+    none,
+    (room, op) => {
+      const device = draftDevice(op)
+      return device === ''
+        ? room
+        : { ...room, [device]: (room[device] ?? 0) + DRAFT_ROW }
+    },
+  )
+}
+
 /** Доска шага с черновиком сцены поверх: новые устройства черновика тоже
     стоят на доске (пунктиром). */
 const withPreview = (world: World, previews: ReadonlyArray<Preview>): World =>
@@ -488,6 +519,7 @@ export const pictureOf = (context: Context, model: Model): Picture => {
     ),
     moved,
     text: nodeText(context, settled, hidden),
+    below: draftRoom(previews),
   })
   const isPlayHidden = Array.contains(hidden, 'play')
   // NOTE: трассы сцены считаются на `stageDoc` — мире до хода ученика, если
@@ -586,11 +618,16 @@ export const pictureOf = (context: Context, model: Model): Picture => {
     tone: 'info' as const,
     isPulsing: false,
   }))
-  const stageNotes = Array.map(stageItems(stage, 'Annotate'), item => ({
-    target: item.target,
-    text: context.annotationText(item.key),
-    tone: item.tone,
-  }))
+  // Подпись-функция с пустым текстом не рисуется: так подпись в задаче
+  // появляется и исчезает вместе с тем, что она описывает.
+  const stageNotes = Array.filter(
+    Array.map(stageItems(stage, 'Annotate'), item => ({
+      target: item.target,
+      text: context.annotationText(item.key),
+      tone: item.tone,
+    })),
+    note => note.text !== '',
+  )
   const quizNotes: ReadonlyArray<Note> = Option.match(quiz, {
     onNone: () => [],
     onSome: marks =>

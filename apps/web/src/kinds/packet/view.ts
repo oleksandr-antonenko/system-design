@@ -11,9 +11,15 @@ import {
 } from '../../net/model'
 import { levelOf, sourceOf } from '../../net/packet'
 import { addressOf, wifiOf } from '../../net/topology'
+import { isContainerUp } from '../../net/trace'
 import type { BoardSlot, Tone } from '../contract'
 import type { PacketTypes } from '../types'
-import { addressesOf, isAddressQuestion, isSealed } from './envelope'
+import {
+  addressesOf,
+  isAddressQuestion,
+  isSealed,
+  isTunneled,
+} from './envelope'
 import { deviceIcons } from './icons'
 import {
   type CloudShape,
@@ -24,13 +30,21 @@ import {
   anchorOf,
   centreOf,
   doublePath,
+  metricsFor,
   shapeOf,
 } from './layout'
 import { Message } from './message'
 import { boardPanels, quizTray, stageOverlays } from './panels'
-import { type Picture, deviceOf, pictureOf, shapeIdOf } from './picture'
+import {
+  DRAFT_ROW,
+  type Picture,
+  deviceOf,
+  draftDevice,
+  pictureOf,
+  shapeIdOf,
+} from './picture'
 import { DevicePointer } from './pointer'
-import { type OwnerOf, letterOf } from './timeline'
+import { type OwnerOf, letterOf, outerLetterOf } from './timeline'
 
 // Доска сетей (план 3.1, макет docs/mockups/networks-lesson-1.html): дом с
 // крышей, облако «Интернет», устройства со значками и подписями, связи
@@ -171,8 +185,69 @@ const zoneView = <ParentMessage>(
         ],
         [title],
       ),
+      ...(zone.kind === 'docker' ? doorViews(draw, zone) : []),
     ],
   )
+}
+
+const DOOR_CHAR = 6.4
+const DOOR_PAD = 16
+const DOOR_GAP = 8
+
+/** Port mapping хоста Docker: «дверь» на рамке его зоны, `8080 → app:3000`,
+    справа налево. На узкой доске — на нижней рамке: у верхней стоят подписи
+    containers. */
+const doorViews = <ParentMessage>(
+  draw: Draw<ParentMessage>,
+  zone: ZoneBox,
+): ReadonlyArray<Html> => {
+  const { h, picture } = draw
+  const publishes = Option.match(deviceOf(picture, zone.id), {
+    onNone: () => [],
+    onSome: device => (device._tag === 'Host' ? device.publishes : []),
+  })
+  const doors = Array.map(publishes, publish => {
+    const host =
+      publish.bind === '0.0.0.0'
+        ? `${publish.hostPort}`
+        : `${publish.bind}:${publish.hostPort}`
+    const text = `${host} → ${publish.container}:${publish.containerPort}`
+    return { text, width: text.length * DOOR_CHAR + DOOR_PAD }
+  })
+  const right = zone.x + zone.w - 12
+  const edge = picture.layout.isNarrow ? zone.y + zone.h : zone.y
+  return Array.map(doors, (door, index) => {
+    const end =
+      right -
+      Array.reduce(
+        Array.take(doors, index),
+        0,
+        (sum, before) => sum + before.width + DOOR_GAP,
+      )
+    return h.g(
+      [
+        h.Class('pb-door'),
+        h.Transform(`translate(${n(end - door.width)},${n(edge - 10)})`),
+        h.Role('img'),
+        h.AriaLabel(picture.context.ui.packetBoard.zone.door(door.text)),
+      ],
+      [
+        h.rect([
+          h.Attribute('width', n(door.width)),
+          h.Attribute('height', '20'),
+          h.Attribute('rx', '4'),
+        ]),
+        h.text(
+          [
+            h.Attribute('x', n(door.width / 2)),
+            h.Attribute('y', '14'),
+            h.TextAnchor('middle'),
+          ],
+          [door.text],
+        ),
+      ],
+    )
+  })
 }
 
 const planView = <ParentMessage>(
@@ -506,6 +581,9 @@ const linkView = <ParentMessage>(
     isShownDown(picture, link) ? 'down' : '',
     link.isActive ? '' : 'idle',
     isHiddenLink ? 'unknown' : '',
+    Array.some(picture.context.doc.doc.links, each => each.id === link.id)
+      ? ''
+      : 'draft',
     Option.match(mark, {
       onNone: () => '',
       onSome: found => `mark-${found.tone}`,
@@ -724,7 +802,14 @@ const layerDevices = (picture: Picture): ReadonlyArray<string> =>
                 : Option.match(Array.get(picture.timeline.plays, leg.play), {
                     onNone: () => [],
                     onSome: play => {
-                      const letter = letterOf(
+                      const isOuter = Option.exists(
+                        Array.findFirstIndex(
+                          leg.hop.envelope,
+                          inner => inner._tag === 'Tunnel',
+                        ),
+                        tunnel => position < tunnel,
+                      )
+                      const letter = (isOuter ? outerLetterOf : letterOf)(
                         play.trace,
                         leg.hop,
                         ownerOfIp(picture),
@@ -896,6 +981,7 @@ const nodeView = <ParentMessage>(
         device => device._tag === 'Host',
       ),
   )
+  const isDown = isRestarting(picture, node.id)
   const isHovered = Option.exists(
     picture.context.maybeHoveredRef,
     ref => ref === node.id,
@@ -920,12 +1006,13 @@ const nodeView = <ParentMessage>(
         [
           'pb-node',
           isFlying ? 'hl' : '',
-          isOff ? 'off' : '',
+          isOff || isDown ? 'off' : '',
           isHovered || isLayer ? 'ref-hover' : '',
           isCableFrom || isCard ? 'selected' : '',
           isCand ? 'cand' : '',
           movable ? 'movable' : '',
           Option.isSome(click) ? 'clickable' : '',
+          Option.isNone(deviceOf(picture, node.id)) ? 'draft' : '',
         ].join(' '),
       ),
       h.DataAttribute('node', node.id),
@@ -1029,6 +1116,21 @@ const nodeView = <ParentMessage>(
     ],
   )
 }
+
+/** Container падает и перезапускается: рисуется бледным. */
+const isRestarting = (picture: Picture, id: DeviceId): boolean =>
+  picture.isOpen('board.dockerHost') &&
+  Option.exists(
+    deviceOf(picture, id),
+    device =>
+      device._tag === 'Host' &&
+      Option.isSome(device.maybeContainer) &&
+      !isContainerUp(
+        picture.context.doc.doc,
+        picture.context.run.settled,
+        device,
+      ),
+  )
 
 /** Новое в уроке устройство: справочная (урок 3), коммутатор (урок 7),
     транзит (урок 4) — с меткой «новое». */
@@ -1425,6 +1527,9 @@ const scanViews = <ParentMessage>(
   )
 }
 
+/** Черновик сцены (`preview`): новые устройства и кабели черновика стоят на
+    доске пунктиром, а остальные операции — строки под своим устройством,
+    одна под другой. Устройство и кабель строк не получают: их видно и так. */
 const draftViews = <ParentMessage>(
   draw: Draw<ParentMessage>,
 ): ReadonlyArray<Html> => {
@@ -1439,16 +1544,11 @@ const draftViews = <ParentMessage>(
         onNone: () => '',
         onSome: found => ` mark-${found.tone}`,
       })
-      const device =
-        op._tag === 'AddDevice'
-          ? op.device.id
-          : 'device' in op && typeof op.device === 'string'
-            ? op.device
-            : 'router' in op && typeof op.router === 'string'
-              ? op.router
-              : op._tag === 'Connect'
-                ? op.a
-                : ''
+      const device = draftDevice(op)
+      const row = Array.filter(
+        Array.take(ops, index),
+        earlier => draftDevice(earlier) === device,
+      ).length
       return Option.map(
         Option.flatMap(visibleIdOptional(picture, device), shapeId =>
           shapeOf(picture.layout, shapeId),
@@ -1457,12 +1557,16 @@ const draftViews = <ParentMessage>(
           const centre = centreOf(shape)
           const text = picture.context.maybeQuiz.pipe(
             Option.flatMap(quiz => Option.fromNullishOr(quiz.names[id])),
+            Option.orElse(() =>
+              Option.map(picture.context.label(id), label => label.name),
+            ),
             Option.getOrElse(
               () => `${picture.context.ui.packetBoard.draft}: ${op._tag}`,
             ),
           )
           const width = Math.min(text.length * 6.4 + 18, 260)
-          const y = centre.y + 40 + (index % 3) * 22
+          const below = shape._tag === 'Box' ? shape.node.h / 2 + 6 : 40
+          const y = centre.y + below + row * DRAFT_ROW
           return h.keyed('g')(
             `draft-${index}`,
             [
@@ -1484,6 +1588,95 @@ const draftViews = <ParentMessage>(
         },
       )
     }),
+  )
+}
+
+/** Готовый блок сцены (`place`): пунктирное место, где встанет устройство.
+    Нажатие ставит блок; пока задача не начата или блок уже на доске, места
+    нет. С третьей подсказкой место пульсирует, как призрак. */
+const placeViews = <ParentMessage>(
+  draw: Draw<ParentMessage>,
+): ReadonlyArray<Html> => {
+  const { h, picture, send } = draw
+  if (picture.context.mode !== 'Edit' || !picture.isOpen('board.sandbox')) {
+    return []
+  }
+  const metrics = metricsFor(picture.layout.isNarrow)
+  const isGhost = Option.exists(
+    picture.context.maybeTask,
+    task => task.isGhostShown,
+  )
+  return Array.flatMap(picture.context.stage, item =>
+    item._tag !== 'Place'
+      ? []
+      : Option.match(
+          Array.findFirst(item.ops, op =>
+            op._tag === 'AddDevice' ? Option.some(op.device) : Option.none(),
+          ),
+          {
+            onNone: () => [],
+            onSome: device => {
+              if (Option.isSome(deviceOf(picture, device.id))) {
+                return []
+              }
+              const at = picture.layout.place({ x: device.x, y: device.y })
+              const title = picture.name(device.id)
+              const hint = picture.context.ui.packetBoard.place
+              const width = Math.max(
+                metrics.minNodeWidth,
+                Math.max(title.length, hint.length) * metrics.charWidth * 0.86 +
+                  metrics.textInset,
+              )
+              const x0 = at.x - width / 2
+              const y0 = at.y - metrics.nodeHeight / 2
+              const icon = picture.layout.isNarrow ? 9 : 11
+              const textX = x0 + (picture.layout.isNarrow ? 34 : 42)
+              return [
+                h.keyed('g')(
+                  `place-${device.id}`,
+                  [
+                    h.Class(
+                      `pb-place${isGhost ? ` ghost${picture.context.isReducedMotion ? '' : ' pulse'}` : ''}`,
+                    ),
+                    h.DataAttribute('place', device.id),
+                    ...button(
+                      draw,
+                      `${title}: ${hint}`,
+                      send(Message.ClickedPlace({ ops: item.ops })),
+                    ),
+                  ],
+                  [
+                    h.rect([
+                      h.Class('pb-body'),
+                      h.Attribute('x', n(x0)),
+                      h.Attribute('y', n(y0)),
+                      h.Attribute('width', n(width)),
+                      h.Attribute('height', n(metrics.nodeHeight)),
+                      h.Attribute('rx', '11'),
+                    ]),
+                    iconView(h, kindOf(device), x0 + icon, at.y - 12),
+                    h.text(
+                      [
+                        h.Class('pb-title'),
+                        h.Attribute('x', n(textX)),
+                        h.Attribute('y', n(at.y - 2)),
+                      ],
+                      [title],
+                    ),
+                    h.text(
+                      [
+                        h.Class('pb-sub'),
+                        h.Attribute('x', n(textX)),
+                        h.Attribute('y', n(at.y + 13)),
+                      ],
+                      [hint],
+                    ),
+                  ],
+                ),
+              ]
+            },
+          },
+        ),
   )
 }
 
@@ -1565,7 +1758,8 @@ const letterView = <ParentMessage>(
         onSome: leg =>
           Option.match(play, {
             onNone: () => ({ from: '', to: '' }),
-            onSome: found => letterOf(found.trace, leg.hop, ownerOfIp(picture)),
+            onSome: found =>
+              outerLetterOf(found.trace, leg.hop, ownerOfIp(picture)),
           }),
       })
       const addresses = Option.flatMap(legHop, leg => addressesOf(leg.hop))
@@ -1597,6 +1791,9 @@ const letterView = <ParentMessage>(
       const sealed =
         picture.isOpen('board.sealedEnvelope') &&
         Option.exists(legHop, leg => isSealed(leg.hop))
+      const tunneled =
+        picture.isOpen('board.sealedEnvelope') &&
+        Option.exists(legHop, leg => isTunneled(leg.hop))
       const width = Math.ceil(
         Math.max(
           ui.envelope.from.length + fromText.length,
@@ -1714,7 +1911,13 @@ const letterView = <ParentMessage>(
                               h.Attribute('y', '11'),
                               h.TextAnchor('middle'),
                             ],
-                            [sealed ? '🔒 TLS' : protocol.toUpperCase()],
+                            [
+                              tunneled
+                                ? '🔒 VPN'
+                                : sealed
+                                  ? '🔒 TLS'
+                                  : protocol.toUpperCase(),
+                            ],
                           ),
                         ],
                       ),
@@ -1829,6 +2032,7 @@ const svgView = <ParentMessage>(draw: Draw<ParentMessage>): Html => {
           ...Array.map(layout.nodes, node => nodeView(draw, node)),
           ...stickerView(draw),
           ...draftViews(draw),
+          ...placeViews(draw),
           ...scanViews(draw),
         ],
       ),

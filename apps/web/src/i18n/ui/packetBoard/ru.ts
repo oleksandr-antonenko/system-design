@@ -104,6 +104,7 @@ export const packetBoardRu: PacketBoardStrings = {
     office: 'Офис',
     plan: 'План квартиры',
     docker: host => `Docker: ${host}`,
+    door: mapping => `Port mapping ${mapping}`,
     internet: 'Internet',
     internetSub: 'весь мир',
     internetOpenSub: 'много сетей',
@@ -232,6 +233,7 @@ export const packetBoardRu: PacketBoardStrings = {
     bad: 'здесь поломка',
   },
   draft: 'черновик',
+  place: 'нажмите, чтобы поставить',
   builder: {
     title: 'Соберите конверт',
     hint: 'Разложите заголовки снаружи внутрь: перетащите или нажмите заголовок, потом место.',

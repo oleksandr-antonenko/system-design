@@ -148,7 +148,15 @@ export type CheckField = Enabled &
   Readonly<{ _tag: 'Check'; id: string; label: Text }>
 
 /** Значение только для чтения. */
-export type InfoField = Readonly<{ _tag: 'Info'; id: string; label: Text }>
+/** Значение только для показа. `isDevice`: в значении id устройства, а
+    показывается его имя с подписью урока — так `read` не зависит от языка
+    и подписей, и черновик панели не сбрасывается. */
+export type InfoField = Readonly<{
+  _tag: 'Info'
+  id: string
+  label: Text
+  isDevice?: boolean
+}>
 
 export type ScalarField =
   | InputField

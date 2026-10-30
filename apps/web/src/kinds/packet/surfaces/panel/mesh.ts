@@ -46,9 +46,11 @@ const meshDevice = (
     Option.map(host => host.id),
   )
 
-const MEMBER_KINDS = ['pc', 'phone', 'laptop', 'server']
+// NOTE: без 'pc': на доске урока своей сети (16) это чужой компьютер, который
+// перебирает адреса, а не ваше устройство.
+const MEMBER_KINDS = ['phone', 'laptop', 'server']
 
-/** Свои устройства, которые можно включить в сеть: компьютеры, телефоны и
+/** Свои устройства, которые можно включить в сеть: ноутбуки, телефоны и
     серверы, кроме служебных (справочные, DNS-провайдеры, CA, ретрансляторы). */
 const candidatesOf = (context: PanelContext): ReadonlyArray<Host> =>
   Array.filter(
@@ -77,7 +79,12 @@ const membersTab: PanelTab = {
       label: strings => strings.mesh.members,
       fixed: true,
       columns: [
-        { _tag: 'Info', id: 'device', label: strings => strings.mesh.device },
+        {
+          _tag: 'Info',
+          id: 'device',
+          label: strings => strings.mesh.device,
+          isDevice: true,
+        },
         { _tag: 'Check', id: 'member', label: strings => strings.mesh.member },
         {
           _tag: 'Input',
@@ -99,7 +106,7 @@ const membersTab: PanelTab = {
           return {
             id: host.id,
             cells: {
-              device: context.name(host.id),
+              device: host.id,
               member: onOff(Option.isSome(maybeMesh)),
               name: Option.match(maybeMesh, {
                 onNone: () => host.id,

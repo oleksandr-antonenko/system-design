@@ -9,6 +9,7 @@ import { findHost, macsOf } from '../../net/doc'
 import type { Device, DeviceId, NetState } from '../../net/model'
 import {
   type Hop,
+  type Intent,
   type StackLevel,
   TableChange,
   sourceOf,
@@ -778,6 +779,20 @@ const certCards = <ParentMessage>(
     : []
 }
 
+/** Что проверяет строка прогона: адрес страницы или «хост:port». */
+const rowTarget = (intent: Intent): string =>
+  intent._tag === 'Browse' ||
+  intent._tag === 'Fetch' ||
+  intent._tag === 'Submit'
+    ? intent.url
+    : intent._tag === 'Connect'
+      ? `${intent.host}:${intent.port}`
+      : intent._tag === 'Ping' || intent._tag === 'Traceroute'
+        ? intent.host
+        : intent._tag === 'Resolve' || intent._tag === 'Query'
+          ? intent.name
+          : ''
+
 const finalRun = <ParentMessage>(
   picture: Picture,
   h: HtmlBuilder<ParentMessage>,
@@ -824,17 +839,35 @@ const finalRun = <ParentMessage>(
                           ([row, result]) => {
                             const isAsExpected =
                               result.delivered === (row.expect === 'reach')
+                            const target = rowTarget(row.intent)
                             return h.keyed('tr')(
                               row.id,
-                              [h.Class(isAsExpected ? 'ok' : 'bad')],
+                              [
+                                h.Class(
+                                  `${isAsExpected ? 'ok' : 'bad'} ${row.expect}`,
+                                ),
+                              ],
                               [
                                 h.td(
                                   [],
                                   [
-                                    Array.map(
-                                      result.devices,
-                                      picture.name,
-                                    ).join(' → '),
+                                    ...(target === ''
+                                      ? []
+                                      : [
+                                          h.span(
+                                            [h.Class('pb-run-target')],
+                                            [target],
+                                          ),
+                                        ]),
+                                    h.span(
+                                      [h.Class('pb-run-path')],
+                                      [
+                                        Array.map(
+                                          result.devices,
+                                          picture.name,
+                                        ).join(' → '),
+                                      ],
+                                    ),
                                   ],
                                 ),
                                 h.td(

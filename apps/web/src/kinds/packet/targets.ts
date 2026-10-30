@@ -193,6 +193,8 @@ const elementFeatures = (item: PacketStage): ReadonlyArray<string> =>
                       ? ['board.floorPlan']
                       : item._tag === 'Builder'
                         ? ['envelope.builder']
+                        : item._tag === 'Place'
+                          ? ['board.sandbox']
                         : ['board.devices']
 
 /** Элемент сцены и то, что он показывает: договорённость о шифре в показе

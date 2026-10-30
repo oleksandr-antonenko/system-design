@@ -57,7 +57,8 @@ export type QuizTexts<
 > = Readonly<{
   question: string
   explain: string
-  /** Почему неверен выбранный вариант: в карточке после попытки. */
+  /** Почему неверен выбранный вариант: в карточке после попытки. У квиза с
+      несколькими ответами — и почему верен пропущенный вариант. */
   wrong?: Readonly<Partial<Record<Candidate, string>>>
   /** Короткая метка на доске у выбранного и у верного ответа. */
   tags?: Readonly<Partial<Record<Candidate, string>>>

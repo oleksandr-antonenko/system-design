@@ -398,6 +398,27 @@ describe('board tools', () => {
       ),
     )
   })
+
+  test('a ready block on its place is one move of all its operations; not in a quiz', () => {
+    const block = [
+      add(
+        router('hosted', 600, 300, { lan: '10.0.0.1/24', wan: '198.51.100.7' }),
+      ),
+      cable('internet', 'hosted'),
+    ]
+    story(
+      update(input('Edit')),
+      given(Board.initialModel),
+      message(Board.Message.ClickedPlace({ ops: block })),
+      expectOutMessage(BoardOutMessage.ProposedOps(block)),
+    )
+    story(
+      update(input('Pick')),
+      given(Board.initialModel),
+      message(Board.Message.ClickedPlace({ ops: block })),
+      expectNoOutMessage(),
+    )
+  })
 })
 
 describe('a move with its own trace', () => {
