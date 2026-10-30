@@ -14,64 +14,64 @@ const usd = (value: number) => `${value.toFixed(2).replace('.', ',')} $`
 const crossing = simulationRules.regionCrossingMs
 
 export default {
-  title: 'Regionai ir CAP',
+  title: 'Multi-region ir CAP',
   summary:
-    'Antrasis regionas tolimiems naudotojams ir duomenų centro praradimo atvejui, asinchroninė replikacija ir pasirinkimas tarp suderinamumo ir prieinamumo.',
+    'Antrasis regionas tolimiems naudotojams ir duomenų centro praradimo atvejui, asinchroninė replikacija ir pasirinkimas tarp consistency ir availability.',
   steps: {
     'one-region': {
       title: 'Naudotojai už vandenyno',
       body: ({ sim }) =>
-        `Paslauga išaugo: prie [[users-eu|naudotojų]] Europoje prisidėjo tiek pat [[users-us|naudotojų Amerikoje]]. O visa sistema vis dar veikia viename duomenų centre Europoje. Lentoje tai **regionas** „Europa“: jo blokai stovi pažymėtoje zonoje.
+        `Paslauga išaugo: prie naudotojų Europoje ([[users-eu|users-eu]]) prisidėjo tiek pat naudotojų Amerikoje ([[users-us|users-us]]). O visa sistema vis dar veikia viename duomenų centre Europoje. Lentoje tai **regionas** (region) „Europa“: jo blokai stovi pažymėtoje zonoje.
 
-Šviesa optiniame kabelyje Atlantą kerta pirmyn ir atgal maždaug per ${crossing} ms. Kiekviena amerikiečių užklausa juos sumoka dar prieš serveriui pradedant darbą. Dabar p95 yra ${p95(sim)}: lėčiausios užklausos ateina iš Amerikos, ir ${crossing} ms kiekvienoje iš jų – tai tiesiog kelias.
+Šviesa optiniame kabelyje Atlantą kerta pirmyn ir atgal maždaug per ${crossing} ms. Kiekviena amerikiečių užklausa juos sumoka dar prieš tai, kai server pradeda darbą. Dabar p95 yra ${p95(sim)}: lėčiausios užklausos ateina iš Amerikos, ir ${crossing} ms kiekvienoje iš jų – tai tiesiog kelias.
 
-Puslapis – ne viena užklausa: ryšio užmezgimas, šifravimas, pats puslapis ir jo duomenys reikalauja kelių kelionių pirmyn ir atgal paeiliui, todėl atstumą naudotojas pajunta kelis kartus.`,
+Puslapis – ne viena užklausa: ryšio užmezgimas, šifravimas, pats puslapis ir jo duomenys reikalauja kelių kelionių pirmyn ir atgal (**round trip**) paeiliui, todėl atstumą naudotojas pajunta kelis kartus.`,
     },
     'region-down': {
       title: 'Sugenda visas regionas',
       body: `Duomenų centrai irgi sugenda ištisai: dingsta elektra, nutraukiamas kabelis, klaidinga konfigūracija iškart paskleidžiama visoms mašinoms. Debesijos paslaugų teikėjai tokius incidentus skelbia kasmet, ir regionas gali neveikti kelias valandas.
 
-Dabar neveikia visa Europa: [[lb-1|balansuotuvas]], abu serveriai ir [[db|duomenų bazė]]. Atsarginis serveris nepadeda, jei stovi tame pačiame pastate. Klaidos 100 %, ir nukentėjo amerikiečiai: visa paslauga gyveno viename regione.`,
+Dabar neveikia visa Europa: [[lb-1|load balancer]], abu servers ir [[db|database]]. Atsarginis server nepadeda, jei stovi tame pačiame pastate. Klaidos 100 %, ir nukentėjo amerikiečiai: visa paslauga gyveno viename regione.`,
     },
     'second-region': {
       title: 'Antrasis regionas',
-      body: `Išeitis – paleisti paslaugą dviejuose regionuose. Artimiausio veikiančio regiono adresą naudotojai gauna iš **DNS** su sveikatos patikra: amerikiečiai keliauja į JAV, europiečiai – į Europą, o jei regionas nustoja atsakyti, DNS visus nukreipia į kitą.
+      body: `Išeitis – paleisti paslaugą dviejuose regionuose. Tokia schema vadinama **multi-region** (daugiaregione). Artimiausio veikiančio regiono adresą naudotojai gauna iš **DNS** su **health check** (sveikatos patikra): amerikiečiai keliauja į JAV, europiečiai – į Europą, o jei regionas nustoja atsakyti, DNS visus nukreipia į kitą.
 
-Serverius JAV pridėti lengva: jie neturi būsenos. Su duomenimis sudėtingiau. Ten sukūrėme bazės [[replica-1|repliką]]. [[db|Duomenų bazė]] Europoje lieka **lyderė** (leader): ji priima visus įrašus ir siunčia pakeitimus replikai. Įrašų tvarka turi būti nustatoma vienoje vietoje, todėl įrašai iš Amerikos vis tiek keliaus per vandenyną. Lentoje serveris, sujungtas su baze ir replika, rašo tik į lyderę, o skaitymą dalija tarp jų po lygiai.
+Servers JAV pridėti lengva: jie **stateless** (neturi savo būsenos). Su duomenimis sudėtingiau. Ten sukūrėme [[replica-1|read replica]]. [[db|Database]] Europoje lieka **leader** (lyderė, dar vadinama primary): ji priima visus įrašus ir siunčia pakeitimus į read replica. Įrašų tvarka turi būti nustatoma vienoje vietoje, todėl įrašai iš Amerikos vis tiek keliaus per vandenyną. Lentoje server, sujungtas su database ir read replica, rašo tik į leader, o skaitymą dalija tarp jų po lygiai.
 
-Replikacija **asinchroninė**: lyderė pirmiausia patvirtina įrašą naudotojui, o replikai jį perduoda šiek tiek vėliau. Replika atsilieka, dažniausiai milisekundėmis, kartais sekundėmis.`,
+Replikacija **asinchroninė** (asynchronous): leader pirmiausia patvirtina įrašą naudotojui, o į read replica jį perduoda šiek tiek vėliau. Read replica atsilieka, dažniausiai milisekundėmis, kartais sekundėmis: tai **replication lag** (replikos atsilikimas).`,
     },
     'build-us': {
       title: 'Užduotis: JAV regionas',
-      body: `Sukurkite sistemos kopiją JAV: balansuotuvą ir serverius, kurie dirba su replika. Statykite blokus zonos „JAV“ viduje: blokas gauna tos zonos regioną, kurioje jį atleidžiate.
+      body: `Sukurkite sistemos kopiją JAV: load balancer ir servers, kurie dirba su read replica. Statykite blokus zonos „JAV“ viduje: blokas gauna tos zonos regioną, kurioje jį atleidžiate.
 
 Tada praneškite naudotojams apie naują įėjimą. Amerikiečiai jį rinksis, nes jis arčiau. Europiečiams jis reikalingas kaip atsarginis išėjimas tai dienai, kai Europa suges.`,
     },
     failover: {
       title: 'Europa vėl sugedo',
       body: ({ sim }) =>
-        `Europa vėl neveikia. Šįkart DNS nukreipė [[users-eu|europiečius]] į JAV. Jie aptarnaujami, bet kiekviena jų užklausa dabar sumoka ${crossing} ms už vandenyną: p95 ${p95(sim)}, klaidos ${percent(sim.errorRate)}.
+        `Europa vėl neveikia. Šįkart DNS nukreipė europiečius ([[users-eu|users-eu]]) į JAV. Jie aptarnaujami, bet kiekviena jų užklausa dabar sumoka ${crossing} ms už vandenyną: p95 ${p95(sim)}, klaidos ${percent(sim.errorRate)}.
 
-Visas bazės darbas perėjo [[replica-1|replikai]]. JAV serveriai aptiko, kad lyderė nebeveikia, ir replika buvo **paaukštinta** (promoted): dabar ji priima ir įrašus, ir skaitymą. Lentoje tai įvyksta akimirksniu. Realybėje tai trunka sekundes ar minutes: kažkas turi pastebėti gedimą ir nuspręsti, kad Europa tikrai prarasta.
+Visą database darbą perėmė [[replica-1|read replica]]. JAV servers aptiko, kad leader nebeveikia, ir read replica buvo **paaukštinta** (promote): dabar ji priima ir įrašus, ir skaitymą. Tai ir yra **failover** (perjungimas į rezervą). Lentoje tai įvyksta akimirksniu. Realybėje tai trunka sekundes ar minutes: kažkas turi pastebėti gedimą ir nuspręsti, kad Europa tikrai prarasta.
 
 Išliko ne viskas. Replikacija buvo asinchroninė, todėl paskutiniai įrašai prieš gedimą naudotojams buvo patvirtinti, bet Amerikos nepasiekė. Jie prarasti arba geriausiu atveju įstrigo Europoje, kol ji sugrįš. Kiek duomenų leidžiama prarasti per gedimą, vadinama **RPO** (recovery point objective). Esant asinchroninei replikacijai jis didesnis už nulį.`,
     },
     cap: {
-      title: 'CAP: suderinamumas ar prieinamumas',
-      body: `Europa sugrįžo, ir lentoje jos [[db|duomenų bazė]] iškart vėl tapo lydere. Realybėje tai sunkiausia akimirka: senoji lyderė nieko nežino apie įrašus, kuriuos Amerika priėmė per gedimą, o Amerikos nepasiekė paskutiniai Europos įrašai. Prieš vėl priimant įrašus kažkas turi nuspręsti, kuri kopija teisinga.
+      title: 'CAP: consistency ar availability',
+      body: `Europa sugrįžo, ir lentoje jos [[db|database]] iškart vėl tapo leader. Realybėje tai sunkiausia akimirka: database Europoje nieko nežino apie įrašus, kuriuos Amerika priėmė per gedimą, o Amerikos nepasiekė paskutiniai Europos įrašai. Prieš vėl priimant įrašus kažkas turi nuspręsti, kuri kopija teisinga.
 
-Dar blogiau – **tinklo atskyrimas** (partition): ryšys tarp regionų nutrūksta, bet abu veikia. **CAP teorema** teigia: tinklo atskyrimo metu sistema su duomenų kopijomis negali būti kartu **suderinta** (consistency: kiekvienas skaitymas mato naujausią įrašą) ir **prieinama** (availability: kiekviena užklausa gauna atsakymą). Tenka rinktis.
+Dar blogiau – **network partition** (tinklo atskyrimas): ryšys tarp regionų nutrūksta, bet abu veikia. **CAP teorema** (CAP theorem) teigia: per partition sistema su duomenų kopijomis negali kartu išlaikyti **consistency** (suderinamumo: kiekvienas skaitymas mato naujausią įrašą) ir **availability** (prieinamumo: kiekviena užklausa gauna atsakymą). Tenka rinktis.
 
-**Suderinamumas:** Amerika atsisako priimti įrašus, kol ryšys grįš. Amerikiečiai mato klaidas, užtat kopijos nesiskiria. Taip elgiasi bankai ir biržos. **Prieinamumas:** abu regionai toliau priima įrašus, o kopijos vėliau suderinamos: laimi naujausias įrašas arba kopijos sujungiamos pagal dalykinės srities taisykles. Du krepšelius galima sujungti, dviejų nurašymų iš vienos sąskaitos – ne. Taip elgiasi socialiniai tinklai ir parduotuvės.
+**Consistency:** Amerika atsisako priimti įrašus, kol ryšys grįš. Amerikiečiai mato klaidas, užtat kopijos nesiskiria. Taip elgiasi bankai ir biržos. **Availability:** abu regionai toliau priima įrašus, o kopijos vėliau suderinamos: laimi naujausias įrašas arba kopijos sujungiamos pagal dalykinės srities taisykles. Du krepšelius galima sujungti, dviejų nurašymų iš vienos sąskaitos – ne. Taip elgiasi socialiniai tinklai ir parduotuvės.
 
-Todėl automatinis paaukštinimas pavojingas. Jei Amerika tinklo atskyrimą palaikys gedimu, lyderių bus dvi: tai **split brain** („suskilusios smegenys“). Tikros sistemos repliką paaukština tik tada, kai už tai balsuoja stebėtojų dauguma, o stebėtojai dažnai statomi trečiame regione.`,
+Todėl automatiškai paaukštinti read replica pavojinga. Jei Amerika partition palaikys gedimu, abu regionai taps leader: tai **split brain** („suskilusios smegenys“). Tikros sistemos read replica paaukština tik tada, kai už tai balsuoja stebėtojų dauguma, o stebėtojai dažnai statomi trečiame regione.`,
     },
     summary: {
       title: 'Santrauka',
       body: ({ sim }) =>
-        `Antrasis regionas davė du dalykus: tolimi naudotojai aptarnaujami arti jų, o paslauga išgyvena viso regiono praradimą. p95 sumažėjo iki ${p95(sim)}. Lėčiausios užklausos dabar – įrašai iš Amerikos, keliaujantys pas [[db|lyderę]], ir ta skaitymo dalis, kurią JAV serveriai siunčia ten pat.
+        `Antrasis regionas davė du dalykus: tolimi naudotojai aptarnaujami arti jų, o paslauga išgyvena viso regiono praradimą. p95 sumažėjo iki ${p95(sim)}. Lėčiausios užklausos dabar – įrašai iš Amerikos, keliaujantys pas leader, į [[db|database]] Europoje, ir ta skaitymo dalis, kurią JAV servers siunčia ten pat.
 
-Kaina: sistema kainuoja ${usd(sim.costPerHour)} per valandą vietoj 1,90 $, įrašai vis dar kerta vandenyną, o kiekviena duomenų kopija atneša pasirinkimą tarp suderinamumo ir prieinamumo. Kad ir įrašai taptų vietiniai, reikia lyderio kiekviename regione ir konfliktų sprendimo arba duomenis reikia padalyti pagal geografiją: europiečių paskyros gyvena Europoje, amerikiečių – JAV. Tai skaidymas (sharding, 9 pamoka), pritaikytas geografijai.
+Kaina: sistema kainuoja ${usd(sim.costPerHour)} per valandą vietoj 1,90 $, įrašai vis dar kerta vandenyną, o kiekviena duomenų kopija atneša pasirinkimą tarp consistency ir availability. Kad ir įrašai taptų vietiniai, reikia leader kiekviename regione ir konfliktų sprendimo (conflict resolution) arba duomenis reikia padalyti pagal geografiją: europiečių paskyros gyvena Europoje, amerikiečių – JAV. Tai sharding (9 pamoka), pritaikytas geografijai.
 
 12 pamokoje vienas įvykių srautas maitins paiešką ir analitiką.`,
     },
@@ -81,34 +81,34 @@ Kaina: sistema kainuoja ${usd(sim.costPerHour)} per valandą vietoj 1,90 $, įra
     farTrip: sim =>
       `${n(incoming(sim, 'users-us'))} rps · +${crossing} ms už vandenyno`,
     noAnswer: sim => `atsakymo nėra · klaidos ${percent(sim.errorRate)}`,
-    leader: sim => `lyderė · ${n(incoming(sim, 'db'))} rps`,
-    replicaIdle: sim => `bazės kopija · ${n(incoming(sim, 'replica-1'))} rps`,
+    leader: sim => `leader · ${n(incoming(sim, 'db'))} rps`,
+    replicaIdle: sim => `database kopija · ${n(incoming(sim, 'replica-1'))} rps`,
     promoted: sim => `paaukštinta · ${n(incoming(sim, 'replica-1'))} rps`,
     detour: sim =>
       `→ JAV · +${crossing} ms · klaidos ${percent(sim.errorRate)}`,
     oldLeader: () => 'grįžo · be JAV įrašų',
     lag: sim => `${n(incoming(sim, 'replica-1'))} rps · atsilieka`,
-    writesHere: () => 'lyderė · čia keliauja kiekvienas įrašas',
+    writesHere: () => 'leader · čia keliauja kiekvienas įrašas',
   },
   tasks: {
     'build-us': {
       prompt:
         'Sukurkite sistemos kopiją JAV: amerikiečiai turi būti aptarnaujami namie, o paslauga turi išgyventi Europos praradimą.',
       goals: {
-        'two-entrances': 'Naudotojai sujungti su dviem balansuotuvais',
-        'reads-replica': 'Serveris sujungtas su replika',
+        'two-entrances': 'Users sujungti su dviem load balancers',
+        'reads-replica': 'Server sujungtas su read replica',
         'holds-load': 'Atlaiko 500 rps, kai klaidų mažiau nei 1 %',
         fast: 'p95 ne daugiau kaip 160 ms esant 500 rps',
         'survives-eu':
           'Išgyvena Europos praradimą esant 500 rps, kai klaidų ne daugiau kaip 1 %',
       },
       hints: [
-        'Amerikiečiams viskas reikalinga arti: įėjimas, serveriai ir duomenys. Duomenys jau yra: replika zonoje „JAV“.',
-        'Pastatykite zonoje „JAV“ balansuotuvą ir du serverius: kai Europa suges, jie priims visus 500 rps. Sujunkite balansuotuvą su abiem serveriais, o kiekvieną serverį – su baze (įrašai) ir su replika. Tada sujunkite abi naudotojų grupes su naujuoju balansuotuvu.',
+        'Amerikiečiams viskas reikalinga arti: įėjimas, servers ir duomenys. Duomenys jau yra: read replica zonoje „JAV“.',
+        'Pastatykite zonoje „JAV“ load balancer ir du servers: kai Europa suges, jie priims visus 500 rps. Sujunkite load balancer su abiem servers, o kiekvieną server – su database (įrašai) ir su read replica. Tada sujunkite abu blokus „Users“ su naujuoju load balancer.',
         'Zonoje „JAV“ atsirado punktyrinis kontūras. Pastatykite blokus ten ir nutieskite pažymėtus ryšius.',
       ],
       solvedNote:
-        'Amerikiečiai aptarnaujami namie. Kai Europa sugenda, JAV pusė priima visus, o replika perima įrašus.',
+        'Amerikiečiai aptarnaujami namie. Kai Europa sugenda, JAV pusė priima visus, o read replica perima įrašus.',
     },
   },
 } satisfies LessonTexts<typeof lesson>
