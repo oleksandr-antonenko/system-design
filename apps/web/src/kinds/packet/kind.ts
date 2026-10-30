@@ -53,7 +53,9 @@ const opText = (op: PacketOp): string =>
 // MOVES
 
 /** Ход ученика со своей сценой: открытая страница или трассы команды
-    терминала (`ping`, `curl`) проигрываются на доске. */
+    терминала (`ping`, `curl`) проигрываются на доске. Одинаковые конверты
+    команды (три эха ping) проигрываются один раз: доска показывает первое
+    эхо, остальные строки печатает терминал. */
 const moveStage = (
   before: PacketDoc,
   op: PacketOp,
@@ -62,8 +64,14 @@ const moveStage = (
     ? [{ _tag: 'Play', intent: op.intent }]
     : op._tag === 'RunCommand'
       ? Array.map(
-          runCommand(before.doc, before.state, op.device, op.line).traces,
-          (traced): PacketStage => ({ _tag: 'Play', intent: traced.intent }),
+          Array.dedupeWith(
+            Array.map(
+              runCommand(before.doc, before.state, op.device, op.line).traces,
+              traced => traced.intent,
+            ),
+            (left, right) => JSON.stringify(left) === JSON.stringify(right),
+          ),
+          (intent): PacketStage => ({ _tag: 'Play', intent }),
         )
       : []
 

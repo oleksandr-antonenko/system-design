@@ -47,6 +47,22 @@ export const terminalFeatures = (
         ),
       )
 
+/** Детали вывода, а не команды: их открывает курс отдельно. */
+const outputDetails: ReadonlyArray<TerminalFeature> = ['ping.ttl', 'ip.mac']
+
+/** Распечатка на доске (`printout`) печатает любую команду, а детали вывода —
+    только открытые: в уроке 4 у ping нет `ttl=`, он появится в уроке 8. */
+export const printoutFeatures = (
+  unlocked: ReadonlyArray<string>,
+): ReadonlyArray<TerminalFeature> => {
+  const open = terminalFeatures(unlocked)
+  return Array.filter(
+    allFeatures,
+    feature =>
+      !Array.contains(outputDetails, feature) || Array.contains(open, feature),
+  )
+}
+
 /** Кнопки-подсказки: как набирают открытую команду. С пробелом в конце —
     команде нужен адрес. */
 const suggestionOf: ReadonlyArray<readonly [TerminalFeature, string]> = [

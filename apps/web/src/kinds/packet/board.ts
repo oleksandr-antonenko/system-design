@@ -3,7 +3,8 @@ import type { Update } from 'foldkit'
 import { defineTaggedUnion } from 'foldkit/schema'
 import { modifyFields } from 'foldkit/struct'
 
-import { cable, move, send, unplug } from '../../net/build'
+import { cable, move, send, setLinkUp, unplug } from '../../net/build'
+import { linkBetween } from '../../net/doc'
 import { Intent, StackLevel } from '../../net/packet'
 import { type BoardInput, BoardOutMessage } from '../contract'
 import type { PacketTypes } from '../types'
@@ -125,6 +126,11 @@ const propose = (model: Model, ops: ReadonlyArray<PacketOp>): UpdateReturn => ({
   model,
   outMessage: BoardOutMessage.ProposedOps(ops),
 })
+
+/** Между устройствами лежит выдернутый кабель: инструмент «кабель»
+    вставляет его обратно, а не кладёт второй (урок 4). */
+const isUnplugged = (input: Input, a: string, b: string): boolean =>
+  Option.exists(linkBetween(input.doc.doc, a, b), link => !link.up)
 
 const toggle = (
   values: ReadonlyArray<string>,
@@ -349,11 +355,19 @@ export const update =
                       modifyFields(model, {
                         tool: () => Tool.Cable({ maybeFrom: Option.none() }),
                       }),
-                      [cable(from, id)],
+                      [
+                        isUnplugged(input, from, id)
+                          ? setLinkUp(from, id, true)
+                          : cable(from, id),
+                      ],
                     ),
             }),
       ClickedUnplug: ({ a, b }) =>
         input.mode === 'Edit' ? propose(model, [unplug(a, b)]) : { model },
+      ClickedPlugIn: ({ a, b }) =>
+        input.mode === 'Edit'
+          ? propose(model, [setLinkUp(a, b, true)])
+          : { model },
       PressedMoveKey: ({ id, x, y }) =>
         input.mode === 'Edit' ? propose(model, [move(id, x, y)]) : { model },
       GrabbedDevice: ({ id, x, y }) =>

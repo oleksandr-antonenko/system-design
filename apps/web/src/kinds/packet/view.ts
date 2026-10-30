@@ -442,10 +442,27 @@ const linkView = <ParentMessage>(
     isLayerLink(picture, link.id)
   const mark = Array.findLast(picture.marks, found => found.target === target)
   const isPick = isCandidate(picture, target)
+  const isPlugIn =
+    picture.context.mode === 'Edit' && !link.isUp && link.medium === 'cable'
   const isUnplugTool =
     picture.context.mode === 'Edit' &&
     picture.model.tool._tag === 'Cable' &&
     link.medium === 'cable'
+  const isPlugGhost =
+    isPlugIn &&
+    Option.exists(
+      picture.context.maybeTask,
+      task =>
+        task.isGhostShown &&
+        Array.some(
+          task.solution,
+          op =>
+            op._tag === 'SetLinkUp' &&
+            op.up &&
+            ((op.a === link.a && op.b === link.b) ||
+              (op.a === link.b && op.b === link.a)),
+        ),
+    )
   const classes = [
     'pb-link',
     link.medium,
@@ -469,19 +486,25 @@ const linkView = <ParentMessage>(
             [h.Class(classes), h.Attribute('d', link.d)],
             [h.title([], [label])],
           ),
-          ...(isPick || isUnplugTool
+          ...(isPick || isPlugIn || isUnplugTool
             ? [
                 h.path([
-                  h.Class(`pb-link-hit${isPick ? ' cand' : ''}`),
+                  h.Class(
+                    `pb-link-hit${isPick ? ' cand' : isPlugIn ? ' plug' : ''}${isPlugGhost ? ` ghost${picture.context.isReducedMotion ? '' : ' pulse'}` : ''}`,
+                  ),
                   h.Attribute('d', link.d),
                   ...button(
                     draw,
-                    isUnplugTool
-                      ? picture.context.ui.packetBoard.tools.unplug(label)
-                      : label,
+                    isPick
+                      ? label
+                      : isPlugIn
+                        ? picture.context.ui.packetBoard.tools.plugIn(label)
+                        : picture.context.ui.packetBoard.tools.unplug(label),
                     isPick
                       ? send(candidateMessage(picture, target))
-                      : send(Message.ClickedUnplug({ a: link.a, b: link.b })),
+                      : isPlugIn
+                        ? send(Message.ClickedPlugIn({ a: link.a, b: link.b }))
+                        : send(Message.ClickedUnplug({ a: link.a, b: link.b })),
                   ),
                 ]),
               ]

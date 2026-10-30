@@ -165,6 +165,7 @@ export const packetBoardEn: PacketBoardStrings = {
       'Press a device, then another one: a cable will connect them. Press a cable to unplug it.',
     cableFrom: device => `Cable from “${device}”: press the second device.`,
     unplug: link => `Unplug cable ${link}`,
+    plugIn: link => `Plug in cable ${link}`,
     move: 'Move devices',
     locked: 'cannot move',
     moveHint: 'Drag a device, or select it and press the arrow keys.',

@@ -164,6 +164,7 @@ export const packetBoardLt: PacketBoardStrings = {
       'Paspauskite įrenginį, paskui kitą: tarp jų atsiras kabelis. Paspauskite kabelį, kad jį ištrauktumėte.',
     cableFrom: device => `Kabelis nuo „${device}“: paspauskite antrą įrenginį.`,
     unplug: link => `Ištraukti kabelį ${link}`,
+    plugIn: link => `Įkišti kabelį ${link}`,
     move: 'Perkelti įrenginius',
     locked: 'nejuda',
     moveHint: 'Nutempkite įrenginį arba pasirinkite jį ir spauskite rodykles.',

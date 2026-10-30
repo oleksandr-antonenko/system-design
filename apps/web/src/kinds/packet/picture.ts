@@ -122,6 +122,19 @@ const deviceName = (context: Context, id: string): string =>
 const isUnlocked = (context: Context, feature: string): boolean =>
   Array.contains(context.unlocked, feature)
 
+/** Адрес устройства виден с урока 2; адреса транзитных роутеров — с урока 8
+    вместе с таблицами маршрутов: в уроке 4 у цепочки только имена. */
+export const isAddressOpen = (
+  context: Readonly<{ doc: World; unlocked: ReadonlyArray<string> }>,
+  id: DeviceId,
+): boolean =>
+  Array.contains(context.unlocked, 'board.addresses') &&
+  (Array.contains(context.unlocked, 'board.routes') ||
+    !Array.some(
+      context.doc.doc.devices,
+      device => device.id === id && device._tag === 'Transit',
+    ))
+
 const nodeText =
   (context: Context, state: NetState, hidden: ReadonlyArray<string>) =>
   (id: DeviceId): NodeText => {
@@ -131,7 +144,7 @@ const nodeText =
       onSome: label => label.note ?? '',
     })
     const isAddressShown =
-      isUnlocked(context, 'board.addresses') &&
+      isAddressOpen(context, id) &&
       !Array.contains(hidden, 'addresses') &&
       !Array.contains(hidden, id)
     const isOffline =

@@ -2,8 +2,17 @@ import { Option } from 'effect'
 import { expectOutMessage, given, message, model, story } from 'foldkit/story'
 import { describe, expect, test } from 'vitest'
 
-import { cable, move, send } from '../../net/build'
+import {
+  add,
+  cable,
+  move,
+  router,
+  send,
+  setLinkUp,
+  transit,
+} from '../../net/build'
 import { Intent } from '../../net/packet'
+import { buildWorld } from '../../net/testing'
 import { emptyWorld } from '../../net/world'
 import { type BoardInput, BoardOutMessage } from '../contract'
 import type { PacketTypes } from '../types'
@@ -198,6 +207,50 @@ describe('board tools', () => {
       expectOutMessage(
         BoardOutMessage.ProposedOps([cable('printer', 'router')]),
       ),
+    )
+  })
+
+  test('an unplugged cable goes back in: pressed, or joined again with the cable tool', () => {
+    const unplugged: BoardInput<PacketTypes> = {
+      doc: buildWorld([
+        add(
+          router('router', 300, 300, {
+            lan: '192.168.1.1/24',
+            wan: '203.0.113.7',
+          }),
+        ),
+        add(transit('isp', 490, 300, { ip: '203.0.113.1' })),
+        cable('router', 'isp'),
+        setLinkUp('router', 'isp', false),
+      ]),
+      mode: 'Edit',
+      pickable: [],
+    }
+    story(
+      update(unplugged),
+      given(Board.initialModel),
+      message(Board.Message.ClickedPlugIn({ a: 'router', b: 'isp' })),
+      expectOutMessage(
+        BoardOutMessage.ProposedOps([setLinkUp('router', 'isp', true)]),
+      ),
+    )
+    story(
+      update(unplugged),
+      given(Board.initialModel),
+      message(Board.Message.ClickedCableTool()),
+      message(Board.Message.ClickedCableEnd({ id: 'isp' })),
+      message(Board.Message.ClickedCableEnd({ id: 'router' })),
+      expectOutMessage(
+        BoardOutMessage.ProposedOps([setLinkUp('isp', 'router', true)]),
+      ),
+    )
+    story(
+      update({ ...unplugged, mode: 'View' }),
+      given(Board.initialModel),
+      message(Board.Message.ClickedPlugIn({ a: 'router', b: 'isp' })),
+      model(next => {
+        expect(next).toEqual(Board.initialModel)
+      }),
     )
   })
 
