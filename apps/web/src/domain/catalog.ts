@@ -13,6 +13,7 @@ export const ComponentKind = Schema.Literals([
   'db',
   'replica',
   'search',
+  'storage',
 ])
 export type ComponentKind = typeof ComponentKind.Type
 
@@ -37,6 +38,7 @@ export const componentName: Readonly<Record<ComponentKind, string>> = {
   db: 'Database',
   replica: 'Read replica',
   search: 'Search index',
+  storage: 'Object storage',
 }
 
 export const Region = Schema.Literals(['eu', 'us', 'asia'])
@@ -58,13 +60,13 @@ export const catalog: Readonly<Record<ComponentKind, ComponentSpec>> = {
     rank: 0,
     capacity: Number.POSITIVE_INFINITY,
     costPerHour: 0,
-    connectsTo: ['cdn', 'limiter', 'lb', 'server'],
+    connectsTo: ['cdn', 'limiter', 'lb', 'server', 'storage'],
   },
   cdn: {
     rank: 1,
     capacity: 20000,
     costPerHour: 0.2,
-    connectsTo: ['limiter', 'lb', 'server'],
+    connectsTo: ['limiter', 'lb', 'server', 'storage'],
   },
   limiter: {
     rank: 2,
@@ -92,10 +94,19 @@ export const catalog: Readonly<Record<ComponentKind, ComponentSpec>> = {
     costPerHour: 0.15,
     connectsTo: ['worker', 'search'],
   },
-  worker: { rank: 6, capacity: 200, costPerHour: 0.3, connectsTo: ['db'] },
+  worker: {
+    rank: 6,
+    capacity: 200,
+    costPerHour: 0.3,
+    connectsTo: ['db', 'storage'],
+  },
   db: { rank: 7, capacity: 1500, costPerHour: 1, connectsTo: [] },
   replica: { rank: 7, capacity: 1500, costPerHour: 0.6, connectsTo: [] },
   search: { rank: 7, capacity: 1500, costPerHour: 0.5, connectsTo: [] },
+  // Object storage (add-object-storage): файлы по ссылке. Пользователи
+  // загружают в неё по presigned URL, CDN берёт из неё промахи (origin),
+  // worker кладёт в неё результаты задач.
+  storage: { rank: 7, capacity: 50000, costPerHour: 0.05, connectsTo: [] },
 }
 
 export const hasFiniteCapacity = (kind: ComponentKind): boolean =>
@@ -104,6 +115,7 @@ export const hasFiniteCapacity = (kind: ComponentKind): boolean =>
 export const canConnect = (from: ComponentKind, to: ComponentKind): boolean =>
   catalog[from].connectsTo.includes(to)
 
-/** База, реплика и поисковый индекс — конец потока: дальше они не шлют. */
+/** База, реплика, поисковый индекс и object storage — конец потока:
+    дальше они не шлют. */
 export const isSink = (kind: ComponentKind): boolean =>
   Array.isReadonlyArrayEmpty(catalog[kind].connectsTo)

@@ -31,6 +31,8 @@ const kindHint: UiStrings['kindHint'] = {
   replica:
     'Skaitymo replika: duomenų bazės kopija, atsakanti į skaitymo užklausas',
   search: 'Paieškos indeksas: greitai randa įrašus pagal tekstą',
+  storage:
+    'Objektų saugykla: saugo failus – paveikslėlius, vaizdo įrašus, atsargines kopijas – ir atiduoda juos pagal nuorodą',
 }
 
 const regionName: UiStrings['regionName'] = {

@@ -128,6 +128,11 @@ const iconPaths: Readonly<Record<ComponentKind, ReadonlyArray<string>>> = {
     'M9 11v8c0 1.4 2.7 2.5 6 2.5s6-1.1 6-2.5v-8',
   ],
   search: ['M10.5 3.5a7 7 0 1 1 0 14a7 7 0 1 1 0-14z', 'M15.6 15.6l5.4 5.4'],
+  storage: [
+    'M3 6.5c0-1.4 4-2.5 9-2.5s9 1.1 9 2.5s-4 2.5-9 2.5s-9-1.1-9-2.5z',
+    'M3 6.5l2.6 12.6c.3 1.4 3 2.4 6.4 2.4s6.1-1 6.4-2.4L21 6.5',
+    'M8.5 13.5h7',
+  ],
 }
 
 const iconView = (kind: ComponentKind, h: HtmlBuilder<Message>): Html =>

@@ -28,6 +28,8 @@ const kindHint: UiStrings['kindHint'] = {
   db: 'Stores the system’s data',
   replica: 'A copy of the database that serves reads',
   search: 'Finds records by text quickly',
+  storage:
+    'Keeps files such as images, videos and backups and serves them by link',
 }
 
 const regionName: UiStrings['regionName'] = {

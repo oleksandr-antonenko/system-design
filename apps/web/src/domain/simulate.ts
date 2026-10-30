@@ -45,6 +45,7 @@ export type SimulationRules = Readonly<{
   cdnMs: number
   cacheHitMs: number
   deferredMs: number
+  storageMs: number
   regionCrossingMs: number
 }>
 
@@ -59,6 +60,7 @@ export const simulationRules: SimulationRules = {
   cdnMs: 12,
   cacheHitMs: 2,
   deferredMs: 2,
+  storageMs: 40,
   regionCrossingMs: 70,
 }
 
@@ -577,24 +579,58 @@ const handleEvents: Handler = (context, node, arrival, flow) => {
   })
 }
 
-// Worker пишет `writesPerJob` записей на задачу: больше 1 — fan-out,
-// меньше 1 — запись пачками.
+// Worker пишет `writesPerJob` записей на задачу в свои базы: больше 1 —
+// fan-out, меньше 1 — запись пачками. В свои object storage он кладёт по
+// одному объекту на задачу (add-object-storage).
 const handleWorker: Handler = (context, node, arrival) => {
   const served = Math.min(arrival.total, capacityOf(node))
+  const live = alive(context, targetNodes(context, node))
   return handled({
     served,
     dropped: arrival.total - served,
-    sends: spread(
-      served * context.doc.traffic.writesPerJob,
-      alive(context, ofKinds(targetNodes(context, node), ['db'])),
-      false,
-    ),
+    sends: [
+      ...spread(
+        served * context.doc.traffic.writesPerJob,
+        ofKinds(live, ['db']),
+        false,
+      ),
+      ...spread(served, ofKinds(live, ['storage']), false),
+    ],
   })
 }
 
 const handleStore: Handler = (_context, node, arrival) => {
   const served = Math.min(arrival.total, capacityOf(node))
   return handled({ served, dropped: arrival.total - served })
+}
+
+// Object storage (add-object-storage) держит поток как база, но запросы
+// пользователей приходят в неё напрямую (загрузка по presigned URL) или
+// промахами CDN. Их время ответа — путь до неё (в том числе переход между
+// регионами) плюс постоянные `storageMs`, и оно входит в p95.
+const handleStorage: Handler = (_context, node, arrival) => {
+  const served = Math.min(arrival.total, capacityOf(node))
+  return handled({
+    served,
+    dropped: arrival.total - served,
+    plans:
+      served > 0 && Array.isReadonlyArrayNonEmpty(arrival.parcels)
+        ? [
+            {
+              parcels: scaled(arrival.parcels, served / arrival.total),
+              maybeServer: Option.none(),
+              branches: [
+                {
+                  weight: 1,
+                  fixedMs: simulationRules.storageMs,
+                  maybeStore: Option.none(),
+                  crossings: 0,
+                },
+              ],
+            },
+          ]
+        : [],
+  })
 }
 
 const handlers: Readonly<Record<ComponentKind, Handler>> = {
@@ -610,6 +646,7 @@ const handlers: Readonly<Record<ComponentKind, Handler>> = {
   db: handleStore,
   replica: handleStore,
   search: handleStore,
+  storage: handleStorage,
 }
 
 const receive = (arrivals: Flow['arrivals'], send: Send): Flow['arrivals'] => {

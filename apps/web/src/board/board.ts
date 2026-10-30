@@ -137,6 +137,11 @@ const defaultSpots: Readonly<Record<ComponentKind, ReadonlyArray<Point>>> = {
     { x: 790, y: 515 },
     { x: 790, y: 130 },
   ],
+  storage: [
+    { x: 790, y: 515 },
+    { x: 790, y: 130 },
+    { x: 790, y: 280 },
+  ],
 }
 
 const freeSpot = (doc: BoardDoc, kind: ComponentKind): Point =>
