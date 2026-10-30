@@ -298,6 +298,26 @@ const looseMembers = (
     Array.map(device => device.id),
   )
 
+/** Containers хоста Docker стоят в доме своего хоста: зона Docker — внутри. */
+const withContainers = (
+  doc: NetDoc,
+  members: ReadonlyArray<DeviceId>,
+): ReadonlyArray<DeviceId> => [
+  ...members,
+  ...pipe(
+    doc.devices,
+    Array.filter(
+      device =>
+        device._tag === 'Host' &&
+        Option.exists(device.maybeContainer, info =>
+          Array.contains(members, info.host),
+        ) &&
+        !Array.contains(members, device.id),
+    ),
+    Array.map(device => device.id),
+  ),
+]
+
 const boxAround = (
   nodes: ReadonlyArray<NodeBox>,
 ): Option.Option<Readonly<{ x: number; y: number; w: number; h: number }>> =>
@@ -328,10 +348,13 @@ const zonesOf = (
     Array.findFirst(nodes, node => node.id === id)
   const lanZones = Array.getSomes(
     Array.map(routers, router => {
-      const members = Array.dedupe([
-        ...lanMembers(doc, router.id),
-        ...looseMembers(doc, routers, router),
-      ])
+      const members = withContainers(
+        doc,
+        Array.dedupe([
+          ...lanMembers(doc, router.id),
+          ...looseMembers(doc, routers, router),
+        ]),
+      )
       const kind = zoneKindOf(router)
       return Option.map(
         boxAround(Array.getSomes(Array.map(members, nodeOf))),

@@ -585,11 +585,16 @@ export const pictureOf = (context: Context, model: Model): Picture => {
     tone: 'info' as const,
     isPulsing: false,
   }))
-  const stageNotes = Array.map(stageItems(stage, 'Annotate'), item => ({
-    target: item.target,
-    text: context.annotationText(item.key),
-    tone: item.tone,
-  }))
+  // Подпись-функция с пустым текстом не рисуется: так подпись в задаче
+  // появляется и исчезает вместе с тем, что она описывает.
+  const stageNotes = Array.filter(
+    Array.map(stageItems(stage, 'Annotate'), item => ({
+      target: item.target,
+      text: context.annotationText(item.key),
+      tone: item.tone,
+    })),
+    note => note.text !== '',
+  )
   const quizNotes: ReadonlyArray<Note> = Option.match(quiz, {
     onNone: () => [],
     onSome: marks =>

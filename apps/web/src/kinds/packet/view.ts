@@ -11,6 +11,7 @@ import {
 } from '../../net/model'
 import { levelOf, sourceOf } from '../../net/packet'
 import { addressOf, wifiOf } from '../../net/topology'
+import { isContainerUp } from '../../net/trace'
 import type { BoardSlot, Tone } from '../contract'
 import type { PacketTypes } from '../types'
 import { addressesOf, isAddressQuestion, isSealed } from './envelope'
@@ -171,8 +172,67 @@ const zoneView = <ParentMessage>(
         ],
         [title],
       ),
+      ...(zone.kind === 'docker' ? doorViews(draw, zone) : []),
     ],
   )
+}
+
+const DOOR_CHAR = 6.4
+const DOOR_PAD = 16
+const DOOR_GAP = 8
+
+/** Port mapping хоста Docker: «дверь» на верхней рамке его зоны,
+    `8080 → app:3000`, справа налево. */
+const doorViews = <ParentMessage>(
+  draw: Draw<ParentMessage>,
+  zone: ZoneBox,
+): ReadonlyArray<Html> => {
+  const { h, picture } = draw
+  const publishes = Option.match(deviceOf(picture, zone.id), {
+    onNone: () => [],
+    onSome: device => (device._tag === 'Host' ? device.publishes : []),
+  })
+  const doors = Array.map(publishes, publish => {
+    const host =
+      publish.bind === '0.0.0.0'
+        ? `${publish.hostPort}`
+        : `${publish.bind}:${publish.hostPort}`
+    const text = `${host} → ${publish.container}:${publish.containerPort}`
+    return { text, width: text.length * DOOR_CHAR + DOOR_PAD }
+  })
+  const right = zone.x + zone.w - 12
+  return Array.map(doors, (door, index) => {
+    const end =
+      right -
+      Array.reduce(
+        Array.take(doors, index),
+        0,
+        (sum, before) => sum + before.width + DOOR_GAP,
+      )
+    return h.g(
+      [
+        h.Class('pb-door'),
+        h.Transform(`translate(${n(end - door.width)},${n(zone.y - 10)})`),
+        h.Role('img'),
+        h.AriaLabel(picture.context.ui.packetBoard.zone.door(door.text)),
+      ],
+      [
+        h.rect([
+          h.Attribute('width', n(door.width)),
+          h.Attribute('height', '20'),
+          h.Attribute('rx', '4'),
+        ]),
+        h.text(
+          [
+            h.Attribute('x', n(door.width / 2)),
+            h.Attribute('y', '14'),
+            h.TextAnchor('middle'),
+          ],
+          [door.text],
+        ),
+      ],
+    )
+  })
 }
 
 const planView = <ParentMessage>(
@@ -896,6 +956,7 @@ const nodeView = <ParentMessage>(
         device => device._tag === 'Host',
       ),
   )
+  const isDown = isRestarting(picture, node.id)
   const isHovered = Option.exists(
     picture.context.maybeHoveredRef,
     ref => ref === node.id,
@@ -920,7 +981,7 @@ const nodeView = <ParentMessage>(
         [
           'pb-node',
           isFlying ? 'hl' : '',
-          isOff ? 'off' : '',
+          isOff || isDown ? 'off' : '',
           isHovered || isLayer ? 'ref-hover' : '',
           isCableFrom || isCard ? 'selected' : '',
           isCand ? 'cand' : '',
@@ -1029,6 +1090,21 @@ const nodeView = <ParentMessage>(
     ],
   )
 }
+
+/** Container падает и перезапускается: рисуется бледным. */
+const isRestarting = (picture: Picture, id: DeviceId): boolean =>
+  picture.isOpen('board.dockerHost') &&
+  Option.exists(
+    deviceOf(picture, id),
+    device =>
+      device._tag === 'Host' &&
+      Option.isSome(device.maybeContainer) &&
+      !isContainerUp(
+        picture.context.doc.doc,
+        picture.context.run.settled,
+        device,
+      ),
+  )
 
 /** Новое в уроке устройство: справочная (урок 3), коммутатор (урок 7),
     транзит (урок 4) — с меткой «новое». */

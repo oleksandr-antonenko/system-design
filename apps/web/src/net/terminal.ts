@@ -34,7 +34,7 @@ import {
 import { Intent, type Outcome, type RouteLine, type Trace } from './packet'
 import { certFor } from './tls'
 import { IFACE, hostIface, ownAddresses, routeTable } from './topology'
-import { settle, trace } from './trace'
+import { isContainerUp, settle, trace } from './trace'
 
 // Терминал: чистый интерпретатор строки на устройстве. Вывод упрощён в
 // стиле Unix и не переводится; действие команды — операции свёртки.
@@ -1436,24 +1436,6 @@ const projectOf = (host: Host): string =>
     () => 'app',
   )
 
-const isUp = (doc: NetDoc, state: NetState, container: Host): boolean =>
-  Option.match(
-    Option.flatMap(container.maybeContainer, info => info.maybeNeeds),
-    {
-      onNone: () => true,
-      onSome: needs =>
-        trace(
-          doc,
-          state,
-          Intent.Connect({
-            from: container.id,
-            host: needs.host,
-            port: needs.port,
-          }),
-        )[0].outcome._tag === 'Delivered',
-    },
-  )
-
 const dockerPs = (doc: NetDoc, state: NetState, host: Host): CommandResult => {
   const project = projectOf(host)
   const rows = Array.map(containersOf(doc, host), container => {
@@ -1478,7 +1460,7 @@ const dockerPs = (doc: NetDoc, state: NetState, host: Host): CommandResult => {
       }),
       Array.join(', '),
     )
-    const up = isUp(doc, state, container)
+    const up = isContainerUp(doc, state, container)
     return line(
       `${containerId(container.id)}   ${image.padEnd(13, ' ')} ${(up ? 'Up 3 seconds' : 'Restarting (1) 4 seconds ago').padEnd(30, ' ')} ${ports.padEnd(24, ' ')} ${project}-${container.id}-1`,
       up ? 'ok' : 'symptom',
@@ -1523,7 +1505,7 @@ const dockerLogs = (
                 line(`${tag}Listening on 0.0.0.0:${port}`, 'ok'),
               ]),
             onSome: needs => {
-              const up = isUp(doc, state, container)
+              const up = isContainerUp(doc, state, container)
               const ip = isIp(needs.host)
                 ? needs.host
                 : needs.host === 'localhost'
@@ -1904,9 +1886,11 @@ export const runCommand = (
       ops: Option.match(findHost(doc, device), {
         onNone: () => [],
         onSome: host =>
-          Array.some(host.listeners, listener => listener.port === DEV_PORT)
-            ? [NetOp.StopListening({ device, proto: 'tcp', port: DEV_PORT })]
-            : [],
+          Option.isSome(host.maybeTunnel)
+            ? [NetOp.SetTunnel({ device, maybeTunnel: Option.none() })]
+            : Array.some(host.listeners, listener => listener.port === DEV_PORT)
+              ? [NetOp.StopListening({ device, proto: 'tcp', port: DEV_PORT })]
+              : [],
       }),
     })
   }
