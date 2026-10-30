@@ -152,11 +152,7 @@ export default defineLesson(packet, {
     {
       id: 'summary',
       ops: [],
-      stage: [
-        showTable('phone', 'contacts'),
-        annotate('phone', 'whereFrom', 'info'),
-        play(browse),
-      ],
+      stage: [annotate('dns', 'notAsked', 'info'), play(browse)],
     },
   ],
 })

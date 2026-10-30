@@ -63,7 +63,7 @@ Next, lesson 4: an envelope passes through several post offices. We will find ou
   },
   annotations: {
     siteName: () => 'shop.example',
-    whereFrom: () => 'the address came from the contacts',
+    notAsked: () => 'not asked: the address is already in the contacts',
   },
   quizzes: {
     'who-first': {

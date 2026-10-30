@@ -63,7 +63,7 @@ Toliau, 4 pamoka: vokas keliauja per kelis pašto skyrius. Sužinosime, kiek sky
   },
   annotations: {
     siteName: () => 'shop.example',
-    whereFrom: () => 'adresas paimtas iš kontaktų',
+    notAsked: () => 'neklausta: adresas jau kontaktuose',
   },
   quizzes: {
     'who-first': {

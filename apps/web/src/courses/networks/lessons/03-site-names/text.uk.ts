@@ -63,7 +63,7 @@ export default {
   },
   annotations: {
     siteName: () => 'shop.example',
-    whereFrom: () => 'адресу взято з контактів',
+    notAsked: () => 'не питали: адреса вже в контактах',
   },
   quizzes: {
     'who-first': {
