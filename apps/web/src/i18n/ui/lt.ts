@@ -41,6 +41,10 @@ const regionName: UiStrings['regionName'] = {
 
 const n = (value: number) => formatNumber('lt', Math.round(value))
 const percent = (ratio: number) => `${n(ratio * 100)} %`
+/** Доля профиля трафика: до десятых процента, чтобы 0,5 % не стало 1 %. */
+const share = (ratio: number) =>
+  `${formatNumber('lt', Math.round(ratio * 1000) / 10)} %`
+const count = (value: number) => formatNumber('lt', value)
 const perHour = (dollars: number) =>
   `${dollars.toFixed(2).replace('.', ',')} $/val.`
 const kindList = (kinds: ReadonlyArray<ComponentKind>) =>
@@ -116,6 +120,15 @@ export const lt = {
     ms: value => `${n(value)} ms`,
     percent,
     perHour,
+    trafficMix: 'Srauto sudėtis',
+    trafficKnob: {
+      writeShare: value => `rašymas ${share(value)}`,
+      deferredShare: value => `atidėtas rašymas ${share(value)}`,
+      cacheHitShare: value => `cache hit ${share(value)}`,
+      cdnStaticShare: value => `CDN statika ${share(value)}`,
+      jobsPerRequest: value => `užduočių užklausai ×${count(value)}`,
+      writesPerJob: value => `įrašų užduočiai ×${count(value)}`,
+    },
     pause: 'Pauzė',
     play: 'Srautas',
     speed: 'Greitis',
@@ -242,6 +255,8 @@ export const lt = {
       `Apkrovos dalį galima nustatyti tik blokui „Users“, o ${id} – kitas blokas.`,
     InvalidShare: ({ id }) =>
       `${id} apkrovos dalis turi būti skaičius, didesnis už nulį.`,
+    InvalidTraffic: ({ knob }) =>
+      `Srauto nustatymas ${knob} už ribų: dalys nuo 0 iki 1, rašymas ir atidėtas rašymas kartu ne daugiau kaip 1, skaitikliai nuo 0.`,
     RegionHasNoBlocks: ({ region }) =>
       `Regione „${regionName[region]}“ blokų nėra.`,
     GoalSlowResponse: ({ load, p95, max, hottest }) =>

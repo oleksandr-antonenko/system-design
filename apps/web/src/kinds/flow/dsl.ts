@@ -3,6 +3,7 @@ import { Option } from 'effect'
 import { type BoardDoc, BoardOp } from '../../domain/board'
 import type { ComponentKind, Region } from '../../domain/catalog'
 import type { SimResult } from '../../domain/simulate'
+import type { TrafficPatch } from '../../domain/traffic'
 import type { Tone } from '../contract'
 
 export { flow } from './kind'
@@ -103,3 +104,20 @@ export const setShare = (id: string, share: number): BoardOp =>
     эталон задаёт сам. Вернувшись на прежний шаг, ученик снова видит свою
     схему. */
 export const reset = (): BoardOp => BoardOp.Reset()
+
+/** Профиль трафика: меняет только названные ручки, остальные остаются
+    (по умолчанию — прежние константы симулятора).
+
+    - `writeShare` (0.2) — синхронная запись в базы через сервер;
+    - `deferredShare` (0) — запись, которую сервер отдаёт своей очереди или
+      шине и отвечает через 2 мс; без них пишет её синхронно;
+    - `cacheHitShare` (0.8) — доля чтений, на которые отвечает кеш;
+    - `cdnStaticShare` (0.6) — доля запросов, которые CDN отдаёт сам;
+    - `jobsPerRequest` (1) — сообщений в каждую очередь и шину на запрос;
+    - `writesPerJob` (1) — записей в базу на задачу worker.
+
+    Чтение — `1 − writeShare − deferredShare`. Например, сервис коротких
+    ссылок почти только читает: `setTraffic({ writeShare: 0.01,
+    cacheHitShare: 0.95 })`. */
+export const setTraffic = (traffic: TrafficPatch): BoardOp =>
+  BoardOp.SetTraffic({ traffic })

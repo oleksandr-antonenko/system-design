@@ -211,6 +211,7 @@ describe('every domain message', () => {
     DomainMessage.RegionHasNoBlocks({ region: 'asia' }),
     DomainMessage.ShareNotForUsers({ id: 'app1' }),
     DomainMessage.InvalidShare({ id: 'users-eu' }),
+    DomainMessage.InvalidTraffic({ knob: 'cacheHitShare' }),
     DomainMessage.GoalMissingKind({ kind: 'lb' }),
     DomainMessage.GoalTooFewTargets({
       from: 'lb',
@@ -274,7 +275,7 @@ describe('every domain message', () => {
   test('covers every tag', () => {
     const tags = new Set(samples.map(sample => sample._tag))
     expect(tags.size).toBe(samples.length)
-    expect(tags.size).toBe(31)
+    expect(tags.size).toBe(32)
   })
 
   test.each(locales)(

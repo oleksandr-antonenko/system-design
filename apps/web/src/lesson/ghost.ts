@@ -22,6 +22,7 @@ const addedNodes = (solution: ReadonlyArray<BoardOp>) =>
         RecoverRegion: () => Option.none(),
         SetShare: () => Option.none(),
         Reset: () => Option.none(),
+        SetTraffic: () => Option.none(),
       }),
     ),
   )

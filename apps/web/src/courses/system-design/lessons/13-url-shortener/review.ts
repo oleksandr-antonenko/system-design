@@ -6,7 +6,7 @@ import {
   nodesOfKind,
 } from '../../../../domain/board'
 import { type ComponentKind, catalog } from '../../../../domain/catalog'
-import { type SimResult, simulationRules } from '../../../../domain/simulate'
+import type { SimResult } from '../../../../domain/simulate'
 
 // Разбор схемы ученика на шаге «review»: одни и те же числа для всех языков.
 
@@ -46,7 +46,7 @@ export const reviewOf = (sim: SimResult, doc: BoardDoc): Review => {
       liveOfKind(doc, 'cdn'),
       cdn =>
         Math.min(incomingOf(sim, cdn.id), capacityOf(cdn)) *
-        simulationRules.cdnStaticShare,
+        doc.traffic.cdnStaticShare,
     ),
   )
   const busiest = pipe(

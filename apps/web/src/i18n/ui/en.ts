@@ -38,6 +38,10 @@ const regionName: UiStrings['regionName'] = {
 
 const n = (value: number) => formatNumber('en', Math.round(value))
 const percent = (ratio: number) => `${n(ratio * 100)}%`
+/** Доля профиля трафика: до десятых процента, чтобы 0,5 % не стало 1 %. */
+const share = (ratio: number) =>
+  `${formatNumber('en', Math.round(ratio * 1000) / 10)}%`
+const count = (value: number) => formatNumber('en', value)
 const perHour = (dollars: number) => `$${dollars.toFixed(2)}/h`
 const kindList = (kinds: ReadonlyArray<ComponentKind>) =>
   kinds.map(kind => componentName[kind]).join(', ')
@@ -111,6 +115,15 @@ export const en = {
     ms: value => `${n(value)} ms`,
     percent,
     perHour,
+    trafficMix: 'Traffic mix',
+    trafficKnob: {
+      writeShare: value => `writes ${share(value)}`,
+      deferredShare: value => `deferred writes ${share(value)}`,
+      cacheHitShare: value => `hit ${share(value)}`,
+      cdnStaticShare: value => `CDN static ${share(value)}`,
+      jobsPerRequest: value => `jobs per request ×${count(value)}`,
+      writesPerJob: value => `writes per job ×${count(value)}`,
+    },
     pause: 'Pause',
     play: 'Traffic',
     speed: 'Speed',
@@ -238,6 +251,8 @@ export const en = {
       `Only a “Users” block has a share of the load, and ${id} is a different block.`,
     InvalidShare: ({ id }) =>
       `The load share of ${id} must be a number above zero.`,
+    InvalidTraffic: ({ knob }) =>
+      `The traffic setting ${knob} is out of range: shares go from 0 to 1, writes and deferred writes together up to 1, counts from 0.`,
     RegionHasNoBlocks: ({ region }) =>
       `There are no blocks in region “${regionName[region]}”.`,
     GoalSlowResponse: ({ load, p95, max, hottest }) =>

@@ -8,6 +8,7 @@ import {
   ComponentKind as ComponentKindSchema,
 } from '../../domain/catalog'
 import type { SimResult } from '../../domain/simulate'
+import { changedKnobs } from '../../domain/traffic'
 import type { UiStrings } from '../../i18n/ui'
 import { type Anim, shownSimulation } from '../../lesson/anim'
 import { ghostPlan } from '../../lesson/ghost'
@@ -148,6 +149,21 @@ const hasAnyKind = (
 
 export type ExtraMetric = Readonly<{ label: string; value: string }>
 
+/** Профиль трафика одной строкой: только ручки, которые урок поменял. */
+export const trafficLine = (
+  doc: BoardDoc,
+  ui: UiStrings,
+): Option.Option<string> =>
+  Array.match(changedKnobs(doc.traffic), {
+    onEmpty: () => Option.none(),
+    onNonEmpty: changed =>
+      Option.some(
+        Array.map(changed, ({ knob, value }) =>
+          ui.hud.trafficKnob[knob](value),
+        ).join(' · '),
+      ),
+  })
+
 /** Приборы, которые есть не на каждой доске: «отклонено» — когда стоит
     ограничитель, «очередь растёт» — когда есть очередь или шина (D4, D3). */
 export const extraMetrics = (
@@ -238,6 +254,18 @@ export const instruments = <ParentMessage>(
                 ],
               ),
           ),
+          ...Option.match(trafficLine(context.doc, ui), {
+            onNone: () => [],
+            onSome: line => [
+              h.div(
+                [h.Class('metric profile')],
+                [
+                  h.span([h.Class('label')], [ui.hud.trafficMix]),
+                  h.span([h.Class('value')], [line]),
+                ],
+              ),
+            ],
+          }),
           h.div(
             [h.Class('metric')],
             [

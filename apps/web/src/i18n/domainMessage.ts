@@ -2,6 +2,7 @@ import { Schema } from 'effect'
 import { defineTaggedUnion } from 'foldkit/schema'
 
 import { ComponentKind, Region } from '../domain/catalog'
+import { TrafficKnob } from '../domain/traffic'
 import { Locale } from './locale'
 
 export const DomainMessage = defineTaggedUnion({
@@ -30,6 +31,7 @@ export const DomainMessage = defineTaggedUnion({
   RegionHasNoBlocks: { region: Region },
   ShareNotForUsers: { id: Schema.String },
   InvalidShare: { id: Schema.String },
+  InvalidTraffic: { knob: TrafficKnob },
   GoalMissingKind: { kind: ComponentKind },
   GoalTooFewTargets: {
     from: ComponentKind,
@@ -126,6 +128,7 @@ export const renderDomainMessage = (
     RegionHasNoBlocks: params => texts.RegionHasNoBlocks(params),
     ShareNotForUsers: params => texts.ShareNotForUsers(params),
     InvalidShare: params => texts.InvalidShare(params),
+    InvalidTraffic: params => texts.InvalidTraffic(params),
     GoalMissingKind: params => texts.GoalMissingKind(params),
     GoalTooFewTargets: params => texts.GoalTooFewTargets(params),
     GoalDirectPath: params => texts.GoalDirectPath(params),
