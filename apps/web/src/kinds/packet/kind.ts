@@ -3,9 +3,9 @@ import { Update } from 'foldkit'
 
 import { findDevice } from '../../net/doc'
 import { type Goal, checkGoal } from '../../net/goals'
-import type { NetMessage } from '../../net/message'
 import { kindOf } from '../../net/model'
 import { StackLevel, sourceOf } from '../../net/packet'
+import { renderNetMessage } from '../../net/text'
 import type { BoardKind, SurfaceDefinition } from '../contract'
 import {
   BoardMessage,
@@ -19,7 +19,7 @@ import type { PacketTypes } from '../types'
 import * as PacketBoard from './board'
 import {
   type PacketDoc,
-  PacketOp,
+  type PacketOp,
   type PacketRun,
   applyPacketOp,
   emptyPacketDoc,
@@ -41,18 +41,18 @@ const isStackLevel = Schema.is(StackLevel)
 /** Устройство по id, связь `link:<id>`, слой конверта `env:<уровень>`.
     Зоны (`zone:…`) появятся вместе с планом квартиры. */
 const resolveTarget = (
-  doc: PacketDoc,
+  world: PacketDoc,
   target: string,
 ): Option.Option<string> =>
   target.startsWith(LINK_PREFIX)
-    ? Array.some(doc.net.links, link => `${LINK_PREFIX}${link.id}` === target)
+    ? Array.some(world.doc.links, link => `${LINK_PREFIX}${link.id}` === target)
       ? Option.some(target)
       : Option.none()
     : target.startsWith(ENVELOPE_PREFIX)
       ? isStackLevel(target.slice(ENVELOPE_PREFIX.length))
         ? Option.some(target)
         : Option.none()
-      : Option.map(findDevice(doc.net, target), device => device.id)
+      : Option.map(findDevice(world.doc, target), device => device.id)
 
 const stageTargets = (item: PacketStage): ReadonlyArray<string> =>
   item._tag === 'Highlight' || item._tag === 'Annotate'
@@ -78,13 +78,11 @@ const fieldsText = (value: object): string =>
   ).join(' · ')
 
 const opText = (op: PacketOp): string =>
-  PacketOp.match(op, {
-    Edit: ({ op: netOp }) =>
-      netOp._tag === 'AddDevice'
-        ? `AddDevice ${netOp.device.id} · ${kindOf(netOp.device)}`
-        : `${netOp._tag} ${fieldsText(netOp)}`,
-    Send: ({ intent }) => `Send ${intent._tag} ${fieldsText(intent)}`,
-  })
+  op._tag === 'AddDevice'
+    ? `AddDevice ${op.device.id} · ${kindOf(op.device)}`
+    : op._tag === 'Send'
+      ? `Send ${op.intent._tag} ${fieldsText(op.intent)}`
+      : `${op._tag} ${fieldsText(op)}`
 
 // SURFACES
 
@@ -137,8 +135,8 @@ export const packet: BoardKind<PacketTypes> = {
   apply: applyPacketOp,
   run: runPacket,
 
-  checkGoal: (doc: PacketDoc, run: PacketRun, goal: Goal) => {
-    const check = checkGoal(doc.net, run.settled, goal)
+  checkGoal: (world: PacketDoc, run: PacketRun, goal: Goal) => {
+    const check = checkGoal(world.doc, run.settled, goal)
     return {
       met: check.met,
       maybeFailure: check.maybeFailure,
@@ -159,10 +157,10 @@ export const packet: BoardKind<PacketTypes> = {
       item._tag === 'Annotate' ? Option.some(item.key) : Option.none(),
     describe: item => `${item._tag} ${fieldsText(item)}`,
   },
+  targetName: (_doc, target) => target,
   describeOp: opText,
-  // NOTE: тексты кодов `NetMessage` на четырёх языках приходят с изменением
-  // extend-packet-model (`renderNetMessage`); до него показывается код.
-  renderMessage: (_ui, message: NetMessage) => message._tag,
+  renderMessage: (locale, _ui, message, name) =>
+    renderNetMessage(locale, message, name),
 
   op: {
     wrap: op => KindOp.PacketOp({ op }),
@@ -201,4 +199,9 @@ export const packet: BoardKind<PacketTypes> = {
     instruments: PacketBoard.instruments,
   },
   surfaces: [wifiSurface],
+
+  // NOTE: `NextHop`, `PickLinks`, `PickLayer`, `PlaceChips`, `SpotFault` и
+  // картинки вариантов (экраны браузера) добавляет add-network-board.
+  quizzes: ['PickDevice'],
+  picture: () => Option.none(),
 }

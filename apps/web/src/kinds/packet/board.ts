@@ -5,7 +5,7 @@ import { defineMessageUnion } from 'foldkit/message'
 import { modifyFields } from 'foldkit/struct'
 
 import { kindOf } from '../../net/model'
-import { trace } from '../../net/trace'
+import { sendIntent } from '../../net/world'
 import { type BoardInput, BoardOutMessage, type BoardSlot } from '../contract'
 import type { PacketTypes } from '../types'
 import type { PacketOp } from './doc'
@@ -97,8 +97,7 @@ const sceneHops = <ParentMessage>(
   Array.flatMap(slot.context.stage, item =>
     item._tag === 'Play'
       ? Array.map(
-          trace(slot.context.doc.net, slot.context.doc.state, item.intent)[0]
-            .hops,
+          sendIntent(slot.context.doc, item.intent)[0].hops,
           hop => `${hop.from} → ${hop.to}`,
         )
       : [],
@@ -122,7 +121,7 @@ export const view = <ParentMessage>(
       h.p([h.Class('packet-note')], [context.ui.network.placeholder]),
       h.ul(
         [h.Class('packet-devices')],
-        Array.map(context.doc.net.devices, device =>
+        Array.map(context.doc.doc.devices, device =>
           h.keyed('li')(
             device.id,
             [

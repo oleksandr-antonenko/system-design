@@ -94,6 +94,8 @@ export const lt = {
     zoneDown: region => `${regionName[region]} · regionas neveikia`,
     edgeFlow: rps => `${n(rps)} rps`,
     ghost: kind => `čia: ${kindName[kind]}`,
+    modePick: 'Klausimas · pasirinkite lentoje',
+    loadHidden: 'apkrova paslėpta iki atsakymo',
   },
   hud: {
     load: 'Apkrova',
@@ -138,6 +140,11 @@ export const lt = {
       'Lenta bet kuriame žingsnyje – tai šios operacijos, pritaikytos nuo pamokos pradžios. Demonstracijos ir jūsų ėjimai užrašomi viena kalba, todėl veikia persukimas, atšaukimas ir „Rodyti sprendimą“.',
     finishedTitle: 'Pamoka baigta',
     finishedBody: 'Kitos pamokos atsiras kurso programoje.',
+    answerFirst: 'Pirmiau atsakykite į klausimą',
+    moreBadge: 'smalsiems',
+    askAiTitle: 'Kaip paklausti DI',
+    copy: 'Kopijuoti',
+    copied: 'Nukopijuota',
   },
   task: {
     heading: 'Užduotis lentoje',
@@ -159,6 +166,16 @@ export const lt = {
     resultCost: 'Kaina',
     continueLesson: 'Toliau →',
     surfaces: 'Kur spręsti užduotį',
+  },
+  quiz: {
+    heading: 'Klausimas',
+    correct: 'Teisingai iš pirmo karto',
+    incorrect: 'Ne visai',
+    oneAttempt: 'Vienas bandymas: po jo parodysime atsakymą ir paaiškinimą.',
+    pickOnBoard:
+      'Spustelėkite atsakymą lentoje. Klaviatūra: Tab iki jo ir Enter.',
+    choices: 'Atsakymo variantai',
+    answerWas: answer => `Teisingas atsakymas: ${answer}`,
   },
   network: {
     boardLabel: 'Tinklo schema',

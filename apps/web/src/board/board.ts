@@ -57,7 +57,12 @@ export const initialModel: Model = {
 
 // UPDATE
 
-export type Input = Readonly<{ doc: BoardDoc; isEditable: boolean }>
+export type Input = Readonly<{
+  doc: BoardDoc
+  isEditable: boolean
+  /** Квиз на доске: блоки, которые можно выбрать. */
+  pickable?: ReadonlyArray<string>
+}>
 
 export type UpdateReturn = Update.ReturnWithOutMessage<
   Model,
@@ -326,11 +331,33 @@ const deleteSelection = (model: Model): UpdateReturn =>
       ),
   })
 
+const pickedBy = (
+  message: Message,
+  pickable: ReadonlyArray<string>,
+): Option.Option<string> =>
+  pipe(
+    Message.match(message, {
+      ReleasedPointer: ({ target }) => targetNodeId(target),
+      PressedPickKey: ({ id }) => Option.some(id),
+      PressedPointer: () => Option.none<string>(),
+      MovedPointer: () => Option.none<string>(),
+      CancelledPointer: () => Option.none<string>(),
+      ClickedPaletteItem: () => Option.none<string>(),
+    }),
+    Option.filter(id => Array.contains(pickable, id)),
+  )
+
 export const update =
-  ({ doc, isEditable }: Input) =>
+  ({ doc, isEditable, pickable = [] }: Input) =>
   (model: Model, message: Message): UpdateReturn => {
     if (!isEditable) {
-      return { model: initialModel }
+      return Option.match(pickedBy(message, pickable), {
+        onNone: () => ({ model: initialModel }),
+        onSome: id => ({
+          model: initialModel,
+          outMessage: OutMessage.PickedNode({ id }),
+        }),
+      })
     }
     return Message.match<UpdateReturn>(message, {
       PressedPointer: ({ target, point }) => pressed(model, target, point, doc),
@@ -341,6 +368,7 @@ export const update =
       CancelledPointer: () => ({ model: idle(model) }),
       ClickedPaletteItem: ({ kind }) =>
         propose(model, addNodeAt(doc, kind, freeSpot(doc, kind))),
+      PressedPickKey: () => ({ model }),
     })
   }
 

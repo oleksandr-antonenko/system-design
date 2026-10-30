@@ -4,7 +4,9 @@ import {
   all,
   expect,
   expectAll,
+  expectOutMessage,
   given,
+  keydown,
   role,
   scene,
   text,
@@ -48,6 +50,11 @@ const boardScene = (
 ) => ({
   update: Board.update({ doc, isEditable: true }),
   view: withViewInputs(view, inputsFor(doc))(overrides),
+})
+
+const pickScene = (doc: BoardDoc, overrides: Partial<BoardViewInputs>) => ({
+  update: Board.update({ doc, isEditable: false, pickable: ['app1', 'db'] }),
+  view: withViewInputs(view, inputsFor(doc))({ mode: 'Pick', ...overrides }),
 })
 
 const regional = foldOps(emptyBoard, [
@@ -174,6 +181,68 @@ describe('blocks', () => {
       pointerReady,
       expectAll(all.selector('[data-port="app-eu"]')).toHaveCount(2),
       expectAll(all.selector('[data-port="db"]')).toHaveCount(0),
+    )
+  })
+})
+
+describe('pick a block (quiz)', () => {
+  const shop = foldOps(emptyBoard, [
+    addNode('users', 'client', 100, 280),
+    addNode('app1', 'server', 520, 280),
+    addNode('db', 'db', 790, 280),
+    connect('users', 'app1'),
+    connect('app1', 'db'),
+    setLoad(300),
+  ])
+  const pick = {
+    candidates: ['app1', 'db'],
+    maybePicked: Option.none(),
+    maybeAnswer: Option.none(),
+    tags: { app1: 'gives up first', db: 'holds 1,500 rps' },
+    hidden: ['load'],
+  }
+
+  test('candidates are buttons reachable by keyboard; Enter picks', () => {
+    scene(
+      pickScene(shop, { pick }),
+      given(Board.initialModel),
+      pointerReady,
+      expect(text('Question · pick on the board')).toExist(),
+      expect(role('button', { name: /^Server app1/ })).toExist(),
+      expect(role('img', { name: /^Users users/ })).toExist(),
+      keydown(role('button', { name: /^Database db/ }), 'Enter'),
+      expectOutMessage(Board.OutMessage.PickedNode({ id: 'db' })),
+    )
+  })
+
+  test('the load stays hidden until the answer', () => {
+    scene(
+      pickScene(shop, { pick }),
+      given(Board.initialModel),
+      pointerReady,
+      expect(role('button', { name: /^Server app1/ })).toHaveAccessibleName(
+        /load hidden until you answer/,
+      ),
+    )
+  })
+
+  test('after a wrong pick: red with its tag, the answer green with its tag', () => {
+    scene(
+      pickScene(shop, {
+        mode: 'View',
+        pick: {
+          ...pick,
+          hidden: [],
+          maybePicked: Option.some('db'),
+          maybeAnswer: Option.some('app1'),
+        },
+      }),
+      given(Board.initialModel),
+      pointerReady,
+      expect(role('img', { name: /^Database db/ })).toHaveClass('pick-wrong'),
+      expect(role('img', { name: /^Server app1/ })).toHaveClass('pick-right'),
+      expect(text('holds 1,500 rps')).toExist(),
+      expect(text('gives up first')).toExist(),
     )
   })
 })

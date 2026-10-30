@@ -18,6 +18,11 @@ const writes = (sim: SimResult) =>
   Math.min(sim.databaseLoad, sim.load * writeShare)
 const missedReads = (sim: SimResult) => sim.databaseLoad - writes(sim)
 
+const LOAD = 1600
+const quizWrites = LOAD * writeShare
+const quizReads = LOAD - quizWrites
+const quizMisses = quizReads * (1 - cacheHitShare)
+
 export default {
   title: 'Caching',
   summary: 'Cache-aside, hit rate and TTL: taking load off the database.',
@@ -91,6 +96,24 @@ Now the busiest blocks are the [[app3|servers]], at 80%. Much of their work is n
       `writes ${n(writes(sim))} + misses ${n(missedReads(sim))} rps`,
     serversNext: sim =>
       `${n(incoming(sim, 'app3'))} of 400 rps · ${percent(utilization(sim, 'app3'))}`,
+  },
+  quizzes: {
+    'db-after-cache': {
+      question: `The cache answers ${percent(cacheHitShare)} of reads by itself. Once it is in place, how many requests per second reach the database at ${n(LOAD)} rps?`,
+      options: {
+        unchanged: `${n(LOAD)} rps, the same as now`,
+        'all-reads': `${n(quizReads)} rps`,
+        'writes-and-misses': `${n(quizWrites + quizMisses)} rps`,
+        misses: `${n(quizMisses)} rps`,
+      },
+      wrong: {
+        unchanged:
+          'The cache takes the reads it knows the answer to, so noticeably less reaches the database.',
+        'all-reads': `${n(quizReads)} is all the reads. But the cache serves ${percent(cacheHitShare)} of them itself; only the misses go on to the database.`,
+        misses: `${n(quizMisses)} is just the misses. Writes go to the database past the cache: another ${n(quizWrites)} rps.`,
+      },
+      explain: `The database gets every write, ${percent(writeShare)} of ${n(LOAD)}, which is ${n(quizWrites)} rps, plus the cache misses: ${percent(1 - cacheHitShare)} of ${n(quizReads)} reads, which is ${n(quizMisses)} rps. That is ${n(quizWrites + quizMisses)} rps out of the 1,500 it can handle, so the database can breathe. Check it in the task.`,
+    },
   },
   tasks: {
     'place-cache': {

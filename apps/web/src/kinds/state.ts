@@ -3,10 +3,10 @@ import { defineTaggedUnion } from 'foldkit/schema'
 
 import { BoardOp } from '../domain/board'
 import { DomainMessage } from '../i18n/domainMessage'
+import { NetOp } from '../net/doc'
 import { NetMessage } from '../net/message'
 import * as FlowBoard from './flow/board'
 import * as PacketBoard from './packet/board'
-import { PacketOp } from './packet/doc'
 import * as WifiSurface from './packet/wifi'
 
 // Model плеера строится только из Schema (FOLDKIT.md), поэтому значения,
@@ -16,7 +16,7 @@ import * as WifiSurface from './packet/wifi'
 /** Ход в журнале задачи. */
 export const KindOp = defineTaggedUnion({
   FlowOp: { op: BoardOp },
-  PacketOp: { op: PacketOp },
+  PacketOp: { op: NetOp },
 })
 export type KindOp = typeof KindOp.Type
 

@@ -5,6 +5,7 @@ import type { Html, HtmlBuilder } from 'foldkit/html'
 import type { BoardKindId } from '../courses/model'
 import type { Locale } from '../i18n/locale'
 import type { UiStrings } from '../i18n/ui'
+import type { QuizKind } from '../lesson/quiz'
 import type {
   BoardMessage,
   BoardState,
@@ -103,6 +104,8 @@ export const BoardOutMessage = {
 export type BoardInput<T extends KindTypes> = Readonly<{
   doc: T['Doc']
   mode: BoardMode
+  /** В режиме `Pick` — кандидаты квиза, иначе пусто. */
+  pickable: ReadonlyArray<string>
 }>
 
 /** Задача текущего шага глазами доски. */
@@ -312,9 +315,17 @@ export type BoardKind<T extends KindTypes> = Readonly<{
       устройство, связь (`link:…`), поле конверта (`env:…`), зона (`zone:…`). */
   resolveTarget: (doc: T['Doc'], target: string) => Option.Option<string>
   stage: StageContract<T['Stage']>
+  /** Как назвать цель в тексте, если урок не дал ей подписи (`labels`). */
+  targetName: (doc: T['Doc'], target: string, ui: UiStrings) => string
   /** Строка журнала. Язык операций не переводится, как код. */
   describeOp: (op: T['Op']) => string
-  renderMessage: (ui: UiStrings, message: T['Message']) => string
+  /** Текст кода на языке страницы; `name` — подпись сущности доски. */
+  renderMessage: (
+    locale: Locale,
+    ui: UiStrings,
+    message: T['Message'],
+    name: (id: string) => string,
+  ) => string
 
   // STORAGE
   op: Lens<T['Op'], KindOp>
@@ -323,4 +334,14 @@ export type BoardKind<T extends KindTypes> = Readonly<{
   // UI
   board: BoardHost<T>
   surfaces: ReadonlyArray<SurfaceDefinition<T>>
+
+  // QUIZZES
+  /** Квизы, которые доска умеет показывать (`Choice` рисует карточка). */
+  quizzes: ReadonlyArray<QuizKind>
+  /** Картинка варианта `Choice` по ключу, например экран ошибки браузера. */
+  picture: <ParentMessage>(
+    key: string,
+    ui: UiStrings,
+    h: HtmlBuilder<ParentMessage>,
+  ) => Option.Option<Html>
 }>

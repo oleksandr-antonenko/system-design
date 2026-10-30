@@ -7,5 +7,10 @@ export default defineLessonMeta(course, {
   order: 2,
   available: false,
   locales: ['uk', 'ru', 'en', 'lt'],
-  unlocks: ['board.addresses', 'board.deviceCard', 'board.cable'],
+  unlocks: [
+    'board.addresses',
+    'board.deviceCard',
+    'board.cable',
+    'board.sendTo',
+  ],
 })

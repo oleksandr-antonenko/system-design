@@ -238,8 +238,11 @@ const runUpdate = (
       Board.update(input)(previous.model, boardMessage),
   )
 
+const proposedOp = (result: Board.UpdateReturn) =>
+  result.outMessage?._tag === 'ProposedOp' ? result.outMessage.op : undefined
+
 const proposedAddNode = (result: Board.UpdateReturn) => {
-  const op = result.outMessage?.op
+  const op = proposedOp(result)
   if (op?._tag !== 'AddNode') {
     throw new Error(`expected AddNode, got ${op?._tag ?? 'nothing'}`)
   }
@@ -311,18 +314,20 @@ describe('regions', () => {
 
 describe('moving a block', () => {
   const dragApp1To = (to: { x: number; y: number }) =>
-    runUpdate({ doc, isEditable: true }, [
-      Board.Message.PressedPointer({
-        target: Board.PointerTarget.Node({ id: 'app1' }),
-        point: point(520, 280),
-      }),
-      Board.Message.MovedPointer({ point: to, isOverBoard: true }),
-      Board.Message.ReleasedPointer({
-        target: Board.PointerTarget.Background(),
-        point: to,
-        isOverBoard: true,
-      }),
-    ]).outMessage?.op
+    proposedOp(
+      runUpdate({ doc, isEditable: true }, [
+        Board.Message.PressedPointer({
+          target: Board.PointerTarget.Node({ id: 'app1' }),
+          point: point(520, 280),
+        }),
+        Board.Message.MovedPointer({ point: to, isOverBoard: true }),
+        Board.Message.ReleasedPointer({
+          target: Board.PointerTarget.Background(),
+          point: to,
+          isOverBoard: true,
+        }),
+      ]),
+    )
 
   test('the drop point snaps to the 10-unit grid', () => {
     expect(dragApp1To(point(563, 337))).toEqual(

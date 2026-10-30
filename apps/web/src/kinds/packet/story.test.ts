@@ -5,7 +5,7 @@ import { describe, expect, test } from 'vitest'
 import * as Player from '../../lesson/player'
 import { joinWifi } from '../../net/build'
 import { SurfaceMessage } from '../state'
-import { edit, packet } from './dsl'
+import { packet } from './dsl'
 import { phoneOnline } from './testing'
 import * as Wifi from './wifi'
 
@@ -37,7 +37,7 @@ const wifi = (wifiMessage: Wifi.Message) =>
 const logOf = (playerModel: Player.Model) =>
   Player.opsOf(packet, Player.taskStateOf(playerModel, TASK_ID).log)
 
-const joinHome = edit(joinWifi('phone', 'Home', 'correct-horse'))
+const joinHome = joinWifi('phone', 'Home', 'correct-horse')
 
 const joinWith = (password: string) => [
   wifi(Wifi.Message.SelectedNetwork({ ssid: 'Home' })),

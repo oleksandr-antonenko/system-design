@@ -3,10 +3,11 @@ import { Schema } from 'effect'
 /**
  * Элементы интерфейса курса сетей, которые открывают уроки (`meta.unlocks`,
  * план, раздел 3.4). Имя — `<поверхность>.<элемент>`; поверхности:
- * `transport` (кнопки под доской), `board`, `quiz`, `wifi` (настройки Wi-Fi
- * телефона), `browser`, `terminal`, `router` (вкладки панели роутера),
- * `dnsPanel`, `vpn`. Поверхность видна, если открыт хотя бы один её элемент
- * (`isSurfaceOpen`). Порядок — порядок уроков, которые их открывают.
+ * `transport` (кнопки под доской), `board`, `envelope` (конверт), `quiz`,
+ * `wifi` (настройки Wi-Fi телефона), `browser`, `terminal`, `router`
+ * (вкладки панели роутера), `dnsPanel`, `vpn`. Поверхность видна, если
+ * открыт хотя бы один её элемент (`isSurfaceOpen`). Порядок — порядок
+ * уроков, которые их открывают.
  */
 export const UiFeature = Schema.Literals([
   'transport.run',
@@ -19,7 +20,9 @@ export const UiFeature = Schema.Literals([
   'board.addresses',
   'board.deviceCard',
   'board.cable',
+  'board.sendTo',
   'board.dnsServer',
+  'board.contacts',
   'browser.addressBar',
   'browser.errNameNotResolved',
   'wifi.networkInfo',
@@ -27,6 +30,8 @@ export const UiFeature = Schema.Literals([
   'transport.hopCounter',
   'board.routerChain',
   'terminal.ping',
+  'board.printout',
+  'quiz.nextHop',
   'board.floorPlan',
   'board.wifiRange',
   'router.wifi',
@@ -35,6 +40,7 @@ export const UiFeature = Schema.Literals([
   'terminal.ipAddr',
   'browser.typeAddress',
   'browser.errConnectionRefused',
+  'quiz.choice',
   'board.envelopeLayers',
   'board.legend',
   'board.switch',
@@ -43,8 +49,10 @@ export const UiFeature = Schema.Literals([
   'transport.slow',
   'router.devices',
   'terminal.arp',
+  'quiz.pickLayer',
+  'board.deviceMac',
+  'envelope.builder',
   'board.routes',
-  'router.routes',
   'terminal.traceroute',
   'board.natTable',
   'router.addresses',
@@ -63,6 +71,7 @@ export const UiFeature = Schema.Literals([
   'terminal.ufw',
   'browser.errConnectionTimedOut',
   'board.tunnel',
+  'router.routes',
   'vpn.settings',
   'board.dockerHost',
   'board.tunnelRelay',

@@ -52,10 +52,19 @@ export type GhostPlan = Readonly<{
 
 export type LaterKind = Readonly<{ kind: ComponentKind; lesson: number }>
 
+/** Квиз «выберите блок» (`PickDevice`): кандидаты, выбор и ответ. */
+export type BoardPick = Readonly<{
+  candidates: ReadonlyArray<string>
+  maybePicked: Option.Option<string>
+  maybeAnswer: Option.Option<string>
+  tags: Readonly<Record<string, string>>
+  hidden: ReadonlyArray<string>
+}>
+
 export type BoardViewInputs = Readonly<{
   locale: Locale
   doc: BoardDoc
-  mode: 'View' | 'Edit' | 'Replay'
+  mode: 'View' | 'Edit' | 'Replay' | 'Pick'
   palette: ReadonlyArray<ComponentKind>
   newKinds: ReadonlyArray<ComponentKind>
   later: ReadonlyArray<LaterKind>
@@ -68,6 +77,7 @@ export type BoardViewInputs = Readonly<{
   sim: SimResult
   prefersDark: boolean
   isReducedMotion: boolean
+  pick?: BoardPick
 }>
 
 // ICONS
@@ -127,6 +137,33 @@ const iconView = (kind: ComponentKind, h: HtmlBuilder<Message>): Html =>
 
 // NODES
 
+const isLoadHidden = (inputs: BoardViewInputs, id: string): boolean =>
+  inputs.pick !== undefined &&
+  (Array.contains(inputs.pick.hidden, 'load') ||
+    Array.contains(inputs.pick.hidden, id))
+
+/** Класс блока в квизе: можно выбрать, выбран неверно, верный ответ. */
+const pickClass = (inputs: BoardViewInputs, id: string): string => {
+  const pick = inputs.pick
+  if (pick === undefined) {
+    return ''
+  }
+  if (Option.exists(pick.maybeAnswer, answer => answer === id)) {
+    return ' pick-right'
+  }
+  if (Option.exists(pick.maybePicked, picked => picked === id)) {
+    return ' pick-wrong'
+  }
+  return inputs.mode === 'Pick' && Array.contains(pick.candidates, id)
+    ? ' pickable'
+    : ''
+}
+
+const isPickable = (inputs: BoardViewInputs, id: string): boolean =>
+  inputs.mode === 'Pick' &&
+  inputs.pick !== undefined &&
+  Array.contains(inputs.pick.candidates, id)
+
 const utilizationClass = (utilization: number, isDown: boolean): string =>
   isDown || utilization > 1
     ? 'util bad'
@@ -165,7 +202,8 @@ const nodeView = (
     DraggingNode: () => '',
     Placing: () => '',
   })
-  const hasCapacity = hasFiniteCapacity(node.kind)
+  const isHiddenLoad = isLoadHidden(inputs, node.id)
+  const hasCapacity = hasFiniteCapacity(node.kind) && !isHiddenLoad
   const flow = inputs.sim.nodes[node.id]
   const backlog = flow?.backlog ?? 0
   const rejected = flow?.rejected ?? 0
@@ -174,13 +212,15 @@ const nodeView = (
   const isRejecting = node.kind === 'limiter' && rejected >= 1
   const subText = isDown
     ? ui.board.nodeDown
-    : node.kind === 'client'
-      ? ui.board.clientsLoad(incoming)
-      : isGrowing
-        ? ui.board.queueGrowing(backlog)
-        : isRejecting
-          ? ui.board.rejecting(rejected)
-          : ui.board.nodeLoad(incoming, utilization)
+    : isHiddenLoad
+      ? ui.board.loadHidden
+      : node.kind === 'client'
+        ? ui.board.clientsLoad(incoming)
+        : isGrowing
+          ? ui.board.queueGrowing(backlog)
+          : isRejecting
+            ? ui.board.rejecting(rejected)
+            : ui.board.nodeLoad(incoming, utilization)
   const classes = [
     'board-node',
     isEditable ? 'editable' : '',
@@ -192,11 +232,21 @@ const nodeView = (
     node.id,
     [
       h.DataAttribute('node', node.id),
-      h.Class(`${classes}${connectState}`),
+      h.Class(`${classes}${connectState}${pickClass(inputs, node.id)}`),
       h.Transform(
         `translate(${node.x - NODE_WIDTH / 2},${node.y - NODE_HEIGHT / 2})`,
       ),
-      h.Role('img'),
+      ...(isPickable(inputs, node.id)
+        ? [
+            h.Role('button'),
+            h.Tabindex(0),
+            h.OnKeyDownPreventDefault(key =>
+              key === 'Enter' || key === ' '
+                ? Option.some(Message.PressedPickKey({ id: node.id }))
+                : Option.none(),
+            ),
+          ]
+        : [h.Role('img')]),
       h.AriaLabel(`${ui.kindName[node.kind]} ${node.id}, ${subText}`),
     ],
     [
@@ -315,7 +365,11 @@ const edgeView = (
     Array.contains(inputs.focusEdges, key) || Array.contains(removeEdges, key)
   const flow = inputs.flows.edgeFlow[key] ?? 0
   const label =
-    inputs.mode === 'Edit' || flow < 1 || curveLength(curve) < 110
+    inputs.mode === 'Edit' ||
+    flow < 1 ||
+    curveLength(curve) < 110 ||
+    isLoadHidden(inputs, from.id) ||
+    isLoadHidden(inputs, to.id)
       ? Option.none()
       : Option.some(uiFor(inputs.locale).board.edgeFlow(flow))
   const middle = pointOnCurve(curve, 0.5)
@@ -417,12 +471,13 @@ const annotationView = (
   text: string,
   tone: Tone,
   h: HtmlBuilder<Message>,
+  keyPrefix = 'note',
 ): Html => {
   const width = text.length * 6.75 + 20
   const x = Math.min(Math.max(node.x - width / 2, 6), BOARD_WIDTH - width - 6)
   const y = node.y - NODE_HEIGHT / 2 - 34
   return h.keyed('g')(
-    `note-${node.id}`,
+    `${keyPrefix}-${node.id}`,
     [h.Class(`annotation ${tone}`)],
     [
       h.path([
@@ -837,6 +892,38 @@ const paletteView = (
   )
 }
 
+// QUIZ
+
+/** Метки квиза у выбранного блока и у верного ответа. */
+const pickTags = (
+  inputs: BoardViewInputs,
+  nodeById: (id: string) => Option.Option<BoardNode>,
+  h: HtmlBuilder<Message>,
+): ReadonlyArray<Html> => {
+  const pick = inputs.pick
+  if (pick === undefined) {
+    return []
+  }
+  const tagged = (
+    maybeId: Option.Option<string>,
+    tone: Tone,
+  ): ReadonlyArray<Html> =>
+    Option.match(
+      Option.flatMap(maybeId, id =>
+        Option.all([nodeById(id), Option.fromNullishOr(pick.tags[id])]),
+      ),
+      {
+        onNone: () => [],
+        onSome: ([node, text]) => [annotationView(node, text, tone, h, 'tag')],
+      },
+    )
+  const wrongPick = Option.filter(
+    pick.maybePicked,
+    picked => !Option.exists(pick.maybeAnswer, answer => answer === picked),
+  )
+  return [...tagged(wrongPick, 'bad'), ...tagged(pick.maybeAnswer, 'ok')]
+}
+
 // BOARD
 
 export const view = Submodel.defineView<Model, Message, BoardViewInputs>(
@@ -854,7 +941,9 @@ export const view = Submodel.defineView<Model, Message, BoardViewInputs>(
         ? ui.board.modeEdit
         : inputs.mode === 'Replay'
           ? ui.board.modeReplay
-          : ui.board.modeView
+          : inputs.mode === 'Pick'
+            ? ui.board.modePick
+            : ui.board.modeView
 
     return h.div(
       [h.Class('board-wrap'), h.OnMount(BoardPointer())],
@@ -966,6 +1055,7 @@ export const view = Submodel.defineView<Model, Message, BoardViewInputs>(
                         ),
                       ),
                     ),
+                    ...pickTags(inputs, nodeById, h),
                     ...(inputs.mode === 'Edit'
                       ? selectionControls(doc, model, ui, h)
                       : []),

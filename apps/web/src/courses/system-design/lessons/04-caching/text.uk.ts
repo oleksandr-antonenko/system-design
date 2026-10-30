@@ -18,6 +18,11 @@ const writes = (sim: SimResult) =>
   Math.min(sim.databaseLoad, sim.load * writeShare)
 const missedReads = (sim: SimResult) => sim.databaseLoad - writes(sim)
 
+const LOAD = 1600
+const quizWrites = LOAD * writeShare
+const quizReads = LOAD - quizWrites
+const quizMisses = quizReads * (1 - cacheHitShare)
+
 export default {
   title: 'Кешування',
   summary: 'Cache-aside, hit rate і TTL: як зняти навантаження з бази даних.',
@@ -91,6 +96,24 @@ export default {
       `запис ${n(writes(sim))} + промахи ${n(missedReads(sim))} rps`,
     serversNext: sim =>
       `${n(incoming(sim, 'app3'))} rps із 400 · ${percent(utilization(sim, 'app3'))}`,
+  },
+  quizzes: {
+    'db-after-cache': {
+      question: `Кеш сам відповідає на ${percent(cacheHitShare)} читань. Скільки запитів на секунду дійде до бази при ${n(LOAD)} rps, коли кеш стане на місце?`,
+      options: {
+        unchanged: `${n(LOAD)} rps — стільки ж`,
+        'all-reads': `${n(quizReads)} rps`,
+        'writes-and-misses': `${n(quizWrites + quizMisses)} rps`,
+        misses: `${n(quizMisses)} rps`,
+      },
+      wrong: {
+        unchanged:
+          'Кеш забирає собі читання, на які знає відповідь: до бази доходить помітно менше.',
+        'all-reads': `${n(quizReads)} — це всі читання. Але ${percent(cacheHitShare)} з них кеш віддасть сам, у базу підуть лише промахи.`,
+        misses: `${n(quizMisses)} — це лише промахи. Запис іде в базу повз кеш: ще ${n(quizWrites)} rps.`,
+      },
+      explain: `До бази дійдуть усі записи — ${percent(writeShare)} від ${n(LOAD)}, це ${n(quizWrites)} rps, — і промахи кешу: ${percent(1 - cacheHitShare)} від ${n(quizReads)} читань, це ${n(quizMisses)} rps. Разом ${n(quizWrites + quizMisses)} rps із 1500 можливих: база видихне. Перевірте це в задачі.`,
+    },
   },
   tasks: {
     'place-cache': {

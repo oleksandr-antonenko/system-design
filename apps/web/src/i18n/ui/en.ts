@@ -92,6 +92,8 @@ export const en = {
     zoneDown: region => `${regionName[region]} · region down`,
     edgeFlow: rps => `${n(rps)} rps`,
     ghost: kind => `${kindName[kind]} here`,
+    modePick: 'Question · pick on the board',
+    loadHidden: 'load hidden until you answer',
   },
   hud: {
     load: 'Load',
@@ -136,6 +138,11 @@ export const en = {
       'The board on any step is these operations applied from the start of the lesson. Demonstrations and your moves use one language, which is what makes rewinding, undo and “Show solution” work.',
     finishedTitle: 'Lesson complete',
     finishedBody: 'More lessons will appear in the course outline.',
+    answerFirst: 'Answer the question first',
+    moreBadge: 'for the curious',
+    askAiTitle: 'How to ask an AI',
+    copy: 'Copy',
+    copied: 'Copied',
   },
   task: {
     heading: 'Task on the board',
@@ -158,6 +165,16 @@ export const en = {
     resultCost: 'Cost',
     continueLesson: 'Next →',
     surfaces: 'Where to solve the task',
+  },
+  quiz: {
+    heading: 'Question',
+    correct: 'Right on the first try',
+    incorrect: 'Not quite',
+    oneAttempt: 'One attempt: then you see the answer and why.',
+    pickOnBoard:
+      'Click the answer on the board. Keyboard: Tab to it and press Enter.',
+    choices: 'Answer options',
+    answerWas: answer => `Correct answer: ${answer}`,
   },
   network: {
     boardLabel: 'Network diagram',

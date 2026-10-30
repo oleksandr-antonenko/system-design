@@ -27,7 +27,11 @@ export type OutMessage = BoardOutMessage<BoardOp>
 
 // UPDATE
 
-export type Input = Readonly<{ doc: BoardDoc; mode: BoardMode }>
+export type Input = Readonly<{
+  doc: BoardDoc
+  mode: BoardMode
+  pickable: ReadonlyArray<string>
+}>
 
 export type UpdateReturn = Update.ReturnWithOutMessage<
   Model,
@@ -35,9 +39,10 @@ export type UpdateReturn = Update.ReturnWithOutMessage<
   OutMessage
 >
 
-const editorInput = ({ doc, mode }: Input): Board.Input => ({
+const editorInput = ({ doc, mode, pickable }: Input): Board.Input => ({
   doc,
   isEditable: mode === 'Edit',
+  pickable: mode === 'Pick' ? pickable : [],
 })
 
 const editorAdapters = {
@@ -48,7 +53,8 @@ const editorAdapters = {
     Message.GotEditorMessage({ message }),
   toParentOutMessage: (outMessage: Board.OutMessage): OutMessage =>
     Board.OutMessage.match(outMessage, {
-      ProposedOp: ({ op }) => BoardOutMessage.ProposedOps([op]),
+      ProposedOp: ({ op }) => BoardOutMessage.ProposedOps<BoardOp>([op]),
+      PickedNode: ({ id }) => BoardOutMessage.PickedTarget<BoardOp>(id),
     }),
 }
 

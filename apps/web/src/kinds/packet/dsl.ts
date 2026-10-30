@@ -1,20 +1,12 @@
-import type { NetOp } from '../../net/doc'
 import type { DeviceId } from '../../net/model'
 import type { Intent, StackLevel } from '../../net/packet'
 import type { Tone } from '../contract'
-import { PacketOp } from './doc'
 
 export { packet } from './kind'
 
-// Язык уроков курса сетей (design D6, план 3.1).
-
-// OPERATIONS
-
-/** Правка сети: устройство, связь, адрес, Wi-Fi… (`net/build.ts`). */
-export const edit = (op: NetOp): PacketOp => PacketOp.Edit({ op })
-
-/** Отправка: трасса меняет состояние сети и попадает в журнал. */
-export const send = (intent: Intent): PacketOp => PacketOp.Send({ intent })
+// Язык уроков курса сетей (design D6, план 3.1). Операции — конструкторы
+// модели пакетов из `net/build.ts` (`add`, `cable`, `radio`, `joinWifi`,
+// `send(intent)`, `runCommand`…); здесь — сцена шага и поверхности.
 
 // SURFACES
 

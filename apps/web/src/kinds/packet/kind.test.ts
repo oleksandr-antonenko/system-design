@@ -3,11 +3,10 @@ import { describe, expect, test } from 'vitest'
 
 import { boardAt, foldDoc, taskOf, taskStartBoard } from '../../lesson/dsl'
 import { referencedIds } from '../../lesson/markup'
-import { joinWifi } from '../../net/build'
+import { joinWifi, send } from '../../net/build'
 import { Goal } from '../../net/goals'
 import { Intent } from '../../net/packet'
 import type { PacketTypes } from '../types'
-import { edit, send } from './dsl'
 import { phoneOnline } from './testing'
 
 // Контракт вида доски на крошечном уроке сетей (design D6): документ —
@@ -29,7 +28,7 @@ describe('packet board kind', () => {
     const goal = Goal.Associated({ device: 'phone', ap: 'router' })
     const check = kind.checkGoal(start, kind.run(start), goal)
 
-    expect(start.net.devices).toHaveLength(4)
+    expect(start.doc.devices).toHaveLength(4)
     expect(check.met).toBe(false)
     expect(Option.map(check.maybeFailure, failure => failure._tag)).toEqual(
       Option.some('NoWifiProfile'),
@@ -53,16 +52,16 @@ describe('packet board kind', () => {
     const before = boardAt(phoneOnline, 1, logs)
     const after = boardAt(phoneOnline, 2, logs)
 
-    expect(before.traces).toEqual([])
-    expect(after.traces).toHaveLength(1)
-    expect(after.traces[0]?.outcome._tag).toBe('Delivered')
+    expect(before.state.performed).toEqual([])
+    expect(after.state.performed).toHaveLength(1)
+    expect(after.state.performed[0]?.delivered).toBe(true)
     expect(after.state.arp.length).toBeGreaterThan(before.state.arp.length)
   })
 
   test('a wrong password is a refusal-free op whose goal names the reason', () => {
     const start = taskStartBoard(phoneOnline, TASK_STEP, {})
     const wrong = Result.getOrThrow(
-      kind.apply(start, edit(joinWifi('phone', 'Home', '12345678'))),
+      kind.apply(start, joinWifi('phone', 'Home', '12345678')),
     )
     const check = kind.checkGoal(
       wrong,
@@ -102,13 +101,13 @@ describe('packet board kind', () => {
   })
 
   test('the journal names each operation; ops round-trip through the stored union', () => {
-    const op = edit(joinWifi('phone', 'Home', 'correct-horse'))
+    const op = joinWifi('phone', 'Home', 'correct-horse')
 
     expect(kind.describeOp(op)).toBe('JoinWifi phone · Home · correct-horse')
     expect(kind.op.unwrap(kind.op.wrap(op))).toEqual(Option.some(op))
     expect(
       kind.describeOp(
-        send(Intent.Ping({ from: 'phone', ip: '198.51.100.10' })),
+        send(Intent.Ping({ from: 'phone', host: '198.51.100.10' })),
       ),
     ).toBe('Send Ping phone · 198.51.100.10')
   })

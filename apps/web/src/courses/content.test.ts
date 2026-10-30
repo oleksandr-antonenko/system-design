@@ -1,6 +1,8 @@
 import { Array, Option, Record, Result } from 'effect'
+import { inertHtml as ih } from 'foldkit/html'
 import { describe, expect, test } from 'vitest'
 
+import { uiFor } from '../i18n/ui'
 import type { KindTypes } from '../kinds/contract'
 import {
   type AnyLesson,
@@ -16,6 +18,7 @@ import {
 } from '../lesson/dsl'
 import { referencedIds } from '../lesson/markup'
 import { surfaceOf } from '../lesson/player'
+import { isBoardQuiz, quizAnswer, quizFeature, quizOf } from '../lesson/quiz'
 import {
   findCourse,
   findLesson,
@@ -183,6 +186,57 @@ const lessonChecks = <T extends KindTypes>(
     )
   })
 
+  test('quizzes: supported, open, answerable on the board of their step', () => {
+    const unlocked = unlockedAt(course, lesson.slug)
+    const features = Option.match(findCourse(course), {
+      onNone: () => [],
+      onSome: found => found.definition.features,
+    })
+    const ids = Array.getSomes(
+      Array.map(lesson.steps, lessonStep =>
+        Option.map(quizOf<T>(lessonStep), quiz => quiz.id),
+      ),
+    )
+    expect(Array.dedupe(ids), 'quiz ids are unique').toEqual(ids)
+    lesson.steps.forEach((lessonStep, index) =>
+      Option.map(quizOf<T>(lessonStep), quiz => {
+        const where = `step ${lessonStep.id}, quiz ${quiz.id}`
+        const doc = shownBoard(lesson, index)
+        const answer = quizAnswer(quiz, doc, kind.run(doc))
+        expect(lessonStep.task, `${where} has a task too`).toBeUndefined()
+        expect(
+          quiz.kind === 'Choice' || Array.contains(kind.quizzes, quiz.kind),
+          `${where}: board ${kind.id} has no ${quiz.kind}`,
+        ).toBe(true)
+        expect(quiz.candidates, `${where}: answer`).toContain(answer)
+        expect(
+          quiz.candidates.length >= 2 &&
+            quiz.candidates.length <= (isBoardQuiz(quiz) ? 5 : 4),
+          `${where}: ${quiz.candidates.length} candidates`,
+        ).toBe(true)
+        if (Array.contains(features, quizFeature(quiz.kind))) {
+          expect(unlocked, `${where} is not unlocked`).toContain(
+            quizFeature(quiz.kind),
+          )
+        }
+        if (isBoardQuiz(quiz)) {
+          quiz.candidates.forEach(candidate =>
+            expect(
+              Option.isSome(kind.resolveTarget(doc, candidate)),
+              `${where}: candidate ${candidate} is not on the board`,
+            ).toBe(true),
+          )
+        }
+        Object.values(quiz.pictures ?? {}).forEach(key =>
+          expect(
+            Option.isSome(kind.picture(key ?? '', uiFor('en'), ih)),
+            `${where}: picture ${key}`,
+          ).toBe(true),
+        )
+      }),
+    )
+  })
+
   test('stage targets point at things on their board', () => {
     lesson.steps.forEach((lessonStep, index) => {
       const doc = shownBoard(lesson, index)
@@ -253,6 +307,36 @@ const lessonChecks = <T extends KindTypes>(
             ),
           ),
         )
+        Option.map(
+          Option.fromNullishOr(texts.steps?.[lessonStep.id]?.more),
+          more => {
+            filled(more.title, `${lessonStep.id}.more.title`)
+            filled(more.body, `${lessonStep.id}.more.body`)
+          },
+        )
+        Option.map(quizOf<T>(lessonStep), quiz => {
+          const quizTexts = texts.quizzes?.[quiz.id]
+          filled(quizTexts?.question, `${quiz.id}.question`)
+          filled(quizTexts?.explain, `${quiz.id}.explain`)
+          if (quiz.kind === 'Choice') {
+            quiz.candidates.forEach(candidate =>
+              filled(
+                quizTexts?.options?.[candidate],
+                `${quiz.id}.options.${candidate}`,
+              ),
+            )
+          }
+          const explained = [
+            ...Object.keys(quizTexts?.wrong ?? {}),
+            ...Object.keys(quizTexts?.tags ?? {}),
+          ]
+          explained.forEach(candidate =>
+            expect(
+              quiz.candidates,
+              `${quiz.id}: text for ${candidate}`,
+            ).toContain(candidate),
+          )
+        })
         Option.map(taskOf(lessonStep), task => {
           const taskTexts = texts.tasks?.[task.id]
           filled(taskTexts?.prompt, `${task.id}.prompt`)
@@ -270,6 +354,44 @@ const lessonChecks = <T extends KindTypes>(
   )
 }
 
+/** «Подробнее» и «Как спросить ИИ» есть на одних и тех же местах во всех
+    языках урока. */
+const optionalSections = <T extends KindTypes>(texts: TextsOf<T>) => ({
+  more: Array.filter(
+    Object.keys(texts.steps ?? {}),
+    id => texts.steps?.[id]?.more !== undefined,
+  ),
+  askAi: texts.askAi !== undefined,
+})
+
+const sectionChecks = <T extends KindTypes>(
+  course: string,
+  lesson: LessonDefinition<T>,
+) => {
+  test('optional sections appear in every language alike', () => {
+    const sections = Array.map(textsOf(course, lesson), ([locale, texts]) => ({
+      locale,
+      ...optionalSections(texts),
+    }))
+    Array.head(sections).pipe(
+      Option.map(first =>
+        sections.forEach(other =>
+          expect(
+            { more: other.more, askAi: other.askAi },
+            `${other.locale} vs ${first.locale}`,
+          ).toEqual({ more: first.more, askAi: first.askAi }),
+        ),
+      ),
+    )
+    textsOf(course, lesson).forEach(([locale, texts]) =>
+      Option.map(Option.fromNullishOr(texts.askAi), askAi => {
+        expect(askAi.lead.trim(), `${locale} askAi.lead`).not.toBe('')
+        expect(askAi.template.trim(), `${locale} askAi.template`).not.toBe('')
+      }),
+    )
+  })
+}
+
 const cases = Array.map(
   lessonDefinitions,
   ({ course, definition }): readonly [string, string, AnyLesson] => [
@@ -280,7 +402,8 @@ const cases = Array.map(
 )
 
 describe.each(cases)('lesson %s', (_name, course, lesson) => {
-  withLesson(lesson, <T extends KindTypes>(script: LessonDefinition<T>) =>
-    lessonChecks(course, script),
-  )
+  withLesson(lesson, <T extends KindTypes>(script: LessonDefinition<T>) => {
+    lessonChecks(course, script)
+    sectionChecks(course, script)
+  })
 })

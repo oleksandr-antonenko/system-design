@@ -544,3 +544,40 @@ describe('theory and board together', () => {
     )
   })
 })
+
+describe('quiz step', () => {
+  const QUIZ_URL = '/ru/system-design/lessons/caching?step=3'
+  const option = (name: RegExp) =>
+    within(role('group', { name: 'Варианты ответа' }), role('button', { name }))
+
+  test('Next waits for the one attempt; a wrong answer explains and opens it', () => {
+    scene(
+      { update, view },
+      given(openLesson(QUIZ_URL)),
+      pointerReady,
+      expect(text(/Сколько запросов в секунду дойдёт до базы/)).toExist(),
+      expect(text('Сначала ответьте на вопрос')).toExist(),
+      expect(role('button', { name: 'Далее →' })).toBeDisabled(),
+      expect(role('button', { name: /^Далее: Задача: кеш/ })).toBeDisabled(),
+      click(option(/^256 rps/)),
+      expect(text('Не совсем')).toExist(),
+      expect(text(/это только промахи/)).toExist(),
+      expect(text('Правильный ответ: 576 rps')).toExist(),
+      expect(option(/^576 rps/)).toHaveClass('right'),
+      expect(option(/^256 rps/)).toBeDisabled(),
+      expect(role('button', { name: 'Далее →' })).toBeEnabled(),
+      expect(role('button', { name: /^Далее: Задача: кеш/ })).toBeEnabled(),
+    )
+  })
+
+  test('the right answer says so', () => {
+    scene(
+      { update, view },
+      given(openLesson(QUIZ_URL)),
+      pointerReady,
+      click(option(/^576 rps/)),
+      expect(text('Верно с первой попытки')).toExist(),
+      expect(text(/Проверьте это в задаче/)).toExist(),
+    )
+  })
+})

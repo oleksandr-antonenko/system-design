@@ -171,8 +171,14 @@ export const flow: BoardKind<FlowTypes> = {
       item._tag === 'Annotate' ? Option.some(item.key) : Option.none(),
     describe: stageText,
   },
+  targetName: (doc, target, ui) =>
+    Option.match(resolveKey(doc, target), {
+      onNone: () => target,
+      onSome: id => (id === 'users' ? ui.kindName.client : id),
+    }),
   describeOp: opText,
-  renderMessage: (ui, message) => renderDomainMessage(ui.domain, message),
+  renderMessage: (_locale, ui, message) =>
+    renderDomainMessage(ui.domain, message),
 
   op: {
     wrap: op => KindOp.FlowOp({ op }),
@@ -209,4 +215,7 @@ export const flow: BoardKind<FlowTypes> = {
     instruments,
   },
   surfaces: [],
+
+  quizzes: ['PickDevice'],
+  picture: () => Option.none(),
 }

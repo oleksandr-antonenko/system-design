@@ -48,6 +48,8 @@ export type UiStrings = Readonly<{
     zoneDown: (region: Region) => string
     edgeFlow: (rps: number) => string
     ghost: (kind: ComponentKind) => string
+    modePick: string
+    loadHidden: string
   }>
   hud: Readonly<{
     load: string
@@ -91,6 +93,20 @@ export type UiStrings = Readonly<{
     journalNote: string
     finishedTitle: string
     finishedBody: string
+    answerFirst: string
+    moreBadge: string
+    askAiTitle: string
+    copy: string
+    copied: string
+  }>
+  quiz: Readonly<{
+    heading: string
+    correct: string
+    incorrect: string
+    oneAttempt: string
+    pickOnBoard: string
+    choices: string
+    answerWas: (answer: string) => string
   }>
   task: Readonly<{
     heading: string

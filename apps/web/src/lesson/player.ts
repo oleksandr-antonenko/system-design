@@ -43,6 +43,7 @@ import {
   taskSurfaces,
   withLesson,
 } from './dsl'
+import { type QuizSpec, isBoardQuiz, quizAnswer, quizOf } from './quiz'
 
 // Плеер урока (design D2): шаги, задача, журнал ходов, поверхности. Всё, что
 // зависит от вида доски, он спрашивает у `lesson.kind`.
@@ -71,11 +72,23 @@ export const TaskState = Schema.Struct({
 })
 export type TaskState = typeof TaskState.Type
 
+/** Ответ на квиз. Попытка одна, поэтому верный ответ — ответ с первой
+    попытки (для прогресса). */
+export const QuizAnswer = Schema.Struct({
+  picked: Schema.String,
+  isCorrect: Schema.Boolean,
+})
+export type QuizAnswer = typeof QuizAnswer.Type
+
 export const Model = Schema.Struct({
   course: Schema.String,
   slug: Schema.String,
   step: Schema.Number,
   tasks: Schema.Record(Schema.String, TaskState),
+  quizzes: Schema.Record(Schema.String, QuizAnswer),
+  /** Шаги, у которых раскрыт блок «Подробнее». */
+  openMore: Schema.Array(Schema.String),
+  isAskAiCopied: Schema.Boolean,
   board: BoardState,
   /** Состояния поверхностей задач урока по id поверхности. */
   surfaces: Schema.Record(Schema.String, SurfaceState),
@@ -105,6 +118,10 @@ export const Message = defineMessageUnion({
   PressedRedoKey: {},
   PressedDeleteKey: {},
   PressedEscapeKey: {},
+  ClickedChoice: { candidate: Schema.String },
+  ClickedMore: { stepId: Schema.String },
+  ClickedCopyAskAi: { template: Schema.String },
+  CompletedCopyAskAiTemplate: { isCopied: Schema.Boolean },
   ClickedCheck: {},
   ClickedHint: {},
   ClickedShowSolution: {},
@@ -156,6 +173,18 @@ export const ScrollStepIntoView = Command.define('ScrollStepIntoView', {
     }).pipe(
       Effect.as(Message.CompletedScrollStepIntoView()),
       Effect.catch(() => Effect.succeed(Message.CompletedScrollStepIntoView())),
+    ),
+})
+
+export const CopyAskAiTemplate = Command.define('CopyAskAiTemplate', {
+  args: { template: Schema.String },
+  messages: [Message.CompletedCopyAskAiTemplate],
+  execute: ({ template }) =>
+    Effect.tryPromise(() => navigator.clipboard.writeText(template)).pipe(
+      Effect.as(Message.CompletedCopyAskAiTemplate({ isCopied: true })),
+      Effect.catch(() =>
+        Effect.succeed(Message.CompletedCopyAskAiTemplate({ isCopied: false })),
+      ),
     ),
 })
 
@@ -225,18 +254,59 @@ export const currentTask = <T extends KindTypes>(
     })),
   )
 
+export const quizAnswerOf = (
+  model: Model,
+  quizId: string,
+): Option.Option<QuizAnswer> => Record.get(model.quizzes, quizId)
+
+export type CurrentQuiz<T extends KindTypes> = Readonly<{
+  spec: QuizSpec<T>
+  maybeAnswer: Option.Option<QuizAnswer>
+}>
+
+export const currentQuiz = <T extends KindTypes>(
+  lesson: LessonDefinition<T>,
+  model: Model,
+): Option.Option<CurrentQuiz<T>> =>
+  pipe(
+    Array.get(lesson.steps, model.step),
+    Option.flatMap(lessonStep => quizOf<T>(lessonStep)),
+    Option.map(spec => ({
+      spec,
+      maybeAnswer: quizAnswerOf(model, spec.id),
+    })),
+  )
+
+/** Верный ответ квиза на доске текущего шага. */
+export const correctAnswer = <T extends KindTypes>(
+  lesson: LessonDefinition<T>,
+  model: Model,
+  quiz: QuizSpec<T>,
+): string => {
+  const doc = currentDoc(lesson, model)
+  return quizAnswer(quiz, doc, lesson.kind.run(doc))
+}
+
+/** Шаг держит «Далее»: задача не решена или на вопрос ещё не ответили. */
+const isBlocking = <T extends KindTypes>(
+  model: Model,
+  lessonStep: LessonDefinition<T>['steps'][number],
+): boolean =>
+  Option.exists(
+    taskOf(lessonStep),
+    spec => !isSolved(taskStateOf(model, spec.id)),
+  ) ||
+  Option.exists(quizOf<T>(lessonStep), spec =>
+    Option.isNone(quizAnswerOf(model, spec.id)),
+  )
+
 export const maxAllowedStep = <T extends KindTypes>(
   lesson: LessonDefinition<T>,
   model: Model,
 ): number =>
   pipe(
     lesson.steps,
-    Array.findFirstIndex(lessonStep =>
-      Option.exists(
-        taskOf(lessonStep),
-        spec => !isSolved(taskStateOf(model, spec.id)),
-      ),
-    ),
+    Array.findFirstIndex(lessonStep => isBlocking(model, lessonStep)),
     Option.getOrElse(() => lesson.steps.length - 1),
   )
 
@@ -257,6 +327,16 @@ export const isReplaying = <T extends KindTypes>(
     Option.isSome(state.maybeReplayIndex),
   )
 
+/** Квиз шага ждёт выбора на доске. */
+export const isPicking = <T extends KindTypes>(
+  lesson: LessonDefinition<T>,
+  model: Model,
+): boolean =>
+  Option.exists(
+    currentQuiz(lesson, model),
+    ({ spec, maybeAnswer }) => isBoardQuiz(spec) && Option.isNone(maybeAnswer),
+  )
+
 export const boardMode = <T extends KindTypes>(
   lesson: LessonDefinition<T>,
   model: Model,
@@ -265,7 +345,9 @@ export const boardMode = <T extends KindTypes>(
     ? 'Edit'
     : isReplaying(lesson, model)
       ? 'Replay'
-      : 'View'
+      : isPicking(lesson, model)
+        ? 'Pick'
+        : 'View'
 
 /** Модель доски вида урока. */
 export const boardModelOf = <T extends KindTypes>(
@@ -427,6 +509,9 @@ export const init = <T extends KindTypes>(
     slug: lesson.slug,
     step: 0,
     tasks: {},
+    quizzes: {},
+    openMore: [],
+    isAskAiCopied: false,
     board: lesson.kind.board.state.wrap(lesson.kind.board.init),
     surfaces: initialSurfaces(lesson),
     maybeSurfaceTab: Option.none(),
@@ -493,6 +578,7 @@ export const goToStep = <T extends KindTypes>(
       board: board => interruptBoard(lesson, board),
       maybeToast: () => Option.none(),
       maybeHoveredRef: () => Option.none(),
+      isAskAiCopied: () => false,
     }),
     commands: [ScrollStepIntoView({ step })],
     outMessage: OutMessage.ChangedStep({ step }),
@@ -567,7 +653,35 @@ const boardInput = <T extends KindTypes>(
 ): BoardInput<T> => ({
   doc: currentDoc(lesson, model),
   mode: boardMode(lesson, model),
+  pickable: isPicking(lesson, model)
+    ? Option.match(currentQuiz(lesson, model), {
+        onNone: () => [],
+        onSome: ({ spec }) => spec.candidates,
+      })
+    : [],
 })
+
+/** Одна попытка: первый выбор записывается, следующие не меняют ответ. */
+const answerQuiz = <T extends KindTypes>(
+  lesson: LessonDefinition<T>,
+  model: Model,
+  candidate: string,
+): PlainReturn =>
+  Option.match(currentQuiz(lesson, model), {
+    onNone: () => ({ model }),
+    onSome: ({ spec, maybeAnswer }) =>
+      Option.isSome(maybeAnswer) || !Array.contains(spec.candidates, candidate)
+        ? { model }
+        : {
+            model: modifyFields(model, {
+              quizzes: quizzes =>
+                Record.set(quizzes, spec.id, {
+                  picked: candidate,
+                  isCorrect: candidate === correctAnswer(lesson, model, spec),
+                }),
+            }),
+          },
+  })
 
 const boardAdapters = <T extends KindTypes>(lesson: LessonDefinition<T>) => ({
   read: (parent: Model) => lesson.kind.board.state.unwrap(parent.board),
@@ -584,7 +698,7 @@ const boardAdapters = <T extends KindTypes>(lesson: LessonDefinition<T>) => ({
     (parent: Model): PlainReturn =>
       outMessage._tag === 'ProposedOps'
         ? applyStudentOps(lesson, parent, outMessage.ops)
-        : { model: parent },
+        : answerQuiz(lesson, parent, outMessage.id),
 })
 
 const foldBoard = <T extends KindTypes>(
@@ -841,6 +955,22 @@ export const updateWith =
         model: modifyFields(model, {
           board: board => interruptBoard(lesson, board),
         }),
+      }),
+      ClickedChoice: ({ candidate }) => answerQuiz(lesson, model, candidate),
+      ClickedMore: ({ stepId }) => ({
+        model: modifyFields(model, {
+          openMore: openMore =>
+            Array.contains(openMore, stepId)
+              ? Array.filter(openMore, open => open !== stepId)
+              : [...openMore, stepId],
+        }),
+      }),
+      ClickedCopyAskAi: ({ template }) => ({
+        model,
+        commands: [CopyAskAiTemplate({ template })],
+      }),
+      CompletedCopyAskAiTemplate: ({ isCopied }) => ({
+        model: modifyFields(model, { isAskAiCopied: () => isCopied }),
       }),
       ClickedCheck: () => check(lesson, model),
       ClickedHint: () =>

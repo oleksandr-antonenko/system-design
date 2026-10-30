@@ -18,6 +18,11 @@ const writes = (sim: SimResult) =>
   Math.min(sim.databaseLoad, sim.load * writeShare)
 const missedReads = (sim: SimResult) => sim.databaseLoad - writes(sim)
 
+const LOAD = 1600
+const quizWrites = LOAD * writeShare
+const quizReads = LOAD - quizWrites
+const quizMisses = quizReads * (1 - cacheHitShare)
+
 export default {
   title: 'Podėliavimas',
   summary:
@@ -92,6 +97,24 @@ Dabar labiausiai apkrauti blokai – [[app3|serveriai]], 80 %. Nemaža jų darbo
       `rašymas ${n(writes(sim))} + nepataikymai ${n(missedReads(sim))} rps`,
     serversNext: sim =>
       `${n(incoming(sim, 'app3'))} rps iš 400 · ${percent(utilization(sim, 'app3'))}`,
+  },
+  quizzes: {
+    'db-after-cache': {
+      question: `Podėlis pats atsako į ${percent(cacheHitShare)} skaitymų. Kiek užklausų per sekundę pasieks duomenų bazę esant ${n(LOAD)} rps, kai podėlis bus savo vietoje?`,
+      options: {
+        unchanged: `${n(LOAD)} rps – tiek pat`,
+        'all-reads': `${n(quizReads)} rps`,
+        'writes-and-misses': `${n(quizWrites + quizMisses)} rps`,
+        misses: `${n(quizMisses)} rps`,
+      },
+      wrong: {
+        unchanged:
+          'Podėlis pasiima skaitymus, į kuriuos žino atsakymą, todėl duomenų bazę pasiekia gerokai mažiau.',
+        'all-reads': `${n(quizReads)} – tai visi skaitymai. Bet ${percent(cacheHitShare)} jų podėlis atiduos pats, į bazę keliaus tik nepataikymai.`,
+        misses: `${n(quizMisses)} – tai tik nepataikymai. Rašymas į bazę eina pro podėlį: dar ${n(quizWrites)} rps.`,
+      },
+      explain: `Bazę pasieks visas rašymas – ${percent(writeShare)} iš ${n(LOAD)}, tai ${n(quizWrites)} rps, – ir podėlio nepataikymai: ${percent(1 - cacheHitShare)} iš ${n(quizReads)} skaitymų, tai ${n(quizMisses)} rps. Iš viso ${n(quizWrites + quizMisses)} rps iš 1500 galimų: bazė atsikvėps. Patikrinkite tai užduotyje.`,
+    },
   },
   tasks: {
     'place-cache': {

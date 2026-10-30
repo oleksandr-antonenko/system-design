@@ -13,5 +13,6 @@ export default defineLessonMeta(course, {
     'terminal.ipAddr',
     'browser.typeAddress',
     'browser.errConnectionRefused',
+    'quiz.choice',
   ],
 })

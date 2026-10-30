@@ -12,5 +12,7 @@ export default defineLessonMeta(course, {
     'transport.hopCounter',
     'board.routerChain',
     'terminal.ping',
+    'board.printout',
+    'quiz.nextHop',
   ],
 })

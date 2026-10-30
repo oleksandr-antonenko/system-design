@@ -1,6 +1,7 @@
 import { Option } from 'effect'
 import type { HtmlBuilder } from 'foldkit/html'
 import {
+  Command,
   click,
   expect,
   given,
@@ -35,11 +36,22 @@ const entry: Lesson = {
         summary: 'The phone talks to the internet through the router.',
         labels: { phone: { name: 'Phone' }, router: { name: 'Router' } },
         steps: {
-          home: { title: 'Home', body: 'The [[router|router]] is the door.' },
+          home: {
+            title: 'Home',
+            body: 'The [[router|router]] is the door.\n\nAt home:\n- a phone\n- a router',
+            more: {
+              title: 'More: why a router',
+              body: 'It joins two networks.',
+            },
+          },
           join: { title: 'Join', body: 'Connect the phone to Home.' },
           online: { title: 'Online', body: 'The phone is online.' },
         },
         annotations: { door: () => 'door to the internet' },
+        askAi: {
+          lead: 'Start with what you see:',
+          template: 'My phone shows Home but no internet. What should I check?',
+        },
         tasks: {
           'join-home': {
             prompt: 'Connect the phone to the home Wi-Fi.',
@@ -98,6 +110,50 @@ describe('task surfaces', () => {
       click(role('button', { name: 'Check' })),
       expect(text('The phone is home.')).toExist(),
       expect(goal).toExist(),
+    )
+  })
+})
+
+describe('step text extras', () => {
+  test('a bullet list and a collapsed “More” block that opens on click', () => {
+    scene(
+      sceneFor,
+      given(Player.init('networks', phoneOnline, 0)),
+      expect(role('listitem', { name: 'a phone' })).toExist(),
+      expect(text('It joins two networks.')).toBeAbsent(),
+      click(role('button', { name: /More: why a router/ })),
+      expect(role('button', { name: /More: why a router/ })).toHaveAttr(
+        'aria-expanded',
+        'true',
+      ),
+      expect(text('It joins two networks.')).toExist(),
+    )
+  })
+
+  test('the last step offers the AI template with a copy button', () => {
+    const solved = {
+      ...Player.init('networks', phoneOnline, 1),
+      tasks: {
+        'join-home': {
+          ...Player.taskStateOf(Player.init('networks', phoneOnline, 1), 'x'),
+          check: Player.CheckState.Solved({ withHint: false }),
+        },
+      },
+      step: 2,
+    }
+    scene(
+      sceneFor,
+      given(solved),
+      expect(role('heading', { name: 'How to ask an AI' })).toExist(),
+      expect(
+        text('My phone shows Home but no internet. What should I check?'),
+      ).toExist(),
+      click(role('button', { name: 'Copy' })),
+      Command.resolve(
+        Player.CopyAskAiTemplate,
+        Player.Message.CompletedCopyAskAiTemplate({ isCopied: true }),
+      ),
+      expect(text('Copied')).toExist(),
     )
   })
 })

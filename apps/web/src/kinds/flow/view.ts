@@ -72,7 +72,7 @@ export const boardInputs = <ParentMessage>(
   return {
     locale: context.locale,
     doc,
-    mode: context.mode === 'Pick' ? 'View' : context.mode,
+    mode: context.mode,
     palette: context.palette,
     newKinds: Array.filter(context.newPalette, isComponentKind),
     later: Array.getSomes(
@@ -97,6 +97,10 @@ export const boardInputs = <ParentMessage>(
     sim: shownSimulation(anim, doc),
     prefersDark: context.prefersDark,
     isReducedMotion: context.isReducedMotion,
+    ...Option.match(context.maybeQuiz, {
+      onNone: () => ({}),
+      onSome: quiz => ({ pick: quiz }),
+    }),
   }
 }
 

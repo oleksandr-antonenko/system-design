@@ -94,6 +94,8 @@ export const ru = {
     zoneDown: region => `${regionName[region]} · регион недоступен`,
     edgeFlow: rps => `${n(rps)} rps`,
     ghost: kind => `сюда: ${kindName[kind]}`,
+    modePick: 'Вопрос · выберите на доске',
+    loadHidden: 'нагрузка скрыта до ответа',
   },
   hud: {
     load: 'Нагрузка',
@@ -138,6 +140,11 @@ export const ru = {
       'Доска на любом шаге получается применением этих операций с начала урока. Демонстрации и ходы ученика записываются одним языком, поэтому работают перемотка, отмена и «Показать решение».',
     finishedTitle: 'Урок пройден',
     finishedBody: 'Следующие уроки появятся в программе курса.',
+    answerFirst: 'Сначала ответьте на вопрос',
+    moreBadge: 'для любопытных',
+    askAiTitle: 'Как спросить ИИ',
+    copy: 'Скопировать',
+    copied: 'Скопировано',
   },
   task: {
     heading: 'Задача на доске',
@@ -159,6 +166,15 @@ export const ru = {
     resultCost: 'Цена',
     continueLesson: 'Дальше →',
     surfaces: 'Где решать задачу',
+  },
+  quiz: {
+    heading: 'Вопрос',
+    correct: 'Верно с первой попытки',
+    incorrect: 'Не совсем',
+    oneAttempt: 'Попытка одна: после неё покажем ответ и объяснение.',
+    pickOnBoard: 'Нажмите ответ на доске. С клавиатуры: Tab до него и Enter.',
+    choices: 'Варианты ответа',
+    answerWas: answer => `Правильный ответ: ${answer}`,
   },
   network: {
     boardLabel: 'Схема сети',

@@ -58,7 +58,7 @@ const packetTexts = {
   steps: {
     intro: {
       title: 'Intro',
-      body: ({ doc }) => `${doc.net.devices.length} devices`,
+      body: ({ doc }) => `${doc.doc.devices.length} devices`,
     },
   },
   annotations: {},

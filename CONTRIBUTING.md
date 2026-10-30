@@ -169,7 +169,25 @@ Markup in step texts: `**bold**`, `[[blockId|words]]` (highlights the block on h
 
 Optional sections of the texts: `labels` gives board entities a caption per language (`{ phone: { name: 'Phone', note: 'in your hand' } }`; a lesson lists them in `labels: ['phone', …]` of `lesson.ts`, and a missing caption is a type error), and `feedback` replaces the text of a message code in this lesson's task (`{ ConnectIntoClients: 'Users only send requests.' }`, or a function of the message).
 
-`pnpm check` runs the content tests on every lesson through its board kind: the lesson uses the board of its course, all operations apply, a task is unsolved at its start and its solution meets every goal, every `[[id|…]]`, highlight and labelled entity points at something on the board, every task surface exists and is unlocked by then, and no text is empty. It also checks every course: the folder matches the id, each declared language has its `course.<locale>.ts`, a lesson's module and `unlocks` belong to its course, and no feature is unlocked twice. Folders are picked up automatically; you do not edit any shared file.
+**Quizzes.** A step may ask a question instead of setting a task. There is one attempt; after it the step shows the correct answer and the explanation and opens Next, even if the answer was wrong:
+
+```ts
+{
+  id: 'reads-and-writes',
+  ops: [],
+  stage: [],
+  quiz: {
+    id: 'db-after-cache',
+    kind: 'Choice', // options in the card; 'PickDevice' = click a block or device on the board
+    candidates: ['unchanged', 'all-reads', 'writes-and-misses', 'misses'],
+    answer: 'writes-and-misses', // or (doc, run) => id, computed from the step's board
+  },
+}
+```
+
+Its texts go to `quizzes` in `text.<locale>.ts`: `question`, `explain`, for `Choice` an `options` text per candidate, and optionally `wrong` (why a candidate is wrong) and `tags` (a short label shown on the board next to a picked block). Other optional parts of a lesson's texts: `more: { title, body }` in a step (a collapsed “More” block for the curious) and `askAi: { lead, template, note? }` (a “How to ask an AI” block with a copy button on the last step). Step text may contain bullet lists: lines starting with `- `.
+
+`pnpm check` runs the content tests on every lesson through its board kind: the lesson uses the board of its course, all operations apply, a task is unsolved at its start and its solution meets every goal, every `[[id|…]]`, highlight and labelled entity points at something on the board, every task surface exists and is unlocked by then, every quiz's answer is one of its candidates and its candidates are on that step's board, and no text is empty. It also checks every course: the folder matches the id, each declared language has its `course.<locale>.ts`, a lesson's module and `unlocks` belong to its course, and no feature is unlocked twice. Folders are picked up automatically; you do not edit any shared file.
 
 ### Languages
 

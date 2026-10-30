@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'vitest'
 
-import { parseProse, referencedIds } from './markup'
+import { parseBlocks, parseProse, referencedIds } from './markup'
 
 describe('lesson markup', () => {
   test('bold text and block references inside a paragraph', () => {
@@ -43,5 +43,43 @@ describe('lesson markup', () => {
     expect(
       referencedIds('[[users|Users]] call [[app1|it]].\n\n[[db|DB]]'),
     ).toEqual(['users', 'app1', 'db'])
+  })
+})
+
+describe('lists in step text', () => {
+  test('lines starting with "- " become a list after the lead paragraph', () => {
+    expect(
+      parseBlocks(
+        'Now envelopes carry addresses:\n- **IP address** is a number\n  written as four numbers\n- the [[router|router]] hands it out',
+      ),
+    ).toEqual([
+      {
+        _tag: 'Paragraph',
+        inlines: [{ _tag: 'Text', text: 'Now envelopes carry addresses:' }],
+      },
+      {
+        _tag: 'List',
+        items: [
+          [
+            { _tag: 'Strong', text: 'IP address' },
+            { _tag: 'Text', text: ' is a number written as four numbers' },
+          ],
+          [
+            { _tag: 'Text', text: 'the ' },
+            { _tag: 'Ref', id: 'router', text: 'router' },
+            { _tag: 'Text', text: ' hands it out' },
+          ],
+        ],
+      },
+    ])
+  })
+
+  test('a paragraph without bullets stays a paragraph; refs inside lists are found', () => {
+    expect(parseBlocks('One - two.')).toEqual([
+      { _tag: 'Paragraph', inlines: [{ _tag: 'Text', text: 'One - two.' }] },
+    ])
+    expect(
+      referencedIds('Intro.\n\n- [[link:a-b|cable]]\n- [[env:transport|TCP]]'),
+    ).toEqual(['link:a-b', 'env:transport'])
   })
 })

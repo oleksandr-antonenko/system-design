@@ -9,6 +9,7 @@ export default defineLessonMeta(course, {
   locales: ['uk', 'ru', 'en', 'lt'],
   unlocks: [
     'board.dnsServer',
+    'board.contacts',
     'browser.addressBar',
     'browser.errNameNotResolved',
     'wifi.networkInfo',

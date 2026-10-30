@@ -23,19 +23,23 @@ import {
   taskOf,
   withLesson,
 } from './dsl'
-import { type Paragraph, parseProse } from './markup'
+import { type Paragraph, parseBlocks } from './markup'
 import {
   CheckState,
+  type CurrentQuiz,
   type CurrentTask,
   Message,
   type Model,
   activeSurface,
   boardMode,
   boardModelOf,
+  correctAnswer,
   currentDoc,
+  currentQuiz,
   currentTask,
   docAt,
   isEditable,
+  isPicking,
   isReplaying,
   maxAllowedStep,
   opsOf,
@@ -44,6 +48,7 @@ import {
   unlocksOf,
   visibleSurfaces,
 } from './player'
+import { isBoardQuiz } from './quiz'
 
 export type PlayerViewInputs = Readonly<{
   locale: Locale
@@ -76,7 +81,12 @@ const messageText = <T extends KindTypes>(
     onSome: message => {
       const override = page.texts.feedback?.[message._tag]
       return override === undefined
-        ? page.lesson.kind.renderMessage(page.ui, message)
+        ? page.lesson.kind.renderMessage(page.locale, page.ui, message, id =>
+            Option.match(labelOf(page.texts)(id), {
+              onNone: () => id,
+              onSome: label => label.name,
+            }),
+          )
         : typeof override === 'string'
           ? override
           : override(message)
@@ -109,10 +119,23 @@ const paragraphView = (paragraph: Paragraph, h: HtmlBuilder<Message>): Html =>
     }),
   )
 
+const listView = (
+  items: ReadonlyArray<Paragraph>,
+  h: HtmlBuilder<Message>,
+): Html =>
+  h.ul(
+    [],
+    Array.map(items, item => h.li([], [paragraphView(item, h)])),
+  )
+
 const proseView = (source: string, h: HtmlBuilder<Message>): Html =>
   h.div(
     [h.Class('prose')],
-    Array.map(parseProse(source), paragraph => paragraphView(paragraph, h)),
+    Array.map(parseBlocks(source), block =>
+      block._tag === 'Paragraph'
+        ? paragraphView(block.inlines, h)
+        : listView(block.items, h),
+    ),
   )
 
 // STEPS
@@ -410,6 +433,7 @@ const taskCardView = <T extends KindTypes>(
 // кнопка в карточке решённой задачи.
 const inlineNextView = <T extends KindTypes>(
   { lesson, model, texts, ui }: Page<T>,
+  isLocked: boolean,
   h: HtmlBuilder<Message>,
 ): ReadonlyArray<Html> =>
   Option.match(Array.get(lesson.steps, model.step + 1), {
@@ -422,10 +446,229 @@ const inlineNextView = <T extends KindTypes>(
             [
               h.Type('button'),
               h.Class('btn primary'),
-              h.OnClick(Message.ClickedNext()),
+              ...(isLocked
+                ? [h.Disabled(true)]
+                : [h.OnClick(Message.ClickedNext())]),
             ],
             [ui.player.nextTo(stepTitle(texts, nextStep.id))],
           ),
+        ],
+      ),
+    ],
+  })
+
+// QUIZ
+
+/** Как назвать вариант квиза: текст варианта `Choice`, подпись урока или
+    имя цели на доске. */
+const candidateName = <T extends KindTypes>(
+  page: Page<T>,
+  quiz: CurrentQuiz<T>,
+  doc: T['Doc'],
+  candidate: string,
+): string =>
+  quiz.spec.kind === 'Choice'
+    ? (page.texts.quizzes?.[quiz.spec.id]?.options?.[candidate] ?? candidate)
+    : Option.match(labelOf(page.texts)(candidate), {
+        onNone: () => page.lesson.kind.targetName(doc, candidate, page.ui),
+        onSome: label => label.name,
+      })
+
+const choicesView = <T extends KindTypes>(
+  page: Page<T>,
+  quiz: CurrentQuiz<T>,
+  doc: T['Doc'],
+  answer: string,
+  h: HtmlBuilder<Message>,
+): Html => {
+  const isAnswered = Option.isSome(quiz.maybeAnswer)
+  return h.div(
+    [
+      h.Class('quiz-options'),
+      h.Role('group'),
+      h.AriaLabel(page.ui.quiz.choices),
+    ],
+    Array.map(quiz.spec.candidates, candidate => {
+      const isPicked = Option.exists(
+        quiz.maybeAnswer,
+        ({ picked }) => picked === candidate,
+      )
+      const state =
+        isAnswered && candidate === answer ? ' right' : isPicked ? ' wrong' : ''
+      const picture = Option.flatMap(
+        Option.fromNullishOr(quiz.spec.pictures?.[candidate]),
+        key => page.lesson.kind.picture(key, page.ui, h),
+      )
+      return h.keyed('button')(
+        candidate,
+        [
+          h.Type('button'),
+          h.Class(`quiz-option${state}`),
+          h.AriaPressed(isPicked ? 'true' : 'false'),
+          ...(isAnswered
+            ? [h.Disabled(true)]
+            : [h.OnClick(Message.ClickedChoice({ candidate }))]),
+        ],
+        [
+          ...Option.toArray(picture),
+          h.span([], [candidateName(page, quiz, doc, candidate)]),
+        ],
+      )
+    }),
+  )
+}
+
+const quizCardView = <T extends KindTypes>(
+  page: Page<T>,
+  quiz: CurrentQuiz<T>,
+  doc: T['Doc'],
+  h: HtmlBuilder<Message>,
+): Html => {
+  const { ui } = page
+  const quizTexts = page.texts.quizzes?.[quiz.spec.id]
+  const answer = correctAnswer(page.lesson, page.model, quiz.spec)
+  const isChoice = !isBoardQuiz(quiz.spec)
+  return Option.match(quiz.maybeAnswer, {
+    onNone: () =>
+      h.div(
+        [h.Class('quiz-card')],
+        [
+          h.div(
+            [h.Class('quiz-head')],
+            [
+              h.span([h.Class('mark'), h.AriaHidden(true)], ['?']),
+              ui.quiz.heading,
+            ],
+          ),
+          h.p([h.Class('quiz-question')], [quizTexts?.question ?? '']),
+          isChoice
+            ? choicesView(page, quiz, doc, answer, h)
+            : h.p([h.Class('quiz-how')], [ui.quiz.pickOnBoard]),
+          h.p([h.Class('quiz-attempt')], [ui.quiz.oneAttempt]),
+        ],
+      ),
+    onSome: ({ picked, isCorrect }) =>
+      h.div(
+        [h.Class(`quiz-card answered ${isCorrect ? 'right' : 'wrong'}`)],
+        [
+          h.div(
+            [h.Class('quiz-head')],
+            [
+              h.span(
+                [h.Class('mark'), h.AriaHidden(true)],
+                [isCorrect ? '✓' : '✕'],
+              ),
+              isCorrect ? ui.quiz.correct : ui.quiz.incorrect,
+            ],
+          ),
+          h.p([h.Class('quiz-question')], [quizTexts?.question ?? '']),
+          ...(isChoice ? [choicesView(page, quiz, doc, answer, h)] : []),
+          h.div(
+            [h.Class('quiz-result'), h.Role('status')],
+            [
+              ...(isCorrect
+                ? []
+                : Option.match(
+                    Option.fromNullishOr(quizTexts?.wrong?.[picked]),
+                    {
+                      onNone: () => [],
+                      onSome: wrong => [h.p([h.Class('quiz-wrong')], [wrong])],
+                    },
+                  )),
+              h.p(
+                [h.Class('quiz-answer')],
+                [ui.quiz.answerWas(candidateName(page, quiz, doc, answer))],
+              ),
+              proseView(quizTexts?.explain ?? '', h),
+            ],
+          ),
+        ],
+      ),
+  })
+}
+
+/** Сворачиваемый блок «Подробнее» шага. */
+const moreView = <T extends KindTypes>(
+  { model, texts, ui }: Page<T>,
+  stepId: string,
+  h: HtmlBuilder<Message>,
+): ReadonlyArray<Html> =>
+  Option.match(Option.fromNullishOr(texts.steps?.[stepId]?.more), {
+    onNone: () => [],
+    onSome: more => {
+      const isOpen = Array.contains(model.openMore, stepId)
+      return [
+        h.div(
+          [h.Class(`step-more${isOpen ? ' open' : ''}`)],
+          [
+            h.button(
+              [
+                h.Type('button'),
+                h.Class('more-toggle'),
+                h.AriaExpanded(isOpen),
+                h.AriaControls(`more-${stepId}`),
+                h.OnClick(Message.ClickedMore({ stepId })),
+              ],
+              [
+                h.span([h.Class('more-title')], [more.title]),
+                h.span([h.Class('more-badge')], [ui.player.moreBadge]),
+              ],
+            ),
+            ...(isOpen
+              ? [
+                  h.div(
+                    [h.Id(`more-${stepId}`), h.Class('more-body')],
+                    [proseView(more.body, h)],
+                  ),
+                ]
+              : []),
+          ],
+        ),
+      ]
+    },
+  })
+
+/** «Как спросить ИИ» на шаге-итоге: шаблон вопроса с кнопкой. */
+const askAiView = <T extends KindTypes>(
+  { model, texts, ui }: Page<T>,
+  h: HtmlBuilder<Message>,
+): ReadonlyArray<Html> =>
+  Option.match(Option.fromNullishOr(texts.askAi), {
+    onNone: () => [],
+    onSome: askAi => [
+      h.section(
+        [h.Class('ask-ai'), h.AriaLabel(ui.player.askAiTitle)],
+        [
+          h.h3([], [ui.player.askAiTitle]),
+          proseView(askAi.lead, h),
+          h.blockquote([h.Class('ask-ai-template')], [askAi.template]),
+          h.div(
+            [h.Class('ask-ai-actions')],
+            [
+              h.button(
+                [
+                  h.Type('button'),
+                  h.Class('btn'),
+                  h.OnClick(
+                    Message.ClickedCopyAskAi({ template: askAi.template }),
+                  ),
+                ],
+                [ui.player.copy],
+              ),
+              ...(model.isAskAiCopied
+                ? [
+                    h.span(
+                      [h.Class('ask-ai-copied'), h.Role('status')],
+                      [ui.player.copied],
+                    ),
+                  ]
+                : []),
+            ],
+          ),
+          ...Option.match(Option.fromNullishOr(askAi.note), {
+            onNone: () => [],
+            onSome: note => [proseView(note, h)],
+          }),
         ],
       ),
     ],
@@ -444,11 +687,9 @@ const theoryView = <T extends KindTypes>(
   })
   const maxStep = maxAllowedStep(lesson, model)
   const isLast = model.step === lesson.steps.length - 1
-  const atUnsolvedTask =
-    model.step === maxStep &&
-    Option.isSome(currentTask(lesson, model)) &&
-    !isLast &&
-    maxStep < lesson.steps.length - 1
+  const isHeld = model.step === maxStep && !isLast
+  const atUnsolvedTask = isHeld && Option.isSome(currentTask(lesson, model))
+  const atUnansweredQuiz = isHeld && Option.isSome(currentQuiz(lesson, model))
 
   return h.section(
     [h.AriaLabel(ui.lesson.theoryRegion), h.Class('theory')],
@@ -503,11 +744,26 @@ const theoryView = <T extends KindTypes>(
                     ],
                   ),
                   proseView(stepBody(lesson, texts, lessonStep.id, doc), h),
+                  ...moreView(page, lessonStep.id, h),
                   ...(index === model.step
                     ? Option.match(currentTask(lesson, model), {
-                        onNone: () => inlineNextView(page, h),
+                        onNone: () =>
+                          Option.match(currentQuiz(lesson, model), {
+                            onNone: () => inlineNextView(page, false, h),
+                            onSome: quiz => [
+                              quizCardView(page, quiz, doc, h),
+                              ...inlineNextView(
+                                page,
+                                Option.isNone(quiz.maybeAnswer),
+                                h,
+                              ),
+                            ],
+                          }),
                         onSome: task => [taskCardView(page, task, doc, h)],
                       })
+                    : []),
+                  ...(index === lesson.steps.length - 1
+                    ? askAiView(page, h)
                     : []),
                 ],
               )
@@ -544,9 +800,11 @@ const theoryView = <T extends KindTypes>(
             [
               atUnsolvedTask
                 ? ui.player.solveFirst
-                : isLast
-                  ? ui.player.lessonEnd
-                  : ui.player.navHint,
+                : atUnansweredQuiz
+                  ? ui.player.answerFirst
+                  : isLast
+                    ? ui.player.lessonEnd
+                    : ui.player.navHint,
             ],
           ),
           h.button(
@@ -717,7 +975,25 @@ const boardContext = <T extends KindTypes>(
       focusNodes: state.check._tag === 'Failed' ? state.check.focusNodes : [],
       focusEdges: state.check._tag === 'Failed' ? state.check.focusEdges : [],
     })),
-    maybeQuiz: Option.none(),
+    maybeQuiz: Option.flatMap(currentQuiz(lesson, model), quiz =>
+      isBoardQuiz(quiz.spec)
+        ? Option.some({
+            candidates: quiz.spec.candidates,
+            maybePicked: Option.map(quiz.maybeAnswer, ({ picked }) => picked),
+            maybeAnswer: Option.map(quiz.maybeAnswer, () =>
+              correctAnswer(lesson, model, quiz.spec),
+            ),
+            tags: Record.getSomes(
+              Record.map(texts.quizzes?.[quiz.spec.id]?.tags ?? {}, tag =>
+                Option.fromNullishOr(tag),
+              ),
+            ),
+            hidden: isPicking(lesson, model)
+              ? (quiz.spec.hideUntilAnswered ?? [])
+              : [],
+          })
+        : Option.none(),
+    ),
     palette: Option.match(task, {
       onNone: () => lessonPalette(lesson),
       onSome: ({ spec }) => spec.palette,

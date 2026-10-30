@@ -307,8 +307,22 @@ h3 {
 .prose p {
   margin: 0;
 }
-.prose p + p {
+.prose p + p,
+.prose p + ul,
+.prose ul + p {
   margin-top: 0.75em;
+}
+.prose ul {
+  margin: 0;
+  padding-left: 1.2em;
+  display: grid;
+  gap: 0.35em;
+}
+.prose ul + ul {
+  margin-top: 0.75em;
+}
+.prose li::marker {
+  color: var(--accent);
 }
 .prose strong {
   font-weight: 600;
@@ -673,6 +687,44 @@ h3 {
 .board-svg .board-node.drop-ok .body {
   stroke: var(--accent);
   stroke-width: 2.5;
+}
+/* Квиз на доске: кандидаты обведены пунктиром, неверный выбор вспыхивает
+   красным, верный ответ зеленеет. */
+.board-svg .board-node.pickable {
+  cursor: pointer;
+}
+.board-svg .board-node.pickable .body {
+  stroke: var(--accent);
+  stroke-width: 2;
+  stroke-dasharray: 6 4;
+}
+.board-svg .board-node.pickable:hover .body,
+.board-svg .board-node.pickable:focus-visible .body {
+  stroke-width: 3;
+  stroke-dasharray: none;
+}
+.board-svg .board-node.pickable:focus-visible {
+  outline: none;
+}
+.board-svg .board-node.pick-wrong .body {
+  stroke: var(--bad);
+  stroke-width: 3;
+  fill: var(--bad-soft);
+  animation: pick-flash 0.9s ease-out 1;
+}
+.board-svg .board-node.pick-right .body {
+  stroke: var(--ok);
+  stroke-width: 3;
+  fill: var(--ok-soft);
+}
+@keyframes pick-flash {
+  0%,
+  40% {
+    fill: var(--bad);
+  }
+  100% {
+    fill: var(--bad-soft);
+  }
 }
 .board-svg .board-node.drop-no {
   opacity: 0.35;
@@ -1065,6 +1117,194 @@ h3 {
   font-size: 13.5px;
 }
 
+/* ---------- квиз, «Подробнее», «Как спросить ИИ» ---------- */
+.quiz-card {
+  margin-top: 16px;
+  border: 1.5px solid var(--warn);
+  border-radius: 12px;
+  background: var(--node);
+  padding: 16px;
+  display: grid;
+  gap: 12px;
+}
+.quiz-card.answered.right {
+  border-color: var(--ok);
+}
+.quiz-card.answered.wrong {
+  border-color: var(--bad);
+}
+.quiz-head {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--warn);
+}
+.quiz-card.answered.right .quiz-head {
+  color: var(--ok);
+}
+.quiz-card.answered.wrong .quiz-head {
+  color: var(--bad);
+}
+.quiz-head .mark {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: var(--warn);
+  color: var(--page);
+  font-size: 11px;
+}
+.quiz-card.answered.right .quiz-head .mark {
+  background: var(--ok);
+}
+.quiz-card.answered.wrong .quiz-head .mark {
+  background: var(--bad);
+}
+.quiz-question {
+  margin: 0;
+  font-family: var(--font-prose);
+  font-size: 16px;
+  line-height: 1.5;
+  font-weight: 600;
+}
+.quiz-how,
+.quiz-attempt {
+  margin: 0;
+  font-size: 12px;
+  color: var(--muted);
+}
+.quiz-options {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 8px;
+}
+.quiz-option {
+  appearance: none;
+  display: grid;
+  gap: 6px;
+  justify-items: start;
+  text-align: left;
+  border: 1.5px solid var(--line);
+  border-radius: 10px;
+  background: var(--page);
+  color: var(--ink);
+  padding: 10px 12px;
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+}
+.quiz-option:hover:not(:disabled) {
+  border-color: var(--accent);
+}
+.quiz-option:disabled {
+  cursor: default;
+}
+.quiz-option.wrong {
+  border-color: var(--bad);
+  background: var(--bad-soft);
+}
+.quiz-option.right {
+  border-color: var(--ok);
+  background: var(--ok-soft);
+}
+.quiz-result {
+  display: grid;
+  gap: 8px;
+}
+.quiz-result p {
+  margin: 0;
+}
+.quiz-wrong {
+  border-radius: 8px;
+  padding: 10px 12px;
+  font-size: 12.5px;
+  background: var(--bad-soft);
+  border: 1px solid var(--bad);
+}
+.quiz-answer {
+  font-size: 12.5px;
+  font-weight: 600;
+}
+.quiz-result .prose {
+  font-size: 15px;
+}
+.step-more {
+  margin-top: 12px;
+  border-left: 3px solid var(--line);
+  padding-left: 12px;
+}
+.more-toggle {
+  appearance: none;
+  border: 0;
+  background: none;
+  padding: 4px 0;
+  color: var(--accent);
+  font: inherit;
+  font-size: 12.5px;
+  cursor: pointer;
+  display: flex;
+  gap: 8px;
+  align-items: baseline;
+  text-align: left;
+}
+.more-toggle::before {
+  content: '▸';
+}
+.step-more.open .more-toggle::before {
+  content: '▾';
+}
+.more-badge {
+  font-size: 10.5px;
+  color: var(--muted);
+}
+.more-body {
+  padding: 6px 0 4px;
+}
+.more-body .prose {
+  font-size: 15px;
+}
+.ask-ai {
+  margin-top: 18px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--node);
+  padding: 14px 16px;
+  display: grid;
+  gap: 10px;
+}
+.ask-ai h3 {
+  margin: 0;
+  font-size: 11px;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+.ask-ai-template {
+  margin: 0;
+  padding: 10px 12px;
+  border-left: 3px solid var(--accent);
+  background: var(--accent-soft);
+  border-radius: 0 8px 8px 0;
+  font-family: var(--font-prose);
+  font-size: 15px;
+  line-height: 1.5;
+  white-space: pre-wrap;
+}
+.ask-ai-actions {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+.ask-ai-copied {
+  font-size: 12px;
+  color: var(--ok);
+}
+
 /* ---------- поверхности задачи ---------- */
 /* Поверхность (панель, терминал, браузер, Wi-Fi) встаёт под доской только
    в шаге задачи; доска при этом уменьшается. На телефоне вкладки — во всю
@@ -1299,6 +1539,7 @@ h3 {
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .board-svg .board-node.pick-wrong .body,
   .board-svg .halo,
   .board-svg .board-edge.focus {
     animation: none;

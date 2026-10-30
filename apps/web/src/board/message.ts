@@ -31,10 +31,12 @@ export const Message = defineMessageUnion({
   },
   CancelledPointer: {},
   ClickedPaletteItem: { kind: ComponentKind },
+  PressedPickKey: { id: Schema.String },
 })
 export type Message = typeof Message.Type
 
 export const OutMessage = defineTaggedUnion({
   ProposedOp: { op: BoardOp },
+  PickedNode: { id: Schema.String },
 })
 export type OutMessage = typeof OutMessage.Type

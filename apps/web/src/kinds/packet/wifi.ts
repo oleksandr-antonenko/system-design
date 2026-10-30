@@ -7,10 +7,10 @@ import { modifyFields } from 'foldkit/struct'
 import type { UiStrings } from '../../i18n/ui'
 import { joinWifi } from '../../net/build'
 import { findHost } from '../../net/doc'
-import { wifiOf } from '../../net/topology'
+import { nearbyNetworks } from '../../net/topology'
 import { type SurfaceContext, SurfaceOutMessage } from '../contract'
 import type { PacketTypes } from '../types'
-import { type PacketOp, PacketOp as PacketOpUnion } from './doc'
+import type { PacketOp } from './doc'
 
 // Поверхность «настройки Wi-Fi» устройства (`wifi:<устройство>`, план 3.2) в
 // самом простом виде: сети на доске, пароль и «Подключиться». Она доказывает
@@ -69,9 +69,7 @@ export const update =
               ? {
                   model: modifyFields(model, { password: () => '' }),
                   outMessage: SurfaceOutMessage.ProducedOps([
-                    PacketOpUnion.Edit({
-                      op: joinWifi(context.target, ssid, model.password),
-                    }),
+                    joinWifi(context.target, ssid, model.password),
                   ]),
                 }
               : { model },
@@ -80,19 +78,18 @@ export const update =
 
 // VIEW
 
-/** Сети точек доступа и роутеров на доске, без повторов. */
+/** Сети, которые видит устройство: от сильного сигнала к слабому. */
 export const networksOf = (context: Context): ReadonlyArray<string> =>
   Array.dedupe(
-    Array.getSomes(
-      Array.map(context.doc.net.devices, device =>
-        Option.map(wifiOf(device), wifi => wifi.ssid),
-      ),
+    Array.map(
+      nearbyNetworks(context.doc.doc, context.target),
+      network => network.ssid,
     ),
   )
 
 const joinedNetwork = (context: Context): Option.Option<string> =>
   pipe(
-    findHost(context.doc.net, context.target),
+    findHost(context.doc.doc, context.target),
     Option.flatMap(host => host.maybeWifiProfile),
     Option.map(profile => profile.ssid),
   )
@@ -101,10 +98,8 @@ const joinedNetwork = (context: Context): Option.Option<string> =>
 const ghostNetwork = (context: Context): Option.Option<string> =>
   Option.flatMap(context.maybeGhost, solution =>
     Array.findFirst(solution, op =>
-      op._tag === 'Edit' &&
-      op.op._tag === 'JoinWifi' &&
-      op.op.device === context.target
-        ? Option.some(op.op.ssid)
+      op._tag === 'JoinWifi' && op.device === context.target
+        ? Option.some(op.ssid)
         : Option.none(),
     ),
   )

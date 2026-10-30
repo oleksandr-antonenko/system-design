@@ -16,5 +16,8 @@ export default defineLessonMeta(course, {
     'transport.slow',
     'router.devices',
     'terminal.arp',
+    'quiz.pickLayer',
+    'board.deviceMac',
+    'envelope.builder',
   ],
 })

@@ -3,6 +3,7 @@ import { Array, Option, Result } from 'effect'
 import type { BoardKindId } from '../courses/model'
 import type { BoardKind, EntityLabel, KindTypes } from '../kinds/contract'
 import type { KindTypesById } from '../kinds/types'
+import type { LooseQuizTexts, QuizKind, QuizSpec, QuizTexts } from './quiz'
 
 // Урок — сценарий шагов на доске своего вида (design D1, D3). Тип урока
 // выводится из вида: операции, цели, сцена и тексты-функции у `flow` и
@@ -33,7 +34,10 @@ export type LessonStep<T extends KindTypes> = Readonly<{
   id: string
   ops: ReadonlyArray<T['Op']>
   stage: ReadonlyArray<T['Stage']>
+  /** Задача или квиз: шаг держит «Далее», пока задача не решена или на
+      вопрос не ответили. Одновременно их быть не может. */
   task?: TaskSpec<T>
+  quiz?: QuizSpec<T>
 }>
 
 export type LessonDefinition<T extends KindTypes> = Readonly<{
@@ -92,9 +96,21 @@ export const withLesson = <R>(lesson: AnyLesson, run: LessonRunner<R>): R =>
 
 export type Prose<Context> = string | ((context: Context) => string)
 
+/** Сворачиваемый блок «Подробнее» шага: свёрнут, пока его не открыли. */
+export type MoreTexts = Readonly<{ title: string; body: string }>
+
 export type StepTexts<Context> = Readonly<{
   title: string
   body: Prose<Context>
+  more?: MoreTexts
+}>
+
+/** «Как спросить ИИ» на шаге-итоге: пояснение, шаблон с кнопкой
+    «Скопировать» и необязательная заметка. */
+export type AskAiTexts = Readonly<{
+  lead: string
+  template: string
+  note?: string
 }>
 
 export type TaskTexts<GoalId extends string> = Readonly<{
@@ -139,6 +155,19 @@ type TaskOf<Lesson extends LessonShape> =
       : never
     : never
 
+type QuizShape = Readonly<{
+  id: string
+  kind: QuizKind
+  candidates: ReadonlyArray<string>
+}>
+
+type QuizOf<Lesson extends LessonShape> =
+  StepOf<Lesson> extends infer LessonStepOf
+    ? LessonStepOf extends Readonly<{ quiz: infer Quiz extends QuizShape }>
+      ? Quiz
+      : never
+    : never
+
 type AnnotationKeyOf<Lesson extends LessonShape> = Extract<
   StepOf<Lesson>['stage'][number],
   Readonly<{ _tag: 'Annotate'; key: string }>
@@ -147,6 +176,17 @@ type AnnotationKeyOf<Lesson extends LessonShape> = Extract<
 type LabelTexts<Label extends string> = [Label] extends [never]
   ? Readonly<{ labels?: never }>
   : Readonly<{ labels: Readonly<Record<Label, EntityLabel>> }>
+
+type QuizSection<Quiz extends QuizShape> = [Quiz] extends [never]
+  ? Readonly<{ quizzes?: never }>
+  : Readonly<{
+      quizzes: Readonly<{
+        [Each in Quiz as Each['id']]: QuizTexts<
+          Each['candidates'][number],
+          Each['kind']
+        >
+      }>
+    }>
 
 /** Тексты урока на одном языке: `text.<язык>.ts` с
     `satisfies LessonTexts<typeof lesson>`. Пропущенный ключ не компилируется. */
@@ -168,8 +208,10 @@ export type LessonTexts<Lesson extends LessonShape> = Readonly<{
     >
   }>
   feedback?: FeedbackTexts<TypesOf<Lesson>['Message']>
+  askAi?: AskAiTexts
 }> &
-  LabelTexts<Lesson['labels'][number]>
+  LabelTexts<Lesson['labels'][number]> &
+  QuizSection<QuizOf<Lesson>>
 
 /** Тексты урока без проверки ключей. Так их видит реестр: функции-тексты
     принимают что угодно, плеер зовёт их с данными вида урока. */
@@ -183,8 +225,10 @@ export type LooseLessonTexts<
   steps?: Readonly<Record<string, StepTexts<Context>>>
   annotations?: Readonly<Record<string, (input: Annotation) => string>>
   tasks?: Readonly<Record<string, TaskTexts<string>>>
+  quizzes?: Readonly<Record<string, LooseQuizTexts>>
   labels?: Readonly<Record<string, EntityLabel>>
   feedback?: Readonly<Record<string, string | ((message: Message) => string)>>
+  askAi?: AskAiTexts
 }>
 
 export type TextsOf<T extends KindTypes> = LooseLessonTexts<

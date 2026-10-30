@@ -65,6 +65,14 @@ export default defineLesson(flow, {
       id: 'reads-and-writes',
       ops: [],
       stage: [highlight('db', 'warn'), annotate('db', 'readsWrites', 'warn')],
+      // Предсказать до задачи, сколько дойдёт до базы: запись (20 %) плюс
+      // промахи кеша (20 % чтений). Итог задачи покажет то же число.
+      quiz: {
+        id: 'db-after-cache',
+        kind: 'Choice',
+        candidates: ['unchanged', 'all-reads', 'writes-and-misses', 'misses'],
+        answer: 'writes-and-misses',
+      },
     },
     {
       id: 'place-cache',
