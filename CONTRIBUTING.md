@@ -201,6 +201,14 @@ Quiz kinds on the networking board: `PickDevice`, `NextHop` (drag the envelope o
 - A lesson (or a course) may be written in one language. List it in `locales`; every listed language must be complete.
 - Where a lesson has no translation, the site shows it in English (or the first listed language) with a notice. Translations are welcome as separate pull requests: add `text.<locale>.ts` and the locale to `meta.ts`.
 - Interface strings live in `apps/web/src/i18n/ui/{uk,ru,en,lt}.ts`. A new string must be added to all four files — the type checker enforces it.
+- **System Design: system elements are named in English in every language.** The board, the palette and the feedback show the labels from `componentName` (`apps/web/src/domain/catalog.ts`): Users, Server, Database, Load balancer, Cache, CDN, Read replica, Queue and so on. Students meet the same words in documentation, cloud consoles, monitoring and interviews. Lesson texts follow the same rule:
+  - In the lesson that introduces an element, its first mention is the bold English name, the native term and the explanation: «**Load balancer** (по-русски — балансировщик нагрузки) — …». After that, only the English name. An element mentioned before its lesson is explained briefly at that mention.
+  - Mid-sentence the name is lowercase (load balancer, database, read replica); abbreviations stay as they are (CDN). Pointing at a board block, quote its label: блок «Load balancer».
+  - English words never take native case endings (no «load balancer'а»); rephrase instead. Adjectives and verbs agree with the gender of the native term (ru: database is feminine, cache is masculine).
+  - Tool vocabulary is English too: rps, p95, health check, round-robin, TTL, cache hit / miss, replication lag, failover, shard key, retry, idempotency key, SPOF and the like. Explain each in the student's language at first use. General ideas may stay native, with the English term in parentheses at first mention: горизонтальное масштабирование (horizontal scaling).
+  - Node links use the node id or the English name: `[[db|database]]`, `[[lb|load balancer]]`. Lesson titles that name an element are English («Load balancer», «Read replicas»); summaries stay native and use the English terms.
+  - The rule covers everything: goals, hints, `solvedNote`, annotations, quizzes, `more` and `askAi` (students paste those prompts into AI tools).
+  - The native explanation shown on the board (palette tooltip, the block's accessible description) is `kindHint` in the interface dictionaries.
 
 ## Pull requests
 
