@@ -124,6 +124,7 @@ const LATENCY_PATH: ReadonlyArray<ComponentKind> = [
   'cache',
   'db',
   'replica',
+  'storage',
 ]
 
 // Самый загруженный блок на пути запроса: его и подсвечивает медленный p95.

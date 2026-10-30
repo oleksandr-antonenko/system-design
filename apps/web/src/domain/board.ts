@@ -334,6 +334,7 @@ const idPattern: Readonly<
   db: ['db', 2],
   replica: ['replica-', 1],
   search: ['search-', 1],
+  storage: ['storage-', 1],
 }
 
 export const nextNodeId = (doc: BoardDoc, kind: ComponentKind): string => {
