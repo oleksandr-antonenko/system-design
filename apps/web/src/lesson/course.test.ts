@@ -87,7 +87,9 @@ describe('later in the course (D8)', () => {
 
   test('the palette is computed within one course', () => {
     expect(courseLessons('system-design')).toHaveLength(13)
-    expect(courseLessons('networks')).toEqual([])
+    expect(
+      courseLessons('networks').flatMap(lesson => lesson.palette),
+    ).not.toContain('lb')
     expect(laterInCourse(courseLessons('networks'), 1)).toEqual([])
     expect(courseLessons('no-such-course')).toEqual([])
   })

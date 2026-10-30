@@ -5,7 +5,7 @@ export default defineLessonMeta(course, {
   slug: 'ports-and-localhost',
   module: 'local',
   order: 6,
-  available: false,
+  available: true,
   locales: ['uk', 'ru', 'en', 'lt'],
   unlocks: [
     'board.ports',
