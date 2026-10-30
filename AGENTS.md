@@ -32,6 +32,7 @@ Read before writing code:
 - **Zero-config local run.** `pnpm install && pnpm dev` must work without `.env` or external services. Secrets are required only with `NODE_ENV=production`.
 - **No infrastructure details in the repo**: no server addresses, ssh ports, user names or credentials. The server is described only as "the owner's home server".
 - **Quiet test output**: `vitest run --silent --reporter=dot`, `tsc --noEmit --pretty false`, `oxlint --quiet`.
+- **Screenshots and browser scripts** go to `.shots/` in the repo (or worktree) root; it is gitignored. Overwrite files by name and never clean the folder with `rm` on a glob or a variable: such a command always stops for the owner's confirmation.
 
 ## Commands
 
