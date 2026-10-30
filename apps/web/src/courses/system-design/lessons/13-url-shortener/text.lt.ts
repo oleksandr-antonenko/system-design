@@ -114,7 +114,9 @@ Reikalavimai tapo tikslais po lenta. Biudžetas skaičiuojamas iš karto, o visa
 
 **Apsauga nuo piktnaudžiavimo.** Short URL slepia tikrąjį adresą, ir tuo naudojasi šlamšto siuntėjai ir sukčiai. Ribokite nuorodų kūrimą paskyrai ir IP adresui naudodami rate limiter (8 pamoka), tikrinkite naujus URL pagal juoduosius sąrašus (blocklists) ir būkite pasirengę greitai užblokuoti nuorodą, taip pat pašalindami jos kopiją iš CDN.
 
-Čia kursas baigiasi. Pradėjote nuo vieno server, o baigėte sistema, suprojektuota pagal reikalavimus. Metodas tinka bet kuriai sistemai: įvertinkite skaičius, raskite bottleneck, pridėkite bloką ir patikrinkite, kiek jis kainuoja.`,
+Čia baigiasi pagrindinė kurso dalis. Pradėjote nuo vieno server, o baigėte sistema, suprojektuota pagal reikalavimus. Metodas tinka bet kuriai sistemai: įvertinkite skaičius, raskite bottleneck, pridėkite bloką ir patikrinkite, kiek jis kainuoja.
+
+Toliau – 4 modulis, 14 pamoka: public API. Pirmoji iš 10 sudėtingų užduočių, kuriose suprojektuojate visą sistemą kaip per pokalbį dėl darbo.`,
     },
   },
   annotations: {

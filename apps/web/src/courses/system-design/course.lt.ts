@@ -9,5 +9,6 @@ export default {
     foundations: 'Pagrindai',
     scaling: 'Mastelio didinimas',
     distributed: 'Patikimumas ir paskirstytos sistemos',
+    hard: 'Sudėtingos užduotys',
   },
 } satisfies CourseText<typeof course>

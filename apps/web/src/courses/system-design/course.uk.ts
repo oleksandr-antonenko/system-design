@@ -9,5 +9,6 @@ export default {
     foundations: 'Основи',
     scaling: 'Масштабування',
     distributed: 'Надійність і розподіленість',
+    hard: 'Складні задачі',
   },
 } satisfies CourseText<typeof course>
