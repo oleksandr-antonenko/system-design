@@ -87,8 +87,14 @@ describe('later in the course (D8)', () => {
 
   test('the palette is computed within one course', () => {
     expect(courseLessons('system-design')).toHaveLength(13)
-    expect(courseLessons('networks')).toEqual([])
-    expect(laterInCourse(courseLessons('networks'), 1)).toEqual([])
+    expect(
+      courseLessons('networks').every(({ order }) => order >= 1 && order <= 16),
+    ).toBe(true)
+    expect(
+      laterInCourse(courseLessons('networks'), 1).some(
+        ({ kind }) => kind === 'lb',
+      ),
+    ).toBe(false)
     expect(courseLessons('no-such-course')).toEqual([])
   })
 })

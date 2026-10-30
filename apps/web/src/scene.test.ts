@@ -135,7 +135,7 @@ const ukTitle = (lesson: ReturnType<typeof lessonsOf>[number]) =>
   lessonTextFor(lesson, 'uk').text.title
 
 describe('catalogue', () => {
-  test('has a card per course, and a course without lessons yet is “coming soon”', () => {
+  test('has a card per course; a course with open lessons is not “coming soon”', () => {
     scene(
       { update, view },
       given(at(AppRoute.Home({ locale: 'lt' }), 'lt')),
@@ -149,7 +149,7 @@ describe('catalogue', () => {
       ).toHaveAttr('href', '/lt/networks/'),
       expect(within(role('main'), text('13 pamokų'))).toExist(),
       expect(within(role('main'), text('16 pamokų'))).toExist(),
-      expectAll(all.text('Netrukus')).toHaveCount(1),
+      expectAll(all.text('Netrukus')).toHaveCount(0),
     )
   })
 })
@@ -184,7 +184,11 @@ describe('course map', () => {
     )
   })
 
-  test('the networking course shows 16 lessons in three modules, all coming soon', () => {
+  test('the networking course shows 16 lessons in three modules; only available ones are links', () => {
+    const available = Array.filter(
+      lessonsOf('networks'),
+      lesson => lesson.meta.available,
+    )
     scene(
       { update, view },
       given(at(AppRoute.Course({ locale: 'ru', course: 'networks' }), 'ru')),
@@ -195,8 +199,8 @@ describe('course map', () => {
       expect(role('heading', { name: 'Интернет' })).toExist(),
       expect(role('heading', { name: 'Сеть разработчика' })).toExist(),
       expectAll(all.selector('main li')).toHaveCount(16),
-      expectAll(all.selector('main a')).toHaveCount(0),
-      expectAll(all.text('Скоро')).toHaveCount(16),
+      expectAll(all.selector('main a')).toHaveCount(available.length),
+      expectAll(all.text('Скоро')).toHaveCount(16 - available.length),
       expect(
         role('heading', { name: 'Как телефон попадает в интернет' }),
       ).toExist(),

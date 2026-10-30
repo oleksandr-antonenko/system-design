@@ -20,6 +20,7 @@ import {
   catalog,
   courses,
   findCourse,
+  findDefinition,
   findLesson,
   isUnlocked,
   lessonsOf,
@@ -55,7 +56,7 @@ describe('course registry', () => {
     })
   })
 
-  test('Networking shows the 16 lessons of the programme as “coming soon”', () => {
+  test('Networking shows the 16 lessons of the programme; available ones have a script', () => {
     const lessons = lessonsOf('networks')
     expect(lessons.map(lesson => lesson.meta.slug)).toEqual([
       'phone-online',
@@ -81,7 +82,13 @@ describe('course registry', () => {
       ...Array.replicate('internet', 4),
       ...Array.replicate('developer', 5),
     ])
-    expect(lessons.some(lesson => lesson.meta.available)).toBe(false)
+    expect(
+      lessons
+        .filter(lesson => lesson.meta.available)
+        .every(lesson =>
+          Option.isSome(findDefinition('networks', lesson.meta.slug)),
+        ),
+    ).toBe(true)
     lessons.forEach(lesson => {
       expect(sorted(lesson.texts.map(entry => entry.locale))).toEqual(
         sorted(locales),
