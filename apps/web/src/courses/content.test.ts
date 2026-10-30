@@ -28,7 +28,8 @@ import {
 import {
   findCourse,
   findLesson,
-  lessonDefinitions,
+  loadedDefinitions,
+  loadedLesson,
   unlockedFeatures,
 } from './registry'
 import { isSurfaceOpen } from './unlocks'
@@ -88,7 +89,7 @@ const textsOf = <T extends KindTypes>(
   course: string,
   lesson: LessonDefinition<T>,
 ): ReadonlyArray<readonly [string, TextsOf<T>]> =>
-  Option.match(findLesson(course, lesson.slug), {
+  Option.match(loadedLesson(course, lesson.slug), {
     onNone: () => [],
     onSome: found =>
       Array.map(found.texts, (entry): readonly [string, TextsOf<T>] => [
@@ -403,7 +404,7 @@ const sectionChecks = <T extends KindTypes>(
 }
 
 const cases = Array.map(
-  lessonDefinitions,
+  loadedDefinitions(),
   ({ course, definition }): readonly [string, string, AnyLesson] => [
     `${course}/${definition.slug}`,
     course,

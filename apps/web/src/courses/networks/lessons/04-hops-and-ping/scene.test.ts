@@ -15,15 +15,14 @@ import { describe, test } from 'vitest'
 
 import type { Locale } from '../../../../i18n/locale'
 import * as Player from '../../../../lesson/player'
-import { lessonView } from '../../../../lesson/view'
-import { findLesson } from '../../../registry'
+import { lessonView, loadedEntry } from '../../../../lesson/view'
 import lesson from './lesson'
 
 // Урок 4 глазами ученика: вопрос «куда дальше» на доске, задача в
 // терминале ноутбука и на доске (вставить выдернутый кабель) — руками и
 // через «Показать решение».
 
-const entry = Option.getOrThrow(findLesson('networks', 'hops-and-ping'))
+const entry = Option.getOrThrow(loadedEntry('networks', 'hops-and-ping'))
 
 const sceneIn = (locale: Locale) => ({
   update: (playerModel: Player.Model, playerMessage: Player.Message) =>

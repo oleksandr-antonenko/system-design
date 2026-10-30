@@ -13,10 +13,9 @@ import {
 } from 'foldkit/scene'
 import { describe, test } from 'vitest'
 
-import type { Lesson } from '../../courses/assemble'
 import { findLesson } from '../../courses/registry'
 import * as Player from '../../lesson/player'
-import { lessonView } from '../../lesson/view'
+import { type LessonEntry, lessonView } from '../../lesson/view'
 import { phoneOnline } from './testing'
 
 // Хост поверхностей в плеере (design D5): вкладка видна на шаге задачи,
@@ -24,9 +23,8 @@ import { phoneOnline } from './testing'
 
 const meta = Option.getOrThrow(findLesson('networks', 'phone-online')).meta
 
-const entry: Lesson = {
+const entry: LessonEntry = {
   course: 'networks',
-  folder: '01-phone-online',
   meta,
   texts: [
     {

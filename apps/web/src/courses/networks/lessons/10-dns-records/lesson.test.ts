@@ -19,7 +19,7 @@ import { checkGoal } from '../../../../net/goals'
 import { addressOf } from '../../../../net/topology'
 import { settle } from '../../../../net/trace'
 import { runInTerminal, sendIntent } from '../../../../net/world'
-import { findLesson } from '../../../registry'
+import { loadedLesson } from '../../../registry'
 import dnsRecords, {
   DOMAIN,
   PARKING_IP,
@@ -307,7 +307,7 @@ describe('lesson 10: DNS records and your own domain', () => {
       PARKING_IP,
       '1.1.1.1',
     ])
-    const texts = Option.match(findLesson('networks', 'dns-records'), {
+    const texts = Option.match(loadedLesson('networks', 'dns-records'), {
       onNone: () => [],
       onSome: found => found.texts,
     })

@@ -2,7 +2,6 @@ import type { HtmlBuilder } from 'foldkit/html'
 import { click, expect, given, role, scene, text } from 'foldkit/scene'
 import { describe, test } from 'vitest'
 
-import type { Lesson } from '../../courses/assemble'
 import { defineLessonMeta } from '../../courses/model'
 import networks from '../../courses/networks/course'
 import {
@@ -12,7 +11,7 @@ import {
 } from '../../lesson/dsl'
 import * as Player from '../../lesson/player'
 import { type QuizKind, allOf, matchOf } from '../../lesson/quiz'
-import { lessonView } from '../../lesson/view'
+import { type LessonEntry, lessonView } from '../../lesson/view'
 import {
   add,
   cable,
@@ -106,9 +105,8 @@ const meta = defineLessonMeta(networks, {
 const entryWith = (
   options: Readonly<Record<string, string>> = {},
   slots: Readonly<Record<string, string>> = {},
-): Lesson => ({
+): LessonEntry => ({
   course: 'networks',
-  folder: '99-quiz-kinds',
   meta,
   texts: [
     {
@@ -128,7 +126,7 @@ const entryWith = (
 
 const sceneFor = (
   lesson: LessonDefinition<PacketTypes>,
-  entry: Lesson = entryWith(),
+  entry: LessonEntry = entryWith(),
 ) => ({
   update: (playerModel: Player.Model, playerMessage: Player.Message) =>
     Player.updateWith(lesson)(playerModel, playerMessage),

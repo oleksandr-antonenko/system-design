@@ -3,11 +3,10 @@ import type { HtmlBuilder } from 'foldkit/html'
 import { expect, given, role, scene } from 'foldkit/scene'
 import { describe, test } from 'vitest'
 
-import type { Lesson } from '../../courses/assemble'
 import { findLesson } from '../../courses/registry'
 import { type LessonDefinition, defineLesson } from '../../lesson/dsl'
 import * as Player from '../../lesson/player'
-import { lessonView } from '../../lesson/view'
+import { type LessonEntry, lessonView } from '../../lesson/view'
 import { add, cable, internet, router } from '../../net/build'
 import type { PacketTypes } from '../types'
 import { packet } from './dsl'
@@ -36,9 +35,8 @@ const home: LessonDefinition<PacketTypes> = defineLesson(packet, {
   ],
 })
 
-const entry: Lesson = {
+const entry: LessonEntry = {
   course: 'networks',
-  folder: '01-phone-online',
   meta: Option.getOrThrow(findLesson('networks', 'phone-online')).meta,
   texts: [
     {

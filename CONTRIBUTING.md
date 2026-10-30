@@ -37,6 +37,8 @@ apps/web/src/courses/
   networks/                “Networking for vibe coders”, same layout
 ```
 
+Each lesson loads as its own file when it is opened: the course map knows only `meta.ts`, the `title`, `summary` and `preview.alt` of each `text.<locale>.ts` and, in `lesson.ts`, the `palette` of each task and the lesson's `introduces`, which the build reads straight from the source. Write those as plain literals (`title: 'Load balancer'`, `palette: ['lb', 'server']`); the build names the file if one is not.
+
 **Every lesson has a picture.** It sits above the lesson title, on the course map and in link previews. Its alt text is `preview: { alt }` in each `text.<locale>.ts`: 100–160 characters that describe the picture through the lesson's subject and name the lesson's English term, following the language rules below. The style, the shared prompt and the export sizes are in [docs/plans/lesson-previews.md](docs/plans/lesson-previews.md); if you cannot generate the picture, write `preview.md` and the alt texts and say so in the pull request.
 
 A lesson lives at `/<locale>/<course>/lessons/<slug>`, for example `/en/system-design/lessons/load-balancer?step=2`. A lesson listed as available without a `lesson.ts` shows a placeholder page; a lesson with `available: false` is shown as “coming soon” on the course map.

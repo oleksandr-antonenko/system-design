@@ -1,11 +1,10 @@
 import type { HtmlBuilder } from 'foldkit/html'
 
-import type { Lesson } from '../courses/assemble'
 import type { LessonText } from '../courses/model'
 import type { KindTypes } from '../kinds/contract'
 import type { LessonDefinition } from './dsl'
 import * as Player from './player'
-import { lessonView } from './view'
+import { type LessonEntry, lessonView } from './view'
 
 // Уроки-образцы для сценарных тестов плеера: урок собран в самом тесте и
 // не лежит в папке курса, поэтому не попадает ни в каталог, ни в программу.
@@ -15,9 +14,8 @@ export const fixtureEntry = (
   course: string,
   slug: string,
   text: LessonText,
-): Lesson => ({
+): LessonEntry => ({
   course,
-  folder: `99-${slug}`,
   meta: {
     course,
     slug,
@@ -33,7 +31,7 @@ export const fixtureEntry = (
 /** Плеер урока на английском: `update` и `view` для `scene`. */
 export const playerScene = <T extends KindTypes>(
   lesson: LessonDefinition<T>,
-  entry: Lesson,
+  entry: LessonEntry,
 ) => ({
   update: (playerModel: Player.Model, playerMessage: Player.Message) =>
     Player.updateWith(lesson)(playerModel, playerMessage),

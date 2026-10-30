@@ -132,7 +132,7 @@ describe('lesson previews', () => {
 
   test.each(
     Array.flatMap(lessons, lesson =>
-      Array.map(lesson.texts, ({ locale, text }) => [
+      Array.map(lesson.summaries, ({ locale, text }) => [
         `${previewFolder(lesson)} ${locale}`,
         text.title,
         text.preview.alt,

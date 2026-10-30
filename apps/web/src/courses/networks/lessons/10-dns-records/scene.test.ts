@@ -20,15 +20,14 @@ import { packet } from '../../../../kinds/packet/dsl'
 import type { PacketTypes } from '../../../../kinds/types'
 import { type LessonDefinition, taskOf } from '../../../../lesson/dsl'
 import * as Player from '../../../../lesson/player'
-import { lessonView } from '../../../../lesson/view'
-import { findLesson } from '../../../registry'
+import { lessonView, loadedEntry } from '../../../../lesson/view'
 import lesson from './lesson'
 
 // Урок 10 глазами ученика: задача в панели DNS-провайдера и терминале
 // ноутбука — руками и через «Показать решение»; вопрос «где застрял старый
 // адрес» с карточкой справочной, которая открывается только после ответа.
 
-const entry = Option.getOrThrow(findLesson('networks', 'dns-records'))
+const entry = Option.getOrThrow(loadedEntry('networks', 'dns-records'))
 
 const TASK_STEP = 2
 const QUIZ_STEP = 3

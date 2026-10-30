@@ -17,15 +17,14 @@ import { describe, test } from 'vitest'
 
 import type { Locale } from '../../../../i18n/locale'
 import * as Player from '../../../../lesson/player'
-import { lessonView } from '../../../../lesson/view'
-import { findLesson } from '../../../registry'
+import { lessonView, loadedEntry } from '../../../../lesson/view'
 import lesson from './lesson'
 
 // Урок 2 глазами ученика: адреса под устройствами и на конверте, выдача
 // адреса двумя конвертами, вопрос «кто выдал адрес» и задача в карточках
 // устройств и инструментом «Кабель» — руками и через «Показать решение».
 
-const entry = Option.getOrThrow(findLesson('networks', 'addresses'))
+const entry = Option.getOrThrow(loadedEntry('networks', 'addresses'))
 
 const sceneIn = (locale: Locale) => ({
   update: (playerModel: Player.Model, playerMessage: Player.Message) =>

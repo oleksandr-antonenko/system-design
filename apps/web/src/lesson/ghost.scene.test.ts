@@ -16,7 +16,6 @@ import { describe, test } from 'vitest'
 
 import * as Board from '../board/board'
 import { BoardPointer } from '../board/pointer'
-import { findLesson } from '../courses/registry'
 import loadBalancer from '../courses/system-design/lessons/03-load-balancer/lesson'
 import { Goal } from '../domain/goals'
 import { addNode, connect, flow, reset, setLoad } from '../kinds/flow/dsl'
@@ -24,6 +23,7 @@ import type { FlowTypes } from '../kinds/types'
 import { type LessonDefinition, defineLesson } from './dsl'
 import * as Player from './player'
 import { fixtureEntry, playerScene } from './testing'
+import { loadedEntry } from './view'
 
 // Третья подсказка рисует пунктиром блоки эталона, которых на доске нет.
 // Во второй фазе урока доска начинается с общего эталона (`reset()`), и его
@@ -97,7 +97,9 @@ const phasedEntry = fixtureEntry(COURSE, 'phased-lesson', {
   },
 })
 
-const loadBalancerEntry = Option.getOrThrow(findLesson(COURSE, 'load-balancer'))
+const loadBalancerEntry = Option.getOrThrow(
+  loadedEntry(COURSE, 'load-balancer'),
+)
 
 const showThreeHints = Array.makeBy(3, () =>
   click(role('button', { name: /^Hint/ })),
