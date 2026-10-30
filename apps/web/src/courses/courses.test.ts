@@ -114,10 +114,10 @@ describe('course registry', () => {
           locales.map(locale => courseTextFor(course, locale).text.title),
       })
     expect(titles('networks')).toEqual([
-      'Мережі для вайбкодерів',
-      'Сети для вайбкодеров',
       'Networking for vibe coders',
       'Tinklai vaibkoderiams',
+      'Сети для вайбкодеров',
+      'Мережі для вайбкодерів',
     ])
     expect(titles('system-design')).toEqual(Array.replicate('System Design', 4))
   })

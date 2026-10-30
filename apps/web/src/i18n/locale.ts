@@ -1,6 +1,7 @@
 import { Array, Option, Schema, String, pipe } from 'effect'
 
-export const Locale = Schema.Literals(['uk', 'ru', 'en', 'lt'])
+/** The order is the order of the language menu. */
+export const Locale = Schema.Literals(['en', 'lt', 'ru', 'uk'])
 export type Locale = typeof Locale.Type
 
 export const locales: ReadonlyArray<Locale> = Locale.literals
