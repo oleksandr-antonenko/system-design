@@ -139,6 +139,7 @@ export const packetBoardRu: PacketBoardStrings = {
     address: 'IP address',
     noAddress: 'нет IP',
     mac: 'MAC address',
+    gateway: 'Gateway',
     ports: 'Ports',
     portOnlySelf: 'только localhost',
     noPorts: 'никто не ждёт гостей',

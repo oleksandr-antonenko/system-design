@@ -138,6 +138,7 @@ export const packetBoardLt: PacketBoardStrings = {
     address: 'IP address',
     noAddress: 'nėra IP',
     mac: 'MAC address',
+    gateway: 'Gateway',
     ports: 'Ports',
     portOnlySelf: 'tik localhost',
     noPorts: 'niekas nelaukia svečių',

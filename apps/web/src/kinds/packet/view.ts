@@ -10,7 +10,7 @@ import {
   kindOf,
 } from '../../net/model'
 import { levelOf, sourceOf } from '../../net/packet'
-import { wifiOf } from '../../net/topology'
+import { addressOf, wifiOf } from '../../net/topology'
 import type { BoardSlot, Tone } from '../contract'
 import type { PacketTypes } from '../types'
 import { addressesOf, isAddressQuestion, isSealed } from './envelope'
@@ -30,7 +30,7 @@ import { Message } from './message'
 import { boardPanels, quizTray, stageOverlays } from './panels'
 import { type Picture, deviceOf, pictureOf, shapeIdOf } from './picture'
 import { DevicePointer } from './pointer'
-import { letterOf } from './timeline'
+import { type OwnerOf, letterOf } from './timeline'
 
 // Доска сетей (план 3.1, макет docs/mockups/networks-lesson-1.html): дом с
 // крышей, облако «Интернет», устройства со значками и подписями, связи
@@ -420,11 +420,35 @@ const innerView = <ParentMessage>(
   ]
 }
 
+/** Чей на доске этот IP-адрес: конверт, который не дошёл, подписан своим
+    адресатом, а не тем, у кого он пропал. */
+const ownerOfIp =
+  (picture: Picture): OwnerOf =>
+  ip =>
+    Option.map(
+      Array.findFirst(picture.context.doc.doc.devices, device =>
+        Option.contains(
+          addressOf(
+            picture.context.doc.doc,
+            picture.context.run.settled,
+            device.id,
+          ),
+          ip,
+        ),
+      ),
+      device => device.id,
+    )
+
 // LINKS
+
+/** Связь выключена, и это видно: квиз «где обрыв» прячет обрыв до ответа
+    (`hideUntilAnswered: ['links']`). */
+const isShownDown = (picture: Picture, link: LinkShape): boolean =>
+  !link.isUp && !Array.contains(picture.hidden, 'links')
 
 const linkTitle = (picture: Picture, link: LinkShape): string => {
   const ui = picture.context.ui.packetBoard.link
-  return !link.isUp
+  return isShownDown(picture, link)
     ? ui.unplugged
     : !link.isActive
       ? ui.notConnected
@@ -479,7 +503,7 @@ const linkView = <ParentMessage>(
     'pb-link',
     link.medium,
     isLit ? 'lit' : '',
-    link.isUp ? '' : 'down',
+    isShownDown(picture, link) ? 'down' : '',
     link.isActive ? '' : 'idle',
     isHiddenLink ? 'unknown' : '',
     Option.match(mark, {
@@ -700,7 +724,11 @@ const layerDevices = (picture: Picture): ReadonlyArray<string> =>
                 : Option.match(Array.get(picture.timeline.plays, leg.play), {
                     onNone: () => [],
                     onSome: play => {
-                      const letter = letterOf(play.trace, leg.hop)
+                      const letter = letterOf(
+                        play.trace,
+                        leg.hop,
+                        ownerOfIp(picture),
+                      )
                       return [letter.from, letter.to]
                     },
                   }),
@@ -1531,13 +1559,13 @@ const letterView = <ParentMessage>(
             onNone: () => ({ from: '', to: '' }),
             onSome: found => ({
               from: sourceOf(found.trace.intent),
-              to: lastAddressee(found),
+              to: lastAddressee(picture, found),
             }),
           }),
         onSome: leg =>
           Option.match(play, {
             onNone: () => ({ from: '', to: '' }),
-            onSome: found => letterOf(found.trace, leg.hop),
+            onSome: found => letterOf(found.trace, leg.hop, ownerOfIp(picture)),
           }),
       })
       const addresses = Option.flatMap(legHop, leg => addressesOf(leg.hop))
@@ -1702,14 +1730,28 @@ const letterView = <ParentMessage>(
 }
 
 /** Кому адресован конверт, который не ушёл: у отправки на адрес (урок 2)
-    — то, что ввёл ученик, а не последний, кто слышал поиск MAC. */
-const lastAddressee = (play: Picture['timeline']['plays'][number]): DeviceId =>
-  play.trace.intent._tag === 'Send' && play.trace.intent.to.trim() !== ''
-    ? play.trace.intent.to.trim()
-    : Option.match(Array.last(play.trace.hops), {
+    — то, что ввёл ученик, у ping и traceroute на IP-адрес — его владелец
+    (урок 8), а не последний, кто слышал поиск MAC. */
+const lastAddressee = (
+  picture: Picture,
+  play: Picture['timeline']['plays'][number],
+): DeviceId => {
+  const intent = play.trace.intent
+  if (intent._tag === 'Send' && intent.to.trim() !== '') {
+    return intent.to.trim()
+  }
+  return pipe(
+    intent._tag === 'Ping' || intent._tag === 'Traceroute'
+      ? ownerOfIp(picture)(intent.host)
+      : Option.none(),
+    Option.getOrElse(() =>
+      Option.match(Array.last(play.trace.hops), {
         onNone: () => play.trace.outcome.at,
         onSome: hop => hop.to,
-      })
+      }),
+    ),
+  )
+}
 
 // BOARD
 

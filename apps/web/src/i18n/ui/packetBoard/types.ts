@@ -132,6 +132,8 @@ export type PacketBoardStrings = Readonly<{
     address: string
     noAddress: string
     mac: string
+    /** Шлюз хоста в карточке (с урока 8, вместе с таблицами маршрутов). */
+    gateway: string
     ports: string
     portOnlySelf: string
     noPorts: string

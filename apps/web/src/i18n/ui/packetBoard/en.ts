@@ -137,6 +137,7 @@ export const packetBoardEn: PacketBoardStrings = {
     address: 'IP address',
     noAddress: 'no IP address',
     mac: 'MAC address',
+    gateway: 'Gateway',
     ports: 'Ports',
     portOnlySelf: 'localhost only',
     noPorts: 'nobody is expecting guests',

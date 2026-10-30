@@ -199,9 +199,58 @@ export const isPlay = (item: PacketStage): item is Play => item._tag === 'Play'
 
 const isWalk = (item: PacketStage): item is Walk => item._tag === 'Walk'
 
+const ipDestinationOf = (hop: Hop): Option.Option<string> =>
+  Array.findFirst(hop.envelope, layer =>
+    layer._tag === 'Ip' ? Option.some(layer.dst) : Option.none(),
+  )
+
+const lastHopOf = (trace: Trace, packet: number): Option.Option<Hop> =>
+  Array.findLast(trace.hops, hop => hop.packet === packet)
+
+const isTtlExpired = (hop: Hop): boolean => hop.note._tag === 'TtlExpired'
+
+/** Чьё устройство на доске носит этот IP-адрес. */
+export type OwnerOf = (ip: string) => Option.Option<string>
+
+const noOwner: OwnerOf = () => Option.none()
+
+/** Конверт не дошёл до адресата: у него кончился TTL (проба traceroute)
+    или на его последнем хопе трасса оборвалась. */
+const isDeadEnd = (trace: Trace, last: Hop): boolean =>
+  isTtlExpired(last) ||
+  (trace.outcome._tag !== 'Delivered' &&
+    sameMessage(last.note, trace.outcome.reason))
+
+/** Куда дошёл другой пакет трассы с тем же адресом получателя. */
+const deliveredTo = (trace: Trace, dst: string): Option.Option<string> =>
+  Array.findFirst(
+    Array.dedupe(Array.map(trace.hops, hop => hop.packet)),
+    packet =>
+      Option.flatMap(lastHopOf(trace, packet), hop =>
+        !isDeadEnd(trace, hop) && Option.contains(ipDestinationOf(hop), dst)
+          ? Option.some(hop.to)
+          : Option.none(),
+      ),
+  )
+
+/** Кому адресован пакет. Обычно — куда пришёл его последний хоп; у пакета,
+    который не дошёл, — владелец адреса получателя (или тот, до кого дошёл
+    пакет с тем же адресом), а не тот, у кого он пропал. */
+const addresseeOf = (trace: Trace, last: Hop, ownerOf: OwnerOf): string =>
+  isDeadEnd(trace, last)
+    ? pipe(
+        ipDestinationOf(last),
+        Option.flatMap(dst =>
+          Option.orElse(ownerOf(dst), () => deliveredTo(trace, dst)),
+        ),
+        Option.getOrElse(() => last.to),
+      )
+    : last.to
+
 const endpointsOf = (
   trace: Trace,
   packet: number,
+  ownerOf: OwnerOf = noOwner,
 ): Readonly<{ from: string; to: string }> => {
   const hops = Array.filter(trace.hops, hop => hop.packet === packet)
   return {
@@ -211,17 +260,20 @@ const endpointsOf = (
     }),
     to: Option.match(Array.last(hops), {
       onNone: () => '',
-      onSome: hop => hop.to,
+      onSome: last => addresseeOf(trace, last, ownerOf),
     }),
   }
 }
 
 /** Кто отправил и кому адресован конверт хопа: первый и последний хоп его
-    пакета в трассе. */
+    пакета в трассе; у пакета, который не дошёл (проба traceroute, обрыв),
+    — адресат, а не тот, у кого он пропал. */
 export const letterOf = (
   trace: Trace,
   hop: Hop,
-): Readonly<{ from: string; to: string }> => endpointsOf(trace, hop.packet)
+  ownerOf: OwnerOf = noOwner,
+): Readonly<{ from: string; to: string }> =>
+  endpointsOf(trace, hop.packet, ownerOf)
 
 const mediumOf = (world: World, link: string): Medium =>
   Option.match(

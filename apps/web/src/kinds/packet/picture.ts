@@ -14,6 +14,7 @@ import {
 } from '../../net/model'
 import {
   type Hop,
+  type RouteMatch,
   type StackLevel,
   TableChange,
   type Trace,
@@ -90,6 +91,9 @@ export type Picture = Readonly<{
   state: NetState
   /** Строки таблиц, изменившиеся на текущем хопе. */
   changes: ReadonlyArray<TableChange>
+  /** Строка маршрутов, по которой устройство у конверта отдаёт его дальше
+      (у конверта в пути — то, откуда он вылетел): её подсвечивает карточка. */
+  maybeRoute: Option.Option<RouteMatch>
   maybeCard: Option.Option<DeviceId>
   cardTables: ReadonlyArray<DeviceTable>
   maybeOpenLevel: Option.Option<StackLevel>
@@ -645,12 +649,40 @@ export const pictureOf = (context: Context, model: Model): Picture => {
         })
       : []
   // `hideUntilAnswered: ['tables']`: таблицы сцены открываются только после
-  // ответа, иначе таймер в карточке подсказывает ответ квиза.
+  // ответа, иначе таймер в карточке подсказывает ответ квиза. Таблицы
+  // нескольких устройств: карточка — у того, где сейчас конверт.
   const stageTables = Array.contains(hidden, 'tables')
     ? []
     : stageItems(stage, 'ShowTable')
-  const cardFromStage = Option.map(Array.head(stageTables), item => item.device)
+  const envelopeAt = Option.map(maybeLeg, ({ leg }) =>
+    moment._tag === 'Resting' ? leg.hop.to : leg.hop.from,
+  )
+  const cardFromStage = pipe(
+    envelopeAt,
+    Option.flatMap(at =>
+      Array.findFirst(stageTables, item => item.device === at),
+    ),
+    Option.orElse(() => Array.head(stageTables)),
+    Option.map(item => item.device),
+  )
   const maybeCard = Option.orElse(model.maybeCard, () => cardFromStage)
+  const maybeRoute = Option.flatMap(maybeLeg, ({ leg }) =>
+    moment._tag === 'Resting'
+      ? pipe(
+          Array.get(timeline.plays, leg.play),
+          Option.flatMap(play =>
+            Array.findFirst(
+              play.trace.hops,
+              hop =>
+                hop.packet === leg.hop.packet &&
+                hop.from === leg.hop.to &&
+                hop.sentAt >= leg.hop.arrivedAt,
+            ),
+          ),
+          Option.flatMap(hop => hop.maybeRoute),
+        )
+      : leg.hop.maybeRoute,
+  )
   return {
     context,
     model,
@@ -667,6 +699,7 @@ export const pictureOf = (context: Context, model: Model): Picture => {
     notes: [...stageNotes, ...quizNotes, ...dropNotes, ...doneNotes],
     state,
     changes,
+    maybeRoute,
     maybeCard,
     cardTables: Array.map(stageTables, item => item.table),
     maybeOpenLevel: Option.map(

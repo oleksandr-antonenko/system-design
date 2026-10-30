@@ -3,6 +3,7 @@ import type { Html, HtmlBuilder } from 'foldkit/html'
 
 import { renderDomainMessage } from '../../i18n/domainMessage'
 import type { ProtocolName } from '../../i18n/ui/packetBoard/types'
+import { networkAddress } from '../../net/address'
 import { runAll } from '../../net/answers'
 import { findHost, macsOf } from '../../net/doc'
 import type { Device, DeviceId, NetState } from '../../net/model'
@@ -13,7 +14,12 @@ import {
   sourceOf,
 } from '../../net/packet'
 import { certChecks, certFor } from '../../net/tls'
-import { addressOf, routeTable } from '../../net/topology'
+import {
+  type RouteRow,
+  addressOf,
+  hostIface,
+  routeTable,
+} from '../../net/topology'
 import { runInTerminal } from '../../net/world'
 import type { DeviceTable } from './dsl'
 import { changedFields, keyFieldOf, layerRows } from './envelope'
@@ -47,6 +53,29 @@ const LEVELS: ReadonlyArray<StackLevel> = [
 
 // CARD
 
+/** Куда ведёт строка маршрутов: сеть или `default` («всё остальное»), как
+    в выводе `ip route`. */
+const routeTarget = (row: RouteRow): string =>
+  row.prefix === 0 ? 'default' : `${row.network}/${row.prefix}`
+
+/** Номер строки маршрутов устройства, по которой конверт ушёл дальше. */
+const matchedRouteIndex = (
+  picture: Picture,
+  device: DeviceId,
+): Option.Option<number> =>
+  Option.flatMap(
+    Option.filter(picture.maybeRoute, match => match.device === device),
+    match =>
+      Array.findFirstIndex(
+        routeTable(picture.context.doc.doc, picture.state, device),
+        row =>
+          row.kind === match.kind &&
+          row.prefix === match.prefix &&
+          networkAddress(row.network, row.prefix) ===
+            networkAddress(match.network, match.prefix),
+      ),
+  )
+
 const tableRows = (
   picture: Picture,
   device: Device,
@@ -69,9 +98,13 @@ const tableRows = (
     )
   }
   if (table === 'routes') {
-    return Array.map(routeTable(picture.context.doc.doc, state, id), row => [
-      `${row.network}/${row.prefix}`,
-      Option.getOrElse(row.maybeVia, () => row.kind),
+    const doc = picture.context.doc.doc
+    return Array.map(routeTable(doc, state, id), row => [
+      routeTarget(row),
+      Option.match(row.maybeVia, {
+        onNone: () => (row.kind === 'transit' ? 'connected' : row.kind),
+        onSome: via => Option.getOrElse(addressOf(doc, state, via), () => via),
+      }),
       row.iface,
     ])
   }
@@ -341,6 +374,17 @@ const cardView = <ParentMessage>(
           ...(device._tag === 'Router' && picture.isOpen('board.routes')
             ? [['WAN', device.wan.ip] as const]
             : []),
+          ...(device._tag === 'Host' && picture.isOpen('board.routes')
+            ? Option.toArray(
+                Option.map(
+                  Option.flatMap(
+                    hostIface(picture.context.doc.doc, picture.state, device),
+                    iface => iface.maybeGateway,
+                  ),
+                  gateway => [ui.gateway, gateway] as const,
+                ),
+              )
+            : []),
           ...(picture.isOpen('board.deviceMac')
             ? Array.map(macsOf(device), mac => [ui.mac, mac] as const)
             : []),
@@ -386,6 +430,10 @@ const cardView = <ParentMessage>(
               ...Array.map(tables, table => {
                 const rows = tableRows(picture, device, table, picture.state)
                 const isAsked = Array.contains(picture.cardTables, table)
+                const maybeMatched =
+                  table === 'routes'
+                    ? matchedRouteIndex(picture, device.id)
+                    : Option.none()
                 return h.keyed('section')(
                   table,
                   [h.Class(`pb-card-table${isAsked ? ' asked' : ''}`)],
@@ -403,7 +451,7 @@ const cardView = <ParentMessage>(
                           [
                             h.tbody(
                               [],
-                              Array.map(found, row =>
+                              Array.map(found, (row, index) =>
                                 h.keyed('tr')(
                                   row.join('|'),
                                   [
@@ -415,7 +463,9 @@ const cardView = <ParentMessage>(
                                         row,
                                       )
                                         ? 'changed'
-                                        : '',
+                                        : Option.contains(maybeMatched, index)
+                                          ? 'matched'
+                                          : '',
                                     ),
                                   ],
                                   Array.map(row, cell => h.td([], [cell])),
