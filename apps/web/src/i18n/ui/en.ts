@@ -198,6 +198,8 @@ export const en = {
     UnknownLesson: ({ slug }) => `There is no lesson “${slug}” in the course.`,
     LessonNotTranslated: ({ shownIn }) =>
       `This lesson hasn’t been translated into English yet, so it is shown ${inLanguage[shownIn]}.`,
+    SendNeedsIp: () =>
+      'Type an IP address: four numbers separated by dots, for example 192.168.1.10.',
     ConnectSelf: () => 'A block cannot connect to itself.',
     ConnectDuplicate: () => 'This connection already exists.',
     ConnectIntoClients: () =>

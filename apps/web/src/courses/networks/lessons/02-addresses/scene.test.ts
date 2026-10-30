@@ -185,6 +185,40 @@ describe('lesson 2: everyone has an address', () => {
     )
   })
 
+  test.each([
+    [
+      'ru',
+      'Отправить фото',
+      'Впишите IP address: четыре числа через точку, например 192.168.1.10.',
+    ],
+    [
+      'en',
+      'Send a photo',
+      'Type an IP address: four numbers separated by dots, for example 192.168.1.10.',
+    ],
+  ] as const)(
+    '%s: a device name instead of an address is refused, the photo does not go',
+    (locale, form, refusal) => {
+      scene(
+        sceneIn(locale),
+        given(atTask()),
+        click(role('button', { name: 'Phone, 192.168.1.100' })),
+        type(within(role('form', { name: form }), role('textbox')), 'laptop'),
+        submit(role('form', { name: form })),
+        expect(role('alert')).toHaveText(refusal),
+        expect(
+          within(role('form', { name: form }), role('textbox')),
+        ).toHaveAttr('aria-invalid', 'true'),
+        expect(selector('[data-letter]')).not.toExist(),
+        type(
+          within(role('form', { name: form }), role('textbox')),
+          '192.168.1.42',
+        ),
+        expect(role('alert')).not.toExist(),
+      )
+    },
+  )
+
   test('en: the third hint outlines the cable and the address fields; show solution replays the three moves', () => {
     scene(
       sceneIn('en'),

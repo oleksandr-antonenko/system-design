@@ -1,6 +1,7 @@
 import { Array, Option, Order, pipe } from 'effect'
 import type { Html, HtmlBuilder } from 'foldkit/html'
 
+import { renderDomainMessage } from '../../i18n/domainMessage'
 import type { ProtocolName } from '../../i18n/ui/packetBoard/types'
 import { runAll } from '../../net/answers'
 import { macsOf } from '../../net/doc'
@@ -256,15 +257,32 @@ const sendForm = <ParentMessage>(
           [
             h.span([], [ui.sendAddress]),
             h.input([
-              h.Class(isGhost ? 'ghost' : ''),
+              h.Class(
+                [
+                  isGhost ? 'ghost' : '',
+                  Option.isSome(picture.model.maybeSendRefusal)
+                    ? 'refused'
+                    : '',
+                ].join(' '),
+              ),
               h.Type('text'),
               h.Attribute('inputmode', 'decimal'),
               h.Attribute('autocomplete', 'off'),
+              h.AriaInvalid(Option.isSome(picture.model.maybeSendRefusal)),
               h.Value(picture.model.sendAddress),
               h.OnInput(value => send(Message.UpdatedSendAddress({ value }))),
             ]),
           ],
         ),
+        ...Option.match(picture.model.maybeSendRefusal, {
+          onNone: () => [],
+          onSome: refusal => [
+            h.p(
+              [h.Class('pb-send-refusal'), h.Role('alert')],
+              [renderDomainMessage(picture.context.ui.domain, refusal)],
+            ),
+          ],
+        }),
         h.button([h.Type('submit'), h.Class('btn primary')], [ui.send]),
       ],
     ),
