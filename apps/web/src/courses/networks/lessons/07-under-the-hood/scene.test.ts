@@ -73,15 +73,18 @@ describe('lesson 7: an envelope in an envelope', () => {
     )
   })
 
-  test('en: the right layer on the first attempt', () => {
+  test('en: the right layer on the first attempt; then the envelope can be closed', () => {
     scene(
       sceneIn('en'),
       given(atQuiz()),
+      expect(role('button', { name: 'Close the envelope' })).not.toExist(),
       click(role('button', { name: 'Transport · TCP or UDP' })),
       expect(text(/Correct/)).toExist(),
       expect(text(/Flat numbers are the Transport layer/)).toExist(),
       expect(selector('.pb-layer.answer')).toHaveText(/443/),
       expect(selector('.pb-layer.picked')).not.toExist(),
+      click(role('button', { name: 'Close the envelope' })),
+      expect(selector('.pb-envelope')).not.toExist(),
     )
   })
 

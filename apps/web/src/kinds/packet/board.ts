@@ -52,6 +52,9 @@ export const Model = Schema.Struct({
   isSlow: Schema.Boolean,
   isLegendOpen: Schema.Boolean,
   isEnvelopeOpen: Schema.Boolean,
+  /** Ученик закрыл конверт, который открыла сцена (`openEnvelope`): на
+      телефоне шторка иначе закрывает кнопки урока. */
+  isEnvelopeDismissed: Schema.Boolean,
   maybeLayer: Schema.Option(Schema.Number),
   maybeCard: Schema.Option(Schema.String),
   isStickerOpen: Schema.Boolean,
@@ -81,6 +84,7 @@ export const initialModel: Model = {
   isSlow: false,
   isLegendOpen: false,
   isEnvelopeOpen: false,
+  isEnvelopeDismissed: false,
   maybeLayer: Option.none(),
   maybeCard: Option.none(),
   isStickerOpen: false,
@@ -208,11 +212,15 @@ export const update =
         model: modifyFields(model, { isLegendOpen: isOpen => !isOpen }),
       }),
       ClickedEnvelope: () => ({
-        model: modifyFields(model, { isEnvelopeOpen: isOpen => !isOpen }),
+        model: modifyFields(model, {
+          isEnvelopeOpen: isOpen => !isOpen,
+          isEnvelopeDismissed: () => false,
+        }),
       }),
       ClickedCloseEnvelope: () => ({
         model: modifyFields(model, {
           isEnvelopeOpen: () => false,
+          isEnvelopeDismissed: () => true,
           maybeLayer: () => Option.none(),
         }),
       }),

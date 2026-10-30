@@ -436,11 +436,15 @@ const envelopePanel = <ParentMessage>(
     picture.quiz,
     marks => marks.quiz.kind === 'PickLayer',
   )
+  const isPickPending =
+    isPickLayer && Option.exists(picture.quiz, marks => !marks.isAnswered)
   const isShown =
     picture.isOpen('board.envelopeLayers') &&
-    (picture.model.isEnvelopeOpen ||
-      Option.isSome(picture.maybeOpenLevel) ||
-      isPickLayer)
+    (isPickPending ||
+      (!picture.model.isEnvelopeDismissed &&
+        (picture.model.isEnvelopeOpen ||
+          Option.isSome(picture.maybeOpenLevel) ||
+          isPickLayer)))
   if (!isShown) {
     return []
   }
@@ -465,8 +469,7 @@ const envelopePanel = <ParentMessage>(
             keyFieldOf(leg.hop, level, picture.isOpen),
           )
         : Option.none()
-      const isNamesHidden =
-        isPickLayer && Option.exists(picture.quiz, marks => !marks.isAnswered)
+      const isNamesHidden = isPickPending
       const pickedLevels = Option.match(picture.quiz, {
         onNone: () => [],
         onSome: marks => (marks.isAnswered ? marks.picked : []),
@@ -483,7 +486,7 @@ const envelopePanel = <ParentMessage>(
               [h.Class('pb-envelope-head')],
               [
                 h.p([], [ui.title(leg.index, leg.count)]),
-                ...(isPickLayer
+                ...(isPickPending
                   ? []
                   : [
                       h.button(
