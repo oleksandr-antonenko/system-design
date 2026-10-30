@@ -436,6 +436,10 @@ const envelopePanel = <ParentMessage>(
         onNone: () => [],
         onSome: marks => (marks.isAnswered ? marks.picked : []),
       })
+      const answerLevels = Option.match(picture.quiz, {
+        onNone: () => [],
+        onSome: marks => (marks.isAnswered ? marks.answer : []),
+      })
       return [
         h.section(
           [h.Class('pb-envelope'), h.AriaLabel(ui.title(leg.index, leg.count))],
@@ -479,15 +483,17 @@ const envelopePanel = <ParentMessage>(
                     picture.context.maybeHoveredRef,
                     ref => ref === `env:${row.level}`,
                   )
-                const isPicked = Array.contains(
-                  pickedLevels,
+                const isAnswer = Array.contains(
+                  answerLevels,
                   `env:${row.level}`,
                 )
+                const isPicked =
+                  !isAnswer && Array.contains(pickedLevels, `env:${row.level}`)
                 return h.keyed('li')(
                   `${row.position}`,
                   [
                     h.Class(
-                      `pb-layer level-${row.level}${isOpen ? ' open' : ''}${isPicked ? ' picked' : ''}`,
+                      `pb-layer level-${row.level}${isOpen ? ' open' : ''}${isAnswer ? ' answer' : ''}${isPicked ? ' picked' : ''}`,
                     ),
                     h.OnMouseEnter(
                       send(Message.HoveredLayer({ position: row.position })),

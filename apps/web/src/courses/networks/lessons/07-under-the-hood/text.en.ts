@@ -12,7 +12,7 @@ export default {
     router: { name: 'Wi-Fi router', note: 'the post office of your home' },
     internet: {
       name: 'Internet',
-      note: 'behind the cloud, the chain of routers from lesson 4',
+      note: 'the chain of routers from lesson 4',
     },
     dns: { name: 'DNS server', note: 'your provider’s directory' },
     shop: { name: 'Shop website', note: 'somewhere far away' },

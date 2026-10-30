@@ -12,7 +12,7 @@ export default {
     router: { name: 'Wi-Fi router', note: 'jūsų namų paštas' },
     internet: {
       name: 'Internet',
-      note: 'už debesies — routers grandinė iš 4 pamokos',
+      note: 'routers grandinė iš 4 pamokos',
     },
     dns: { name: 'DNS server', note: 'tiekėjo informacijos tarnyba' },
     shop: { name: 'Parduotuvės svetainė', note: 'kažkur toli' },

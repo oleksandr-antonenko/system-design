@@ -1,6 +1,15 @@
 import { Array, Option } from 'effect'
 import type { HtmlBuilder } from 'foldkit/html'
-import { Command, click, expect, given, role, scene, text } from 'foldkit/scene'
+import {
+  Command,
+  click,
+  expect,
+  given,
+  role,
+  scene,
+  selector,
+  text,
+} from 'foldkit/scene'
 import { describe, test } from 'vitest'
 
 import type { Locale } from '../../../../i18n/locale'
@@ -56,6 +65,8 @@ describe('lesson 7: an envelope in an envelope', () => {
       expect(text(/flags/)).not.toExist(),
       expect(text(/А 443 — квартира в нём, программа сайта/)).toExist(),
       expect(text('Правильный ответ: TCP или UDP · port')).toExist(),
+      expect(selector('.pb-layer.answer')).toHaveText(/443/),
+      expect(selector('.pb-layer.picked')).toHaveText(/198\.51\.100\.10/),
       expect(role('button', { name: 'TCP или UDP · port' })).toBeDisabled(),
     )
   })
@@ -67,6 +78,8 @@ describe('lesson 7: an envelope in an envelope', () => {
       click(role('button', { name: 'TCP or UDP · the port' })),
       expect(text(/Correct/)).toExist(),
       expect(text(/Ports live in TCP or UDP/)).toExist(),
+      expect(selector('.pb-layer.answer')).toHaveText(/443/),
+      expect(selector('.pb-layer.picked')).not.toExist(),
     )
   })
 

@@ -12,7 +12,7 @@ export default {
     router: { name: 'Wi-Fi router', note: 'почта вашего дома' },
     internet: {
       name: 'Internet',
-      note: 'за облаком цепочка routers из урока 4',
+      note: 'цепочка routers из урока 4',
     },
     dns: { name: 'DNS server', note: 'справочная провайдера' },
     shop: { name: 'Сайт магазина', note: 'где-то далеко' },

@@ -844,6 +844,9 @@
 .pb-layer.open {
   background: var(--accent-soft);
 }
+.pb-layer.answer {
+  border-color: var(--ok);
+}
 .pb-layer.picked {
   border-color: var(--bad);
 }
