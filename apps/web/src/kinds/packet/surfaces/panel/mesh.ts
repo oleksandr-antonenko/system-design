@@ -77,7 +77,12 @@ const membersTab: PanelTab = {
       label: strings => strings.mesh.members,
       fixed: true,
       columns: [
-        { _tag: 'Info', id: 'device', label: strings => strings.mesh.device },
+        {
+          _tag: 'Info',
+          id: 'device',
+          label: strings => strings.mesh.device,
+          isDevice: true,
+        },
         { _tag: 'Check', id: 'member', label: strings => strings.mesh.member },
         {
           _tag: 'Input',
@@ -99,7 +104,7 @@ const membersTab: PanelTab = {
           return {
             id: host.id,
             cells: {
-              device: context.name(host.id),
+              device: host.id,
               member: onOff(Option.isSome(maybeMesh)),
               name: Option.match(maybeMesh, {
                 onNone: () => host.id,

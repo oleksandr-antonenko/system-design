@@ -223,6 +223,7 @@ export const packetBoardEn: PacketBoardStrings = {
   },
   fog: 'fog',
   draft: 'draft',
+  place: 'press to place it',
   builder: {
     title: 'Build the envelope',
     hint: 'Put the headers in order from outside to inside: drag them, or press a header and then its place.',

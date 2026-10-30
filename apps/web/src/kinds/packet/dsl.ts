@@ -164,6 +164,11 @@ export type ShowCert = Readonly<{
   name: string
 }>
 
+/** Готовый блок (урок 16, `board.sandbox`): пунктирное место на доске, где
+    встанет первое устройство из `ops`. Нажатие пишет `ops` в журнал задачи,
+    как ход ученика; когда устройство уже на доске, места нет. */
+export type Place = Readonly<{ _tag: 'Place'; ops: ReadonlyArray<NetOp> }>
+
 export type PacketStage =
   | PacketHighlight
   | PacketAnnotate
@@ -181,6 +186,7 @@ export type PacketStage =
   | Room
   | Builder
   | ShowCert
+  | Place
 
 export const highlight = (
   target: PacketTarget,
@@ -277,4 +283,9 @@ export const showCert = (device: DeviceId, name: string): ShowCert => ({
   _tag: 'ShowCert',
   device,
   name,
+})
+
+export const place = (ops: ReadonlyArray<NetOp>): Place => ({
+  _tag: 'Place',
+  ops,
 })

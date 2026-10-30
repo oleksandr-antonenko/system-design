@@ -204,6 +204,8 @@ export type PacketBoardStrings = Readonly<{
   }>
   fog: string
   draft: string
+  /** Подпись пунктирного места готового блока (`place`). */
+  place: string
   builder: Readonly<{
     title: string
     hint: string
