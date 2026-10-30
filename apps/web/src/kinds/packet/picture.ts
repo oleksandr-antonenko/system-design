@@ -644,10 +644,12 @@ export const pictureOf = (context: Context, model: Model): Picture => {
           },
         })
       : []
-  const cardFromStage = Option.map(
-    Array.head(stageItems(stage, 'ShowTable')),
-    item => item.device,
-  )
+  // `hideUntilAnswered: ['tables']`: таблицы сцены открываются только после
+  // ответа, иначе таймер в карточке подсказывает ответ квиза.
+  const stageTables = Array.contains(hidden, 'tables')
+    ? []
+    : stageItems(stage, 'ShowTable')
+  const cardFromStage = Option.map(Array.head(stageTables), item => item.device)
   const maybeCard = Option.orElse(model.maybeCard, () => cardFromStage)
   return {
     context,
@@ -666,7 +668,7 @@ export const pictureOf = (context: Context, model: Model): Picture => {
     state,
     changes,
     maybeCard,
-    cardTables: Array.map(stageItems(stage, 'ShowTable'), item => item.table),
+    cardTables: Array.map(stageTables, item => item.table),
     maybeOpenLevel: Option.map(
       Array.head(stageItems(stage, 'OpenEnvelope')),
       item => item.level,
