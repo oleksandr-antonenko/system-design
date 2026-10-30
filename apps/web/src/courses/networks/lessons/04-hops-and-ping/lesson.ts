@@ -110,7 +110,7 @@ export default defineLesson(packet, {
           }),
         ),
         add(
-          host('shop', 'server', 900, 470, {
+          host('shop', 'server', 900, 490, {
             address: '198.51.100.10/24',
             listeners: [tcp(80), tcp(443)],
             certs: [
