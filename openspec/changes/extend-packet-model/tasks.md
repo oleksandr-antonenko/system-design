@@ -16,11 +16,11 @@
 
 ## 4. Механика В2 (уроки 8–11)
 
-- [ ] 4.1 Маршрутизация: роутер за роутером, статические маршруты, `routeTable`, ICMP Time Exceeded через NAT, `Traceroute`, команда `traceroute`. Проверка: сценарии урока 8.
-- [ ] 4.2 NAT: таблица, пробросы, CGNAT на транзите, сводка пула DHCP, `Connect`, цель `OnlyOpenPorts`. Проверка: сценарии урока 9.
-- [ ] 4.3 DNS: записи с типом и TTL, CNAME, NS, рекурсивный резолвер, кэши на часах, `Query`, команды `nslookup` и `dig`, цель `HasRecord`. Проверка: `dns.test.ts`, сценарии урока 10.
-- [ ] 4.4 TLS: сертификаты, ClientHello/ServerHello, проверки правилами, перенаправление 301, `Submit`, ACME `IssueCertificate`, команды `curl -v` и `certbot`, цель `ValidCert`. Проверка: `tls.test.ts`, сценарии урока 11.
-- [ ] 4.5 Цели `WifiSecurity`, `ChannelClear`, `RanCommand`. Проверка: `goals.test.ts`.
+- [x] 4.1 Маршрутизация: роутер за роутером, статические маршруты, `routeTable`, ICMP Time Exceeded через NAT, `Traceroute`, команда `traceroute`. Проверка: сценарии урока 8.
+- [x] 4.2 NAT: таблица, пробросы, CGNAT на транзите, сводка пула DHCP, `Connect`, цель `OnlyOpenPorts`. Проверка: сценарии урока 9.
+- [x] 4.3 DNS: записи с типом и TTL, CNAME, NS, рекурсивный резолвер, кэши на часах, `Query`, команды `nslookup` и `dig`, цель `HasRecord`. Проверка: `dns.test.ts`, сценарии урока 10.
+- [x] 4.4 TLS: сертификаты, ClientHello/ServerHello, проверки правилами, перенаправление 301, `Submit`, ACME `IssueCertificate`, команды `curl -v` и `certbot`, цель `ValidCert`. Проверка: `tls.test.ts`, сценарии урока 11.
+- [x] 4.5 Цели `WifiSecurity`, `ChannelClear`, `RanCommand`. Проверка: `goals.test.ts`.
 
 ## 5. Механика В3 (уроки 12–16)
 

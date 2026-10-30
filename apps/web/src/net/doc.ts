@@ -247,7 +247,7 @@ export const NetOp = defineTaggedUnion({
   ComposeUp: { device: DeviceId },
   Send: { intent: Intent },
   Wait: { seconds: Schema.Number },
-  FastForward: {},
+  FastForward: { maybeDevice: Schema.Option(DeviceId) },
   FlushDns: { device: DeviceId },
   RunCommand: { device: DeviceId, line: Schema.String },
   IssueCertificate: { device: DeviceId, names: Schema.Array(Schema.String) },
