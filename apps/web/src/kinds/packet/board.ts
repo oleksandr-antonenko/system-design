@@ -64,6 +64,10 @@ export const pressDelete =
 
 export const interrupt = (model: Model): Model => model
 
+/** Ход ученика со своей сценой: трасса проигрывается с начала. */
+export const replay = (model: Model): Model =>
+  modifyFields(model, { playhead: () => 0 })
+
 export const frame = (
   model: Model,
   deltaMs: number,
@@ -97,7 +101,7 @@ const sceneHops = <ParentMessage>(
   Array.flatMap(slot.context.stage, item =>
     item._tag === 'Play'
       ? Array.map(
-          sendIntent(slot.context.doc, item.intent)[0].hops,
+          sendIntent(slot.context.stageDoc, item.intent)[0].hops,
           hop => `${hop.from} → ${hop.to}`,
         )
       : [],

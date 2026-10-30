@@ -3,6 +3,7 @@ import { Array } from 'effect'
 import type { ComponentKind } from '../../domain/catalog'
 import { formatNumber } from '../format'
 import { plural } from '../plural'
+import { deviceUk } from './device/uk'
 import type { UiStrings } from './types'
 
 const inLanguage: UiStrings['inLanguage'] = {
@@ -182,13 +183,8 @@ export const uk = {
     boardLabel: 'Схема мережі',
     placeholder: 'Дошка мережі в розробці: поки що тут лише список пристроїв.',
     run: 'Пуск',
-    wifiTab: device => `Wi-Fi: ${device}`,
-    wifiNetworks: 'Мережі поруч',
-    wifiNone: 'Поруч немає мереж Wi-Fi.',
-    wifiPassword: 'Пароль',
-    wifiJoin: 'Підключитися',
-    wifiJoined: ssid => `Підключено до мережі «${ssid}»`,
   },
+  device: deviceUk,
   notFound: {
     title: 'Сторінку не знайдено',
     body: path => `За адресою «${path}» нічого немає.`,

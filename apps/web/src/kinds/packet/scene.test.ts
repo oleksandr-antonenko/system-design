@@ -98,15 +98,15 @@ describe('task surfaces', () => {
     scene(
       sceneFor,
       given(Player.init('networks', phoneOnline, 1)),
-      expect(role('tab', { name: 'Wi-Fi: Phone' })).toHaveAttr(
+      expect(role('tab', { name: 'Screen · Phone' })).toHaveAttr(
         'aria-selected',
         'true',
       ),
-      expect(role('button', { name: 'Join' })).toBeDisabled(),
-      click(role('button', { name: 'Home' })),
+      expect(role('button', { name: 'Join' })).not.toExist(),
+      click(role('button', { name: /^Home,/ })),
       type(label('Password'), 'correct-horse'),
       click(role('button', { name: 'Join' })),
-      expect(text('Connected to “Home”')).toExist(),
+      expect(role('img', { name: 'Connected to “Home”' })).toExist(),
       click(role('button', { name: 'Check' })),
       expect(text('The phone is home.')).toExist(),
       expect(goal).toExist(),

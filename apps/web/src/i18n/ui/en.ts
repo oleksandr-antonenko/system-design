@@ -3,6 +3,7 @@ import { Array } from 'effect'
 import type { ComponentKind } from '../../domain/catalog'
 import { formatNumber } from '../format'
 import { plural } from '../plural'
+import { deviceEn } from './device/en'
 import type { UiStrings } from './types'
 
 const inLanguage: UiStrings['inLanguage'] = {
@@ -181,13 +182,8 @@ export const en = {
     placeholder:
       'The network board is in progress: for now it is just a list of devices.',
     run: 'Run',
-    wifiTab: device => `Wi-Fi: ${device}`,
-    wifiNetworks: 'Networks nearby',
-    wifiNone: 'No Wi-Fi networks nearby.',
-    wifiPassword: 'Password',
-    wifiJoin: 'Join',
-    wifiJoined: ssid => `Connected to “${ssid}”`,
   },
+  device: deviceEn,
   notFound: {
     title: 'Page not found',
     body: path => `There is nothing at “${path}”.`,

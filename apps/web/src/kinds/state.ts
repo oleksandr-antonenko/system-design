@@ -7,7 +7,10 @@ import { NetOp } from '../net/doc'
 import { NetMessage } from '../net/message'
 import * as FlowBoard from './flow/board'
 import * as PacketBoard from './packet/board'
-import * as WifiSurface from './packet/wifi'
+import * as ScreenMessage from './packet/surfaces/screen/message'
+import * as ScreenSurface from './packet/surfaces/screen/screen'
+import * as TerminalMessage from './packet/surfaces/terminal/message'
+import * as TerminalSurface from './packet/surfaces/terminal/terminal'
 
 // Model плеера строится только из Schema (FOLDKIT.md), поэтому значения,
 // тип которых зависит от вида доски, хранятся в union по виду (design D2).
@@ -42,11 +45,13 @@ export type BoardMessage = typeof BoardMessage.Type
 
 /** Состояние поверхности задачи. */
 export const SurfaceState = defineTaggedUnion({
-  WifiSurface: { model: WifiSurface.Model },
+  ScreenSurface: { model: ScreenSurface.Model },
+  TerminalSurface: { model: TerminalSurface.Model },
 })
 export type SurfaceState = typeof SurfaceState.Type
 
 export const SurfaceMessage = defineMessageUnion({
-  GotWifiSurfaceMessage: { message: WifiSurface.Message },
+  GotScreenSurfaceMessage: { message: ScreenMessage.Message },
+  GotTerminalSurfaceMessage: { message: TerminalMessage.Message },
 })
 export type SurfaceMessage = typeof SurfaceMessage.Type

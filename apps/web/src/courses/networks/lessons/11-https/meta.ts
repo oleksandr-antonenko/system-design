@@ -12,5 +12,6 @@ export default defineLessonMeta(course, {
     'terminal.curl',
     'browser.certificate',
     'browser.errCert',
+    'browser.form',
   ],
 })

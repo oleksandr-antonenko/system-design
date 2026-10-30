@@ -141,6 +141,9 @@ export type BoardContext<T extends KindTypes> = Readonly<{
   run: T['Run']
   mode: BoardMode
   stage: ReadonlyArray<T['Stage']>
+  /** Документ, на котором проигрывается сцена: до хода ученика, если сцена —
+      его ход (браузер открыл адрес), иначе `doc`. */
+  stageDoc: T['Doc']
   annotationText: (key: string) => string
   label: (id: string) => Option.Option<EntityLabel>
   maybeTask: Option.Option<BoardTask<T>>
@@ -183,6 +186,8 @@ export type BoardHost<T extends KindTypes> = Readonly<{
   ) => (model: T['BoardModel']) => BoardReturn<T>
   /** Отменить начатый жест: шаг сменился, ход отменён, решение показывается. */
   interrupt: (model: T['BoardModel']) => T['BoardModel']
+  /** Проиграть сцену заново: ученик сделал ход со своей сценой. */
+  replay: (model: T['BoardModel']) => T['BoardModel']
   /** Кадр анимации. */
   frame: (
     model: T['BoardModel'],
@@ -230,6 +235,14 @@ export type SurfaceContext<T extends KindTypes> = Readonly<{
   maybeGhost: Option.Option<ReadonlyArray<T['Op']>>
   unlocked: ReadonlyArray<string>
   newFeatures: ReadonlyArray<string>
+  /** Операции, из которых свёрнут `doc`: шаги урока до текущего и журнал
+      задачи. По ним поверхность восстанавливает, что было (вывод терминала,
+      открытая страница), поэтому отмена и «Показать решение» её не ломают. */
+  history: ReadonlyArray<T['Op']>
+  /** Ходы ученика в задаче шага. */
+  journal: ReadonlyArray<T['Op']>
+  /** Id поверхностей задачи шага: `['board', 'browser:phone', …]`. */
+  surfaces: ReadonlyArray<string>
 }>
 
 export type SurfaceSlot<T extends KindTypes, ParentMessage> = Readonly<{
@@ -237,6 +250,8 @@ export type SurfaceSlot<T extends KindTypes, ParentMessage> = Readonly<{
   context: SurfaceContext<T>
   locale: Locale
   ui: UiStrings
+  /** Текст кода: свой текст урока (`feedback`) или текст вида. */
+  renderMessage: (message: T['Message']) => string
   toParentMessage: (message: SurfaceMessage) => ParentMessage
 }>
 
@@ -247,6 +262,9 @@ export type SurfaceDefinition<T extends KindTypes> = Readonly<{
   type: string
   /** Поверхность видна, если открыт хотя бы один элемент `<feature>.*`. */
   feature: string
+  /** Поверхности одного экрана устройства (`wifi:phone` и `browser:phone`)
+      делят одну вкладку и одно состояние: их вид — первая объявленная. */
+  screen?: string
   init: (target: string) => SurfaceState
   update: (
     context: SurfaceContext<T>,
@@ -319,6 +337,9 @@ export type BoardKind<T extends KindTypes> = Readonly<{
   targetName: (doc: T['Doc'], target: string, ui: UiStrings) => string
   /** Строка журнала. Язык операций не переводится, как код. */
   describeOp: (op: T['Op']) => string
+  /** Сцена хода ученика на документе до него: браузер открыл адрес —
+      трасса на доске. Пусто — доска показывает сцену шага. */
+  moveStage: (before: T['Doc'], op: T['Op']) => ReadonlyArray<T['Stage']>
   /** Текст кода на языке страницы; `name` — подпись сущности доски. */
   renderMessage: (
     locale: Locale,

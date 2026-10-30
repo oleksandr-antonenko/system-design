@@ -1,20 +1,13 @@
 import { Array, Option, Schema } from 'effect'
-import { Update } from 'foldkit'
 
 import { findDevice } from '../../net/doc'
 import { type Goal, checkGoal } from '../../net/goals'
 import { kindOf } from '../../net/model'
 import { StackLevel, sourceOf } from '../../net/packet'
+import { runCommand } from '../../net/terminal'
 import { renderNetMessage } from '../../net/text'
-import type { BoardKind, SurfaceDefinition } from '../contract'
-import {
-  BoardMessage,
-  BoardState,
-  KindMessage,
-  KindOp,
-  SurfaceMessage,
-  SurfaceState,
-} from '../state'
+import type { BoardKind } from '../contract'
+import { BoardMessage, BoardState, KindMessage, KindOp } from '../state'
 import type { PacketTypes } from '../types'
 import * as PacketBoard from './board'
 import {
@@ -26,7 +19,9 @@ import {
   runPacket,
 } from './doc'
 import type { PacketStage } from './dsl'
-import * as Wifi from './wifi'
+import { browserPicture } from './surfaces/screen/browser'
+import { browserSurface, wifiSurface } from './surfaces/screen/surface'
+import { terminalSurface } from './surfaces/terminal/surface'
 
 // Вид доски курса сетей (design D6). Модель пакетов — `src/net/`; здесь
 // только её подключение к контракту. Доска — заготовка, поверхность одна.
@@ -84,47 +79,22 @@ const opText = (op: PacketOp): string =>
       ? `Send ${op.intent._tag} ${fieldsText(op.intent)}`
       : `${op._tag} ${fieldsText(op)}`
 
-// SURFACES
+// MOVES
 
-const readWifi = (state: SurfaceState): Option.Option<Wifi.Model> =>
-  state._tag === 'WifiSurface' ? Option.some(state.model) : Option.none()
-
-const toWifiMessage = (message: Wifi.Message): SurfaceMessage =>
-  SurfaceMessage.GotWifiSurfaceMessage({ message })
-
-const wifiSurface: SurfaceDefinition<PacketTypes> = {
-  type: 'wifi',
-  feature: 'wifi',
-  init: () => SurfaceState.WifiSurface({ model: Wifi.initialModel }),
-  update: context => (state, message) =>
-    Update.foldChild({
-      update: Wifi.update(context),
-      read: readWifi,
-      write: (_state: SurfaceState, model: Wifi.Model) =>
-        SurfaceState.WifiSurface({ model }),
-      toParentMessage: toWifiMessage,
-      toParentOutMessage: (outMessage: Wifi.OutMessage) => outMessage,
-    })(state, message.message),
-  tabLabel: (context, ui) =>
-    ui.network.wifiTab(
-      Option.match(context.label(context.target), {
-        onNone: () => context.target,
-        onSome: label => label.name,
-      }),
-    ),
-  view: (slot, h) =>
-    Option.match(readWifi(slot.state), {
-      onNone: () => h.empty,
-      onSome: model =>
-        Wifi.view(
-          model,
-          slot.context,
-          slot.ui,
-          message => slot.toParentMessage(toWifiMessage(message)),
-          h,
-        ),
-    }),
-}
+/** Ход ученика со своей сценой: открытая страница или трассы команды
+    терминала (`ping`, `curl`) проигрываются на доске. */
+const moveStage = (
+  before: PacketDoc,
+  op: PacketOp,
+): ReadonlyArray<PacketStage> =>
+  op._tag === 'Send'
+    ? [{ _tag: 'Play', intent: op.intent }]
+    : op._tag === 'RunCommand'
+      ? Array.map(
+          runCommand(before.doc, before.state, op.device, op.line).traces,
+          (traced): PacketStage => ({ _tag: 'Play', intent: traced.intent }),
+        )
+      : []
 
 // KIND
 
@@ -159,6 +129,7 @@ export const packet: BoardKind<PacketTypes> = {
   },
   targetName: (_doc, target) => target,
   describeOp: opText,
+  moveStage,
   renderMessage: (locale, _ui, message, name) =>
     renderNetMessage(locale, message, name),
 
@@ -194,14 +165,15 @@ export const packet: BoardKind<PacketTypes> = {
     update: PacketBoard.update,
     pressDelete: PacketBoard.pressDelete,
     interrupt: PacketBoard.interrupt,
+    replay: PacketBoard.replay,
     frame: PacketBoard.frame,
     view: PacketBoard.view,
     instruments: PacketBoard.instruments,
   },
-  surfaces: [wifiSurface],
+  surfaces: [wifiSurface, browserSurface, terminalSurface],
 
   // NOTE: `NextHop`, `PickLinks`, `PickLayer`, `PlaceChips`, `SpotFault` и
   // картинки вариантов (экраны браузера) добавляет add-network-board.
   quizzes: ['PickDevice'],
-  picture: () => Option.none(),
+  picture: browserPicture,
 }

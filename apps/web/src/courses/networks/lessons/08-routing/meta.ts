@@ -7,5 +7,10 @@ export default defineLessonMeta(course, {
   order: 8,
   available: false,
   locales: ['uk', 'ru', 'en', 'lt'],
-  unlocks: ['board.routes', 'terminal.traceroute'],
+  unlocks: [
+    'board.routes',
+    'terminal.traceroute',
+    'terminal.ipRoute',
+    'wifi.addressing',
+  ],
 })
