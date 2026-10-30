@@ -402,6 +402,16 @@ const askServer = (
   )
 }
 
+/** DNS офиса для имени его зоны, пока VPN подключён (раздельный DNS). */
+export const vpnDnsFor = (host: Host, name: string): Option.Option<Ip> =>
+  pipe(
+    host.maybeVpn,
+    Option.filter(vpn => vpn.connected),
+    Option.flatMap(vpn => vpn.maybeDns),
+    Option.filter(dns => name === dns.zone || name.endsWith(`.${dns.zone}`)),
+    Option.map(dns => dns.server),
+  )
+
 /** Какой сервер спрашивать: имена зоны офиса — у DNS VPN, остальные — у
     DNS хоста (контейнер — у DNS своего хоста). */
 const dnsServerFor = (
@@ -409,22 +419,14 @@ const dnsServerFor = (
   state: NetState,
   host: Host,
   name: string,
-): Option.Option<Ip> => {
-  const vpnDns = pipe(
-    host.maybeVpn,
-    Option.filter(vpn => vpn.connected),
-    Option.flatMap(vpn => vpn.maybeDns),
-    Option.filter(dns => name === dns.zone || name.endsWith(`.${dns.zone}`)),
-    Option.map(dns => dns.server),
-  )
-  return Option.orElse(vpnDns, () =>
+): Option.Option<Ip> =>
+  Option.orElse(vpnDnsFor(host, name), () =>
     Option.flatMap(
       Option.orElse(dockerHostOf(doc, host), () => Option.some(host)),
       owner =>
         Option.flatMap(hostIface(doc, state, owner), iface => iface.maybeDns),
     ),
   )
-}
 
 /** Имена без сети: свой сервис compose, `host.docker.internal`, член mesh. */
 const localName = (
@@ -1872,6 +1874,31 @@ export const trace = (
     step.run.state,
   ]
 }
+
+/** Container с зависимостью (`DATABASE_URL`) работает, только если
+    достаёт до неё; иначе он падает и перезапускается (`Restarting`). */
+export const isContainerUp = (
+  doc: NetDoc,
+  state: NetState,
+  container: Device,
+): boolean =>
+  container._tag !== 'Host' ||
+  Option.match(
+    Option.flatMap(container.maybeContainer, info => info.maybeNeeds),
+    {
+      onNone: () => true,
+      onSome: needs =>
+        trace(
+          doc,
+          state,
+          Intent.Connect({
+            from: container.id,
+            host: needs.host,
+            port: needs.port,
+          }),
+        )[0].outcome._tag === 'Delivered',
+    },
+  )
 
 /** Открытие без перехода по 301: для цели «перенаправляет на HTTPS». */
 export const traceNoFollow = (

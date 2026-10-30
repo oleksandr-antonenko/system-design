@@ -103,6 +103,7 @@ export const packetBoardLt: PacketBoardStrings = {
     office: 'Biuras',
     plan: 'Buto planas',
     docker: host => `Docker: ${host}`,
+    door: mapping => `Port mapping ${mapping}`,
     internet: 'Internet',
     internetSub: 'visas pasaulis',
     internetOpenSub: 'daug tinklų',
@@ -223,7 +224,15 @@ export const packetBoardLt: PacketBoardStrings = {
     expected: what => `tikėtasi: ${what}`,
   },
   fog: 'rūkas',
+  ladder: {
+    title: 'Patikros iš apačios į viršų',
+    idle: 'dar netikrinta',
+    seen: 'pažiūrėta',
+    ok: 'patikra praėjo',
+    bad: 'čia gedimas',
+  },
   draft: 'juodraštis',
+  place: 'paspauskite, kad pastatytumėte',
   builder: {
     title: 'Surinkite voką',
     hint: 'Sudėkite antraštes iš išorės į vidų: nutempkite arba paspauskite antraštę, paskui vietą.',

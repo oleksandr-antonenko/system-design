@@ -157,6 +157,15 @@ const runInWorld = (
                   program: command.program,
                   maybeTarget: command.maybeTarget,
                   saw: command.saw,
+                  tags: Array.dedupe(
+                    Array.map(command.lines, printed => printed.tag),
+                  ),
+                  path: Array.dedupe(
+                    Array.flatMap(
+                      command.traces,
+                      traced => pathOf(traced).devices,
+                    ),
+                  ),
                 },
               ],
             },
@@ -166,7 +175,8 @@ const runInWorld = (
 
 /** Любая операция над миром: операции документа меняют документ, `Send` —
     состояние трассой, `Wait` двигает часы, `RunCommand` применяет действие
-    команды, `IssueCertificate` проверяет имена и ставит сертификат. */
+    команды, `IssueCertificate` проверяет имена и ставит сертификат, `Report`
+    запоминает отчёт для ИИ, `Reset` начинает с пустого мира. */
 export const applyWorld = (world: World, op: NetOp): WorldResult =>
   NetOp.match(op, {
     Send: ({ intent }) => Result.succeed(sendIntent(world, intent)[1]),
@@ -210,6 +220,18 @@ export const applyWorld = (world: World, op: NetOp): WorldResult =>
           state: issued.state,
         }),
       ),
+    Report: report =>
+      Result.succeed({
+        doc: world.doc,
+        state: {
+          ...world.state,
+          reports: [
+            ...world.state.reports,
+            { fault: report.fault, evidence: report.evidence },
+          ],
+        },
+      }),
+    Reset: () => Result.succeed(emptyWorld),
     ReserveAddress: reservation =>
       Result.map(apply(world.doc, op), doc =>
         releaseReserved(

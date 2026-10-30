@@ -141,4 +141,29 @@ export const deviceLt: DeviceStrings = {
   interrupt: 'Sustabdyti programą (Ctrl+C)',
   consoleNote:
     'Prisijungimas per ssh uždarytas. Tai prieglobos konsolė: ji veikia tiesiogiai, be ssh.',
+
+  reportTab: 'Ataskaita DI',
+  reportTitle: 'Ataskaita DI asistentui',
+  reportWhat: 'Kas neveikia',
+  reportSymptom: (device, url) => `${device} neatidaro ${url}`,
+  reportFixedNow: 'Dabar jau atsidaro.',
+  reportEvidence: 'Įrodymas',
+  reportEvidenceHint:
+    'Spustelėkite išvesties eilutę, kuri įrodo gedimą, — ne daugiau kaip dvi eilutes.',
+  reportNoOutput:
+    'Čia atsiras komandų išvestis iš terminalo. Paleiskite patikras iš apačios į viršų.',
+  reportPicked: count => `Pasirinkta eilučių: ${count} iš 2`,
+  reportWhere: 'Kur gedimas',
+  reportFaults: {
+    link: 'Nėra ryšio ar adreso',
+    gateway: 'Gateway: vokas neišeina iš namų',
+    dns: 'DNS: informacijos tarnyba nepaverčia vardo adresu',
+    firewall: 'Port uždarytas: firewall neįleidžia',
+    loopback: 'Serveris klausosi tik savęs (127.0.0.1)',
+    cert: 'Certificate išduotas kitam vardui',
+  },
+  reportSend: 'Siųsti ataskaitą',
+  reportReply: 'Asistento atsakymas',
+  reportApply: 'Pritaikyti',
+  reportApplied: 'Pataisymas pritaikytas.',
 }

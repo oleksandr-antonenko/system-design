@@ -29,6 +29,7 @@ export type PacketSurface =
   | `wifi:${DeviceId}`
   | `terminal:${DeviceId}`
   | `browser:${DeviceId}`
+  | 'report'
 
 // STAGE
 
@@ -132,8 +133,16 @@ export type RunRow = Readonly<{
 export type RunAll = Readonly<{ _tag: 'RunAll'; rows: ReadonlyArray<RunRow> }>
 
 /** Туман: видны только эти устройства и то, до чего дотянулись команды
-    терминала (журнал команд). */
+    терминала (журнал команд): сами устройства, цели и пути их конвертов.
+    Туман остаётся на доске и во время ходов ученика. */
 export type Fog = Readonly<{ _tag: 'Fog'; visible: ReadonlyArray<DeviceId> }>
+
+/** Лесенка проверок (урок 15): адрес, шлюз, DNS, port, приложение снизу
+    вверх у левого края доски. Каждая команда терминала зажигает свою
+    ступеньку: зелёным, если проверка прошла, красным — если нет. Ступеньки
+    считаются по журналу команд мира, поэтому лесенка остаётся на доске и
+    во время ходов ученика. */
+export type Ladder = Readonly<{ _tag: 'Ladder' }>
 
 /** Устройство проходит по точкам, полоски сигнала меняются на ходу. */
 export type Walk = Readonly<{
@@ -164,6 +173,11 @@ export type ShowCert = Readonly<{
   name: string
 }>
 
+/** Готовый блок (урок 16, `board.sandbox`): пунктирное место на доске, где
+    встанет первое устройство из `ops`. Нажатие пишет `ops` в журнал задачи,
+    как ход ученика; когда устройство уже на доске, места нет. */
+export type Place = Readonly<{ _tag: 'Place'; ops: ReadonlyArray<NetOp> }>
+
 export type PacketStage =
   | PacketHighlight
   | PacketAnnotate
@@ -177,10 +191,12 @@ export type PacketStage =
   | Preview
   | RunAll
   | Fog
+  | Ladder
   | Walk
   | Room
   | Builder
   | ShowCert
+  | Place
 
 export const highlight = (
   target: PacketTarget,
@@ -254,6 +270,8 @@ export const fog = (visible: ReadonlyArray<DeviceId>): Fog => ({
   visible,
 })
 
+export const ladder = (): Ladder => ({ _tag: 'Ladder' })
+
 export const walk = (
   device: DeviceId,
   points: ReadonlyArray<readonly [number, number]>,
@@ -277,4 +295,9 @@ export const showCert = (device: DeviceId, name: string): ShowCert => ({
   _tag: 'ShowCert',
   device,
   name,
+})
+
+export const place = (ops: ReadonlyArray<NetOp>): Place => ({
+  _tag: 'Place',
+  ops,
 })

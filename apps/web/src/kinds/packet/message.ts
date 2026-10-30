@@ -1,6 +1,7 @@
 import { Schema } from 'effect'
 import { defineMessageUnion } from 'foldkit/message'
 
+import { NetOp } from '../../net/doc'
 import { StackLevel } from '../../net/packet'
 
 // Сообщения доски сетей (add-network-board): что сделал ученик на доске и
@@ -64,5 +65,7 @@ export const Message = defineMessageUnion({
   DroppedOnHeaderSlot: { position: Schema.Number },
   ClickedBuilderReset: {},
   ClickedBuilderSend: { from: Schema.String, url: Schema.String },
+  /** Готовый блок поставлен на пунктирное место (`place` сцены). */
+  ClickedPlace: { ops: Schema.Array(NetOp) },
 })
 export type Message = typeof Message.Type

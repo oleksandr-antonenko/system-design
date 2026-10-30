@@ -495,6 +495,44 @@ describe('lesson 13 (vpn): full tunnel eats the printer, split tunnel brings it 
       ).met,
     ).toBe(false)
   })
+
+  test('split DNS: the office directory is asked through the tunnel even when its network is not on the list', () => {
+    const one = buildWorld(
+      [
+        vpnSettings('laptop', {
+          connected: true,
+          mode: 'split',
+          networks: ['10.20.0.5/32'],
+        }),
+      ],
+      lesson,
+    )
+    expect(metAll(one, taskGoals)).toEqual([true, true, true, true])
+    expect(runCommand(one.doc, one.state, 'laptop', 'ip route').output).toEqual(
+      expect.arrayContaining(['10.20.0.5/32 dev wg0', '10.20.0.1/32 dev wg0']),
+    )
+    const wide = buildWorld(
+      [
+        vpnSettings('laptop', {
+          connected: true,
+          mode: 'split',
+          networks: ['10.0.0.0/8'],
+        }),
+      ],
+      lesson,
+    )
+    expect(
+      runCommand(wide.doc, wide.state, 'laptop', 'ip route').output,
+    ).not.toContain('10.20.0.1/32 dev wg0')
+    expect(
+      runCommand(wide.doc, wide.state, 'laptop', 'nslookup wiki.corp.example')
+        .output[0],
+    ).toBe('Server:\t\t10.20.0.1')
+    expect(
+      runCommand(wide.doc, wide.state, 'laptop', 'nslookup shop.example')
+        .output[0],
+    ).toBe('Server:\t\t192.0.2.53')
+  })
 })
 
 describe('lesson 14 (dev-networks): localhost, Docker and a tunnel', () => {
@@ -690,6 +728,57 @@ describe('lesson 14 (dev-networks): localhost, Docker and a tunnel', () => {
       Option.some(NetMessage.UpstreamFailed({ device: 'laptop', port: 3000 })),
     )
     expect(traceOn(start.doc, devForFriend).outcome).toMatchObject({
+      answer: { status: 404 },
+    })
+  })
+
+  test('a container reaches a published port through its host’s own address', () => {
+    const viaHost = Intent.Connect({
+      from: 'app',
+      host: '192.168.1.42',
+      port: 5432,
+    })
+    expect(traceOn(lesson, viaHost).outcome).toMatchObject({
+      _tag: 'Delivered',
+      at: 'db',
+    })
+    const hidden = buildNet(
+      [
+        compose(
+          'laptop',
+          composeFile([
+            service('app', { image: 'shop-app', port: 3000 }),
+            service('db', { image: 'postgres:16', port: 5432 }),
+          ]),
+        ),
+        composeUp('laptop'),
+      ],
+      lesson,
+    )
+    expect(traceOn(hidden, viaHost).outcome).toMatchObject({
+      _tag: 'Refused',
+      at: 'laptop',
+    })
+  })
+
+  test('Ctrl+C stops the running tunnel, not just the dev server', () => {
+    const tunnelled = foldWorld(buildWorld([], lesson), [
+      run('laptop', 'tunnel http 8080'),
+    ])
+    const stopped = foldWorld(tunnelled, [run('laptop', 'Ctrl+C')])
+    expect(
+      Option.isSome(
+        Option.flatMap(
+          Array.findFirst(
+            stopped.doc.devices,
+            device => device.id === 'laptop',
+          ),
+          device =>
+            device._tag === 'Host' ? device.maybeTunnel : Option.none(),
+        ),
+      ),
+    ).toBe(false)
+    expect(traceOn(stopped.doc, devForFriend, stopped).outcome).toMatchObject({
       answer: { status: 404 },
     })
   })

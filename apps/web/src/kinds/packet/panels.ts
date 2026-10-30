@@ -9,10 +9,12 @@ import { findHost, macsOf } from '../../net/doc'
 import type { Device, DeviceId, NetState } from '../../net/model'
 import {
   type Hop,
+  type Intent,
   type StackLevel,
   TableChange,
   sourceOf,
 } from '../../net/packet'
+import { type Rung, type RungState, ladderOf, rungs } from '../../net/report'
 import { certChecks, certFor } from '../../net/tls'
 import {
   type RouteRow,
@@ -799,6 +801,20 @@ const certCards = <ParentMessage>(
     : []
 }
 
+/** Что проверяет строка прогона: адрес страницы или «хост:port». */
+const rowTarget = (intent: Intent): string =>
+  intent._tag === 'Browse' ||
+  intent._tag === 'Fetch' ||
+  intent._tag === 'Submit'
+    ? intent.url
+    : intent._tag === 'Connect'
+      ? `${intent.host}:${intent.port}`
+      : intent._tag === 'Ping' || intent._tag === 'Traceroute'
+        ? intent.host
+        : intent._tag === 'Resolve' || intent._tag === 'Query'
+          ? intent.name
+          : ''
+
 const finalRun = <ParentMessage>(
   picture: Picture,
   h: HtmlBuilder<ParentMessage>,
@@ -845,17 +861,35 @@ const finalRun = <ParentMessage>(
                           ([row, result]) => {
                             const isAsExpected =
                               result.delivered === (row.expect === 'reach')
+                            const target = rowTarget(row.intent)
                             return h.keyed('tr')(
                               row.id,
-                              [h.Class(isAsExpected ? 'ok' : 'bad')],
+                              [
+                                h.Class(
+                                  `${isAsExpected ? 'ok' : 'bad'} ${row.expect}`,
+                                ),
+                              ],
                               [
                                 h.td(
                                   [],
                                   [
-                                    Array.map(
-                                      result.devices,
-                                      picture.name,
-                                    ).join(' → '),
+                                    ...(target === ''
+                                      ? []
+                                      : [
+                                          h.span(
+                                            [h.Class('pb-run-target')],
+                                            [target],
+                                          ),
+                                        ]),
+                                    h.span(
+                                      [h.Class('pb-run-path')],
+                                      [
+                                        Array.map(
+                                          result.devices,
+                                          picture.name,
+                                        ).join(' → '),
+                                      ],
+                                    ),
                                   ],
                                 ),
                                 h.td(
@@ -930,12 +964,82 @@ const legend = <ParentMessage>(
     : []
 }
 
+// LADDER
+
+/** Подписи ступенек — английские, как в документации и выводе команд. */
+const rungLabel: Readonly<Record<Rung, string>> = {
+  address: 'IP address',
+  gateway: 'Gateway',
+  dns: 'DNS',
+  port: 'Port',
+  app: 'App',
+}
+
+const rungMark: Readonly<Record<RungState, string>> = {
+  idle: '',
+  seen: '·',
+  ok: '✓',
+  bad: '✕',
+}
+
+/** Лесенка проверок у левого края доски (урок 15): ступеньки снизу вверх,
+    у каждой — итог последней проверки и команда, которая её проверила. */
+const ladderView = <ParentMessage>(
+  picture: Picture,
+  h: HtmlBuilder<ParentMessage>,
+): ReadonlyArray<Html> => {
+  const ui = picture.context.ui.packetBoard.ladder
+  const ladder = ladderOf(picture.context.doc.state.commandLog)
+  return picture.isOpen('board.checkLadder') &&
+    Array.some(picture.context.stage, item => item._tag === 'Ladder')
+    ? [
+        h.keyed('section')(
+          'ladder',
+          [h.Class('pb-ladder'), h.AriaLabel(ui.title)],
+          [
+            h.p([h.Class('pb-ladder-title')], [ui.title]),
+            h.ol(
+              [h.Class('pb-rungs')],
+              Array.map(Array.reverse(rungs), rung => {
+                const { state, maybeCommand } = ladder[rung]
+                return h.keyed('li')(
+                  rung,
+                  [
+                    h.Class(`pb-rung ${state}`),
+                    h.AriaLabel(`${rungLabel[rung]}: ${ui[state]}`),
+                  ],
+                  [
+                    h.span(
+                      [h.Class('pb-rung-mark'), h.AriaHidden(true)],
+                      [rungMark[state]],
+                    ),
+                    h.span([h.Class('pb-rung-name')], [rungLabel[rung]]),
+                    ...Option.match(maybeCommand, {
+                      onNone: () => [],
+                      onSome: command => [
+                        h.span(
+                          [h.Class('pb-rung-cmd'), h.AriaHidden(true)],
+                          [command],
+                        ),
+                      ],
+                    }),
+                  ],
+                )
+              }),
+            ),
+          ],
+        ),
+      ]
+    : []
+}
+
 /** Слои над доской, привязанные к её углам. */
 export const stageOverlays = <ParentMessage>(
   picture: Picture,
   _send: Send<ParentMessage>,
   h: HtmlBuilder<ParentMessage>,
 ): ReadonlyArray<Html> => [
+  ...ladderView(picture, h),
   ...legend(picture, h),
   ...printouts(picture, h),
   ...certCards(picture, h),

@@ -102,6 +102,7 @@ export const packetBoardUk: PacketBoardStrings = {
     office: 'Офіс',
     plan: 'План квартири',
     docker: host => `Docker: ${host}`,
+    door: mapping => `Port mapping ${mapping}`,
     internet: 'Internet',
     internetSub: 'увесь світ',
     internetOpenSub: 'багато мереж',
@@ -222,7 +223,15 @@ export const packetBoardUk: PacketBoardStrings = {
     expected: what => `чекали: ${what}`,
   },
   fog: 'туман',
+  ladder: {
+    title: 'Перевірки знизу вгору',
+    idle: 'ще не перевіряли',
+    seen: 'подивилися',
+    ok: 'перевірка пройшла',
+    bad: 'тут поломка',
+  },
   draft: 'чернетка',
+  place: 'натисніть, щоб поставити',
   builder: {
     title: 'Зберіть конверт',
     hint: 'Розкладіть заголовки ззовні всередину: перетягніть або натисніть заголовок, потім місце.',

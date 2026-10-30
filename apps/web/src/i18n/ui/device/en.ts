@@ -141,4 +141,29 @@ export const deviceEn: DeviceStrings = {
   interrupt: 'Stop the program (Ctrl+C)',
   consoleNote:
     'ssh is closed. This is the hosting console: it works directly, without ssh.',
+
+  reportTab: 'AI report',
+  reportTitle: 'Report for the AI assistant',
+  reportWhat: 'What does not work',
+  reportSymptom: (device, url) => `${device} does not open ${url}`,
+  reportFixedNow: 'It opens now.',
+  reportEvidence: 'Evidence',
+  reportEvidenceHint:
+    'Click the output line that proves the fault — two lines at most.',
+  reportNoOutput:
+    'Output from the terminal will appear here. Run the checks bottom up.',
+  reportPicked: count => `Lines picked: ${count} of 2`,
+  reportWhere: 'Where is the fault',
+  reportFaults: {
+    link: 'No connection or no address',
+    gateway: 'Gateway: the envelope does not leave home',
+    dns: 'DNS: the directory does not turn the name into an address',
+    firewall: 'A firewall does not let you through to the port',
+    loopback: 'The server listens only to itself (127.0.0.1)',
+    cert: 'The certificate is issued for another name',
+  },
+  reportSend: 'Send report',
+  reportReply: 'Assistant’s reply',
+  reportApply: 'Apply',
+  reportApplied: 'The fix is applied.',
 }

@@ -2,11 +2,13 @@ import { Option } from 'effect'
 
 import { type AcmeProblem } from '../message'
 import {
+  type Fault,
   type FirewallScope,
   type Medium,
   type Security,
   type WifiBand,
 } from '../model'
+import { faultPlace } from '../report'
 import { type NetTexts, type TextContext } from './types'
 
 const band = (value: WifiBand): string =>
@@ -49,6 +51,80 @@ const acme: Readonly<Record<AcmeProblem, string>> = {
   refused: 'port 80 is closed',
   timeout: 'port 80 cannot be reached',
   'wrong-server': 'another server answers for this name',
+}
+
+// Ответ ассистента на неверный диагноз в отчёте (урок 15): выбранная
+// ступенька ниже настоящей поломки — она цела; выше — до неё конверт не
+// дошёл; та же — поломка соседняя.
+
+type Below = (ran: boolean, host: string, port: number) => string
+
+const belowFault: Readonly<Record<Fault, Below>> = {
+  link: ran =>
+    ran
+      ? 'There is an IP address, and the router answers: the connection is fine.'
+      : 'Check first: ip a for the IP address, then ping the router.',
+  gateway: ran =>
+    ran
+      ? 'Envelopes leave home: ping 1.1.1.1 answers.'
+      : 'Check: ping 1.1.1.1 — does the envelope leave home?',
+  dns: (ran, host) =>
+    ran
+      ? 'The name is found: the DNS server returned an address.'
+      : `Check: nslookup ${host}.`,
+  firewall: (ran, host, port) =>
+    ran
+      ? 'The door opens: the connection is established.'
+      : `Check: nc -zv ${host} ${port}.`,
+  loopback: ran =>
+    ran
+      ? 'The connection opened: the server listens to more than itself.'
+      : 'Check on the server: ss -ltn.',
+  cert: ran =>
+    ran
+      ? 'The certificate matches the name.'
+      : 'Check: curl -v shows what the server presents when you connect.',
+}
+
+const aboveFault: Readonly<Record<Fault, string>> = {
+  link: 'The connection and the address have nothing to do with it: the trouble is elsewhere.',
+  gateway:
+    'The envelope does not leave home, but the cause is lower: does the device have an IP address?',
+  dns: 'The DNS server really did not answer. But did the envelope reach it? The DNS server lives outside.',
+  firewall:
+    'It never got as far as the door: the envelope did not reach the server.',
+  loopback:
+    'It never got as far as the door: the envelope did not reach the server.',
+  cert: 'It never got as far as the certificate: the connection did not even open.',
+}
+
+const sameFault: Readonly<Partial<Record<Fault, string>>> = {
+  firewall:
+    'The refusal came at once: the envelope arrived, and the answer was “nobody here”. A firewall usually stays silent. See which address the server listens on: ss -ltn.',
+  loopback:
+    'Silence, not a refusal: if nobody listened on the port, a quick Connection refused would come. On the server, check ss -ltn and sudo ufw status.',
+}
+
+const wrongFault = ({
+  picked,
+  expected,
+  ran,
+  host,
+  port,
+}: Readonly<{
+  picked: Fault
+  expected: Fault
+  ran: boolean
+  host: string
+  port: number
+}>): string => {
+  const place = faultPlace(picked, expected)
+  return place === 'below'
+    ? belowFault[picked](ran, host, port)
+    : place === 'above'
+      ? `${aboveFault[picked]}${ran ? ' The step below is already red: look there.' : ' Check the step below.'}`
+      : (sameFault[picked] ??
+        'Same step, different fault. Read the last lines of the output again.')
 }
 
 export const en: NetTexts = {
@@ -314,6 +390,26 @@ export const en: NetTexts = {
   GoalNoDevice: ({ id }, c) => `There is no ${q(id, c)} on the board yet.`,
   SshLockedOut: ({ device }, c) =>
     `You closed ssh on yourself: ${q(device, c)} no longer lets you in.`,
+  ReportMissing: () =>
+    'The report has not been sent yet: pick a line as evidence and where the fault is.',
+  ReportAfterFix: () =>
+    'Fixed — great. Now describe what was broken: the report is half of the task.',
+  ReportNoEvidence: () =>
+    'Add evidence: click an output line that shows the fault.',
+  ReportWrongFault: wrongFault,
+  ReportTrap: wrongFault,
+  ReportEvidenceOk: () =>
+    'This line is a good answer: everything works here. You need a line where the trouble shows.',
+  ReportEvidenceSymptom: () =>
+    'This is a symptom, not the cause: the line repeats what the browser said. You need a line that shows why.',
+  ReportEvidenceAbove: () =>
+    'This line shows where the trouble was noticed, not where it happened. You need a line from the step below.',
+  ReportEvidenceOther: () =>
+    'This line is about something else. Click a line that proves your diagnosis.',
+  ReportAccepted: () =>
+    'The report is precise: the assistant knows what to fix. Press “Apply”.',
+  ReportConfirmed: () =>
+    'The report is precise, and everything already works: you fixed it yourself.',
 
   UnknownCommand: ({ command, available }) =>
     `There is no ${command} command here. Try: ${available.join(', ')}.`,

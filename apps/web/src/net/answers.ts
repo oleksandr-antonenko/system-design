@@ -260,7 +260,34 @@ export const scanPorts = (
     }
   })
 
-/** Финальный прогон: каждое намерение — путь, число хопов и время. */
+/** Служебные пакеты пути: поиск MAC, выдача адреса и вопрос справочной. */
+const isHelperHop = (hop: Hop): boolean =>
+  Array.some(
+    hop.envelope,
+    layer =>
+      layer._tag === 'Arp' || layer._tag === 'Dhcp' || layer._tag === 'Dns',
+  )
+
+/** Путь самого конверта: устройства первого пакета разговора, без поиска
+    MAC и справочной. Если до разговора не дошло (имя не нашлось), — весь
+    путь трассы. */
+export const letterPath = (trace: Trace): ReadonlyArray<DeviceId> =>
+  Option.match(
+    Array.findFirst(trace.hops, hop => !isHelperHop(hop)),
+    {
+      onNone: () => pathOf(trace).devices,
+      onSome: first =>
+        pipe(
+          trace.hops,
+          Array.filter(hop => hop.packet === first.packet),
+          Array.flatMap(hop => [hop.from, hop.to]),
+          Array.dedupe,
+        ),
+    },
+  )
+
+/** Финальный прогон: каждое намерение — путь конверта, число хопов и
+    время всей трассы. */
 export const runAll = (
   doc: NetDoc,
   state: NetState,
@@ -280,7 +307,7 @@ export const runAll = (
     return {
       intent,
       delivered: result.outcome._tag === 'Delivered',
-      devices: pathOf(result).devices,
+      devices: letterPath(result),
       hops: result.hops.length,
       ms: durationOf(result),
       trace: result,

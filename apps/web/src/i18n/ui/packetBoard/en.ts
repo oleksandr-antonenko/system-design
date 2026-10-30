@@ -102,6 +102,7 @@ export const packetBoardEn: PacketBoardStrings = {
     office: 'Office',
     plan: 'Floor plan',
     docker: host => `Docker: ${host}`,
+    door: mapping => `Port mapping ${mapping}`,
     internet: 'Internet',
     internetSub: 'the whole world',
     internetOpenSub: 'many networks',
@@ -222,7 +223,15 @@ export const packetBoardEn: PacketBoardStrings = {
     expected: what => `expected: ${what}`,
   },
   fog: 'fog',
+  ladder: {
+    title: 'Checks, bottom up',
+    idle: 'not checked yet',
+    seen: 'looked at',
+    ok: 'check passed',
+    bad: 'broken here',
+  },
   draft: 'draft',
+  place: 'press to place it',
   builder: {
     title: 'Build the envelope',
     hint: 'Put the headers in order from outside to inside: drag them, or press a header and then its place.',

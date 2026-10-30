@@ -1,10 +1,11 @@
 import { Array, Number, Option, Order, Schema, pipe } from 'effect'
 import { defineTaggedUnion } from 'foldkit/schema'
 
-import { isIp } from './address'
+import { isIp, normalizeUrl, parseUrl } from './address'
 import { scanPorts } from './answers'
 import { addressesIn, normalizeName, zonesOf } from './dns'
 import {
+  NetOp,
   findDevice,
   findHost,
   isPointToPoint,
@@ -15,6 +16,7 @@ import { NetMessage } from './message'
 import {
   type Device,
   DeviceId,
+  Fault,
   Ip,
   type LinkId,
   Medium,
@@ -33,6 +35,7 @@ import {
   pathOf,
   sourceOf,
 } from './packet'
+import { decidingRung, evidenceVerdict, lastReport, wasChecked } from './report'
 import {
   associationOf,
   channelConflicts,
@@ -100,6 +103,18 @@ export const Goal = defineTaggedUnion({
     commands: Schema.Array(Schema.String),
     maybeName: Schema.Option(Schema.String),
     maybeSaw: Schema.Option(Schema.String),
+  },
+  /** Отчёт для ИИ (урок 15): последний отчёт называет поломку `fault` и
+      приводит строку вывода с одной из меток `evidence`. `traps` — неверные
+      диагнозы, на которые у урока свой ответ (`ReportTrap`); `symptom` — что
+      не работает; `fix` — исправление, которое предлагает ассистент на
+      точный отчёт (кнопка «Применить»). */
+  Reported: {
+    fault: Fault,
+    evidence: Schema.Array(Schema.String),
+    traps: Schema.Array(Fault),
+    symptom: Intent,
+    fix: Schema.Array(NetOp),
   },
 })
 export type Goal = typeof Goal.Type
@@ -863,7 +878,90 @@ const devicesOf = (goal: Goal): ReadonlyArray<DeviceId> =>
     OnlyOpenPorts: ({ from, target }) =>
       isIp(target) ? [from] : [from, target],
     RanCommand: ({ device }) => [device],
+    Reported: ({ symptom }) => [sourceOf(symptom)],
   })
+
+// REPORT
+
+/** Имя и port, которые не открываются: подставляются в совет ассистента. */
+const symptomTarget = (
+  intent: Intent,
+): Readonly<{ host: string; port: number }> =>
+  intent._tag === 'Browse' ||
+  intent._tag === 'Fetch' ||
+  intent._tag === 'Submit' ||
+  intent._tag === 'Raw'
+    ? Option.match(parseUrl(normalizeUrl(intent.url)), {
+        onNone: () => ({ host: intent.url, port: 0 }),
+        onSome: url => ({ host: url.host, port: url.port }),
+      })
+    : intent._tag === 'Connect'
+      ? { host: intent.host, port: intent.port }
+      : intent._tag === 'Ping' || intent._tag === 'Traceroute'
+        ? { host: intent.host, port: 0 }
+        : { host: '', port: 0 }
+
+/** Симптом ушёл: то, что не открывалось, открывается. */
+export const isSymptomGone = (
+  doc: NetDoc,
+  state: NetState,
+  symptom: Intent,
+): boolean => reached(traceOf(doc, state, symptom)).met
+
+const checkReported = (
+  doc: NetDoc,
+  state: NetState,
+  goal: Extract<Goal, Readonly<{ _tag: 'Reported' }>>,
+): GoalCheck => {
+  const focus = { focusDevices: [sourceOf(goal.symptom)] }
+  return Option.match(lastReport(state.reports), {
+    onNone: () =>
+      failed(
+        isSymptomGone(doc, state, goal.symptom)
+          ? NetMessage.ReportAfterFix()
+          : NetMessage.ReportMissing(),
+        focus,
+      ),
+    onSome: report => {
+      if (report.fault !== goal.fault) {
+        const fields = {
+          picked: report.fault,
+          expected: goal.fault,
+          ran: wasChecked(
+            state.commandLog,
+            decidingRung(report.fault, goal.fault),
+          ),
+          ...symptomTarget(goal.symptom),
+        }
+        return failed(
+          Array.contains(goal.traps, report.fault)
+            ? NetMessage.ReportTrap(fields)
+            : NetMessage.ReportWrongFault(fields),
+          focus,
+        )
+      }
+      const verdicts = Array.map(report.evidence, evidence =>
+        evidenceVerdict(evidence, goal.fault, goal.evidence),
+      )
+      return Array.contains(verdicts, 'accepted')
+        ? met
+        : failed(
+            Option.match(Array.head(verdicts), {
+              onNone: () => NetMessage.ReportNoEvidence(),
+              onSome: verdict =>
+                verdict === 'ok'
+                  ? NetMessage.ReportEvidenceOk()
+                  : verdict === 'symptom'
+                    ? NetMessage.ReportEvidenceSymptom()
+                    : verdict === 'above'
+                      ? NetMessage.ReportEvidenceAbove()
+                      : NetMessage.ReportEvidenceOther(),
+            }),
+            focus,
+          )
+    },
+  })
+}
 
 /** Цели проверяются по документу и состоянию сети, в котором хосты на DHCP
     уже получили адреса, а туннели подключились (`settle`). */
@@ -906,6 +1004,7 @@ export const checkGoal = (
             checkOnlyOpen(doc, state, target, from, allow, exact),
           RanCommand: ({ device, commands, maybeName, maybeSaw }) =>
             checkRanCommand(state, device, commands, maybeName, maybeSaw),
+          Reported: reported => checkReported(doc, state, reported),
         }),
     },
   )

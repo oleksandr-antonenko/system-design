@@ -71,9 +71,24 @@ export const CheckState = defineTaggedUnion({
 })
 export type CheckState = typeof CheckState.Type
 
+/** Ход из нескольких операций, сделанный одним нажатием: готовый блок на
+    доске, сохранение панели. В журнале это одна запись, и «Отменить»
+    снимает её целиком, как и «Повторить» возвращает. */
+export const Move = Schema.TaggedStruct('Move', { ops: Schema.Array(KindOp) })
+
+/** Запись журнала задачи: одна операция или ход из нескольких. */
+export const JournalEntry = Schema.Union([KindOp, Move])
+export type JournalEntry = typeof JournalEntry.Type
+
+/** Ход ученика — одна запись журнала, сколько бы операций в нём ни было. */
+export const journalEntry = (ops: ReadonlyArray<KindOp>): JournalEntry => {
+  const [first, ...rest] = ops
+  return first !== undefined && rest.length === 0 ? first : Move.make({ ops })
+}
+
 export const TaskState = Schema.Struct({
-  log: Schema.Array(KindOp),
-  redo: Schema.Array(KindOp),
+  log: Schema.Array(JournalEntry),
+  redo: Schema.Array(JournalEntry),
   attempts: Schema.Number,
   hintsShown: Schema.Number,
   check: CheckState,
@@ -214,11 +229,19 @@ const emptyTask: TaskState = {
 export const taskStateOf = (model: Model, taskId: string): TaskState =>
   model.tasks[taskId] ?? emptyTask
 
-/** Ходы задачи в типах вида доски. */
+/** Операции журнала задачи в типах вида доски, ход за ходом. */
 export const opsOf = <T extends KindTypes>(
   kind: BoardKind<T>,
-  ops: ReadonlyArray<KindOp>,
-): ReadonlyArray<T['Op']> => Array.getSomes(Array.map(ops, kind.op.unwrap))
+  entries: ReadonlyArray<JournalEntry>,
+): ReadonlyArray<T['Op']> =>
+  Array.getSomes(
+    Array.map(
+      Array.flatMap(entries, entry =>
+        entry._tag === 'Move' ? entry.ops : [entry],
+      ),
+      kind.op.unwrap,
+    ),
+  )
 
 const logsOf = <T extends KindTypes>(
   lesson: LessonDefinition<T>,
@@ -491,11 +514,25 @@ export const surfaceContext = <T extends KindTypes>(
       onNone: () => [],
       onSome: ({ spec }) => taskSurfaces(spec),
     }),
+    goals: Option.match(task, {
+      onNone: () => [],
+      onSome: ({ spec }) => Array.map(spec.goals, ({ goal }) => goal),
+    }),
   }
 }
 
+const stepStage = <T extends KindTypes>(
+  lesson: LessonDefinition<T>,
+  model: Model,
+): ReadonlyArray<T['Stage']> =>
+  Option.match(Array.get(lesson.steps, model.step), {
+    onNone: () => [],
+    onSome: found => found.stage,
+  })
+
 /** Сцена на доске: ход ученика, если у последнего хода задачи есть своя
-    сцена (браузер открыл адрес — его трасса), иначе сцена шага. */
+    сцена (браузер открыл адрес — его трасса), иначе сцена шага. Элементы
+    шага, которые вид оставляет на доске (`persists`), видны и в сцене хода. */
 export const boardStage = <T extends KindTypes>(
   lesson: LessonDefinition<T>,
   model: Model,
@@ -511,16 +548,20 @@ export const boardStage = <T extends KindTypes>(
           Array.dropRight(log, 1),
         )
         const stage = lesson.kind.moveStage(before, last)
+        const persists = lesson.kind.stage.persists ?? (() => false)
         return Array.isReadonlyArrayEmpty(stage)
           ? Option.none()
-          : Option.some({ stage, doc: before })
+          : Option.some({
+              stage: [
+                ...Array.filter(stepStage(lesson, model), persists),
+                ...stage,
+              ],
+              doc: before,
+            })
       })
     }),
     Option.getOrElse(() => ({
-      stage: Option.match(Array.get(lesson.steps, model.step), {
-        onNone: () => [],
-        onSome: found => found.stage,
-      }),
+      stage: stepStage(lesson, model),
       doc: currentDoc(lesson, model),
     })),
   )
@@ -672,6 +713,7 @@ export const goToStep = <T extends KindTypes>(
       maybeToast: () => Option.none(),
       maybeHoveredRef: () => Option.none(),
       isAskAiCopied: () => false,
+      maybeSurfaceTab: () => Option.none(),
     }),
     commands: [ScrollStepIntoView({ step })],
     outMessage: OutMessage.ChangedStep({ step }),
@@ -731,7 +773,10 @@ const applyStudentOps = <T extends KindTypes>(
                 lesson,
                 withTask(model, spec.id, task => ({
                   ...task,
-                  log: [...task.log, ...Array.map(ops, lesson.kind.op.wrap)],
+                  log: [
+                    ...task.log,
+                    journalEntry(Array.map(ops, lesson.kind.op.wrap)),
+                  ],
                   redo: [],
                   check:
                     task.check._tag === 'Failed'

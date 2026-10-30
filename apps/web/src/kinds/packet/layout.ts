@@ -90,6 +90,8 @@ export type LayoutInput = Readonly<{
   /** Устройства в пути (`walk`) или в руке ученика: координаты документа. */
   moved: Readonly<Record<DeviceId, Point>>
   text: (id: DeviceId) => NodeText
+  /** Сколько места оставить под устройством: строки черновика сцены. */
+  below?: Readonly<Record<DeviceId, number>>
 }>
 
 // SHAPES
@@ -298,6 +300,26 @@ const looseMembers = (
     Array.map(device => device.id),
   )
 
+/** Containers хоста Docker стоят в доме своего хоста: зона Docker — внутри. */
+const withContainers = (
+  doc: NetDoc,
+  members: ReadonlyArray<DeviceId>,
+): ReadonlyArray<DeviceId> => [
+  ...members,
+  ...pipe(
+    doc.devices,
+    Array.filter(
+      device =>
+        device._tag === 'Host' &&
+        Option.exists(device.maybeContainer, info =>
+          Array.contains(members, info.host),
+        ) &&
+        !Array.contains(members, device.id),
+    ),
+    Array.map(device => device.id),
+  ),
+]
+
 const boxAround = (
   nodes: ReadonlyArray<NodeBox>,
 ): Option.Option<Readonly<{ x: number; y: number; w: number; h: number }>> =>
@@ -317,6 +339,22 @@ const boxAround = (
     },
   })
 
+/** Зона Docker внутри дома стоит с отступом от его стен. */
+const DOCKER_INSET = 14
+
+const enclose = <
+  Box extends Readonly<{ x: number; y: number; w: number; h: number }>,
+>(
+  outer: Box,
+  inner: Readonly<{ x: number; y: number; w: number; h: number }>,
+): Box => {
+  const left = Math.min(outer.x, inner.x - DOCKER_INSET)
+  const top = Math.min(outer.y, inner.y - ZONE_PAD_TOP)
+  const right = Math.max(outer.x + outer.w, inner.x + inner.w + DOCKER_INSET)
+  const bottom = Math.max(outer.y + outer.h, inner.y + inner.h + DOCKER_INSET)
+  return { ...outer, x: left, y: top, w: right - left, h: bottom - top }
+}
+
 const zonesOf = (
   input: LayoutInput,
   nodes: ReadonlyArray<NodeBox>,
@@ -326,25 +364,6 @@ const zonesOf = (
   const routers = Array.filter(doc.devices, device => device._tag === 'Router')
   const nodeOf = (id: DeviceId) =>
     Array.findFirst(nodes, node => node.id === id)
-  const lanZones = Array.getSomes(
-    Array.map(routers, router => {
-      const members = Array.dedupe([
-        ...lanMembers(doc, router.id),
-        ...looseMembers(doc, routers, router),
-      ])
-      const kind = zoneKindOf(router)
-      return Option.map(
-        boxAround(Array.getSomes(Array.map(members, nodeOf))),
-        (box): ZoneBox => ({
-          id: router.id,
-          kind: isPlan && kind === 'home' ? 'plan' : kind,
-          ...box,
-          roof: kind === 'home' && !isPlan ? Math.min(56, box.w / 6) : 0,
-          members,
-        }),
-      )
-    }),
-  )
   const dockerZones = isUnlocked(input, 'board.dockerHost')
     ? Array.getSomes(
         Array.map(
@@ -383,6 +402,37 @@ const zonesOf = (
         ),
       )
     : []
+  const lanZones = Array.getSomes(
+    Array.map(routers, router => {
+      const members = withContainers(
+        doc,
+        Array.dedupe([
+          ...lanMembers(doc, router.id),
+          ...looseMembers(doc, routers, router),
+        ]),
+      )
+      const kind = zoneKindOf(router)
+      return Option.map(
+        boxAround(Array.getSomes(Array.map(members, nodeOf))),
+        (around): ZoneBox => {
+          const box = Array.reduce(
+            Array.filter(dockerZones, docker =>
+              Array.contains(members, docker.id),
+            ),
+            around,
+            enclose,
+          )
+          return {
+            id: router.id,
+            kind: isPlan && kind === 'home' ? 'plan' : kind,
+            ...box,
+            roof: kind === 'home' && !isPlan ? Math.min(56, box.w / 6) : 0,
+            members,
+          }
+        },
+      )
+    }),
+  )
   return [...lanZones, ...dockerZones]
 }
 
@@ -826,7 +876,10 @@ export const layoutBoard = (input: LayoutInput): Layout => {
       )
     : []
   const withLinks: Layout = { ...partial, links, rings, bars }
-  return { ...withLinks, viewBox: viewBoxOf(withLinks, metrics) }
+  return {
+    ...withLinks,
+    viewBox: viewBoxOf(withLinks, metrics, input.below ?? {}),
+  }
 }
 
 const linkShape = (
@@ -873,6 +926,7 @@ const MARGIN = 28
 const viewBoxOf = (
   layout: Layout,
   metrics: Metrics,
+  below: Readonly<Record<DeviceId, number>>,
 ): Readonly<{ x: number; y: number; w: number; h: number }> => {
   const xs = [
     ...Array.flatMap(layout.nodes, node => [
@@ -889,7 +943,7 @@ const viewBoxOf = (
   const ys = [
     ...Array.flatMap(layout.nodes, node => [
       node.y - node.h / 2 - 56,
-      node.y + node.h / 2 + 8,
+      node.y + node.h / 2 + 8 + (below[node.id] ?? 0),
     ]),
     ...Array.flatMap(layout.zones, zone => [
       zone.y - zone.roof - 24,

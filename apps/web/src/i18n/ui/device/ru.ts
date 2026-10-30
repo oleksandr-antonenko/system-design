@@ -141,4 +141,29 @@ export const deviceRu: DeviceStrings = {
   interrupt: 'Остановить программу (Ctrl+C)',
   consoleNote:
     'Вход по ssh закрыт. Это консоль хостинга: она работает напрямую, без ssh.',
+
+  reportTab: 'Отчёт для ИИ',
+  reportTitle: 'Отчёт для ИИ-ассистента',
+  reportWhat: 'Что не работает',
+  reportSymptom: (device, url) => `${device} не открывает ${url}`,
+  reportFixedNow: 'Сейчас уже открывается.',
+  reportEvidence: 'Доказательство',
+  reportEvidenceHint:
+    'Нажмите строку вывода, которая доказывает поломку, — не больше двух строк.',
+  reportNoOutput:
+    'Здесь появится вывод команд из терминала. Запустите проверки снизу вверх.',
+  reportPicked: count => `Выбрано строк: ${count} из 2`,
+  reportWhere: 'Где поломка',
+  reportFaults: {
+    link: 'Нет связи или адреса',
+    gateway: 'Gateway: конверт не выходит из дома',
+    dns: 'DNS: справочная не превращает имя в адрес',
+    firewall: 'Firewall не пускает на port',
+    loopback: 'Сервер слушает только себя (127.0.0.1)',
+    cert: 'Certificate выписан на другое имя',
+  },
+  reportSend: 'Отправить отчёт',
+  reportReply: 'Ответ ассистента',
+  reportApply: 'Применить',
+  reportApplied: 'Исправление применено.',
 }

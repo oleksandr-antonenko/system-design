@@ -252,6 +252,9 @@ export type SurfaceContext<T extends KindTypes> = Readonly<{
   journal: ReadonlyArray<T['Op']>
   /** Id поверхностей задачи шага: `['board', 'browser:phone', …]`. */
   surfaces: ReadonlyArray<string>
+  /** Цели задачи шага: по ним поверхность может ответить на ход ученика
+      (отчёт для ИИ, урок 15). */
+  goals: ReadonlyArray<T['Goal']>
 }>
 
 export type SurfaceSlot<T extends KindTypes, ParentMessage> = Readonly<{
@@ -301,6 +304,9 @@ export type StageContract<Stage> = Readonly<{
   annotationKey: (item: Stage) => Option.Option<string>
   /** Строка журнала. */
   describe: (item: Stage) => string
+  /** Элемент остаётся на доске и тогда, когда она показывает сцену хода
+      ученика (туман, лесенка проверок). По умолчанию — нет. */
+  persists?: (item: Stage) => boolean
 }>
 
 export type BoardKind<T extends KindTypes> = Readonly<{

@@ -33,8 +33,15 @@ import {
 } from './model'
 import { Intent, type Outcome, type RouteLine, type Trace } from './packet'
 import { certFor } from './tls'
-import { IFACE, hostIface, ownAddresses, routeTable } from './topology'
-import { settle, trace } from './trace'
+import {
+  IFACE,
+  addressOf,
+  hostIface,
+  ownAddresses,
+  routeTable,
+  segmentOf,
+} from './topology'
+import { isContainerUp, settle, trace, vpnDnsFor } from './trace'
 
 // Терминал: чистый интерпретатор строки на устройстве. Вывод упрощён в
 // стиле Unix и не переводится; действие команды — операции свёртки.
@@ -72,6 +79,7 @@ export const LineTag = Schema.Literals([
   'dnsFailed',
   'dnsTimeout',
   'gatewayUnreachable',
+  'wrongGateway',
   'timeout',
   'refused',
   'loopbackOnly',
@@ -278,6 +286,18 @@ const ipAddr = (
   )
 }
 
+/** Шлюз — чей-то адрес в сегменте хоста: иначе конверты «не в наш дом»
+    отдавать некому. */
+const isGatewayPresent = (
+  doc: NetDoc,
+  state: NetState,
+  host: Host,
+  gateway: string,
+): boolean =>
+  Array.some(segmentOf(doc, host.id), id =>
+    Option.exists(addressOf(doc, state, id), ip => ip === gateway),
+  )
+
 const ipRoute = (doc: NetDoc, state: NetState, host: Host): CommandResult => {
   const iface = hostIface(doc, state, host)
   const lines = Array.map(routeTable(doc, state, host.id), row =>
@@ -297,9 +317,24 @@ const ipRoute = (doc: NetDoc, state: NetState, host: Host): CommandResult => {
                 )
           }`,
   )
+  const wrong = Array.getSomes(
+    Array.map(routeTable(doc, state, host.id), row =>
+      row.kind === 'default'
+        ? Option.filter(
+            row.maybeVia,
+            via =>
+              row.iface === IFACE && !isGatewayPresent(doc, state, host, via),
+          )
+        : Option.none(),
+    ),
+  )
   return result(
     'ip',
-    Array.map(lines, text => line(text)),
+    Array.map(lines, text =>
+      Array.some(wrong, via => text.startsWith(`default via ${via} `))
+        ? line(text, 'wrongGateway')
+        : line(text),
+    ),
   )
 }
 
@@ -638,10 +673,13 @@ const query = (
   }
 }
 
+/** Сервер в выводе: названный в команде, DNS офиса для имён его зоны
+    (VPN) или DNS хоста. */
 const serverShown = (
   doc: NetDoc,
   state: NetState,
   host: Host,
+  name: string,
   maybeServer: Option.Option<string>,
 ): string =>
   Option.getOrElse(
@@ -650,7 +688,9 @@ const serverShown = (
         resolvedIp(doc, state, host.id, server),
       ),
       () =>
-        Option.flatMap(hostIface(doc, state, host), iface => iface.maybeDns),
+        Option.orElse(vpnDnsFor(host, name), () =>
+          Option.flatMap(hostIface(doc, state, host), iface => iface.maybeDns),
+        ),
     ),
     () => '0.0.0.0',
   )
@@ -669,7 +709,7 @@ const nslookup = (
   const name = maybeName.value
   const maybeServer = Array.get(positional, 1)
   const asked = query(doc, state, host, name, 'A', maybeServer)
-  const server = serverShown(doc, state, host, maybeServer)
+  const server = serverShown(doc, state, host, name, maybeServer)
   const ops = [
     NetOp.Send({
       intent: Intent.Query({ from: host.id, name, rtype: 'A', maybeServer }),
@@ -766,7 +806,7 @@ const dig = (
       intent: Intent.Query({ from: host.id, name, rtype, maybeServer }),
     }),
   ]
-  const server = serverShown(doc, state, host, maybeServer)
+  const server = serverShown(doc, state, host, name, maybeServer)
   return Option.match(asked.maybeRecords, {
     onNone: () => {
       const nx = Option.exists(
@@ -785,10 +825,13 @@ const dig = (
                 line(`;; SERVER: ${server}#53`),
               ]
           : [
-              line(
-                ';; connection timed out; no servers could be reached',
-                'dnsTimeout',
+              ...Array.makeBy(2, () =>
+                line(
+                  `;; communications error to ${server}#53: timed out`,
+                  'dnsTimeout',
+                ),
               ),
+              line(';; no servers could be reached', 'dnsTimeout'),
             ],
         { ops, traces: [asked.trace], maybeTarget: Option.some(name) },
       )
@@ -881,7 +924,7 @@ const curl = (
   )
   return Option.match(outcomeReason(page.outcome), {
     onSome: reason => {
-      if (isNameFailure(reason)) {
+      if (isNameFailure(reason) || nameFailed(page)) {
         return result(
           'curl',
           [
@@ -1107,7 +1150,7 @@ const nc = (
       result(
         'nc',
         [
-          isNameFailure(reason)
+          isNameFailure(reason) || nameFailed(connected)
             ? line(
                 `nc: getaddrinfo for host "${target}" port ${port}: Name or service not known`,
                 'dnsFailed',
@@ -1436,24 +1479,6 @@ const projectOf = (host: Host): string =>
     () => 'app',
   )
 
-const isUp = (doc: NetDoc, state: NetState, container: Host): boolean =>
-  Option.match(
-    Option.flatMap(container.maybeContainer, info => info.maybeNeeds),
-    {
-      onNone: () => true,
-      onSome: needs =>
-        trace(
-          doc,
-          state,
-          Intent.Connect({
-            from: container.id,
-            host: needs.host,
-            port: needs.port,
-          }),
-        )[0].outcome._tag === 'Delivered',
-    },
-  )
-
 const dockerPs = (doc: NetDoc, state: NetState, host: Host): CommandResult => {
   const project = projectOf(host)
   const rows = Array.map(containersOf(doc, host), container => {
@@ -1478,7 +1503,7 @@ const dockerPs = (doc: NetDoc, state: NetState, host: Host): CommandResult => {
       }),
       Array.join(', '),
     )
-    const up = isUp(doc, state, container)
+    const up = isContainerUp(doc, state, container)
     return line(
       `${containerId(container.id)}   ${image.padEnd(13, ' ')} ${(up ? 'Up 3 seconds' : 'Restarting (1) 4 seconds ago').padEnd(30, ' ')} ${ports.padEnd(24, ' ')} ${project}-${container.id}-1`,
       up ? 'ok' : 'symptom',
@@ -1523,7 +1548,7 @@ const dockerLogs = (
                 line(`${tag}Listening on 0.0.0.0:${port}`, 'ok'),
               ]),
             onSome: needs => {
-              const up = isUp(doc, state, container)
+              const up = isContainerUp(doc, state, container)
               const ip = isIp(needs.host)
                 ? needs.host
                 : needs.host === 'localhost'
@@ -1904,9 +1929,11 @@ export const runCommand = (
       ops: Option.match(findHost(doc, device), {
         onNone: () => [],
         onSome: host =>
-          Array.some(host.listeners, listener => listener.port === DEV_PORT)
-            ? [NetOp.StopListening({ device, proto: 'tcp', port: DEV_PORT })]
-            : [],
+          Option.isSome(host.maybeTunnel)
+            ? [NetOp.SetTunnel({ device, maybeTunnel: Option.none() })]
+            : Array.some(host.listeners, listener => listener.port === DEV_PORT)
+              ? [NetOp.StopListening({ device, proto: 'tcp', port: DEV_PORT })]
+              : [],
       }),
     })
   }

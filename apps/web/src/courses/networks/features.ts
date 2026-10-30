@@ -6,9 +6,9 @@ import { Schema } from 'effect'
  * `transport` (кнопки под доской), `board`, `envelope` (конверт), `quiz`,
  * `wifi` (настройки Wi-Fi телефона), `browser`, `terminal`, `router`
  * (вкладки панели роутера), `dnsPanel`, `server` (панель сервера), `vpn`,
- * `compose` (редактор compose.yaml), `mesh` (своя сеть). Поверхность видна, если
- * открыт хотя бы один её элемент (`isSurfaceOpen`). Порядок — порядок
- * уроков, которые их открывают.
+ * `compose` (редактор compose.yaml), `mesh` (своя сеть), `report` (отчёт для
+ * ИИ-ассистента). Поверхность видна, если открыт хотя бы один её элемент
+ * (`isSurfaceOpen`). Порядок — порядок уроков, которые их открывают.
  */
 export const UiFeature = Schema.Literals([
   'transport.run',
@@ -91,6 +91,8 @@ export const UiFeature = Schema.Literals([
   'compose.file',
   'board.fog',
   'terminal.freeInput',
+  'board.checkLadder',
+  'report.card',
   'quiz.match',
   'board.sandbox',
   'board.draft',
