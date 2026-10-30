@@ -11627,10 +11627,10 @@ exports[`simulator snapshots of the System Design lessons > url-shortener 1`] = 
     },
     "step": "next",
     "texts": {
-      "en": "12 | 8",
-      "lt": "12 | 8",
-      "ru": "12 | 8",
-      "uk": "12 | 8",
+      "en": "12 | 8 | 4 | 14 | 10",
+      "lt": "12 | 8 | 4 | 14 | 10",
+      "ru": "12 | 8 | 4 | 14 | 10",
+      "uk": "12 | 8 | 4 | 14 | 10",
     },
   },
 ]

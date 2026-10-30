@@ -20,6 +20,16 @@
   --node-line: #8d9ba8;
   --accent: #2b4bd4;
   --accent-soft: #e2e7fb;
+  /* Заливка основных кнопок и текст на ней. В светлой теме совпадает с
+     --accent; в тёмной заливка темнее текстового акцента, чтобы не слепить. */
+  --accent-fill: #2b4bd4;
+  --on-accent: #fafbf9;
+  /* Тихие подложки модулей на карте курса, по порядку модуля (1–5 по кругу). */
+  --tint-1: #eef2fa;
+  --tint-2: #ecf4ee;
+  --tint-3: #f6f1e6;
+  --tint-4: #f6ecee;
+  --tint-5: #f0edf7;
   --ok: #148a55;
   --warn: #c27c05;
   --bad: #cf3f36;
@@ -40,8 +50,15 @@
     --line: #27323c;
     --node: #182029;
     --node-line: #536475;
-    --accent: #8ea3ff;
-    --accent-soft: #1e2850;
+    --accent: #7a8bd0;
+    --accent-soft: #1c2340;
+    --accent-fill: #4b5db2;
+    --on-accent: #eef1fa;
+    --tint-1: #141b27;
+    --tint-2: #13201b;
+    --tint-3: #1f1c15;
+    --tint-4: #201719;
+    --tint-5: #1a1824;
     --ok: #3dc48b;
     --warn: #e8aa3c;
     --bad: #f2675c;
@@ -63,6 +80,8 @@
   --color-node-line: var(--node-line);
   --color-accent: var(--accent);
   --color-accent-soft: var(--accent-soft);
+  --color-accent-fill: var(--accent-fill);
+  --color-on-accent: var(--on-accent);
   --color-ok: var(--ok);
   --color-warn: var(--warn);
   --color-bad: var(--bad);
@@ -86,6 +105,26 @@ h1,
 h2,
 h3 {
   text-wrap: balance;
+}
+
+/* ---------- модули на карте курса ---------- */
+.module-panel {
+  background: var(--module-tint, var(--tint-1));
+}
+.module-tint-1 {
+  --module-tint: var(--tint-1);
+}
+.module-tint-2 {
+  --module-tint: var(--tint-2);
+}
+.module-tint-3 {
+  --module-tint: var(--tint-3);
+}
+.module-tint-4 {
+  --module-tint: var(--tint-4);
+}
+.module-tint-5 {
+  --module-tint: var(--tint-5);
 }
 
 :focus-visible {
@@ -144,9 +183,9 @@ h3 {
   cursor: not-allowed;
 }
 .btn.primary {
-  background: var(--accent);
-  border-color: var(--accent);
-  color: var(--page);
+  background: var(--accent-fill);
+  border-color: var(--accent-fill);
+  color: var(--on-accent);
   font-weight: 600;
 }
 .btn.link {
@@ -1149,8 +1188,8 @@ h3 {
   cursor: pointer;
 }
 .segmented button[aria-pressed='true'] {
-  background: var(--accent);
-  color: var(--page);
+  background: var(--accent-fill);
+  color: var(--on-accent);
   font-weight: 600;
 }
 .legend {

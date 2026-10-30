@@ -114,7 +114,9 @@ The requirements have become the goals under the board. The budget is counted li
 
 **Abuse protection.** A short link hides where it leads, which attracts spam and phishing. Limit link creation per account and per IP with a rate limiter (lesson 8), check new URLs against blocklists, and be ready to block a link quickly, purging it from the CDN too.
 
-That is the end of the course. You started with one server and finished with a system designed from requirements. The method works for any system: estimate the numbers, find the bottleneck, add a block and check what it costs.`,
+That is the end of the main part of the course. You started with one server and finished with a system designed from requirements. The method works for any system: estimate the numbers, find the bottleneck, add a block and check what it costs.
+
+Next, module 4, lesson 14: a public API. The first of 10 hard tasks where you design a whole system, as in an interview.`,
     },
   },
   annotations: {

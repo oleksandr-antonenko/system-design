@@ -392,6 +392,12 @@ const lessonCardView = (
   )
 }
 
+/** Подложка модуля по его порядку: палитра из `--tint-N` в styles.css. */
+const MODULE_TINTS = 5
+
+export const moduleTint = (index: number): string =>
+  `module-tint-${(index % MODULE_TINTS) + 1}`
+
 const courseMapView = (
   course: Course,
   locale: Locale,
@@ -425,16 +431,20 @@ const courseMapView = (
         ],
         [choice.text.tagline],
       ),
-      ...Array.map(courseModules(course), ({ module, lessons }) =>
+      ...Array.map(courseModules(course), ({ module, lessons }, index) =>
         h.keyed('section')(
           module,
-          [h.Class('mb-10')],
+          [
+            h.Class(
+              `module-panel ${moduleTint(index)} mb-6 rounded-xl px-4 pt-5 pb-2 sm:px-6`,
+            ),
+          ],
           [
             h.h2(
               [
                 h.Lang(choice.shownIn),
                 h.Class(
-                  'mb-1 text-[12px] font-semibold uppercase tracking-[0.09em] text-accent',
+                  'm-0 mb-1 text-[12px] font-semibold uppercase tracking-[0.09em] text-accent',
                 ),
               ],
               [choice.text.modules[module] ?? module],
@@ -516,7 +526,7 @@ const shellTheoryView = (
             h.Type('button'),
             h.OnClick(Message.ClickedRetryLessonLoad()),
             h.Class(
-              'rounded-md bg-accent px-3 py-2 text-[13px] font-semibold text-page hover:opacity-90',
+              'rounded-md bg-accent-fill px-3 py-2 text-[13px] font-semibold text-on-accent hover:opacity-90',
             ),
           ],
           [ui.lesson.retry],

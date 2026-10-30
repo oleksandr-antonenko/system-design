@@ -34,8 +34,8 @@
     --pb-icmp: #f2675c;
     --pb-tcp: #93a0ad;
     --pb-tls: #3dc48b;
-    --pb-http: #8ea3ff;
-    --pb-data: #8ea3ff;
+    --pb-http: #7a8bd0;
+    --pb-data: #7a8bd0;
   }
 }
 
@@ -400,8 +400,8 @@
   margin-left: 6px;
   padding: 1px 6px;
   border-radius: 999px;
-  background: var(--accent);
-  color: var(--page);
+  background: var(--accent-fill);
+  color: var(--on-accent);
   font-size: 9px;
   font-weight: 700;
   letter-spacing: 0.06em;
@@ -1285,9 +1285,9 @@
 }
 .pb-play {
   appearance: none;
-  border: 1px solid var(--accent);
-  background: var(--accent);
-  color: var(--page);
+  border: 1px solid var(--accent-fill);
+  background: var(--accent-fill);
+  color: var(--on-accent);
   border-radius: 10px;
   padding: 9px 16px;
   font: inherit;

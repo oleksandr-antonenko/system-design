@@ -9,5 +9,6 @@ export default {
     foundations: 'Foundations',
     scaling: 'Scaling',
     distributed: 'Reliability and distribution',
+    hard: 'Hard tasks',
   },
 } satisfies CourseText<typeof course>
