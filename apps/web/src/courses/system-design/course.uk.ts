@@ -4,7 +4,7 @@ import type course from './course'
 export default {
   title: 'System Design',
   tagline:
-    'Балансувальники, кеші, черги й регіони: зберіть систему, яка витримає навантаження',
+    'Load balancers, caches, queues і регіони: зберіть систему, яка витримає навантаження',
   modules: {
     foundations: 'Основи',
     scaling: 'Масштабування',

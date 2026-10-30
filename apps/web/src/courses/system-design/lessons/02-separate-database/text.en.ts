@@ -47,7 +47,7 @@ Stateless servers are interchangeable: any of them can handle any request, becau
       body: ({ sim }) =>
         `The state lives in the [[db2|database]], and the servers keep none of it. So you can replace a server or add another one, and the data does not suffer. [[app1|app1]] has been repaired and is now a ready spare: nothing needs to be copied onto it.
 
-The solution has a price: every request from every server goes to the database. The Database load instrument shows ${n(sim.databaseLoad)} rps, exactly what [[app2|app2]] handles. One database copes with about **1,500 rps**, and once there are many servers it becomes the next bottleneck. In lesson 4 a **cache** will take load off it, and in lesson 6 **replicas** will.`,
+The solution has a price: every request from every server goes to the database. The Database load instrument shows ${n(sim.databaseLoad)} rps, exactly what [[app2|app2]] handles. One database copes with about **1,500 rps**, and once there are many servers it becomes the next bottleneck. In lesson 4 a **cache** will take load off it, and in lesson 6 **read replicas** will.`,
     },
   },
   annotations: {

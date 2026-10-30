@@ -25,63 +25,62 @@ const quizMisses = quizReads * (1 - cacheHitShare)
 
 export default {
   title: 'Podėliavimas',
-  summary:
-    'Cache-aside, pataikymų dalis ir TTL: kaip sumažinti duomenų bazės apkrovą.',
+  summary: 'Cache-aside, hit rate ir TTL: kaip sumažinti database apkrovą.',
   steps: {
     'five-servers': {
-      title: 'Penki serveriai, viena bazė',
-      body: `Internetinė parduotuvė iš 3 pamokos išaugo. [[users|Naudotojai]] per [[lb|balansuotuvą]] patenka į penkis serverius, nuo [[app1|app1]] iki [[app5|app5]], ir visi jie dirba su viena [[db|duomenų baze]]. Dabar ateina 1200 rps.
+      title: 'Penki server, viena database',
+      body: `Internetinė parduotuvė iš 3 pamokos išaugo. [[users|Users]] per [[lb|load balancer]] patenka į penkis server, nuo [[app1|app1]] iki [[app5|app5]], ir visi jie dirba su viena [[db|database]]. Dabar ateina 1200 rps.
 
-Kiekvienam serveriui tenka po 240 rps – 60 % jo pajėgumo. Bazei sunkiau: į ją suplaukia visų serverių užklausos, todėl ji gauna visą srautą – 1200 rps iš 1500 galimų. Tai 80 %: labiausiai apkrautas lentos blokas.`,
+Kiekvienam server tenka po 240 rps – 60 % jo pajėgumo. Database apkrauta labiau: į ją suplaukia visų server užklausos, todėl ji gauna visą srautą – 1200 rps iš 1500 galimų. Tai 80 %: labiausiai apkrautas lentos blokas.`,
     },
     'db-overload': {
-      title: 'Bazė užspringsta',
-      body: `Prasidėjo šventinis išpardavimas, ir apkrova išaugo iki **1600 rps**. Serveriai susitvarko: [[app3|kiekvienas iš jų]] gauna 320 rps, tai 80 % pajėgumo. O [[db|bazė]] gauna visą 1600 rps srautą, bet spėja apdoroti tik 1500. Likusios 100 užklausų per sekundę prarandamos: tai raudoni taškai ant ryšių į bazę, apie 6 % klaidų. Praėjusios užklausos laukia eilėje, ir p95 šoktelėjo virš pusės sekundės.
+      title: 'Database užspringsta',
+      body: `Prasidėjo šventinis išpardavimas, ir apkrova išaugo iki **1600 rps**. Kiekvienas [[app3|server]] gauna 320 rps, tai 80 % pajėgumo, ir susitvarko. O [[db|database]] gauna visą 1600 rps srautą, bet spėja apdoroti tik 1500. Likusios 100 užklausų per sekundę prarandamos: tai raudoni taškai ant ryšių į database, apie 6 % klaidų. Praėjusios užklausos laukia eilėje, ir p95 šoktelėjo virš pusės sekundės.
 
-Šeštas serveris nepadėtų. Serveriams būtų lengviau, bet bazė vis tiek gautų tuos pačius 1600 rps. Siauras kaklelis dabar ne serveriuose, o už jų.`,
+Šeštas server nepadėtų. Server blokams būtų lengviau, bet database vis tiek gautų tuos pačius 1600 rps. Siauras kaklelis dabar yra už server blokų.`,
     },
     'reads-and-writes': {
       title: 'Skaitymas ir rašymas',
-      body: `Pažiūrėkime, ko serveriai prašo iš bazės. Dauguma užklausų tik **skaito**: atidaryti prekę, parodyti katalogą, patikrinti likutį. Ir tik nedaugelis **rašo**: pateikti užsakymą, palikti atsiliepimą. Šiame kurse ${percent(1 - writeShare)} užklausų – skaitymas, o ${percent(writeShare)} – rašymas, tad iš 1600 rps skaitymui tenka 1280.
+      body: `Pažiūrėkime, ko server prašo iš database. Dauguma užklausų tik **skaito** (read): atidaryti prekę, parodyti katalogą, patikrinti likutį. Ir tik nedaugelis **rašo** (write): pateikti užsakymą, palikti atsiliepimą. Šiame kurse ${percent(1 - writeShare)} užklausų – skaitymas, o ${percent(writeShare)} – rašymas, tad iš 1600 rps skaitymui tenka 1280.
 
-Be to, skaitymai kartojasi. Pagrindinį puslapį ir šimtą populiariausių prekių atidaro tūkstančiai žmonių, ir kaskart bazė iš naujo ieško tų pačių eilučių. Jei įsimintume atsakymą į populiarią užklausą, antrą kartą klausti bazės nereikėtų.
+Be to, skaitymai kartojasi. Pagrindinį puslapį ir šimtą populiariausių prekių atidaro tūkstančiai žmonių, ir kaskart database iš naujo ieško tų pačių eilučių. Jei įsimintume atsakymą į populiarią užklausą, antrą kartą klausti database nereikėtų.
 
-Tokia atmintis vadinama **podėliu** (cache): tai saugykla, laikanti duomenis operatyviojoje atmintyje, pavyzdžiui, Redis arba Memcached. Skaitymas iš podėlio trunka ${cacheHitMs} ms. Skaitymų dalis, į kuriuos podėlis atsako pats, vadinama **pataikymų dalimi** (hit rate); šiame kurse ji siekia ${percent(cacheHitShare)}. Kiti skaitymai – **nepataikymai** (miss), jie keliauja toliau į bazę.`,
+**Cache** (lietuviškai – podėlis) – būtent tokia atmintis: saugykla, laikanti duomenis operatyviojoje atmintyje, pavyzdžiui, Redis arba Memcached. Skaitymas iš cache trunka ${cacheHitMs} ms. Kai cache žino atsakymą, tai **cache hit** (lietuviškai – pataikymas), kai nežino – **cache miss** (nepataikymas), ir užklausa keliauja toliau į database. Hit dalis tarp visų skaitymų vadinama **hit rate**; šiame kurse ji siekia ${percent(cacheHitShare)}.`,
     },
     'place-cache': {
-      title: 'Užduotis: podėlis',
-      body: `Pastatykite podėlį tarp serverių ir [[db|bazės]]. Serveriai siunčia skaitymo užklausas į podėlį: pataikymus jis aptarnauja pats, o nepataikymus perduoda bazei.
+      title: 'Užduotis: cache',
+      body: `Pastatykite cache tarp server blokų ir [[db|database]]. Server blokai siunčia skaitymo užklausas į cache: hit jis aptarnauja pats, o miss perduoda database.
 
-Kiekvieno serverio ryšį su baze palikite: rašymas keliauja tik ten. Podėlyje laikomos kopijos, o originalai saugomi bazėje. Podėlis jau yra paletėje.`,
+Kiekvieno server ryšį su database palikite: rašymas keliauja tik ten. Cache laiko kopijas, o originalus saugo database. Blokas „Cache“ jau yra paletėje.`,
     },
     'stale-data': {
       title: 'Pasenę duomenys',
       body: ({ sim }) =>
-        `[[db|Bazė]] atsikvėpė: dabar ji gauna ${n(sim.databaseLoad)} rps vietoj 1600. Iš jų ${n(writes(sim))} – rašymas. Čia podėlis nepadeda: kiekvienas rašymas vis tiek keliauja į bazę. Likę ${n(missedReads(sim))} – skaitymai, kurių nebuvo podėlyje. p95 nukrito iki ${p95(sim)}.
+        `[[db|Database]] atsikvėpė: dabar ji gauna ${n(sim.databaseLoad)} rps vietoj 1600. Iš jų ${n(writes(sim))} – rašymas. Čia cache nepadeda: kiekvienas rašymas vis tiek keliauja į database. Likę ${n(missedReads(sim))} – skaitymai, kurie baigėsi cache miss. p95 nukrito iki ${p95(sim)}.
 
-Kaip duomenys patenka į podėlį? Dažniausiai tuo rūpinasi serveris: pirmiausia klausia podėlio, o nepataikęs skaito iš bazės ir įdeda atsakymą į podėlį. Toks būdas vadinamas **cache-aside**. Lentoje [[cache-1|podėlis]] pats kreipiasi į bazę (read-through), bet bazei tai nesvarbu.
+Kaip duomenys patenka į cache? Dažniausiai tuo rūpinasi server: pirmiausia klausia cache, o gavęs miss skaito iš database ir įdeda atsakymą į cache. Toks būdas vadinamas **cache-aside**. Lentoje [[cache-1|cache]] pats kreipiasi į database (toks būdas vadinamas read-through), bet database tai nesvarbu.
 
-Už podėlį tenka mokėti **pasenusiais duomenimis**. Prekės kaina bazėje pasikeitė, o podėlis vis dar pateikia senąją. Viena apsauga – **TTL** (time to live, galiojimo laikas): kiekvienas raktas podėlyje gyvuoja, tarkime, 60 sekundžių ir išnyksta, o kitas skaitymas paima naują reikšmę iš bazės. Kita – **invalidavimas**: rašydamas serveris iš karto ištrina raktą iš podėlio. TTL paprastas, bet palieka pasenusių duomenų langą; invalidavimas tikslesnis, bet jį lengva pamiršti kurioje nors vietoje, kur rašoma. Dažniausiai jie derinami.`,
+Už cache tenka mokėti **pasenusiais duomenimis** (stale data). Server įrašė į database naują prekės kainą, o cache vis dar pateikia senąją. Viena apsauga – **TTL** (time to live, lietuviškai – galiojimo laikas): kiekvienas raktas cache viduje gyvuoja, tarkime, 60 sekundžių ir išnyksta, o kitas skaitymas paima naują reikšmę iš database. Kita – **invalidavimas** (invalidation): rašydamas server iš karto ištrina raktą iš cache. TTL paprastas, bet palieka pasenusių duomenų langą; invalidavimas tikslesnis, bet jį lengva pamiršti kurioje nors vietoje, kur rašoma. Dažniausiai jie derinami.`,
     },
     'cache-down': {
-      title: 'Kai podėlis sugenda',
+      title: 'Kai cache sugenda',
       body: ({ sim }) =>
-        `[[cache-1|Podėlis]] sugedo. ${
+        `[[cache-1|Cache]] sugedo. ${
           sim.errorRate > 0.01
-            ? `Serveriai vėl siunčia skaitymo užklausas tiesiai į [[db|bazę]]. Ji gauna ${n(sim.databaseLoad)} rps, ir ${percent(sim.errorRate)} užklausų prarandama, kaip ir prieš podėlį.`
-            : `Jūsų lentoje skaitymus perėmė kitas podėlis, todėl [[db|bazė]] laikosi: ${n(sim.databaseLoad)} rps. Su vienu podėliu ji vėl gautų 1600 rps ir klaidas.`
+            ? `Server blokai vėl siunčia skaitymo užklausas tiesiai į [[db|database]]. Ji gauna ${n(sim.databaseLoad)} rps, ir ${percent(sim.errorRate)} užklausų prarandama, kaip ir prieš cache.`
+            : `Jūsų lentoje skaitymus perėmė kitas cache, todėl [[db|database]] laikosi: ${n(sim.databaseLoad)} rps. Su vienu cache ji vėl gautų 1600 rps ir klaidas.`
         }
 
-Podėlyje laikomos tik kopijos, bet be jo sistema jau nebegali veikti. Pavojingas net perkrovimas: podėlis grįžta tuščias, arba **šaltas**, ir kurį laiką kiekvienas skaitymas – nepataikymas. Todėl podėlis paleidžiamas keliuose mazguose ir „įšildomas“ prieš nukreipiant į jį srautą, o apkrovą, kurią bazė gautų be podėlio, visada reikia turėti omenyje.`,
+Cache laiko tik kopijas, bet be jo sistema jau nebegali veikti. Pavojingas net perkrovimas: cache grįžta tuščias, arba **šaltas** (cold), ir kurį laiką kiekvienas skaitymas – miss. Todėl cache paleidžiamas keliuose mazguose ir prieš nukreipiant į jį srautą „įšildomas“ (warm-up), o apkrovą, kurią database gautų be cache, visada reikia turėti omenyje.`,
     },
     summary: {
       title: 'Santrauka',
       body: ({ sim }) =>
-        `Podėlis vėl veikia. Jis nuima nuo bazės pasikartojančius skaitymus: kai pataikymų dalis siekia ${percent(cacheHitShare)}, bazę pasiekia tik ${percent(1 - cacheHitShare)} skaitymų. Bazės apkrova sumažėjo nuo 1600 iki ${n(sim.databaseLoad)} rps, o podėlis kainuoja 0,15 $ per valandą.
+        `Cache vėl veikia. Jis nuima nuo database pasikartojančius skaitymus: kai hit rate siekia ${percent(cacheHitShare)}, iki database nueina tik ${percent(1 - cacheHitShare)} skaitymų. Database apkrova sumažėjo nuo 1600 iki ${n(sim.databaseLoad)} rps, o cache kainuoja 0,15 $ per valandą.
 
-Podėlyje laikykite tai, kas dažnai skaitoma ir retai keičiasi. Raktams nustatykite TTL ir ištrinkite juos iš podėlio, kai duomenys pasikeičia. Atminkite, kad rašymas vis tiek keliauja į bazę, o be podėlio bazė vėl perkrauta.
+Į cache dėkite tai, kas dažnai skaitoma ir retai keičiasi. Raktams nustatykite TTL ir ištrinkite juos iš cache, kai duomenys pasikeičia. Atminkite, kad rašymas vis tiek keliauja į database, o be cache database vėl perkrauta.
 
-Dabar labiausiai apkrauti blokai – [[app3|serveriai]], 80 %. Nemaža jų darbo dalis visai ne parduotuvės logika, o paveikslėliai, skriptai ir stiliai, vienodi visiems lankytojams. 5 pamokoje juos perims **CDN**.`,
+Dabar labiausiai apkrauti blokai – [[app3|server]], 80 %. Nemaža jų darbo dalis visai ne parduotuvės logika, o paveikslėliai, skriptai ir stiliai, vienodi visiems lankytojams. 5 pamokoje juos perims **CDN** (Content Delivery Network, lietuviškai – turinio pristatymo tinklas).`,
     },
   },
   annotations: {
@@ -92,15 +91,15 @@ Dabar labiausiai apkrauti blokai – [[app3|serveriai]], 80 %. Nemaža jų darbo
     readsWrites: sim =>
       `skaitymas ${n(incoming(sim, 'db') * (1 - writeShare))} · rašymas ${n(incoming(sim, 'db') * writeShare)}`,
     cacheHits: sim =>
-      `pataikymų ${n(incoming(sim, 'cache-1') * cacheHitShare)} iš ${n(incoming(sim, 'cache-1'))} rps`,
+      `hit ${n(incoming(sim, 'cache-1') * cacheHitShare)} iš ${n(incoming(sim, 'cache-1'))} rps`,
     dbAfter: sim =>
-      `rašymas ${n(writes(sim))} + nepataikymai ${n(missedReads(sim))} rps`,
+      `rašymas ${n(writes(sim))} + miss ${n(missedReads(sim))} rps`,
     serversNext: sim =>
       `${n(incoming(sim, 'app3'))} rps iš 400 · ${percent(utilization(sim, 'app3'))}`,
   },
   quizzes: {
     'db-after-cache': {
-      question: `Podėlis pats atsako į ${percent(cacheHitShare)} skaitymų. Kiek užklausų per sekundę pasieks duomenų bazę esant ${n(LOAD)} rps, kai podėlis bus savo vietoje?`,
+      question: `Cache pats atsako į ${percent(cacheHitShare)} skaitymų. Kiek užklausų per sekundę nueis iki database esant ${n(LOAD)} rps, kai cache bus savo vietoje?`,
       options: {
         unchanged: `${n(LOAD)} rps – tiek pat`,
         'all-reads': `${n(quizReads)} rps`,
@@ -109,32 +108,32 @@ Dabar labiausiai apkrauti blokai – [[app3|serveriai]], 80 %. Nemaža jų darbo
       },
       wrong: {
         unchanged:
-          'Podėlis pasiima skaitymus, į kuriuos žino atsakymą, todėl duomenų bazę pasiekia gerokai mažiau.',
-        'all-reads': `${n(quizReads)} – tai visi skaitymai. Bet ${percent(cacheHitShare)} jų podėlis atiduos pats, į bazę keliaus tik nepataikymai.`,
-        misses: `${n(quizMisses)} – tai tik nepataikymai. Rašymas į bazę eina pro podėlį: dar ${n(quizWrites)} rps.`,
+          'Cache pasiima skaitymus, į kuriuos žino atsakymą, todėl iki database nueina gerokai mažiau.',
+        'all-reads': `${n(quizReads)} – tai visi skaitymai. Bet ${percent(cacheHitShare)} jų cache atiduos pats, į database keliaus tik miss.`,
+        misses: `${n(quizMisses)} – tai tik miss. Rašymas į database eina pro cache: dar ${n(quizWrites)} rps.`,
       },
-      explain: `Bazę pasieks visas rašymas – ${percent(writeShare)} iš ${n(LOAD)}, tai ${n(quizWrites)} rps, – ir podėlio nepataikymai: ${percent(1 - cacheHitShare)} iš ${n(quizReads)} skaitymų, tai ${n(quizMisses)} rps. Iš viso ${n(quizWrites + quizMisses)} rps iš 1500 galimų: bazė atsikvėps. Patikrinkite tai užduotyje.`,
+      explain: `Iki database nueis visas rašymas – ${percent(writeShare)} iš ${n(LOAD)}, tai ${n(quizWrites)} rps, – ir cache miss: ${percent(1 - cacheHitShare)} iš ${n(quizReads)} skaitymų, tai ${n(quizMisses)} rps. Iš viso ${n(quizWrites + quizMisses)} rps iš 1500 galimų: database atsikvėps. Patikrinkite tai užduotyje.`,
     },
   },
   tasks: {
     'place-cache': {
       prompt:
-        'Nuimkite skaitymą nuo bazės: pastatykite podėlį tarp serverių ir bazės.',
+        'Nuimkite skaitymą nuo database: pastatykite cache tarp server blokų ir database.',
       goals: {
-        'cache-exists': 'Lentoje yra podėlis',
-        'servers-use-cache': 'Serveriai prijungti prie podėlio',
-        'cache-backed-by-db': 'Podėlis prijungtas prie bazės',
+        'cache-exists': 'Lentoje yra blokas „Cache“',
+        'servers-use-cache': 'Server blokai prijungti prie „Cache“',
+        'cache-backed-by-db': '„Cache“ prijungtas prie „Database“',
         'db-relieved':
-          'Bazė apkrauta ne daugiau kaip 60 %, kai ateina 1600 rps',
+          'Database apkrauta ne daugiau kaip 60 %, kai ateina 1600 rps',
         'holds-load': 'Atlaiko 1600 rps, kai klaidų mažiau nei 1 %',
       },
       hints: [
-        'Dauguma užklausų į bazę – pasikartojantys skaitymai. Atsakymus į juos galima laikyti arčiau, greitoje atmintyje.',
-        'Pastatykite podėlį tarp serverių ir bazės. Prie jo prijunkite kiekvieną serverį, o patį podėlį – prie bazės nepataikymams. Serverių ryšių su baze netrinkite: jais keliauja rašymas.',
-        'Lentoje atsirado punktyrinis kontūras. Pastatykite podėlį ten ir nutieskite pažymėtus ryšius: nuo kiekvieno iš penkių serverių iki podėlio ir nuo podėlio iki bazės.',
+        'Dauguma užklausų į database – pasikartojantys skaitymai. Atsakymus į juos galima laikyti arčiau, greitoje atmintyje.',
+        'Pastatykite bloką „Cache“ tarp server blokų ir database. Prie jo prijunkite kiekvieną server, o patį cache – prie database, kad būtų kur siųsti miss. Server ryšių su database netrinkite: jais keliauja rašymas.',
+        'Lentoje atsirado punktyrinis kontūras. Pastatykite ten bloką „Cache“ ir nutieskite pažymėtus ryšius: nuo kiekvieno iš penkių server iki cache ir nuo cache iki database.',
       ],
       solvedNote:
-        'Keturis skaitymus iš penkių dabar aptarnauja podėlis, o bazė turi atsargą.',
+        'Keturis skaitymus iš penkių dabar aptarnauja cache, o database turi atsargą.',
     },
   },
 } satisfies LessonTexts<typeof lesson>
