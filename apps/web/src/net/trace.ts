@@ -554,6 +554,7 @@ type Connected = Readonly<{
   at: number
   src: Ip
   clientPort: number
+  serverPort: number
 }>
 
 /** Приложение с зависимостью работает, только если достаёт до неё
@@ -621,22 +622,26 @@ const tcpConnect = (
     send(doc, portRun, ready.host, src, ip, fromClient('SYN'), at),
     (reached, syn) => {
       const server = syn.device
+      const serverPort = portsOf(syn.packet).dst
       const listening = Option.isSome(
-        listenerFor(server, 'tcp', port, syn.packet.dst),
+        listenerFor(server, 'tcp', serverPort, syn.packet.dst),
       )
       const refusal = listening
         ? healthy(doc, reached, server, depth)
         : Option.some(
             Option.isSome(syn.maybePublished)
-              ? NetMessage.PublishedPortClosed({ device: server.id, port })
-              : refusalOf(server, 'tcp', port, syn.packet.dst),
+              ? NetMessage.PublishedPortClosed({
+                  device: server.id,
+                  port: serverPort,
+                })
+              : refusalOf(server, 'tcp', serverPort, syn.packet.dst),
           )
       if (Option.isSome(refusal)) {
         const reason = refusal.value
         return andThen(
           reply(doc, editHop(reached, syn.maybeHop, { note: reason }), syn, [
             Layer.Tcp({
-              src: port,
+              src: serverPort,
               dst: portsOf(syn.packet).src,
               flags: 'RST',
             }),
@@ -647,7 +652,7 @@ const tcpConnect = (
       return andThen(
         reply(doc, reached, syn, [
           Layer.Tcp({
-            src: port,
+            src: serverPort,
             dst: portsOf(syn.packet).src,
             flags: 'SYN-ACK',
           }),
@@ -664,7 +669,14 @@ const tcpConnect = (
               synAck.at,
             ),
             (afterAck, ack) =>
-              succeed(afterAck, { server, syn, at: ack.at, src, clientPort }),
+              succeed(afterAck, {
+                server,
+                syn,
+                at: ack.at,
+                src,
+                clientPort,
+                serverPort,
+              }),
           ),
       )
     },
@@ -927,7 +939,7 @@ const openPage = (
       layers: ReadonlyArray<Layer>,
     ): ReadonlyArray<Layer> => [
       Layer.Tcp({
-        src: url.port,
+        src: tcp.serverPort,
         dst: portsOf(arrival.packet).src,
         flags: 'DATA',
       }),
@@ -1059,7 +1071,7 @@ const openPage = (
               hello,
               [
                 Layer.Tcp({
-                  src: url.port,
+                  src: tcp.serverPort,
                   dst: portsOf(hello.packet).src,
                   flags: 'RST',
                 }),
@@ -1328,7 +1340,7 @@ const traceTraceroute = (
                   {
                     ttl,
                     maybeIp: pipe(
-                      Array.findFirst(
+                      Array.findLast(
                         hop.envelope,
                         layer => layer._tag === 'Ip',
                       ),
@@ -1582,6 +1594,55 @@ const traceArp = (
       )
     : dropped(run, from, NetMessage.InvalidIp({ value: ip }))
 
+type Line = Readonly<{
+  packet: Arrival['packet']
+  maybeHop: Option.Option<number>
+  agentPort: number
+}>
+
+/** Линия к ретранслятору: туннель — соединение TCP 443, mesh — «привет»
+    по UDP 41641. Оба оставляют строку NAT дома. */
+const openLine = (
+  doc: NetDoc,
+  run: Run,
+  source: Ready,
+  relayIp: Ip,
+  kind: 'tunnel' | 'mesh',
+): Step<Line> => {
+  if (kind === 'tunnel') {
+    return andThen(
+      tcpConnect(doc, run, source, relayIp, netRules.relayPort, source.at),
+      (connected, tcp) =>
+        succeed(connected, {
+          packet: tcp.syn.packet,
+          maybeHop: tcp.syn.maybeHop,
+          agentPort: tcp.clientPort,
+        }),
+    )
+  }
+  const [portRun, port] = nextPort(run)
+  return andThen(
+    send(
+      doc,
+      portRun,
+      source.host,
+      sourceFor(doc, portRun, source, relayIp),
+      relayIp,
+      [
+        Layer.Udp({ src: port, dst: netRules.meshPort }),
+        Layer.Payload({ protocol: 'mesh', kind: 'request' }),
+      ],
+      source.at,
+    ),
+    (reached, arrival) =>
+      succeed(reached, {
+        packet: arrival.packet,
+        maybeHop: arrival.maybeHop,
+        agentPort: port,
+      }),
+  )
+}
+
 /** Агент открывает линию к ретранслятору: строка NAT дома и запись у
     ретранслятора, по ней потом пойдут входящие. */
 const traceRelayUp = (
@@ -1627,23 +1688,16 @@ const traceRelayUp = (
                   ),
                 onSome: relayIface =>
                   andThen(
-                    tcpConnect(
-                      doc,
-                      prepared,
-                      source,
-                      relayIface.ip,
-                      netRules.relayPort,
-                      source.at,
-                    ),
-                    (connected, tcp) => {
+                    openLine(doc, prepared, source, relayIface.ip, kind),
+                    (connected, line) => {
                       const session = {
                         relay: relay.id,
                         agent: id,
                         kind,
                         key,
-                        endpoint: tcp.syn.packet.src,
-                        endpointPort: portsOf(tcp.syn.packet).src,
-                        agentPort: tcp.clientPort,
+                        endpoint: line.packet.src,
+                        endpointPort: portsOf(line.packet).src,
+                        agentPort: line.agentPort,
                       }
                       const registered = editHop(
                         {
@@ -1663,7 +1717,7 @@ const traceRelayUp = (
                             ],
                           },
                         },
-                        tcp.syn.maybeHop,
+                        line.maybeHop,
                         {
                           changes: [
                             TableChange.RelayOpened({

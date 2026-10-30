@@ -34,6 +34,7 @@ export const netRules = {
   tracerouteStars: 3,
   vpnPort: 51820,
   relayPort: 443,
+  meshPort: 41641,
   dnsTtl: 300,
   maxRedirects: 3,
 }

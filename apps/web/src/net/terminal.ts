@@ -1966,6 +1966,7 @@ export const loginBanner = (
   state: NetState,
   server: DeviceId,
   from: DeviceId,
+  date = 'Thu Oct 29 21:14:03 2026',
 ): Option.Option<string> =>
   Option.flatMap(findHost(doc, server), target =>
     Option.flatMap(hostIface(doc, settle(doc, state), target), iface => {
@@ -1977,7 +1978,7 @@ export const loginBanner = (
       return connected.outcome._tag === 'Delivered' &&
         connected.outcome.answer._tag === 'Connected'
         ? Option.some(
-            `Last login: Thu Oct 29 21:14:03 2026 from ${connected.outcome.answer.seenFrom}`,
+            `Last login: ${date} from ${connected.outcome.answer.seenFrom}`,
           )
         : Option.none()
     }),
