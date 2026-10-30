@@ -33,6 +33,18 @@ const logOf = (playerModel: Player.Model) =>
   Player.opsOf(packet, Player.taskStateOf(playerModel, 'phone-dev').log)
 
 describe('lesson 6 script', () => {
+  test('step 1: the shop page over https reaches the shop on port 443', () => {
+    const apartments = boardAt(lesson, 0, {})
+    const shop = browse(
+      apartments.doc,
+      apartments.state,
+      'phone',
+      'https://shop.example/',
+    )
+    expect(shop.view).toMatchObject({ _tag: 'Page', secure: true })
+    expect(shop.trace.outcome).toMatchObject({ _tag: 'Delivered', at: 'shop' })
+  })
+
   test('step 2: localhost opens on the laptop; step 4: the phone is refused by 127.0.0.1', () => {
     const atDev = boardAt(lesson, 1, {})
     expect(

@@ -5,7 +5,7 @@ export default defineLessonMeta(course, {
   slug: 'site-names',
   module: 'local',
   order: 3,
-  available: false,
+  available: true,
   locales: ['uk', 'ru', 'en', 'lt'],
   unlocks: [
     'board.dnsServer',

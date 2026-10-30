@@ -179,6 +179,7 @@
   overflow-y: auto;
   padding: 4px 10px 14px;
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   align-content: start;
   gap: 6px;
   font-size: 14px;

@@ -897,6 +897,7 @@ export const emptyHostFields: Omit<Host, 'id' | 'x' | 'y' | 'mac'> = {
   maybeDnsOverride: Option.none(),
   wifiBands: [],
   maybeWifiProfile: Option.none(),
+  maybeHomePage: Option.none(),
   listeners: [],
   zones: [],
   resolver: false,
