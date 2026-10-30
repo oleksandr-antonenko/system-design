@@ -3,6 +3,7 @@ import { Array } from 'effect'
 import type { ComponentKind } from '../../domain/catalog'
 import { formatNumber } from '../format'
 import { plural } from '../plural'
+import { panelLt } from './panel/lt'
 import type { UiStrings } from './types'
 
 const inLanguage: UiStrings['inLanguage'] = {
@@ -188,6 +189,7 @@ export const lt = {
     wifiJoin: 'Prisijungti',
     wifiJoined: ssid => `Prisijungta prie „${ssid}“`,
   },
+  panel: panelLt,
   notFound: {
     title: 'Puslapis nerastas',
     body: path => `Adresu „${path}“ nieko nėra.`,

@@ -7,6 +7,7 @@ import { NetOp } from '../net/doc'
 import { NetMessage } from '../net/message'
 import * as FlowBoard from './flow/board'
 import * as PacketBoard from './packet/board'
+import * as PanelSurface from './packet/surfaces/panel/panel'
 import * as WifiSurface from './packet/wifi'
 
 // Model плеера строится только из Schema (FOLDKIT.md), поэтому значения,
@@ -43,10 +44,12 @@ export type BoardMessage = typeof BoardMessage.Type
 /** Состояние поверхности задачи. */
 export const SurfaceState = defineTaggedUnion({
   WifiSurface: { model: WifiSurface.Model },
+  PanelSurface: { model: PanelSurface.Model },
 })
 export type SurfaceState = typeof SurfaceState.Type
 
 export const SurfaceMessage = defineMessageUnion({
   GotWifiSurfaceMessage: { message: WifiSurface.Message },
+  GotPanelSurfaceMessage: { message: PanelSurface.Message },
 })
 export type SurfaceMessage = typeof SurfaceMessage.Type

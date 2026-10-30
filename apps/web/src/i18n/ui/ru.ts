@@ -3,6 +3,7 @@ import { Array } from 'effect'
 import type { ComponentKind } from '../../domain/catalog'
 import { formatNumber } from '../format'
 import { plural } from '../plural'
+import { panelRu } from './panel/ru'
 import type { UiStrings } from './types'
 
 const inLanguage: UiStrings['inLanguage'] = {
@@ -187,6 +188,7 @@ export const ru = {
     wifiJoin: 'Подключиться',
     wifiJoined: ssid => `Подключено к сети «${ssid}»`,
   },
+  panel: panelRu,
   notFound: {
     title: 'Страница не найдена',
     body: path => `По адресу «${path}» ничего нет.`,

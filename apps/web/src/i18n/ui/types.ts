@@ -1,6 +1,7 @@
 import type { ComponentKind, Region } from '../../domain/catalog'
 import type { DomainMessageTexts } from '../domainMessage'
 import type { Locale } from '../locale'
+import type { PanelStrings } from './panel/types'
 
 export type UiStrings = Readonly<{
   siteTitle: string
@@ -138,6 +139,7 @@ export type UiStrings = Readonly<{
     wifiJoin: string
     wifiJoined: (ssid: string) => string
   }>
+  panel: PanelStrings
   notFound: Readonly<{
     title: string
     body: (path: string) => string

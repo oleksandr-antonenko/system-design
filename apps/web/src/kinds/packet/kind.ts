@@ -26,6 +26,7 @@ import {
   runPacket,
 } from './doc'
 import type { PacketStage } from './dsl'
+import { panelSurfaces } from './surfaces/panel/surfaces'
 import * as Wifi from './wifi'
 
 // Вид доски курса сетей (design D6). Модель пакетов — `src/net/`; здесь
@@ -97,14 +98,16 @@ const wifiSurface: SurfaceDefinition<PacketTypes> = {
   feature: 'wifi',
   init: () => SurfaceState.WifiSurface({ model: Wifi.initialModel }),
   update: context => (state, message) =>
-    Update.foldChild({
-      update: Wifi.update(context),
-      read: readWifi,
-      write: (_state: SurfaceState, model: Wifi.Model) =>
-        SurfaceState.WifiSurface({ model }),
-      toParentMessage: toWifiMessage,
-      toParentOutMessage: (outMessage: Wifi.OutMessage) => outMessage,
-    })(state, message.message),
+    message._tag === 'GotWifiSurfaceMessage'
+      ? Update.foldChild({
+          update: Wifi.update(context),
+          read: readWifi,
+          write: (_state: SurfaceState, model: Wifi.Model): SurfaceState =>
+            SurfaceState.WifiSurface({ model }),
+          toParentMessage: toWifiMessage,
+          toParentOutMessage: (outMessage: Wifi.OutMessage) => outMessage,
+        })(state, message.message)
+      : { model: state },
   tabLabel: (context, ui) =>
     ui.network.wifiTab(
       Option.match(context.label(context.target), {
@@ -198,7 +201,7 @@ export const packet: BoardKind<PacketTypes> = {
     view: PacketBoard.view,
     instruments: PacketBoard.instruments,
   },
-  surfaces: [wifiSurface],
+  surfaces: [wifiSurface, ...panelSurfaces],
 
   // NOTE: `NextHop`, `PickLinks`, `PickLayer`, `PlaceChips`, `SpotFault` и
   // картинки вариантов (экраны браузера) добавляет add-network-board.
