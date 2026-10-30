@@ -200,7 +200,13 @@ const timelineView = <T extends KindTypes>(
         Array.map(lesson.steps, (lessonStep, index) =>
           h.keyed('li')(
             lessonStep.id,
-            [],
+            [
+              h.Class(
+                lessonStep.task === undefined
+                  ? 'timeline-item'
+                  : 'timeline-item task',
+              ),
+            ],
             [
               h.button(
                 [
