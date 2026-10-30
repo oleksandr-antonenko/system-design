@@ -24,7 +24,7 @@ export default {
   steps: {
     gateway: {
       title: 'Savi namai ir visa kita',
-      body: `Nešiojamasis kompiuteris siunčia voką. Pirmiausia jis žiūri į IP address „kam“. Jei adresas prasideda 192.168.1., tai kaimynas namuose, pavyzdžiui, [[printer|spausdintuvas]]. Tada ant išorinio voko kompiuteris rašo spausdintuvo MAC address, o router tiesiog perduoda voką namuose. Jei adresas bet koks kitas, kompiuteris ant išorinio voko rašo paties [[router|router]] MAC address: „atiduoti gateway“.
+      body: `Nešiojamasis kompiuteris siunčia voką. Pirmiausia jis žiūri į IP address „kam“. Jei adresas prasideda 192.168.1., tai kaimynas namuose, pavyzdžiui, [[printer|spausdintuvas]]. Tada ant išorinio voko, frame, kompiuteris rašo spausdintuvo MAC address, o router tiesiog perduoda voką namuose. Jei adresas bet koks kitas, kompiuteris ant išorinio voko rašo paties [[router|router]] MAC address: „atiduoti gateway“.
 
 **Gateway** (lietuviškai – šliuzas) – paštas, per kurį išeina viskas, kas „ne mūsų namams“. Namuose gateway – jūsų router, 192.168.1.1. Jį jau matėte telefono tinklo informacijoje: laukas „Router“ ir yra gateway. Kiekvienas įrenginys namuose turi žinoti šį adresą, kitaip jo vokai neišeis toliau namų.`,
     },

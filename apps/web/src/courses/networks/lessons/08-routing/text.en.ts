@@ -24,7 +24,7 @@ export default {
   steps: {
     gateway: {
       title: 'Your home and everything else',
-      body: `The laptop sends an envelope. First it looks at the “to” IP address. If the address starts with 192.168.1., the addressee is a neighbour at home, for example the [[printer|printer]]. Then the laptop writes the printer’s MAC address on the outer envelope, and the router simply passes the envelope on within the home. If the address is anything else, the laptop writes the MAC address of the [[router|router]] itself on the outer envelope: “for the gateway”.
+      body: `The laptop sends an envelope. First it looks at the “to” IP address. If the address starts with 192.168.1., the addressee is a neighbour at home, for example the [[printer|printer]]. Then the laptop writes the printer’s MAC address on the outer envelope, the frame, and the router simply passes the envelope on within the home. If the address is anything else, the laptop writes the MAC address of the [[router|router]] itself on the outer envelope: “for the gateway”.
 
 The **gateway** is the post office through which everything “not for our home” leaves. At home the gateway is your router, 192.168.1.1. You have already seen it in the phone’s network details: the “Router” field is the gateway. Every device at home must know this address, otherwise its envelopes will not get beyond the home.`,
     },
