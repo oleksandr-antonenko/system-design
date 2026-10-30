@@ -53,6 +53,28 @@ export const DeviceKind = Schema.Literals([
 ])
 export type DeviceKind = typeof DeviceKind.Type
 
+/** Имя вида устройства на доске. Оно английское на всех языках и не
+    переводится: так устройства подписаны в настоящих роутерах, терминалах
+    и документации (изменение english-network-terms). Родное название с
+    пояснением — `packetBoard.kindHint` словаря интерфейса. */
+export const deviceKindName: Readonly<Record<DeviceKind, string>> = {
+  pc: 'PC',
+  phone: 'Phone',
+  laptop: 'Laptop',
+  server: 'Server',
+  printer: 'Printer',
+  bulb: 'Smart bulb',
+  container: 'Container',
+  resolver: 'DNS server',
+  relay: 'Relay',
+  switch: 'Switch',
+  router: 'Router',
+  'vpn-gateway': 'VPN gateway',
+  ap: 'Access point',
+  transit: 'ISP router',
+  internet: 'Internet',
+}
+
 /** `cellular` — сотовая связь телефона с оператором (как кабель, без
     пароля); `virtual` — мост Docker между хостом и контейнером. */
 export const Medium = Schema.Literals(['cable', 'radio', 'cellular', 'virtual'])

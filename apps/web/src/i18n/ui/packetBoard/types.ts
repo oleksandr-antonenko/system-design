@@ -27,7 +27,10 @@ export type CardTable =
 
 /** Тексты доски сетей (add-network-board). */
 export type PacketBoardStrings = Readonly<{
-  kindName: Readonly<Record<DeviceKind, string>>
+  /** Подсказка к виду устройства: родное название и короткое пояснение.
+      Само имя на доске английское (`deviceKindName` в `net/model.ts`);
+      подсказка — всплывающий текст и доступное описание устройства. */
+  kindHint: Readonly<Record<DeviceKind, string>>
   transport: Readonly<{
     run: string
     again: string
@@ -69,6 +72,8 @@ export type PacketBoardStrings = Readonly<{
   envelope: Readonly<{
     from: string
     to: string
+    /** «Кому» у вопроса для всех в сети (кто выдаст мне адрес?). */
+    everyone: string
     open: string
     title: (hop: number, total: number) => string
     close: string

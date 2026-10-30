@@ -66,7 +66,7 @@ describe('lesson 6: the phone and localhost', () => {
     scene(
       sceneIn('ru'),
       given(atTask()),
-      expect(role('tab', { name: 'Терминал · Ноутбук' })).toHaveAttr(
+      expect(role('tab', { name: 'Терминал · Laptop' })).toHaveAttr(
         'aria-selected',
         'true',
       ),
@@ -74,13 +74,13 @@ describe('lesson 6: the phone and localhost', () => {
       expect(role('button', { name: /npm run dev/ })).toHaveText(/новое/),
       type(role('textbox', { name: 'Команда' }), 'ip a'),
       submit(role('form', { name: 'Команда' })),
-      expect(text(/Сервер ещё работает в этом окне/)).toExist(),
+      expect(text(/Server ещё работает в этом окне/)).toExist(),
       click(role('button', { name: 'Остановить программу (Ctrl+C)' })),
       expect(text('^C')).toExist(),
       type(role('textbox', { name: 'Команда' }), 'npm run dev -- --host'),
       submit(role('form', { name: 'Команда' })),
       expect(text('  ➜  Network: http://192.168.1.42:5173/')).toExist(),
-      click(role('tab', { name: 'Экран · Телефон' })),
+      click(role('tab', { name: 'Экран · Phone' })),
       expect(
         role('heading', { name: 'Не удаётся получить доступ к сайту' }),
       ).toExist(),

@@ -1,11 +1,17 @@
 import { Array, Option, Order, pipe } from 'effect'
 import type { Html, HtmlBuilder } from 'foldkit/html'
 
+import { renderDomainMessage } from '../../i18n/domainMessage'
 import type { ProtocolName } from '../../i18n/ui/packetBoard/types'
 import { runAll } from '../../net/answers'
 import { macsOf } from '../../net/doc'
 import type { Device, DeviceId, NetState } from '../../net/model'
-import { type Hop, type StackLevel, TableChange } from '../../net/packet'
+import {
+  type Hop,
+  type StackLevel,
+  TableChange,
+  sourceOf,
+} from '../../net/packet'
 import { addressOf, routeTable } from '../../net/topology'
 import { runInTerminal } from '../../net/world'
 import type { DeviceTable } from './dsl'
@@ -227,6 +233,17 @@ const sendForm = <ParentMessage>(
   }
   const what = device.kind === 'phone' ? 'photo' : 'document'
   const title = what === 'photo' ? ui.sendPhoto : ui.printDocument
+  // Третья подсказка обводит поле, если эталон отправляет с этого
+  // устройства; адрес не подставляется.
+  const isGhost = Option.exists(
+    picture.context.maybeTask,
+    task =>
+      task.isGhostShown &&
+      Array.some(
+        task.solution,
+        op => op._tag === 'Send' && sourceOf(op.intent) === device.id,
+      ),
+  )
   return [
     h.form(
       [
@@ -241,14 +258,32 @@ const sendForm = <ParentMessage>(
           [
             h.span([], [ui.sendAddress]),
             h.input([
+              h.Class(
+                [
+                  isGhost ? 'ghost' : '',
+                  Option.isSome(picture.model.maybeSendRefusal)
+                    ? 'refused'
+                    : '',
+                ].join(' '),
+              ),
               h.Type('text'),
               h.Attribute('inputmode', 'decimal'),
               h.Attribute('autocomplete', 'off'),
+              h.AriaInvalid(Option.isSome(picture.model.maybeSendRefusal)),
               h.Value(picture.model.sendAddress),
               h.OnInput(value => send(Message.UpdatedSendAddress({ value }))),
             ]),
           ],
         ),
+        ...Option.match(picture.model.maybeSendRefusal, {
+          onNone: () => [],
+          onSome: refusal => [
+            h.p(
+              [h.Class('pb-send-refusal'), h.Role('alert')],
+              [renderDomainMessage(picture.context.ui.domain, refusal)],
+            ),
+          ],
+        }),
         h.button([h.Type('submit'), h.Class('btn primary')], [ui.send]),
       ],
     ),

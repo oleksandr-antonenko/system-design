@@ -10,7 +10,7 @@ import {
 import { type NetTexts, type TextContext } from './types'
 
 const band = (value: WifiBand): string =>
-  value === 'dual' ? '2,4 и 5 ГГц' : value === '2.4' ? '2,4 ГГц' : '5 ГГц'
+  value === 'dual' ? '2.4 и 5 GHz' : value === '2.4' ? '2.4 GHz' : '5 GHz'
 
 const how: Readonly<Record<Medium, string>> = {
   cable: 'кабелем',
@@ -39,9 +39,9 @@ const all = (ids: ReadonlyArray<string>, context: TextContext): string =>
   ids.map(id => q(id, context)).join(', ')
 
 const scope: Readonly<Record<FirewallScope, string>> = {
-  os: 'Файрвол устройства',
-  cloud: 'Файрвол хостинга',
-  router: 'Файрвол роутера',
+  os: 'Firewall устройства',
+  cloud: 'Firewall хостинга',
+  router: 'Firewall домашней сети',
 }
 
 const ruleName = (maybeRule: Option.Option<number>): string =>
@@ -58,25 +58,26 @@ const security: Readonly<Record<Security, string>> = {
 
 const acme: Readonly<Record<AcmeProblem, string>> = {
   'not-found': 'такого имени нет в DNS',
-  refused: 'порт 80 закрыт',
-  timeout: 'до порта 80 не достучаться',
-  'wrong-server': 'по этому имени отвечает другой сервер',
+  refused: 'port 80 закрыт',
+  timeout: 'port 80 не отвечает',
+  'wrong-server': 'по этому имени отвечает другой server',
 }
 
 export const ru: NetTexts = {
   UnknownDevice: ({ id }, c) => `Устройства ${q(id, c)} нет на доске.`,
   DuplicateDeviceId: ({ id }, c) => `Устройство ${q(id, c)} уже есть на доске.`,
   InvalidMac: ({ value }) =>
-    `«${value}» — не MAC-адрес: нужно шесть пар символов через двоеточие.`,
-  DuplicateMac: ({ mac, owner }, c) => `MAC ${mac} уже есть у ${of(owner, c)}.`,
+    `«${value}» — не MAC address: нужно шесть пар символов через двоеточие.`,
+  DuplicateMac: ({ mac, owner }, c) =>
+    `MAC address ${mac} уже есть у ${of(owner, c)}.`,
   InvalidIp: ({ value }) =>
-    `«${value}» — не адрес: нужно четыре числа от 0 до 255 через точку.`,
-  InvalidPrefix: ({ value }) => `Маска /${value} не подходит.`,
+    `«${value}» — не IP address: нужно четыре числа от 0 до 255 через точку.`,
+  InvalidPrefix: ({ value }) => `Subnet mask /${value} не подходит.`,
   AddressNotUsable: ({ ip, prefix }) =>
-    `Адрес ${ip}/${prefix} нельзя дать устройству: это адрес самой сети или адрес «для всех».`,
+    `IP address ${ip}/${prefix} нельзя дать устройству: это адрес самой сети или адрес «для всех».`,
   GatewayOutsideSubnet: ({ gateway, ip, prefix }) =>
-    `Роутер ${gateway} не в сети ${ip}/${prefix}: устройство до него не достанет.`,
-  OnlyOneInternet: () => 'Интернет на доске может быть только один.',
+    `Router ${gateway} не в сети ${ip}/${prefix}: устройство до него не достанет.`,
+  OnlyOneInternet: () => 'Облако «Internet» на доске может быть только одно.',
   ConnectSelf: ({ id }, c) =>
     `Устройство ${q(id, c)} нельзя соединить с самим собой.`,
   AlreadyLinked: ({ a, b }, c) => `${q(a, c)} и ${q(b, c)} уже соединены.`,
@@ -85,36 +86,38 @@ export const ru: NetTexts = {
   PortBusy: ({ device }, c) =>
     `У ${of(device, c)} один разъём, и он уже занят.`,
   RadioNeedsAccessPoint: ({ a, b }, c) =>
-    `По Wi-Fi подключаются к роутеру или точке доступа, а ${q(a, c)} и ${q(b, c)} — не они.`,
+    `Wi-Fi раздаёт router или access point, а ${q(a, c)} и ${q(b, c)} — не они.`,
   NoWifiOnDevice: ({ device }, c) =>
     `У ${of(device, c)} нет Wi-Fi: подключите его кабелем.`,
   InternetNeedsRouter: ({ device }, c) =>
-    `К интернету подключают роутер или сервер, а не ${acc(device, c)}.`,
+    `К интернету подключают router или server, а не ${acc(device, c)}.`,
   SecondWanLink: ({ router }, c) =>
     `У ${of(router, c)} уже есть выход в интернет.`,
   LinkMakesLoop: ({ a, b }, c) =>
     `Связь ${q(a, c)} — ${q(b, c)} замкнёт кольцо: конверты бегали бы по кругу.`,
   NotAHost: ({ id }, c) =>
-    `Это делают на компьютере, телефоне или сервере, а не на ${on(id, c)}.`,
+    `Это делает компьютер, телефон или server, а не ${acc(id, c)}.`,
   NotARouter: ({ id }, c) =>
-    `Это настройка роутера, а ${q(id, c)} — не роутер.`,
+    `${q(id, c)} — не router: такой настройки у него нет.`,
   NotAnAccessPoint: ({ id }, c) =>
     `У ${of(id, c)} нет своей сети Wi-Fi, её нельзя настроить.`,
   DhcpPoolOutsideSubnet: ({ start, end, network, prefix }) =>
-    `Адреса ${start}–${end} не из домашней сети ${network}/${prefix}.`,
+    `DHCP pool ${start}–${end} не входит в домашнюю сеть ${network}/${prefix}.`,
   DhcpPoolReversed: ({ start, end }) =>
-    `Начало пула ${start} больше его конца ${end}.`,
-  DhcpPoolIncludesRouter: ({ ip }) => `В пул попал адрес самого роутера ${ip}.`,
+    `DHCP pool начинается с ${start}, а это больше его конца ${end}.`,
+  DhcpPoolIncludesRouter: ({ ip }) =>
+    `В DHCP pool попал ${ip}, а это IP address, который занимает сам router.`,
   ReservationOutsideSubnet: ({ mac, ip }) =>
-    `Адрес ${ip} для ${mac} не из домашней сети.`,
-  ReservationTaken: ({ ip, mac }) => `Адрес ${ip} уже закреплён за ${mac}.`,
-  EmptySsid: () => 'У сети Wi-Fi должно быть имя.',
+    `IP address ${ip} для ${mac} не из домашней сети.`,
+  ReservationTaken: ({ ip, mac }) =>
+    `IP address ${ip} уже закреплён за ${mac}.`,
+  EmptySsid: () => 'У сети Wi-Fi должен быть SSID — имя сети.',
   WifiPasswordTooShort: ({ min }) =>
     `Пароль Wi-Fi должен быть не короче ${min} символов.`,
   InvalidChannel: ({ band: value, channel }) =>
     `Канала ${channel} нет в диапазоне ${band(value)}.`,
   InvalidPort: ({ value }) =>
-    `Порт ${value} не подходит: нужен номер от 1 до 65535.`,
+    `Port ${value} не подходит: нужен номер от 1 до 65535.`,
   EmptyName: () => 'Имя не может быть пустым.',
 
   WifiOff: ({ ap }, c) => `Wi-Fi на ${on(ap, c)} выключен.`,
@@ -155,32 +158,33 @@ export const ru: NetTexts = {
   LinkDown: ({ device }, c) =>
     `У ${of(device, c)} связь выключена, конверт не уходит.`,
   NoAddress: ({ device }, c) =>
-    `У ${of(device, c)} нет адреса, поэтому конверт не уходит.`,
+    `У ${of(device, c)} нет IP, поэтому конверт не уходит.`,
   UsesStaticAddress: ({ device }, c) =>
-    `У ${of(device, c)} адрес задан вручную, просить его у роутера не нужно.`,
+    `У ${of(device, c)} IP address задан вручную, просить его через DHCP не нужно.`,
   NoGateway: ({ device, ip }, c) =>
-    `${q(device, c)} не знает, через кого отправить конверт на ${ip}: роутер не задан.`,
+    `${q(device, c)} не знает, через кого отправить конверт на ${ip}: router (gateway) не задан.`,
   NoDnsServer: ({ device }, c) =>
-    `${q(device, c)} не знает, у кого спросить адрес по имени: DNS не задан.`,
+    `${q(device, c)} не знает, у кого спросить адрес по имени: DNS server не задан.`,
   ArpNoReply: ({ device, ip }, c) =>
     `Никто не отозвался на адрес ${ip}, и ${q(device, c)} не может отправить конверт.`,
   NoDhcpServer: ({ device }, c) =>
-    `Никто не выдал ${to(device, c)} адрес: рядом нет роутера с DHCP.`,
+    `Никто не выдал ${to(device, c)} IP address: рядом никто не раздаёт адреса по DHCP.`,
   DhcpPoolExhausted: ({ router }, c) =>
-    `У ${of(router, c)} закончились свободные адреса.`,
+    `У ${of(router, c)} в DHCP pool не осталось свободных адресов.`,
   TtlExpired: ({ device }, c) =>
     `Конверт слишком долго в пути, и ${q(device, c)} выбрасывает его (TTL кончился).`,
-  NoRouteToHost: ({ ip }) => `В интернете нет никого с адресом ${ip}.`,
+  NoRouteToHost: ({ ip }) =>
+    `IP address ${ip} в интернете никому не принадлежит.`,
   PrivateAddressNotRoutable: ({ ip }) =>
-    `${ip} — домашний адрес: в интернете по нему никого не найти.`,
+    `${ip} — private IP, домашний адрес: в интернете по нему никого не найти.`,
   NoWanLink: ({ router }, c) => `У ${of(router, c)} нет связи с интернетом.`,
   NatNoMapping: ({ router, proto, port }, c) =>
     `${q(router, c)} не ждал этого конверта (${up(proto)} ${port}) и выбрасывает его.`,
   PortClosed: ({ device, proto, port }, c) =>
-    `На ${on(device, c)} никто не слушает порт ${port} (${up(proto)}), соединение отклонено.`,
+    `На ${on(device, c)} никто не слушает port ${port} (${up(proto)}), соединение отклонено.`,
   ListensOnlyOnLoopback: ({ device, port }, c) =>
-    `Порт ${port} на ${on(device, c)} открыт только для него самого (127.0.0.1).`,
-  NameNotFound: ({ name }) => `Имени ${name} нет в справочной DNS.`,
+    `Port ${port} на ${on(device, c)} открыт только для него самого (127.0.0.1).`,
+  NameNotFound: ({ name }) => `Имени ${name} нет в DNS.`,
   InvalidUrl: ({ url }) => `«${url}» — не адрес сайта.`,
   FrameLost: ({ device }, c) => `Конверт потерялся на ${on(device, c)}.`,
 
@@ -191,15 +195,15 @@ export const ru: NetTexts = {
   GoalNoRadioLink: ({ device, ap }, c) =>
     `Между устройствами ${q(device, c)} и ${q(ap, c)} нет связи по Wi-Fi.`,
   GoalWrongAddress: ({ device, have, want }, c) =>
-    `У ${of(device, c)} адрес ${have}, а нужен ${want}.`,
+    `У ${of(device, c)} IP address ${have}, а нужен ${want}.`,
   AddressConflict: ({ ip, devices }, c) =>
-    `Адрес ${ip} сразу у нескольких устройств: ${all(devices, c)}.`,
+    `IP address ${ip} сразу у нескольких устройств: ${all(devices, c)}.`,
   GoalReachable: ({ from, at }, c) =>
     `Конверт от ${of(from, c)} доходит до ${of(at, c)}, а не должен.`,
   GoalNotListening: ({ device, proto, port }, c) =>
-    `На ${on(device, c)} никто не слушает порт ${port} (${up(proto)}).`,
+    `На ${on(device, c)} никто не слушает port ${port} (${up(proto)}).`,
   GoalListeningOnWrongAddress: ({ device, port, bind, want }, c) =>
-    `Порт ${port} на ${on(device, c)} слушают на ${bind}, а нужно на ${want}.`,
+    `Port ${port} на ${on(device, c)} слушают на ${bind}, а нужно на ${want}.`,
   GoalResolvesElsewhere: ({ name, have, want }) =>
     `Имя ${name} ведёт на ${have}, а нужно на ${want}.`,
 
@@ -207,64 +211,65 @@ export const ru: NetTexts = {
   CellularNeedsOperator: ({ a, b }, c) =>
     `Сотовая связь соединяет телефон с оператором, а не ${q(a, c)} с ${q(b, c)}.`,
   VirtualNeedsContainer: ({ a, b }, c) =>
-    `Мост Docker соединяет контейнер только с его хостом, а не ${q(a, c)} с ${q(b, c)}.`,
-  NotATransit: ({ id }, c) => `${q(id, c)} — не роутер провайдера.`,
-  NotAVpnGateway: ({ id }, c) => `${q(id, c)} — не VPN-шлюз.`,
+    `Мост Docker соединяет container только с его хостом, а не ${q(a, c)} с ${q(b, c)}.`,
+  NotATransit: ({ id }, c) => `${q(id, c)} — не ISP router.`,
+  NotAVpnGateway: ({ id }, c) => `${q(id, c)} — не VPN gateway.`,
   NotADockerHost: ({ id }, c) => `На ${on(id, c)} не запущен Docker.`,
   NoVpnClient: ({ device }, c) => `На ${on(device, c)} не настроен VPN.`,
   RouteViaOutsideLan: ({ via }) =>
-    `Следующий роутер ${via} должен быть в домашней сети.`,
+    `Следующий router ${via} должен быть в домашней сети.`,
   NotANeighbour: ({ device, via }, c) =>
     `${q(via, c)} не соединён с ${of(device, c)} напрямую.`,
   ForwardOutsideLan: ({ ip }) =>
-    `Проброс ведёт на ${ip}, а нужен адрес из вашего дома.`,
+    `Port forwarding ведёт на ${ip}, а нужен IP address из вашего дома.`,
   ForwardPortTaken: ({ proto, port }) =>
     `Правило для ${up(proto)} ${port} уже есть.`,
   UnknownForward: ({ proto, port }) => `Правила для ${up(proto)} ${port} нет.`,
-  UnknownZone: ({ zone }) => `Домена ${zone} нет у этого DNS-сервера.`,
-  UnknownRecord: ({ name, rtype }) => `Записи ${rtype} у ${name} нет.`,
+  UnknownZone: ({ zone }) => `Этот DNS server не обслуживает domain ${zone}.`,
+  UnknownRecord: ({ name, rtype }) =>
+    `DNS record ${rtype} для ${name} не найдена.`,
   RecordNeedsAddress: ({ rtype, value }) =>
-    `Запись ${rtype} указывает на адрес, а «${value}» — не адрес.`,
+    `DNS record ${rtype} указывает на IP address, а «${value}» — не IP address.`,
   CnameNeedsName: ({ value }) =>
-    `CNAME указывает на имя, а не на адрес «${value}». Для адреса нужна запись A.`,
+    `CNAME указывает на имя, а не на IP address «${value}». IP address записывают в DNS record A.`,
   CnameAtApex: ({ zone }) =>
-    `CNAME нельзя ставить на сам домен ${zone} (@): для @ нужна запись A.`,
+    `CNAME нельзя ставить на сам domain ${zone} (@): для @ нужна DNS record A.`,
   CnameConflict: ({ name }) =>
     `У ${name} уже есть другие записи, поэтому CNAME рядом с ними поставить нельзя.`,
   SplitTunnelEmpty: () =>
-    'В режиме «Только рабочие сети» список не может быть пустым: тогда в туннель не пойдёт ничего.',
+    'В режиме «Только рабочие сети» список не может быть пустым: тогда в tunnel не пойдёт ничего.',
   InvalidPortMapping: ({ value }) =>
-    `«${value}» — не публикация порта: пишут «снаружи:внутри», например 8080:3000.`,
-  HostPortTaken: ({ port }) => `Порт ${port} хоста уже занят другой дверью.`,
-  NoRelay: () => 'Посредника для туннеля на доске нет.',
-  NoCertificateAuthority: () => 'Центра сертификации на доске нет.',
-  NameIsAddress: ({ value }) => `Нужно имя сайта, а не адрес ${value}.`,
+    `Port публикуют так: «снаружи:внутри», например 8080:3000, а «${value}» — не такая запись.`,
+  HostPortTaken: ({ port }) => `Port ${port} хоста уже занят другой дверью.`,
+  NoRelay: () => 'Relay на доске отсутствует, а tunnel идёт через него.',
+  NoCertificateAuthority: () => 'Certificate authority на доске отсутствует.',
+  NameIsAddress: ({ value }) => `Нужно имя сайта, а не IP address ${value}.`,
   AcmeChallengeFailed: ({ name, problem }) =>
-    `Центр сертификации не подтвердил ${name}: ${acme[problem]}.`,
+    `Certificate authority не подтвердил ${name}: ${acme[problem]}.`,
 
   ForeignOpenNetwork: ({ ssid }) =>
     `«${ssid}» — открытая чужая сеть: подключиться может любой прохожий. Выберите свою сеть с наклейки.`,
   ForeignNetwork: ({ ssid }) =>
-    `«${ssid}» — не ваша сеть. Сверьте имя с наклейкой на роутере.`,
+    `«${ssid}» — не ваша сеть. Сверьте SSID с наклейкой у «Router».`,
   NetworkNotFound: ({ ssid }) => `Сети «${ssid}» рядом нет.`,
 
   FirewallAllowed: ({ scope: where, maybeRule }) =>
     `${scope[where]} пропускает конверт: ${ruleName(maybeRule)}.`,
   TunnelUnwrapped: ({ device }, c) =>
-    `${q(device, c)} достаёт конверт из туннеля.`,
+    `${q(device, c)} открывает tunnel и достаёт конверт.`,
   RelayPassed: ({ device }, c) =>
     `${q(device, c)} передаёт конверт дальше по линии.`,
   PortPublished: ({ device, port, container }, c) =>
-    `${q(device, c)} отдаёт конверт с порта ${port} в контейнер ${q(container, c)}.`,
+    `${q(device, c)} передаёт конверт, пришедший на port ${port}, в container ${q(container, c)}.`,
 
   GatewayUnreachable: ({ gateway }) =>
-    `Шлюз ${gateway} не отвечает: такого устройства в сети нет.`,
+    `Gateway ${gateway} не отвечает: такого устройства в сети нет.`,
   GatewayIsSelf: ({ device }, c) =>
-    `${q(device, c)} указывает шлюзом сам себя. Шлюз — это роутер.`,
+    `${q(device, c)} указал gateway — сам себя. А gateway — это router.`,
   GatewayNotARouter: ({ gateway }) =>
-    `${gateway} — не роутер: чужие конверты дальше он не передаёт.`,
+    `${gateway} — не router: чужие конверты дальше он не передаёт.`,
   PublishedPortClosed: ({ device, port }, c) =>
-    `Дверь открылась, но в ${q(device, c)} порт ${port} никто не слушает: ответ пустой.`,
+    `Дверь открылась, но в ${q(device, c)} port ${port} никто не слушает: ответ пустой.`,
   AppDown: ({ device, host, port }, c) =>
     `${q(device, c)} падает: не может достучаться до ${host}:${port}.`,
   FirewallDropped: ({ scope: where, maybeRule }) =>
@@ -273,22 +278,22 @@ export const ru: NetTexts = {
     `${scope[where]} сразу отказывает (${ruleName(maybeRule)}).`,
   TunnelNoRoute: ({ gateway, ip }, c) =>
     `У ${of(gateway, c)} нет пути к ${ip}: этой сети нет в офисе.`,
-  NotConnected: ({ device }, c) => `У ${of(device, c)} туннель не подключён.`,
-  TunnelNotFound: ({ name }) => `Туннеля ${name} нет: страница 404.`,
+  NotConnected: ({ device }, c) => `У ${of(device, c)} tunnel не подключён.`,
+  TunnelNotFound: ({ name }) => `Tunnel ${name} не найден: страница 404.`,
   UpstreamFailed: ({ device, port }, c) =>
-    `За ${q(device, c)} на порту ${port} никто не отвечает: 502 Bad Gateway.`,
+    `За ${q(device, c)} никто не отвечает на port ${port}: 502 Bad Gateway.`,
   CertNameMismatch: ({ name, names }) =>
-    `Сертификат выдан на ${names.join(', ')}, а не на ${name}.`,
-  CertExpired: ({ name, notAfter }) => `Сертификат ${name} истёк ${notAfter}.`,
+    `Certificate выдан на ${names.join(', ')}, а не на ${name}.`,
+  CertExpired: ({ name, notAfter }) => `Certificate ${name} истёк ${notAfter}.`,
   CertUntrusted: ({ name, issuer }) =>
-    `Сертификат ${name} выдал «${issuer}», а ему браузер не верит.`,
+    `Certificate ${name} выдал «${issuer}», а ему браузер не верит.`,
   TlsNotConfigured: ({ device, port }, c) =>
-    `На ${on(device, c)} порт ${port} не умеет HTTPS: сертификата нет.`,
+    `На ${on(device, c)} port ${port} не умеет HTTPS: certificate не установлен.`,
   HttpError: ({ device, status }, c) =>
     `${q(device, c)} отвечает ошибкой ${status}.`,
 
   SeveralAddresses: ({ name, ips }) =>
-    `У ${name} несколько адресов: ${ips.join(', ')}. Часть посетителей попадёт не туда.`,
+    `${name} ведёт сразу на несколько адресов: ${ips.join(', ')}. Часть посетителей попадёт не туда.`,
   GoalWifiTooWeak: ({ ap, security: have, want }, c) =>
     `Wi-Fi ${of(ap, c)} — ${security[have]}, а нужно не слабее ${security[want]}.`,
   GoalChannelBusy: ({ ap, others }, c) =>
@@ -296,17 +301,17 @@ export const ru: NetTexts = {
   GoalNotPerformed: ({ from, at }, c) =>
     `Конверт от ${of(from, c)} ещё не дошёл до ${of(at, c)}.`,
   GoalNoRecord: ({ zone, name, rtype }) =>
-    `В домене ${zone} нет записи ${rtype} для ${name}.`,
+    `DNS record ${rtype} для ${name} в ${zone} не найдена.`,
   GoalRecordValue: ({ name, rtype, have, want }) =>
-    `Запись ${rtype} у ${name} — ${have.join(', ')}, а нужно ${want}.`,
+    `DNS record ${rtype} у ${name} — ${have.join(', ')}, а нужно ${want}.`,
   GoalCommandNotRun: ({ device, commands }, c) =>
     `На ${on(device, c)} ещё не запускали ${commands.join(' или ')}.`,
   GoalCommandSawOther: ({ name, saw, want }) =>
     `Команда показала ${saw.join(', ') || 'пусто'} для ${name}, а ждём ${want}.`,
   GoalExtraOpenPort: ({ target, port }) =>
-    `Снаружи открыт лишний порт ${port} на ${target}.`,
+    `Снаружи открыт лишний port ${port} на ${target}.`,
   GoalPortNotOpen: ({ target, port }) =>
-    `Порт ${port} на ${target} закрыт, а должен быть открыт.`,
+    `Port ${port} на ${target} закрыт, а должен быть открыт.`,
   GoalNotRedirected: ({ url, status }) =>
     `${url} не перенаправляет на https:// (ответ ${status}).`,
   GoalNotThrough: ({ device }, c) => `Конверт идёт мимо ${of(device, c)}.`,
@@ -322,11 +327,11 @@ export const ru: NetTexts = {
     `Команда ${command} откроется позже в курсе. Сейчас доступны: ${available.join(', ')}.`,
   CommandUsage: ({ usage }) => `Так пишут эту команду: ${usage}.`,
   NoLinkLayer: ({ device }, c) =>
-    `${q(device, c)} не может прочитать конверт: снаружи должен быть кадр с MAC.`,
+    `${q(device, c)} не может прочитать конверт: снаружи должен быть frame с MAC.`,
   NoAddressLayer: ({ device }, c) =>
-    `${q(device, c)} не находит адрес получателя: IP должен идти сразу за кадром.`,
+    `${q(device, c)} не находит IP address получателя: первым слоем идёт frame, вторым должен быть IP.`,
   NoPortLayer: ({ device }, c) =>
-    `${q(device, c)} не находит номер порта: TCP должен идти сразу за IP.`,
+    `${q(device, c)} не находит port: TCP должен идти сразу за IP.`,
   EnvelopeMisordered: ({ position, expected, found }) =>
     `На месте ${position} должен быть слой ${expected}, а лежит ${found || 'пусто'}.`,
 }

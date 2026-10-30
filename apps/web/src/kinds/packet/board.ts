@@ -3,6 +3,8 @@ import type { Update } from 'foldkit'
 import { defineTaggedUnion } from 'foldkit/schema'
 import { modifyFields } from 'foldkit/struct'
 
+import { DomainMessage } from '../../i18n/domainMessage'
+import { isIp } from '../../net/address'
 import { cable, move, send, setLinkUp, unplug } from '../../net/build'
 import { linkBetween } from '../../net/doc'
 import { Intent, StackLevel } from '../../net/packet'
@@ -67,6 +69,8 @@ export const Model = Schema.Struct({
   headers: Schema.Array(StackLevel),
   maybeHeader: Schema.Option(StackLevel),
   sendAddress: Schema.String,
+  /** Почему «Отправить» в карточке не ушло: ввели не IP-адрес. */
+  maybeSendRefusal: Schema.Option(DomainMessage),
 })
 export type Model = typeof Model.Type
 
@@ -90,6 +94,7 @@ export const initialModel: Model = {
   headers: [],
   maybeHeader: Option.none(),
   sendAddress: '',
+  maybeSendRefusal: Option.none(),
 }
 
 // MESSAGE
@@ -230,6 +235,7 @@ export const update =
               ? Option.none()
               : Option.some(id),
           sendAddress: () => '',
+          maybeSendRefusal: () => Option.none(),
         }),
       }),
       ClickedCloseCard: () => ({
@@ -405,14 +411,34 @@ export const update =
           onNone: () => ({ model }),
         }),
       UpdatedSendAddress: ({ value }) => ({
-        model: modifyFields(model, { sendAddress: () => value }),
+        model: modifyFields(model, {
+          sendAddress: () => value,
+          maybeSendRefusal: () => Option.none(),
+        }),
       }),
+      // Карточка отправляет только на IP-адрес: имя устройства («laptop»)
+      // движок понял бы, но урок 2 учит находить адрес.
       SubmittedSend: ({ from, what }) =>
-        input.mode === 'Edit' && model.sendAddress.trim() !== ''
-          ? propose(modifyFields(model, { sendAddress: () => '' }), [
-              send(Intent.Send({ from, to: model.sendAddress.trim(), what })),
-            ])
-          : { model },
+        input.mode !== 'Edit' || model.sendAddress.trim() === ''
+          ? { model }
+          : isIp(model.sendAddress.trim())
+            ? propose(
+                modifyFields(model, {
+                  sendAddress: () => '',
+                  maybeSendRefusal: () => Option.none(),
+                }),
+                [
+                  send(
+                    Intent.Send({ from, to: model.sendAddress.trim(), what }),
+                  ),
+                ],
+              )
+            : {
+                model: modifyFields(model, {
+                  maybeSendRefusal: () =>
+                    Option.some(DomainMessage.SendNeedsIp()),
+                }),
+              },
       ClickedHeader: ({ level }) => ({
         model: modifyFields(model, {
           maybeHeader: current =>

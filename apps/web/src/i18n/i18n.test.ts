@@ -1,6 +1,7 @@
 import { Option } from 'effect'
 import { describe, expect, test } from 'vitest'
 
+import { componentKinds, componentName } from '../domain/catalog'
 import { DomainMessage, renderDomainMessage } from './domainMessage'
 import { formatNumber } from './format'
 import { type Locale, locales, resolveLocale } from './locale'
@@ -283,7 +284,7 @@ describe('every domain message', () => {
             allowed: ['lb'],
           }),
         ),
-      ).toContain(ui.kindName.cache)
+      ).toContain(componentName.cache)
       expect(
         render(DomainMessage.RegionHasNoBlocks({ region: 'asia' })),
       ).toContain(ui.regionName.asia)
@@ -307,7 +308,7 @@ describe('every domain message', () => {
             max: 0.01,
           }),
         ),
-      ).toContain(ui.kindName.db)
+      ).toContain(componentName.db)
       expect(
         render(DomainMessage.GoalTooExpensive({ cost: 3.45, max: 3 })),
       ).toContain(ui.hud.perHour(3.45))
@@ -320,5 +321,31 @@ describe('every domain message', () => {
         '',
       )
     })
+  })
+})
+
+describe('system element names', () => {
+  test.each(locales)(
+    'stay English in %s and come with a native explanation',
+    locale => {
+      const ui = uiFor(locale)
+      componentKinds.forEach(kind => {
+        expect(ui.kindHint[kind].trim(), kind).not.toBe('')
+        expect(
+          renderDomainMessage(
+            ui.domain,
+            DomainMessage.GoalMissingKind({ kind }),
+          ),
+          kind,
+        ).toContain(componentName[kind])
+      })
+      expect(ui.board.ghost('lb')).toContain('Load balancer')
+    },
+  )
+
+  test('the native explanation names the element in the page language', () => {
+    expect(uiFor('ru').kindHint.lb).toMatch(/^Балансировщик нагрузки/)
+    expect(uiFor('uk').kindHint.lb).toMatch(/^Балансувальник навантаження/)
+    expect(uiFor('lt').kindHint.lb).toMatch(/^Apkrovos balansavimo priemonė/)
   })
 })

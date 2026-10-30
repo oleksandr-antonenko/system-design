@@ -1,9 +1,11 @@
-import { Array, Option } from 'effect'
+import { Array, Option, Result } from 'effect'
 
 import { type Goal, checkGoal } from '../../net/goals'
 import { kindOf } from '../../net/model'
+import { Intent } from '../../net/packet'
 import { runCommand } from '../../net/terminal'
 import { renderNetMessage } from '../../net/text'
+import { addressOf } from '../../net/topology'
 import type { BoardKind } from '../contract'
 import { BoardMessage, BoardState, KindMessage, KindOp } from '../state'
 import type { PacketTypes } from '../types'
@@ -52,6 +54,31 @@ const opText = (op: PacketOp): string =>
 
 // MOVES
 
+/** Хосты, которые получили адрес только благодаря новой связи. */
+const joinedBy = (before: PacketDoc, op: PacketOp): ReadonlyArray<string> =>
+  op._tag !== 'Connect'
+    ? []
+    : Result.match(applyPacketOp(before, op), {
+        onFailure: () => [],
+        onSuccess: after => {
+          const was = runPacket(before).settled
+          const now = runPacket(after).settled
+          return Array.filter(
+            [op.a, op.b],
+            id =>
+              Array.some(
+                after.doc.devices,
+                device =>
+                  device.id === id &&
+                  device._tag === 'Host' &&
+                  device.addressing._tag === 'Dhcp',
+              ) &&
+              Option.isNone(addressOf(before.doc, was, id)) &&
+              Option.isSome(addressOf(after.doc, now, id)),
+          )
+        },
+      })
+
 const playsOf = (
   before: PacketDoc,
   op: PacketOp,
@@ -69,10 +96,15 @@ const playsOf = (
           ),
           (intent): PacketStage => ({ _tag: 'Play', intent }),
         )
-      : []
+      : Array.map(joinedBy(before, op), (device): PacketStage => ({
+          _tag: 'Play',
+          intent: Intent.DhcpJoin({ device }),
+          after: [op],
+        }))
 
 /** Ход ученика со своей сценой: открытая страница или трассы команды
-    терминала (`ping`, `curl`) проигрываются на доске. Одинаковые конверты
+    терминала (`ping`, `curl`) проигрываются на доске; кабель, по которому
+    устройство получило адрес, показывает выдачу адреса. Одинаковые конверты
     команды (три эха ping) проигрываются один раз: доска показывает первое
     эхо, остальные строки печатает терминал. Если в облаке настоящие
     транзитные роутеры, оно раскрыто: конверт идёт через них хоп за хопом. */
