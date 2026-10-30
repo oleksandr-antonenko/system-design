@@ -3,6 +3,12 @@ import { defineTaggedUnion } from 'foldkit/schema'
 
 import { DomainMessage } from '../i18n/domainMessage'
 import { ComponentKind, Region, canConnect, catalog, isSink } from './catalog'
+import {
+  TrafficPatch,
+  TrafficProfile,
+  defaultTraffic,
+  invalidKnob,
+} from './traffic'
 
 // MODEL
 
@@ -28,6 +34,8 @@ export const BoardDoc = Schema.Struct({
   /** Вес группы пользователей в общей нагрузке по id блока «Users». Нет
       записи — вес 1, поэтому без `SetShare` группы делят нагрузку поровну. */
   shares: Schema.Record(Schema.String, Schema.Number),
+  /** Из чего состоит обслуженный запрос; по умолчанию прежние константы. */
+  traffic: TrafficProfile,
 })
 export type BoardDoc = typeof BoardDoc.Type
 
@@ -37,6 +45,7 @@ export const emptyBoard: BoardDoc = {
   load: 0,
   failed: [],
   shares: {},
+  traffic: defaultTraffic,
 }
 
 const DEFAULT_SHARE = 1
@@ -73,6 +82,8 @@ export const BoardOp = defineTaggedUnion({
   SetShare: { id: Schema.String, share: Schema.Number },
   /** Начать с пустой доски: шаг строит общую эталонную схему заново. */
   Reset: {},
+  /** Меняет названные ручки профиля трафика (add-flow-traffic-profile). */
+  SetTraffic: { traffic: TrafficPatch },
 })
 export type BoardOp = typeof BoardOp.Type
 
@@ -273,6 +284,13 @@ export const applyOp = (doc: BoardDoc, op: BoardOp): BoardResult =>
             : Result.fail(DomainMessage.InvalidShare({ id })),
       ),
     Reset: () => Result.succeed(emptyBoard),
+    SetTraffic: ({ traffic }) => {
+      const next: TrafficProfile = { ...doc.traffic, ...traffic }
+      return Option.match(invalidKnob(next), {
+        onNone: () => Result.succeed({ ...doc, traffic: next }),
+        onSome: knob => Result.fail(DomainMessage.InvalidTraffic({ knob })),
+      })
+    },
   })
 
 export const foldOps = (doc: BoardDoc, ops: ReadonlyArray<BoardOp>): BoardDoc =>

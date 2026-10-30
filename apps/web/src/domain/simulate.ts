@@ -11,6 +11,7 @@ import {
   targetsOf,
 } from './board'
 import { type ComponentKind, catalog } from './catalog'
+import { type TrafficProfile, defaultTraffic, readShareOf } from './traffic'
 
 export type NodeFlow = Readonly<{
   incoming: number
@@ -32,6 +33,8 @@ export type SimResult = Readonly<{
   costPerHour: number
   rejected: number
   backlog: number
+  /** Профиль трафика доски: тексты и подписи цитируют его доли. */
+  traffic: TrafficProfile
 }>
 
 export type SimulationRules = Readonly<{
@@ -41,17 +44,21 @@ export type SimulationRules = Readonly<{
   balancerHopMs: number
   cdnMs: number
   cacheHitMs: number
+  deferredMs: number
   regionCrossingMs: number
 }>
 
-/** Константы потока из design D2–D6. Уроки опираются на них в текстах. */
+/** Константы потока из design D2–D6. Уроки опираются на них в текстах. Доли
+    записи, попаданий в кеш и статики CDN — умолчания профиля трафика
+    (`defaultTraffic`); симулятор берёт их из `doc.traffic`. */
 export const simulationRules: SimulationRules = {
-  writeShare: 0.2,
-  cdnStaticShare: 0.6,
-  cacheHitShare: 0.8,
+  writeShare: defaultTraffic.writeShare,
+  cdnStaticShare: defaultTraffic.cdnStaticShare,
+  cacheHitShare: defaultTraffic.cacheHitShare,
   balancerHopMs: 6,
   cdnMs: 12,
   cacheHitMs: 2,
+  deferredMs: 2,
   regionCrossingMs: 70,
 }
 
@@ -298,16 +305,17 @@ const handleClient: Handler = (context, node, arrival) => {
 }
 
 const handleCdn: Handler = (context, node, arrival) => {
+  const { cdnStaticShare } = context.doc.traffic
   const accepted = Math.min(arrival.total, capacityOf(node))
   const acceptedParcels = scaled(
     arrival.parcels,
     ratio(accepted, arrival.total),
   )
-  const statics = accepted * simulationRules.cdnStaticShare
+  const statics = accepted * cdnStaticShare
   const forwarded = accepted - statics
   const live = alive(context, targetNodes(context, node))
   const staticPlan: LatencyPlan = {
-    parcels: scaled(acceptedParcels, simulationRules.cdnStaticShare),
+    parcels: scaled(acceptedParcels, cdnStaticShare),
     maybeServer: Option.none(),
     branches: [
       {
@@ -324,7 +332,7 @@ const handleCdn: Handler = (context, node, arrival) => {
         dropped: arrival.total - accepted,
         sends: forwardRequests(
           node,
-          scaled(acceptedParcels, 1 - simulationRules.cdnStaticShare),
+          scaled(acceptedParcels, 1 - cdnStaticShare),
           live,
           0,
         ),
@@ -408,8 +416,8 @@ const readBranches = (
   caches: ReadonlyArray<BoardNode>,
   readTargets: ReadonlyArray<BoardNode>,
 ): ReadonlyArray<Branch> => {
-  const readShare = 1 - simulationRules.writeShare
-  const hitShare = simulationRules.cacheHitShare
+  const readShare = readShareOf(context.doc.traffic)
+  const hitShare = context.doc.traffic.cacheHitShare
   return Array.match(caches, {
     onEmpty: () => storeBranches(server, readShare, readTargets, 0),
     onNonEmpty: nonEmpty =>
@@ -434,11 +442,15 @@ const readBranches = (
   })
 }
 
-// Сервер (D2): 20 % записи в свои живые базы, 80 % чтения в кеши или
-// поровну в базы и реплики, по сообщению в каждую очередь и шину. Если все
-// его базы упали, запись принимает живая реплика (D5). Если на доске есть
-// база, а писать некуда, сервер теряет все запросы.
+// Сервер (D2): запись (`writeShare`, по умолчанию 20 %) в свои живые базы,
+// чтение — в кеши или поровну в базы и реплики, `jobsPerRequest` сообщений в
+// каждую очередь и шину. Отложенную запись (`deferredShare`) сервер отдаёт
+// своей очереди или шине и отвечает через `deferredMs`; без них пишет её в
+// базы синхронно (add-flow-traffic-profile). Если все его базы упали, запись
+// принимает живая реплика (D5). Если на доске есть база, а писать некуда,
+// сервер теряет все запросы.
 const handleServer: Handler = (context, node, arrival) => {
+  const traffic = context.doc.traffic
   const targets = targetNodes(context, node)
   const live = alive(context, targets)
   const databases = ofKinds(targets, ['db'])
@@ -454,21 +466,39 @@ const handleServer: Handler = (context, node, arrival) => {
   const canAnswer =
     !context.hasDatabase || Array.isReadonlyArrayNonEmpty(writeTargets)
   const served = canAnswer ? Math.min(arrival.total, capacityOf(node)) : 0
-  const writes = served * simulationRules.writeShare
-  const reads = served - writes
+  const handoffs = ofKinds(live, ['queue', 'events'])
+  const canDefer = Array.isReadonlyArrayNonEmpty(handoffs)
+  const writes = served * traffic.writeShare
+  const deferred = served * traffic.deferredShare
+  const reads = served - writes - deferred
+  const syncWrites = canDefer ? writes : writes + deferred
   const readSends = Array.isReadonlyArrayNonEmpty(caches)
     ? spread(reads, caches, true)
     : spread(reads, readTargets, true)
-  const taskSends = Array.map(ofKinds(live, ['queue', 'events']), target => ({
+  const taskSends = Array.map(handoffs, target => ({
     to: target.id,
-    amount: served,
+    amount: served * traffic.jobsPerRequest,
     isUser: false,
     parcels: [],
   }))
+  const deferredBranches: ReadonlyArray<Branch> = canDefer
+    ? [
+        {
+          weight: traffic.deferredShare,
+          fixedMs: simulationRules.deferredMs,
+          maybeStore: Option.none(),
+          crossings: 0,
+        },
+      ]
+    : storeBranches(node, traffic.deferredShare, writeTargets, 0)
   return handled({
     served,
     dropped: arrival.total - served,
-    sends: [...spread(writes, writeTargets, true), ...readSends, ...taskSends],
+    sends: [
+      ...spread(syncWrites, writeTargets, true),
+      ...readSends,
+      ...taskSends,
+    ],
     plans:
       served > 0
         ? [
@@ -476,12 +506,8 @@ const handleServer: Handler = (context, node, arrival) => {
               parcels: scaled(arrival.parcels, served / arrival.total),
               maybeServer: Option.some(node.id),
               branches: [
-                ...storeBranches(
-                  node,
-                  simulationRules.writeShare,
-                  writeTargets,
-                  0,
-                ),
+                ...storeBranches(node, traffic.writeShare, writeTargets, 0),
+                ...deferredBranches,
                 ...readBranches(context, node, caches, readTargets),
               ],
             },
@@ -492,7 +518,7 @@ const handleServer: Handler = (context, node, arrival) => {
 
 const handleCache: Handler = (context, node, arrival) => {
   const accepted = Math.min(arrival.total, capacityOf(node))
-  const misses = accepted * (1 - simulationRules.cacheHitShare)
+  const misses = accepted * (1 - context.doc.traffic.cacheHitShare)
   const stores = cacheStores(context, node)
   return Array.isReadonlyArrayNonEmpty(stores)
     ? handled({
@@ -551,13 +577,15 @@ const handleEvents: Handler = (context, node, arrival, flow) => {
   })
 }
 
+// Worker пишет `writesPerJob` записей на задачу: больше 1 — fan-out,
+// меньше 1 — запись пачками.
 const handleWorker: Handler = (context, node, arrival) => {
   const served = Math.min(arrival.total, capacityOf(node))
   return handled({
     served,
     dropped: arrival.total - served,
     sends: spread(
-      served,
+      served * context.doc.traffic.writesPerJob,
       alive(context, ofKinds(targetNodes(context, node), ['db'])),
       false,
     ),
@@ -769,6 +797,7 @@ export const simulate = (doc: BoardDoc, load: number): SimResult => {
     backlog: Number.sumAll(
       Array.map(doc.nodes, node => handledOf(node).backlog),
     ),
+    traffic: doc.traffic,
   }
 }
 

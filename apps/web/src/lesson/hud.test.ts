@@ -1,9 +1,10 @@
+import { Option } from 'effect'
 import { describe, expect, test } from 'vitest'
 
 import { emptyBoard, foldOps } from '../domain/board'
 import { uiFor } from '../i18n/ui'
-import { addNode } from '../kinds/flow/dsl'
-import { extraMetrics } from '../kinds/flow/view'
+import { addNode, setTraffic } from '../kinds/flow/dsl'
+import { extraMetrics, trafficLine } from '../kinds/flow/view'
 import { type Anim, initialAnim } from './anim'
 
 describe('instruments that depend on the board', () => {
@@ -36,6 +37,18 @@ describe('instruments that depend on the board', () => {
     expect(extraMetrics(boardWith(['limiter', 'events']), anim, ui)).toEqual([
       { label: 'Rejected', value: '900 rps' },
       growth,
+    ])
+  })
+
+  test('a traffic profile of the lesson is one line of the changed knobs', () => {
+    const doc = foldOps(boardWith(['queue']), [
+      setTraffic({ writeShare: 0.01, cacheHitShare: 0.95 }),
+    ])
+
+    expect(trafficLine(boardWith([]), ui)).toEqual(Option.none())
+    expect(trafficLine(doc, ui)).toEqual(Option.some('writes 1% · hit 95%'))
+    expect(extraMetrics(doc, anim, ui)).toEqual([
+      { label: 'Queue growing', value: '+200 rps' },
     ])
   })
 })

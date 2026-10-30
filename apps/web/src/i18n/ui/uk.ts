@@ -38,6 +38,10 @@ const regionName: UiStrings['regionName'] = {
 
 const n = (value: number) => formatNumber('uk', Math.round(value))
 const percent = (ratio: number) => `${n(ratio * 100)}%`
+/** Доля профиля трафика: до десятых процента, чтобы 0,5 % не стало 1 %. */
+const share = (ratio: number) =>
+  `${formatNumber('uk', Math.round(ratio * 1000) / 10)}%`
+const count = (value: number) => formatNumber('uk', value)
 const perHour = (dollars: number) =>
   `${dollars.toFixed(2).replace('.', ',')} $/год`
 const kindList = (kinds: ReadonlyArray<ComponentKind>) =>
@@ -114,6 +118,15 @@ export const uk = {
     ms: value => `${n(value)} мс`,
     percent,
     perHour,
+    trafficMix: 'Склад трафіку',
+    trafficKnob: {
+      writeShare: value => `запис ${share(value)}`,
+      deferredShare: value => `відкладений запис ${share(value)}`,
+      cacheHitShare: value => `cache hit ${share(value)}`,
+      cdnStaticShare: value => `статика CDN ${share(value)}`,
+      jobsPerRequest: value => `задач на запит ×${count(value)}`,
+      writesPerJob: value => `записів на задачу ×${count(value)}`,
+    },
     pause: 'Пауза',
     play: 'Трафік',
     speed: 'Швидкість',
@@ -240,6 +253,8 @@ export const uk = {
       `Частку навантаження задають лише блоку «Users», а ${id} — інший блок.`,
     InvalidShare: ({ id }) =>
       `Частка навантаження ${id} має бути числом, більшим за нуль.`,
+    InvalidTraffic: ({ knob }) =>
+      `Налаштування трафіку ${knob} поза межами: частки від 0 до 1, запис і відкладений запис разом не більше 1, лічильники від 0.`,
     RegionHasNoBlocks: ({ region }) =>
       `У регіоні «${regionName[region]}» немає блоків.`,
     GoalSlowResponse: ({ load, p95, max, hottest }) =>

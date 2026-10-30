@@ -1,4 +1,5 @@
 import type { ComponentKind, Region } from '../../domain/catalog'
+import type { TrafficKnob } from '../../domain/traffic'
 import type { DomainMessageTexts } from '../domainMessage'
 import type { Locale } from '../locale'
 import type { DeviceStrings } from './device/types'
@@ -68,6 +69,10 @@ export type UiStrings = Readonly<{
     ms: (value: number) => string
     percent: (ratio: number) => string
     perHour: (dollars: number) => string
+    /** Подпись прибора с профилем трафика, когда он не по умолчанию. */
+    trafficMix: string
+    /** Ручка профиля и её значение: «writes 1%», «hit 95%». */
+    trafficKnob: Readonly<Record<TrafficKnob, (value: number) => string>>
     pause: string
     play: string
     speed: string

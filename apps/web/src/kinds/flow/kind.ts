@@ -136,6 +136,10 @@ const opText = (op: BoardOp): string =>
     RecoverRegion: ({ region }) => `RecoverRegion ${region}`,
     SetShare: ({ id, share }) => `SetShare ${id} · ${share}`,
     Reset: () => 'Reset',
+    SetTraffic: ({ traffic }) =>
+      `SetTraffic ${Object.entries(traffic)
+        .map(([knob, value]) => `${knob} ${value}`)
+        .join(' · ')}`,
   })
 
 const targetText = (target: Target): string =>

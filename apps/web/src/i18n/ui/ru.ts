@@ -38,6 +38,10 @@ const regionName: UiStrings['regionName'] = {
 
 const n = (value: number) => formatNumber('ru', Math.round(value))
 const percent = (ratio: number) => `${n(ratio * 100)}%`
+/** Доля профиля трафика: до десятых процента, чтобы 0,5 % не стало 1 %. */
+const share = (ratio: number) =>
+  `${formatNumber('ru', Math.round(ratio * 1000) / 10)}%`
+const count = (value: number) => formatNumber('ru', value)
 const perHour = (dollars: number) =>
   `${dollars.toFixed(2).replace('.', ',')} $/ч`
 const kindList = (kinds: ReadonlyArray<ComponentKind>) =>
@@ -113,6 +117,15 @@ export const ru = {
     ms: value => `${n(value)} мс`,
     percent,
     perHour,
+    trafficMix: 'Состав трафика',
+    trafficKnob: {
+      writeShare: value => `запись ${share(value)}`,
+      deferredShare: value => `отложенная запись ${share(value)}`,
+      cacheHitShare: value => `cache hit ${share(value)}`,
+      cdnStaticShare: value => `статика CDN ${share(value)}`,
+      jobsPerRequest: value => `задач на запрос ×${count(value)}`,
+      writesPerJob: value => `записей на задачу ×${count(value)}`,
+    },
     pause: 'Пауза',
     play: 'Трафик',
     speed: 'Скорость',
@@ -237,6 +250,8 @@ export const ru = {
       `Долю нагрузки задают только блоку «Users», а ${id} — другой блок.`,
     InvalidShare: ({ id }) =>
       `Доля нагрузки ${id} должна быть числом больше нуля.`,
+    InvalidTraffic: ({ knob }) =>
+      `Настройка трафика ${knob} вне допустимого: доли от 0 до 1, запись и отложенная запись вместе не больше 1, счётчики от 0.`,
     RegionHasNoBlocks: ({ region }) =>
       `В регионе «${regionName[region]}» нет блоков.`,
     GoalSlowResponse: ({ load, p95, max, hottest }) =>
