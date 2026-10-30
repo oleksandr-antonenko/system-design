@@ -9,7 +9,7 @@ const dollars = (value: number) => `$${value.toFixed(2)}`
 export default {
   title: 'Fault tolerance',
   summary:
-    'Single points of failure: a second load balancer, a replica that takes over the database, health checks, failover, and availability versus durability.',
+    'Single points of failure: a second load balancer, a read replica that takes over the database, health checks, failover, and availability versus durability.',
   steps: {
     'count-spares': {
       title: 'Count the spares',
@@ -35,9 +35,9 @@ There is something worse than downtime. If the disk itself dies and there is no 
       title: 'Task: spares',
       body: `A block whose failure takes down the whole system is a **single point of failure**. The cure is **redundancy**: a second copy of every such block and a way to switch over to it.
 
-For the entrance, that means a second load balancer the users also know about. For the data, it means a **replica**: a copy of the database that receives every write from the primary. You know it from lesson 6, where it took reads. If the primary fails, the replica is **promoted**: it starts accepting writes, and the servers switch over to it. For that, the servers must be connected to both the [[db|database]] and the replica.
+For the entrance, that means a second load balancer the users also know about. For the data, it means a **read replica**: a copy of the database that receives every write from the primary. You know it from lesson 6, where it took reads. If the primary fails, the replica is **promoted**: it starts accepting writes, and the servers switch over to it. For that, the servers must be connected to both the [[db|database]] and the read replica.
 
-The load balancer and the replica are in the palette.`,
+The load balancer and the read replica are in the palette.`,
     },
     'balancer-failover': {
       title: 'The load balancer fails again',
@@ -49,7 +49,7 @@ How do users know where to go? Through a **health check**. Every few seconds the
     'database-failover': {
       title: 'Replica promotion',
       body: ({ sim }) =>
-        `Now the [[db|database]] fails. The servers can no longer write to it and turn to the [[replica-1|replica]]: it is promoted and takes all the traffic, writes and reads alike. Errors are at ${percent(sim.errorRate)}. Switching over to a spare like this is called **failover**.
+        `Now the [[db|database]] fails. The servers can no longer write to it and turn to the [[replica-1|read replica]]: it is promoted and takes all the traffic, writes and reads alike. Errors are at ${percent(sim.errorRate)}. Switching over to a spare like this is called **failover**.
 
 Database failover is slower than a load balancer's. First you must make sure the primary is really dead and not just slow, otherwise you end up with two primaries, each accepting its own writes. Then the replica is promoted and the servers reconnect. That usually takes tens of seconds, and the **failover time** comes straight out of the time the system is available.
 
@@ -60,9 +60,9 @@ There is a catch with the data too. The replica usually receives writes with a s
       body: ({ sim }) =>
         `The old primary has been repaired. In real life it comes back as a replica of the new primary; on our board it simply takes its old place.
 
-Now every block has a spare: two load balancers, N+1 servers, a database and a replica. The price is on the Cost instrument: ${dollars(sim.costPerHour)} an hour instead of $2.30. Redundancy always costs money, so it goes first where a single failure takes everything down.
+Now every block has a spare: two load balancers, N+1 servers, a database and a read replica. The price is on the Cost instrument: ${dollars(sim.costPerHour)} an hour instead of $2.30. Redundancy always costs money, so it goes first where a single failure takes everything down.
 
-**Availability** is the share of time the system answers. It is counted in “nines”: 99.9% allows almost 9 hours of downtime a year, 99.99% only 53 minutes. **Durability** is the promise that confirmed data is never lost. A replica improves availability, but it just as faithfully copies an accidental deletion. Durability calls for **backups** and, for the most valuable data, synchronous replication.
+**Availability** is the share of time the system answers. It is counted in “nines”: 99.9% allows almost 9 hours of downtime a year, 99.99% only 53 minutes. **Durability** is the promise that confirmed data is never lost. A read replica improves availability, but it just as faithfully copies an accidental deletion. Durability calls for **backups** and, for the most valuable data, synchronous replication.
 
 Our spares still sit in one data center. In practice they are spread across **availability zones**: separate buildings with their own power and network. What to do when a whole region goes down is the topic of lesson 11.`,
     },
@@ -79,7 +79,7 @@ Our spares still sit in one data center. In practice they are spread across **av
       `all ${n(sim.load)} rps · errors ${percent(sim.errorRate)}`,
     promoted: sim => `primary now · errors ${percent(sim.errorRate)}`,
     pair: () => 'one of two · either copes alone',
-    copies: () => 'primary · the replica can take over',
+    copies: () => 'primary · the read replica can take over',
   },
   tasks: {
     'add-spares': {
@@ -87,17 +87,17 @@ Our spares still sit in one data center. In practice they are spread across **av
         'Remove the single points of failure: the shop must survive the failure of any load balancer, server or database.',
       goals: {
         'two-balancers': 'Users are connected to two load balancers',
-        'replica-exists': 'There is a database replica on the board',
+        'replica-exists': 'There is a read replica on the board',
         'survives-failure':
           'At 600 rps, survives the failure of any load balancer, server or database with at most 1% errors',
       },
       hints: [
         'Ask of every block: what happens if it fails? The servers already have a spare, but the load balancer and the database do not.',
-        'Add a second load balancer, connect it to all three servers and connect the users to it as well. Then add a replica and connect every server to it, keeping their connections to the database.',
-        'Dashed outlines appeared on the board. Place the load balancer and the replica there and draw the marked connections.',
+        'Add a second load balancer, connect it to all three servers and connect the users to it as well. Then add a read replica and connect every server to it, keeping their connections to the database.',
+        'Dashed outlines appeared on the board. Place the load balancer and the read replica there and draw the marked connections.',
       ],
       solvedNote:
-        'Any single block can fail now: users switch to the other load balancer, and the replica takes over from the database.',
+        'Any single block can fail now: users switch to the other load balancer, and the read replica takes over from the database.',
     },
   },
 } satisfies LessonTexts<typeof lesson>
