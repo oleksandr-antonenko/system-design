@@ -1128,6 +1128,12 @@
   color: var(--bad);
   font-weight: 600;
 }
+/* Итог, hops и миллисекунды не переносятся: на телефоне узким остаётся путь. */
+.pb-run-all th:nth-child(n + 2),
+.pb-run-all td:nth-child(n + 2) {
+  white-space: nowrap;
+  overflow-wrap: normal;
+}
 /* Закрытое, как и задумано, — серым: зелёным только то, что открывается. */
 .pb-run-all tr.ok.blocked td:nth-child(2) {
   color: var(--muted);
