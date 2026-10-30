@@ -12,12 +12,17 @@ import {
 import { describe, expect, test } from 'vitest'
 
 import * as Board from '../board/board'
+import shipIt, {
+  serverTemplate,
+} from '../courses/networks/lessons/16-ship-it/lesson'
 import loadBalancer from '../courses/system-design/lessons/03-load-balancer/lesson'
 import { type BoardOp, findNode } from '../domain/board'
 import { simulate } from '../domain/simulate'
 import * as FlowBoard from '../kinds/flow/board'
 import { addNode, connect, disconnect, flow } from '../kinds/flow/dsl'
 import { outcomeOf } from '../kinds/flow/kind'
+import * as PacketBoard from '../kinds/packet/board'
+import { packet } from '../kinds/packet/dsl'
 import { BoardMessage, KindOp } from '../kinds/state'
 import type { FlowTypes } from '../kinds/types'
 import type { LessonDefinition } from './dsl'
@@ -296,6 +301,49 @@ describe('board editing', () => {
       message(Player.Message.ClickedRedo()),
       model(next => {
         expect(taskOf(next).log).toHaveLength(2)
+      }),
+    )
+  })
+})
+
+describe('journal', () => {
+  test('a move of several operations is one entry: one undo takes it all back, one redo returns it', () => {
+    const ship: Player.Model = {
+      ...Player.init('networks', shipIt, 0),
+      quizzes: {
+        'launch-checklist': {
+          picked: 'draft:2+draft:6+draft:7',
+          isCorrect: true,
+        },
+      },
+      step: 2,
+    }
+    const update = Player.updateWith(shipIt)
+    const logOf = (playerModel: Player.Model) =>
+      Player.taskStateOf(playerModel, 'ship')
+    story(
+      update,
+      given(ship),
+      message(
+        Player.Message.GotBoardMessage({
+          message: packet.board.message.wrap(
+            PacketBoard.Message.ClickedPlace({ ops: serverTemplate }),
+          ),
+        }),
+      ),
+      model(next => {
+        expect(logOf(next).log).toHaveLength(1)
+        expect(Player.opsOf(packet, logOf(next).log)).toEqual(serverTemplate)
+      }),
+      message(Player.Message.ClickedUndo()),
+      model(next => {
+        expect(logOf(next).log).toEqual([])
+        expect(logOf(next).redo).toHaveLength(1)
+      }),
+      message(Player.Message.ClickedRedo()),
+      model(next => {
+        expect(Player.opsOf(packet, logOf(next).log)).toEqual(serverTemplate)
+        expect(logOf(next).redo).toEqual([])
       }),
     )
   })

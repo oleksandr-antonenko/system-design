@@ -46,9 +46,11 @@ const meshDevice = (
     Option.map(host => host.id),
   )
 
-const MEMBER_KINDS = ['pc', 'phone', 'laptop', 'server']
+// NOTE: без 'pc': на доске урока своей сети (16) это чужой компьютер, который
+// перебирает адреса, а не ваше устройство.
+const MEMBER_KINDS = ['phone', 'laptop', 'server']
 
-/** Свои устройства, которые можно включить в сеть: компьютеры, телефоны и
+/** Свои устройства, которые можно включить в сеть: ноутбуки, телефоны и
     серверы, кроме служебных (справочные, DNS-провайдеры, CA, ретрансляторы). */
 const candidatesOf = (context: PanelContext): ReadonlyArray<Host> =>
   Array.filter(
