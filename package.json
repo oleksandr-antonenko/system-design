@@ -10,9 +10,9 @@
     "node": ">=24"
   },
   "scripts": {
-    "dev": "pnpm -r --parallel dev",
-    "build": "pnpm --filter @system-design/web build && pnpm --filter @system-design/server build",
-    "start": "pnpm --filter @system-design/server start",
+    "dev": "pnpm --filter @system-design/web dev",
+    "build": "pnpm --filter @system-design/web build",
+    "preview": "pnpm --filter @system-design/web preview",
     "typecheck": "pnpm -r typecheck",
     "lint": "pnpm -r lint",
     "test": "vitest run --silent --reporter=dot",
