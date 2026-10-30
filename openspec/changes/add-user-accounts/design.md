@@ -6,7 +6,7 @@
 - `signInEmail({ asResponse: true })` с пересылкой `Set-Cookie`;
 - `getSession` по заголовкам запроса.
 
-Сервер написан на Effect 4.1 (`apps/server` из `bootstrap-foldkit-app`), клиент — на Foldkit. Работает один origin: в проде через nginx, в разработке через прокси Vite.
+Сервер написан на Effect 4.1 (`apps/server` из `bootstrap-foldkit-app`), клиент — на Foldkit. Работает один origin: в проде через обратный прокси, в разработке через прокси Vite.
 
 ## Goals / Non-Goals
 
@@ -30,7 +30,7 @@
 - `emailVerification`: `sendOnSignUp: true`, `autoSignInAfterVerification: true`, `expiresIn: 86400`. Письмо отправляется на языке пользователя.
 - `socialProviders.google` задаётся только при обоих ключах: `prompt: 'select_account'`, `disableSignUp: false`.
 - `account.accountLinking`: `enabled: true`, `trustedProviders: ['google', 'email-password']`, `allowDifferentEmails: false`. Защита `requireLocalEmailVerified` не выключается.
-- `rateLimit`: общий лимит 100 в минуту. Правила: `/sign-in/email` — 10 в минуту, `/sign-up/email` — 5 в минуту, `/request-password-reset` — 5 в минуту. IP берётся из `x-forwarded-for`, nginx его ставит (изменение `setup-deploy-pipeline`).
+- `rateLimit`: общий лимит 100 в минуту. Правила: `/sign-in/email` — 10 в минуту, `/sign-up/email` — 5 в минуту, `/request-password-reset` — 5 в минуту. IP берётся из `x-forwarded-for`, его ставит обратный прокси.
 - `user.additionalFields.locale`: строка из четырёх языков, `input: true`, проверяется Schema `Locale` в хуке `databaseHooks.user.create.before` и `update.before`.
 - `onPasswordReset` ставит `emailVerified: true`: ссылка пришла на почту, значит ящик принадлежит пользователю. Это нужно для автопривязки Google.
 - `secret` берётся из `BETTER_AUTH_SECRET` без значения по умолчанию. `baseURL` и `trustedOrigins` берутся из `BETTER_AUTH_URL`, в разработке добавляется `http://localhost:5173`.
@@ -109,7 +109,7 @@
 - [Письма уходят в спам, если у домена отправителя нет DKIM] → Отправитель на домене с SPF и DKIM. Пока его нет, регистрация по почте может быть выключена, а Google работает независимо. Решение за владельцем, см. Open Questions.
 - [Мост Effect ↔ better-auth (D2)] → Интеграционные тесты сервера на полный цикл: регистрация → письмо в тестовый Mailer → подтверждение → сессия → выход. Запасной вариант — Hono.
 - [Каскадное удаление при миграциях SQLite] → PRAGMA снаружи, проверка ключей, резервная копия перед выкаткой.
-- [Лимит попыток при неверном IP за nginx] → Заголовок ставит nginx (`setup-deploy-pipeline`), тест проверяет, что 11-я попытка с одного IP отклоняется, а с другого — проходит.
+- [Лимит попыток при неверном IP за обратным прокси] → Заголовок ставит прокси, тест проверяет, что 11-я попытка с одного IP отклоняется, а с другого — проходит.
 - [Переводы писем и ошибок пишет не носитель языка] → Вычитка вместе с переводами уроков перед публичным запуском.
 
 ## Migration Plan

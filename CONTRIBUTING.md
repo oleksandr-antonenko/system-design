@@ -224,7 +224,8 @@ Quiz kinds on the networking board: `PickDevice`, `NextHop` (drag the envelope o
 
 - `pnpm check` passes.
 - One lesson or one topic per pull request.
-- New dependencies, `postinstall` scripts and anything under `deploy/` or `.github/` get extra scrutiny: the default branch is deployed automatically.
+- New dependencies and `postinstall` scripts get extra scrutiny.
+- No CI workflows, deploy scripts or hosting notes: deployment is configured outside the repository.
 - Do not commit secrets, server addresses or personal data.
 - Code follows the Foldkit conventions in [apps/web/FOLDKIT.md](apps/web/FOLDKIT.md) and the project notes in [AGENTS.md](AGENTS.md).
 

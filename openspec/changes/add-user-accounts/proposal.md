@@ -38,4 +38,4 @@
 - Web: новые маршруты и страницы, состояние сессии в корневом Model, меню в шапке, около 60 новых строк интерфейса на каждом из четырёх языков.
 - Выкатка: новые переменные в `.env` на сервере (`BETTER_AUTH_SECRET`, `BETTER_AUTH_URL`, `DATABASE_PATH`, `SMTP_URL`, `MAIL_FROM`, `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`), база попадает в резервные копии `release.sh`.
 - Владельцу: создать OAuth-клиент в Google Cloud Console и выбрать почтовый ящик-отправитель.
-- Зависит от `bootstrap-foldkit-app` и `setup-deploy-pipeline`.
+- Зависит от `bootstrap-foldkit-app`. Выкатка настроена вне репозитория.

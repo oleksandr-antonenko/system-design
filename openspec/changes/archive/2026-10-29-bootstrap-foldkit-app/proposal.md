@@ -42,4 +42,4 @@
 
 - Новый код: `apps/web`, `apps/server`, корневые конфиги workspace, `AGENTS.md`, `README.md`.
 - Зависимости: foldkit, @foldkit/vite-plugin, @foldkit/devtools, @foldkit/oxlint-plugin, effect, @effect/platform-node, vite, tailwindcss, vitest, happy-dom, oxlint, oxfmt, typescript, @fontsource-шрифты.
-- Следующие изменения (`setup-deploy-pipeline`, `add-user-accounts`, ядро урока) строятся на этом каркасе; порядок — в `docs/roadmap.md`.
+- Следующие изменения (`add-user-accounts`, ядро урока) строятся на этом каркасе; порядок — в `docs/roadmap.md`.

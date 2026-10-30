@@ -3,7 +3,7 @@
 Learn system design by building it. Each lesson explains the theory step by step while a live board next to it shows the system: requests flow, servers fill up, things break. Then you solve tasks by hand on that board — add load balancers, caches, queues and clusters until the system holds.
 
 - Languages: Ukrainian, Russian, English, Lithuanian.
-- Live site: <https://system-design.oleksandr-antonenko.com> (deployment is being set up).
+- Live site: <https://system-design.oleksandr-antonenko.com>.
 - Built with [Foldkit](https://foldkit.dev) and [Effect](https://effect.website).
 
 > **UA.** Інтерактивний курс із System Design: теорія крок за кроком, жива схема поруч і задачі, які розв’язуються руками на дошці. Уроки можна пропонувати через pull request — дивіться [CONTRIBUTING.md](CONTRIBUTING.md).
