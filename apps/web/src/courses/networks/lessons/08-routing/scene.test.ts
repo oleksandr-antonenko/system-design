@@ -19,8 +19,7 @@ import type { Locale } from '../../../../i18n/locale'
 import * as Board from '../../../../kinds/packet/board'
 import { FLY_MS, LEAD_MS, SLOT_MS } from '../../../../kinds/packet/timeline'
 import * as Player from '../../../../lesson/player'
-import { lessonView } from '../../../../lesson/view'
-import { findLesson } from '../../../registry'
+import { lessonView, loadedEntry } from '../../../../lesson/view'
 import lesson from './lesson'
 
 // Урок 8 глазами ученика: адреса цепочки и метка gateway, таблицы routers
@@ -28,7 +27,7 @@ import lesson from './lesson'
 // traceroute и задача — чужой gateway ноутбука: в терминале и в сведениях
 // о сети руками и через «Показать решение».
 
-const entry = Option.getOrThrow(findLesson('networks', 'routing'))
+const entry = Option.getOrThrow(loadedEntry('networks', 'routing'))
 
 const sceneIn = (locale: Locale) => ({
   update: (playerModel: Player.Model, playerMessage: Player.Message) =>

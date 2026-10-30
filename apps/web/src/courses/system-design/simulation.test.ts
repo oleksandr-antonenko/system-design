@@ -14,7 +14,7 @@ import {
   taskOf,
   taskStartBoard,
 } from '../../lesson/dsl'
-import { findLesson, lessonDefinitions } from '../registry'
+import { loadedDefinitions, loadedLesson } from '../registry'
 
 // Снимки симулятора по урокам курса: метрики доски каждого шага, доски задачи
 // до и после эталона, итоги целей и числа в текстах на всех языках. Движок
@@ -26,7 +26,7 @@ const COURSE = 'system-design'
 type FlowLesson = LessonDefinition<FlowTypes>
 
 const flowLessons: ReadonlyArray<FlowLesson> = Array.getSomes(
-  Array.map(lessonDefinitions, ({ course, definition }) =>
+  Array.map(loadedDefinitions(), ({ course, definition }) =>
     course === COURSE && definition.board === 'flow'
       ? Option.some(definition)
       : Option.none(),
@@ -79,7 +79,7 @@ const solutionLogs = (lesson: FlowLesson): TaskLogs<FlowTypes['Op']> =>
 const textsOf = (
   lesson: FlowLesson,
 ): ReadonlyArray<readonly [string, TextsOf<FlowTypes>]> =>
-  Option.match(findLesson(COURSE, lesson.slug), {
+  Option.match(loadedLesson(COURSE, lesson.slug), {
     onNone: () => [],
     onSome: found =>
       Array.map(found.texts, (entry): readonly [string, TextsOf<FlowTypes>] => [

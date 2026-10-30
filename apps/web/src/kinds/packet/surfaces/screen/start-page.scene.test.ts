@@ -13,9 +13,8 @@ import {
 import { describe, expect as expectValue, test } from 'vitest'
 
 import phoneOnline from '../../../../courses/networks/lessons/01-phone-online/lesson'
-import { findLesson } from '../../../../courses/registry'
 import * as Player from '../../../../lesson/player'
-import { lessonView } from '../../../../lesson/view'
+import { lessonView, loadedEntry } from '../../../../lesson/view'
 import { joinWifi } from '../../../../net/build'
 import { packet } from '../../dsl'
 import { currentPage } from './network'
@@ -24,7 +23,7 @@ import { currentPage } from './network'
 // магазин, и браузер показывает его, как только телефон в сети, — без
 // адресной строки, которая откроется в уроке 3.
 
-const entry = Option.getOrThrow(findLesson('networks', 'phone-online'))
+const entry = Option.getOrThrow(loadedEntry('networks', 'phone-online'))
 
 const shopName = Option.getOrThrow(
   Option.map(

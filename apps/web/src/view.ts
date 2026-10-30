@@ -1,4 +1,4 @@
-import { Array, Option } from 'effect'
+import { Array, Option, Record } from 'effect'
 import type { Document, Html, HtmlBuilder } from 'foldkit/html'
 
 import {
@@ -8,12 +8,18 @@ import {
   courseTextFor,
   lessonTextFor,
 } from './courses/assemble'
-import { courses, findCourse, findLesson } from './courses/registry'
+import {
+  courses,
+  findCourse,
+  findLesson,
+  isLessonLoaded,
+  lessonKey,
+} from './courses/registry'
 import { DomainMessage, renderDomainMessage } from './i18n/domainMessage'
 import { type Locale, localeEndonym, locales } from './i18n/locale'
 import { type UiStrings, uiFor } from './i18n/ui'
 import * as Player from './lesson/view'
-import { Message, type Model, currentSession } from './main'
+import { LessonLoad, Message, type Model, currentSession } from './main'
 import {
   AppRoute,
   courseOf,
@@ -381,8 +387,58 @@ const regionView = (
     ],
   )
 
+/** What the theory column says while the lesson itself is not shown. */
+type LessonShell = 'Loading' | 'Failed' | 'Placeholder'
+
+const shellOf = (model: Model, lesson: Lesson): LessonShell =>
+  Option.match(
+    Record.get(model.lessonLoads, lessonKey(lesson.course, lesson.meta.slug)),
+    {
+      onSome: load =>
+        LessonLoad.match(load, {
+          Loading: (): LessonShell => 'Loading',
+          Failed: (): LessonShell => 'Failed',
+        }),
+      onNone: () =>
+        isLessonLoaded(lesson.course, lesson.meta.slug)
+          ? 'Placeholder'
+          : 'Loading',
+    },
+  )
+
+const shellTheoryView = (
+  shell: LessonShell,
+  ui: UiStrings,
+  h: HtmlBuilder<Message>,
+): Html => {
+  const prose = 'm-0 font-prose text-[16px] leading-relaxed text-muted'
+  if (shell === 'Loading') {
+    return h.p([h.Role('status'), h.Class(prose)], [ui.lesson.loading])
+  }
+  if (shell === 'Failed') {
+    return h.div(
+      [h.Class('flex flex-col items-start gap-3')],
+      [
+        h.p([h.Role('alert'), h.Class(prose)], [ui.lesson.loadFailed]),
+        h.button(
+          [
+            h.Type('button'),
+            h.OnClick(Message.ClickedRetryLessonLoad()),
+            h.Class(
+              'rounded-md bg-accent px-3 py-2 text-[13px] font-semibold text-page hover:opacity-90',
+            ),
+          ],
+          [ui.lesson.retry],
+        ),
+      ],
+    )
+  }
+  return h.p([h.Class(prose)], [ui.lesson.theoryPlaceholder])
+}
+
 const lessonView = (
   lesson: Lesson,
+  shell: LessonShell,
   locale: Locale,
   ui: UiStrings,
   h: HtmlBuilder<Message>,
@@ -454,10 +510,7 @@ const lessonView = (
             ],
             [ui.lesson.theoryRegion],
           ),
-          h.p(
-            [h.Class('m-0 font-prose text-[16px] leading-relaxed text-muted')],
-            [ui.lesson.theoryPlaceholder],
-          ),
+          shellTheoryView(shell, ui, h),
         ],
       ),
       h.div(
@@ -563,7 +616,8 @@ const lessonPageView = (
           unknownView(locale, ui, DomainMessage.UnknownLesson({ slug }), h),
         onSome: lesson =>
           Option.match(currentSession(model), {
-            onNone: () => lessonView(lesson, locale, ui, h),
+            onNone: () =>
+              lessonView(lesson, shellOf(model, lesson), locale, ui, h),
             onSome: session =>
               h.submodel({
                 slotId: 'lesson-player',

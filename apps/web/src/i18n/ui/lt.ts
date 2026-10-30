@@ -82,6 +82,9 @@ export const lt = {
     theoryPlaceholder: 'Pamoka dar ruošiama. Čia atsiras teorijos žingsniai.',
     boardPlaceholder: 'Čia bus lenta su sistemos schema.',
     instrumentsPlaceholder: 'Čia bus apkrova, klaidos ir atsako laikas.',
+    loading: 'Įkeliama pamoka…',
+    loadFailed: 'Pamoka neįsikėlė. Patikrinkite ryšį ir bandykite dar kartą.',
+    retry: 'Bandyti dar kartą',
   },
   board: {
     label: 'Sistemos schema',

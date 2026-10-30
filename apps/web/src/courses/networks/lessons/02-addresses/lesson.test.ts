@@ -17,7 +17,7 @@ import { cable, send } from '../../../../net/build'
 import { checkGoal } from '../../../../net/goals'
 import { Intent } from '../../../../net/packet'
 import { addressOf } from '../../../../net/topology'
-import { findCourse, findLesson, unlockedFeatures } from '../../../registry'
+import { findCourse, loadedLesson, unlockedFeatures } from '../../../registry'
 import addresses from './lesson'
 
 // Проверки урока 2 из сценария (раздел 8, «Что проверяют тесты контента»):
@@ -37,7 +37,7 @@ const task = Option.getOrThrow(taskOf(lesson.steps[TASK]!))
 
 const start = taskStartBoard(lesson, TASK, {})
 
-const texts = Option.match(findLesson('networks', 'addresses'), {
+const texts = Option.match(loadedLesson('networks', 'addresses'), {
   onNone: () => [],
   onSome: found => found.texts,
 })

@@ -77,6 +77,9 @@ export const en = {
       'This lesson is still in the works. Theory steps will appear here.',
     boardPlaceholder: 'The system diagram board will appear here.',
     instrumentsPlaceholder: 'Load, errors and response time will appear here.',
+    loading: 'Loading the lesson…',
+    loadFailed: 'The lesson did not load. Check your connection and try again.',
+    retry: 'Try again',
   },
   board: {
     label: 'System diagram',

@@ -29,6 +29,9 @@ export type UiStrings = Readonly<{
     theoryPlaceholder: string
     boardPlaceholder: string
     instrumentsPlaceholder: string
+    loading: string
+    loadFailed: string
+    retry: string
   }>
   board: Readonly<{
     label: string

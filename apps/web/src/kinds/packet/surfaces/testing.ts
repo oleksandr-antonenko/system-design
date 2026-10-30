@@ -1,9 +1,9 @@
 import { Option } from 'effect'
 
-import type { Lesson } from '../../../courses/assemble'
 import { defineLessonMeta } from '../../../courses/model'
 import networks from '../../../courses/networks/course'
 import { type LessonDefinition, defineLesson } from '../../../lesson/dsl'
+import type { LessonEntry } from '../../../lesson/view'
 import {
   add,
   cable,
@@ -206,9 +206,8 @@ export const devices: LessonDefinition<PacketTypes> = defineLesson(packet, {
 })
 
 /** Запись реестра для `lessonView`: тексты на английском. */
-export const devicesEntry: Lesson = {
+export const devicesEntry: LessonEntry = {
   course: 'networks',
-  folder: '99-device-surfaces',
   meta: defineLessonMeta(networks, {
     slug: 'device-surfaces',
     module: 'developer',

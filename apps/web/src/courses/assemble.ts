@@ -1,23 +1,23 @@
 import { Array, Option, Order, String, pipe } from 'effect'
 
 import { type Locale, isLocale } from '../i18n/locale'
-import type {
-  CourseDefinition,
-  CourseText,
-  LessonMeta,
-  LessonText,
-} from './model'
+import type { CourseDefinition, CourseText, LessonMeta } from './model'
 
 // Реестр курсов (design D2): курсы и их уроки собираются из модулей папок,
 // а всё, что нарушает правила, возвращается списком проблем для тестов.
 
 export type LocalizedText<Text> = Readonly<{ locale: Locale; text: Text }>
 
+/** What the course map shows of a lesson before it is loaded. */
+export type LessonSummary = Readonly<{ title: string; summary: string }>
+
 export type Lesson = Readonly<{
   course: string
   folder: string
   meta: LessonMeta
-  texts: Array.NonEmptyReadonlyArray<LocalizedText<LessonText>>
+  /** Title and summary in each language of the lesson; the full texts load
+      with the lesson (`loadLesson` in the registry). */
+  summaries: Array.NonEmptyReadonlyArray<LocalizedText<LessonSummary>>
 }>
 
 export type Course = Readonly<{
@@ -31,7 +31,7 @@ export type CatalogSources = Readonly<{
   courses: Readonly<Record<string, CourseDefinition>>
   courseTexts: Readonly<Record<string, CourseText>>
   metas: Readonly<Record<string, LessonMeta>>
-  texts: Readonly<Record<string, LessonText>>
+  texts: Readonly<Record<string, LessonSummary>>
 }>
 
 export type AssembledCatalog = Readonly<{
@@ -223,7 +223,7 @@ const lessonName = (entry: LessonEntry): string =>
 const lessonProblems = (
   entry: LessonEntry,
   definition: CourseDefinition,
-  entries: ReadonlyArray<TextEntry<LessonText>>,
+  entries: ReadonlyArray<TextEntry<LessonSummary>>,
 ): ReadonlyArray<string> => {
   const { folder, meta } = entry
   const where = lessonName(entry)
@@ -335,7 +335,7 @@ type AssembledLessons = Readonly<{
 const assembleLessons = (
   definition: CourseDefinition,
   entries: ReadonlyArray<LessonEntry>,
-  texts: ReadonlyArray<TextEntry<LessonText>>,
+  texts: ReadonlyArray<TextEntry<LessonSummary>>,
 ): AssembledLessons => {
   const assembled = Array.map(entries, entry => {
     const own = Array.filter(texts, text => text.owner === lessonName(entry))
@@ -347,7 +347,7 @@ const assembleLessons = (
           course: definition.id,
           folder: entry.folder,
           meta: entry.meta,
-          texts: found,
+          summaries: found,
         }))
       : Option.none()
     return { problems, maybeLesson }
@@ -543,12 +543,12 @@ export const textFor = <Text>(
   )
 }
 
-export type LessonTextChoice = TextChoice<LessonText>
+export type LessonTextChoice = TextChoice<LessonSummary>
 
 export const lessonTextFor = (
   lesson: Lesson,
   locale: Locale,
-): LessonTextChoice => textFor(lesson.texts, locale)
+): LessonTextChoice => textFor(lesson.summaries, locale)
 
 export const courseTextFor = (
   course: Course,

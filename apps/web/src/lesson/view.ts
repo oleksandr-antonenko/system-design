@@ -2,13 +2,15 @@ import { Array, Option, Record, pipe } from 'effect'
 import { Submodel } from 'foldkit'
 import type { Html, HtmlBuilder } from 'foldkit/html'
 
-import { type Lesson, lessonTextFor } from '../courses/assemble'
+import { type LocalizedText, lessonTextFor, textFor } from '../courses/assemble'
+import type { LessonMeta, LessonText } from '../courses/model'
 import {
   courseLessons,
   coursePaletteMode,
   findDefinition,
   findLesson,
   lessonsOf,
+  loadedLesson,
 } from '../courses/registry'
 import { renderDomainMessage } from '../i18n/domainMessage'
 import type { Locale } from '../i18n/locale'
@@ -1262,15 +1264,39 @@ const surfaceHostView = <T extends KindTypes>(
 
 // PLAYER
 
+/** A lesson with its texts loaded, as the player shows it. */
+export type LessonEntry = Readonly<{
+  course: string
+  meta: LessonMeta
+  texts: Array.NonEmptyReadonlyArray<LocalizedText<LessonText>>
+}>
+
+/** The lesson of the registry with its loaded texts. */
+export const loadedEntry = (
+  course: string,
+  slug: string,
+): Option.Option<LessonEntry> =>
+  Option.flatMap(
+    Option.all([findLesson(course, slug), loadedLesson(course, slug)]),
+    ([found, loaded]) =>
+      Array.isReadonlyArrayNonEmpty(loaded.texts)
+        ? Option.some({
+            course: found.course,
+            meta: found.meta,
+            texts: loaded.texts,
+          })
+        : Option.none(),
+  )
+
 export const lessonView = <T extends KindTypes>(
   lesson: LessonDefinition<T>,
-  entry: Lesson,
+  entry: LessonEntry,
   model: Model,
   inputs: PlayerViewInputs,
   h: HtmlBuilder<Message>,
 ): Html => {
   const ui = uiFor(inputs.locale)
-  const choice = lessonTextFor(entry, inputs.locale)
+  const choice = textFor(entry.texts, inputs.locale)
   const page: Page<T> = {
     lesson,
     model,
@@ -1313,7 +1339,7 @@ export const view = Submodel.defineView<Model, Message, PlayerViewInputs>(
     pipe(
       Option.all([
         findDefinition(model.course, model.slug),
-        findLesson(model.course, model.slug),
+        loadedEntry(model.course, model.slug),
       ]),
       Option.match({
         onNone: () => h.empty,
