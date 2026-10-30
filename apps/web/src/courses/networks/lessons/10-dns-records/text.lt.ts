@@ -5,6 +5,9 @@ export default {
   title: 'DNS records. Savas domain svetainei',
   summary:
     'Domain nukreipiamas į serverį per DNS records, o informacijos tarnybos prisimena seną atsakymą, kol nesibaigia jo TTL. Nukreipkite savo domain į savo serverį.',
+  preview: {
+    alt: 'Schema: DNS record nukreipia domain į naują server, o informacijos tarnybos dar prisimena seną atsakymą, kol nesibaigs jo TTL, – tai rodo smėlio laikrodžiai.',
+  },
   labels: {
     phone: { name: 'Phone', note: 'jūsų rankoje' },
     laptop: { name: 'Laptop', note: 'ant stalo' },

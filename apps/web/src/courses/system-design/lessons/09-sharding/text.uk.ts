@@ -23,6 +23,9 @@ export default {
   title: 'Sharding. Дані частинами',
   summary:
     'Як розділити дані між незалежними databases: shard key, hot shards, запити через усі shards і resharding.',
+  preview: {
+    alt: 'Схема sharding: велика database розділена на shards, router за shard key спрямовує запит у потрібний shard, а hot shard навантажений найбільше.',
+  },
   steps: {
     'one-primary': {
       title: 'Маркетплейс на одній database',

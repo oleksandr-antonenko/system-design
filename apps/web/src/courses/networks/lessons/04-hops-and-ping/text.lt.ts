@@ -8,6 +8,9 @@ export default {
   title: 'Ping ir hops. Voko kelias per routers grandinę',
   summary:
     'Kelias iki svetainės – routers grandinė, o ping patikrina ryšį. Raskite atkarpą, kurioje dingo ryšys.',
+  preview: {
+    alt: 'Schema: packet keliauja nuo kompiuterio per routers grandinę, ping gauna atsakymą iš kiekvieno hop, o atsakymai nutrūksta ten, kur dingo ryšys.',
+  },
   labels: {
     phone: { name: 'Phone', note: 'jūsų rankoje' },
     laptop: { name: 'Laptop', note: 'ant stalo' },

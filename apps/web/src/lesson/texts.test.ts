@@ -35,6 +35,7 @@ const packetLesson = defineLesson(packet, {
 const flowTexts = {
   title: 'Texts',
   summary: 'Summary',
+  preview: { alt: 'Preview' },
   steps: {
     intro: { title: 'Intro', body: ({ sim }) => `${sim.load} rps` },
     task: { title: 'Task', body: 'Place a balancer.' },
@@ -54,6 +55,7 @@ const flowTexts = {
 const packetTexts = {
   title: 'Texts',
   summary: 'Summary',
+  preview: { alt: 'Preview' },
   labels: { phone: { name: 'Phone', note: 'in your hand' } },
   steps: {
     intro: {
@@ -93,6 +95,7 @@ describe('lesson texts are checked against lesson.ts', () => {
     const missingLabel = {
       title: 'Texts',
       summary: 'Summary',
+      preview: { alt: 'Preview' },
       steps: { intro: { title: 'Intro', body: 'Body' } },
       annotations: {},
       tasks: {},

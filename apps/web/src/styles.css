@@ -265,6 +265,25 @@ h3 {
 .back-link:hover {
   color: var(--accent);
 }
+/* Картинка урока (docs/plans/lesson-previews.md): тёмная в обеих темах,
+   поэтому фон под ней тот же, пока она грузится. */
+.lesson-hero,
+.lesson-thumb {
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 1200 / 630;
+  border-radius: 10px;
+  border: 1px solid var(--line);
+  background: #111a27;
+  object-fit: cover;
+}
+.lesson-hero {
+  margin: 14px 0 4px;
+}
+.lesson-thumb {
+  border-radius: 8px;
+}
 .eyebrow {
   margin: 14px 0 0;
   font-size: 10.5px;

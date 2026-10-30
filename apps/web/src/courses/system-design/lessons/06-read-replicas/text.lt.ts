@@ -20,6 +20,9 @@ export default {
   title: 'Read replicas. Database kopijos skaitymui',
   summary:
     'Read replicas, replication lag, failover ir kodėl visi įrašai vis tiek keliauja į primary.',
+  preview: {
+    alt: 'Schema: įrašai keliauja į primary database, o skaitymai pasiskirsto tarp read replicas, kurios kopijuoja jos duomenis su nedideliu replication lag.',
+  },
   steps: {
     'one-database': {
       title: 'Penki „Server“ blokai, viena database',

@@ -8,6 +8,9 @@ const percent = (ratio: number) => `${n(ratio * 100)}%`
 export default {
   title: 'Separate database. Дані на окремій машині',
   summary: 'Чому stateless server простіше масштабувати і куди перенести дані.',
+  preview: {
+    alt: 'Схема: stateless server не зберігає власних даних і одним зв’язком надсилає читання та записи в окрему database на своїй машині.',
+  },
   steps: {
     'all-in-one': {
       title: 'Усе на одному server',

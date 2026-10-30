@@ -16,6 +16,9 @@ export default {
   title: 'CDN. Static files close to users',
   summary:
     'Static and dynamic content, edge locations and cache headers: serving images and scripts closer to the user.',
+  preview: {
+    alt: 'Diagram: a CDN serves static files from edge locations close to each group of users, and only a few requests travel to the distant origin server.',
+  },
   steps: {
     'shop-front': {
       title: 'The shop’s entrance',

@@ -5,6 +5,9 @@ export default {
   title: 'Wi-Fi. Why the signal is weak',
   summary:
     'Range, walls and two bands: 2.4 and 5 GHz. Set up the Wi-Fi so it reaches the kitchen.',
+  preview: {
+    alt: 'Diagram: a floor plan of a flat where the router’s Wi-Fi signal in the 2.4 GHz and 5 GHz bands spreads in rings and weakens with every wall.',
+  },
   labels: {
     router: { name: 'Router', note: 'stands in the living room' },
     phone: { name: 'Phone', note: 'in your hand' },

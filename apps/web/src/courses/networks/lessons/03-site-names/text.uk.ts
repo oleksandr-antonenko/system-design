@@ -5,6 +5,9 @@ export default {
   title: 'DNS. Ім’я сайту і його адреса',
   summary:
     'DNS перетворює ім’я сайту на адресу, як контакти в телефоні. Полагодьте сайт, який «не відкривається».',
+  preview: {
+    alt: 'Схема: ноутбук спершу питає DNS server, отримує за ім’ям сайту його IP address і лише потім іде до server сайту.',
+  },
   labels: {
     phone: { name: 'Phone', note: 'у вас у руці' },
     laptop: { name: 'Laptop', note: 'на столі' },

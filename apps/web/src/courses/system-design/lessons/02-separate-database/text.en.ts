@@ -9,6 +9,9 @@ export default {
   title: 'Separate database. Data on its own machine',
   summary:
     'Why stateless servers scale more easily and where the data should live.',
+  preview: {
+    alt: 'Diagram: a stateless server keeps no data of its own and sends every read and write over one link to a separate database on its own machine.',
+  },
   steps: {
     'all-in-one': {
       title: 'Everything on one server',

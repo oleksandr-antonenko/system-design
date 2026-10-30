@@ -5,6 +5,9 @@ export default {
   title: 'Ports and localhost. Flats in one building',
   summary:
     'One computer runs many programs, and each has its own number — a port. Open your dev server from your phone.',
+  preview: {
+    alt: 'Diagram: one computer drawn as a building whose doors are ports; programs listen behind them, and a phone connects to the port of the dev server.',
+  },
   labels: {
     phone: { name: 'Phone', note: 'in your hand' },
     laptop: { name: 'Laptop', note: 'where you build your site' },

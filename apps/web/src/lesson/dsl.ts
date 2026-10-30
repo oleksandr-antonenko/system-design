@@ -198,11 +198,17 @@ type QuizSection<Quiz extends QuizShape> = [Quiz] extends [never]
       }>
     }>
 
+/** Подпись картинки урока (`preview.webp` в его папке) на языке текстов:
+    `alt` описывает картинку через тему урока, 100–160 символов
+    (docs/plans/lesson-previews.md). */
+export type PreviewText = Readonly<{ alt: string }>
+
 /** Тексты урока на одном языке: `text.<язык>.ts` с
     `satisfies LessonTexts<typeof lesson>`. Пропущенный ключ не компилируется. */
 export type LessonTexts<Lesson extends LessonShape> = Readonly<{
   title: string
   summary: string
+  preview: PreviewText
   steps: Readonly<
     Record<StepOf<Lesson>['id'], StepTexts<TypesOf<Lesson>['Prose']>>
   >
@@ -232,6 +238,7 @@ export type LooseLessonTexts<
 > = Readonly<{
   title: string
   summary: string
+  preview: PreviewText
   steps?: Readonly<Record<string, StepTexts<Context>>>
   annotations?: Readonly<Record<string, (input: Annotation) => string>>
   tasks?: Readonly<Record<string, TaskTexts<string>>>

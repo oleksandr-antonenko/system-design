@@ -15,6 +15,9 @@ export default {
   title: 'Single server. Viskas vienoje mašinoje',
   summary:
     'Užklausa ir atsakymas, RPS, delsa, pajėgumo riba, kai server tik vienas, ir single point of failure (SPOF).',
+  preview: {
+    alt: 'Schema: naudotojų įrenginių užklausos plūsta į single server, kuris dirba ties savo riba ir yra single point of failure.',
+  },
   steps: {
     'no-answer': {
       title: 'Užklausos be atsakymo',

@@ -8,6 +8,9 @@ export default {
   title: 'Ping і hops. Шлях конверта ланцюжком routers',
   summary:
     'Шлях до сайту — ланцюжок routers, а ping перевіряє зв’язок. Знайдіть ділянку, де зв’язок зник.',
+  preview: {
+    alt: 'Схема: packet іде від ноутбука ланцюжком routers, ping отримує відповідь від кожного hop, і відповіді обриваються там, де зник зв’язок.',
+  },
   labels: {
     phone: { name: 'Phone', note: 'у вас у руці' },
     laptop: { name: 'Laptop', note: 'на столі' },

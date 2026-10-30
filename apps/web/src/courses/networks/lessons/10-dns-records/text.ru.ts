@@ -5,6 +5,9 @@ export default {
   title: 'DNS records. Свой domain для сайта',
   summary:
     'Domain направляют на сервер с помощью DNS records, а справочные помнят старый ответ, пока не выйдет его TTL. Направьте свой domain на свой сервер.',
+  preview: {
+    alt: 'Схема: DNS record направляет domain на новый server, а справочные ещё помнят старый ответ, пока не истечёт его TTL, — это показывают песочные часы.',
+  },
   labels: {
     phone: { name: 'Phone', note: 'у вас в руке' },
     laptop: { name: 'Laptop', note: 'на столе' },

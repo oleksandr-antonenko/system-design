@@ -20,6 +20,9 @@ export default {
   title: 'Read replicas. Database copies for reads',
   summary:
     'Read replicas, replication lag, failover and why every write still goes to the primary.',
+  preview: {
+    alt: 'Diagram: writes go to the primary database, while reads fan out to read replicas that copy its data with a small replication lag.',
+  },
   steps: {
     'one-database': {
       title: 'Five servers, one database',

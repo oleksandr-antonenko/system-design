@@ -9,6 +9,9 @@ export default {
   title: 'HTTPS ir certificates. Spynelė adreso juostoje',
   summary:
     'Ką saugo spynelė naršyklėje ir kodėl certificate gali būti negaliojantis.',
+  preview: {
+    alt: 'Schema: HTTPS – server pateikia naršyklei certificate, naršyklė jį patikrina ir parodo spynelę, o duomenys keliauja šifruotu kanalu.',
+  },
   labels: {
     phone: { name: 'Phone', note: 'jūsų rankoje, kavinėje' },
     laptop: { name: 'Laptop', note: 'namie ant stalo' },

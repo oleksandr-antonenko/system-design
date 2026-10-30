@@ -20,6 +20,9 @@ export default {
   title: 'Read replicas. Копії database для читання',
   summary:
     'Read replicas, replication lag, failover і чому весь запис і далі йде в primary.',
+  preview: {
+    alt: 'Схема: записи йдуть у primary database, а читання розходяться між read replicas, які копіюють її дані з невеликим replication lag.',
+  },
   steps: {
     'one-database': {
       title: 'П’ять блоків «Server», одна database',

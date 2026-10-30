@@ -17,6 +17,9 @@ export default {
   title: 'URL shortener. Final project',
   summary:
     'Design a whole system from scratch: requirements, estimates, API, then a design that holds the peak, survives failures and fits the budget.',
+  preview: {
+    alt: 'Diagram of a URL shortener: a long tangled chain becomes a short one, backed by a load balancer, servers, a cache and a database that hold the peak.',
+  },
   steps: {
     requirements: {
       title: 'Requirements',

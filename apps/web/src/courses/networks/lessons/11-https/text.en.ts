@@ -10,6 +10,9 @@ export default {
   title: 'HTTPS and certificates. The padlock in the address bar',
   summary:
     'What the padlock in the browser protects, and why a certificate can be invalid.',
+  preview: {
+    alt: 'Diagram of HTTPS: the server presents its certificate, the browser checks it and shows the padlock, and data flows through an encrypted tunnel.',
+  },
   labels: {
     phone: { name: 'Phone', note: 'in your hand, at the café' },
     laptop: { name: 'Laptop', note: 'on the desk at home' },

@@ -5,6 +5,9 @@ export default {
   title: 'DNS records. Your own domain for a site',
   summary:
     'A domain is pointed at a server with DNS records, and directories keep the old answer until its TTL runs out. Point your own domain at your own server.',
+  preview: {
+    alt: 'Diagram: a DNS record points the domain at the new server, while DNS resolvers keep the old answer until its TTL runs out, as their hourglasses show.',
+  },
   labels: {
     phone: { name: 'Phone', note: 'in your hand' },
     laptop: { name: 'Laptop', note: 'on the desk' },

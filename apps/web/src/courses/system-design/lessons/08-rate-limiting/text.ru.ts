@@ -17,6 +17,9 @@ export default {
   title: 'Rate limiter. Защита от перегрузки',
   summary:
     'Rate limiter перед load balancer: быстрый ответ 429 вместо перегрузки, лимиты на клиента, backpressure и retries без лавины.',
+  preview: {
+    alt: 'Схема: rate limiter перед load balancer пропускает ровный поток запросов, а лишние сразу отклоняет ответом 429, и servers работают спокойно.',
+  },
   steps: {
     'normal-day': {
       title: 'Обычный день',

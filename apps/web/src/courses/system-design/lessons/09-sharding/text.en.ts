@@ -23,6 +23,9 @@ export default {
   title: 'Sharding. Splitting the data',
   summary:
     'Splitting data across several databases: the shard key, hot shards, cross-shard queries and resharding.',
+  preview: {
+    alt: 'Diagram of sharding: one large database is split into shards, a router sends each request to its shard by the shard key, and a hot shard glows busier.',
+  },
   steps: {
     'one-primary': {
       title: 'A marketplace on one database',

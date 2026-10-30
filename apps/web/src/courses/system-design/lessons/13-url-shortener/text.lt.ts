@@ -17,6 +17,9 @@ export default {
   title: 'URL shortener. Baigiamasis projektas',
   summary:
     'Suprojektuokite sistemą nuo nulio: reikalavimai, įverčiai, API, o tada schema, kuri atlaiko piką, išgyvena gedimus ir telpa į biudžetą.',
+  preview: {
+    alt: 'Schema: URL shortener ilgą susipynusią grandinę paverčia trumpa, o už jo stovi load balancer, servers, cache ir database, atlaikantys piką.',
+  },
   steps: {
     requirements: {
       title: 'Reikalavimai',

@@ -10,6 +10,9 @@ export default {
   title: 'Failover. Система переживает поломку',
   summary:
     'SPOF, единые точки отказа: второй load balancer, read replica, которая заменяет database, health check, failover и разница между availability и durability.',
+  preview: {
+    alt: 'Схема failover: load balancer и database отказали, трафик идёт через их резервную пару, и single point of failure не остаётся.',
+  },
   steps: {
     'count-spares': {
       title: 'Пересчитаем запасных',

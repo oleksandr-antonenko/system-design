@@ -16,6 +16,9 @@ export default {
   title: 'CDN. Statiniai failai arčiau naudotojo',
   summary:
     'Statinis ir dinaminis turinys, edge location ir cache antraštės: kaip pateikti paveikslėlius ir skriptus arčiau naudotojo.',
+  preview: {
+    alt: 'Schema: CDN pateikia statinius failus iš edge locations arti naudotojų, ir tik nedaug užklausų keliauja iki tolimo origin server.',
+  },
   steps: {
     'shop-front': {
       title: 'Įėjimas į parduotuvę',

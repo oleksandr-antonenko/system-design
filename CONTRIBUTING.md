@@ -32,8 +32,12 @@ apps/web/src/courses/
         lesson.ts          the script: steps, board operations, tasks
         text.en.ts         every text of the lesson in English
         text.uk.ts         … one file per language the lesson is written in
+        preview.md         the subject of the lesson's picture (its generation prompt)
+        preview.webp       the picture, 1200 × 630; preview-600.webp, 600 × 315
   networks/                “Networking for vibe coders”, same layout
 ```
+
+**Every lesson has a picture.** It sits above the lesson title, on the course map and in link previews. Its alt text is `preview: { alt }` in each `text.<locale>.ts`: 100–160 characters that describe the picture through the lesson's subject and name the lesson's English term, following the language rules below. The style, the shared prompt and the export sizes are in [docs/plans/lesson-previews.md](docs/plans/lesson-previews.md); if you cannot generate the picture, write `preview.md` and the alt texts and say so in the pull request.
 
 A lesson lives at `/<locale>/<course>/lessons/<slug>`, for example `/en/system-design/lessons/load-balancer?step=2`. A lesson listed as available without a `lesson.ts` shows a placeholder page; a lesson with `available: false` is shown as “coming soon” on the course map.
 

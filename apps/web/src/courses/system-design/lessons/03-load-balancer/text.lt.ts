@@ -9,6 +9,9 @@ export default {
   title: 'Load balancer. Apkrova dalijama po lygiai',
   summary:
     'Horizontalus plėtimas: keli „Server“ blokai už vieno įėjimo taško, health check ir N+1 taisyklė.',
+  preview: {
+    alt: 'Schema: load balancer paskirsto naudotojų užklausas tarp servers ir išima iš rotacijos sugedusį, kuris neišlaikė health check.',
+  },
   steps: {
     'one-server': {
       title: 'Vienas server',

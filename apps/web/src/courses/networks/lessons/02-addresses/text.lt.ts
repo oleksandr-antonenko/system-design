@@ -5,6 +5,9 @@ export default {
   title: 'IP address. Kiekvienas įrenginys turi savo adresą',
   summary:
     'Kiekvienas tinklo įrenginys turi savo adresą – IP address, – ir jį suteikia router. Raskite nešiojamojo kompiuterio adresą ir prijunkite spausdintuvą.',
+  preview: {
+    alt: 'Schema: namų router kiekvienam įrenginiui suteikia savo IP address – atskirą žymę gauna nešiojamasis kompiuteris, telefonas, kompiuteris ir spausdintuvas.',
+  },
   labels: {
     phone: { name: 'Phone', note: 'jūsų rankoje' },
     laptop: { name: 'Laptop', note: 'ant stalo' },

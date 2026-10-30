@@ -46,6 +46,7 @@ const entry: Lesson = {
       text: {
         title: 'Дом',
         summary: 'Router и интернет.',
+        preview: { alt: 'Router и интернет на схеме.' },
         steps: {
           home: { title: 'Дом', body: 'Router соединяет дом с интернетом.' },
         },

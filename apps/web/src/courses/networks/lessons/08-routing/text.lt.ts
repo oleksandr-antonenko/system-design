@@ -10,6 +10,9 @@ export default {
   title: 'Routing ir gateway. Kaip vokas randa kelią',
   summary:
     'Viską, kas „ne mūsų namams“, įrenginys atiduoda gateway, o traceroute parodo, per kuriuos routers vokas keliauja toliau. Grąžinkite internetą kompiuteriui su svetimu gateway.',
+  preview: {
+    alt: 'Schema: routing – kompiuteris atiduoda packet į default gateway, routing table parenka kitą hop, o traceroute paryškina kelią per routers.',
+  },
   labels: {
     phone: { name: 'Phone', note: 'jūsų rankoje' },
     laptop: { name: 'Laptop', note: 'ant stalo' },

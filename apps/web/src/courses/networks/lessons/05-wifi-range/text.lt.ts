@@ -5,6 +5,9 @@ export default {
   title: 'Wi-Fi. Kodėl signalas silpnas',
   summary:
     'Nuotolis, sienos ir dvi dažnių juostos: 2.4 ir 5 GHz. Nustatykite Wi-Fi taip, kad jis pasiektų virtuvę.',
+  preview: {
+    alt: 'Buto schema: router Wi-Fi signalas 2.4 GHz ir 5 GHz juostose sklinda ratais ir silpnėja už kiekvienos sienos pakeliui į tolimus kambarius.',
+  },
   labels: {
     router: { name: 'Router', note: 'stovi kambaryje' },
     phone: { name: 'Phone', note: 'jūsų rankoje' },

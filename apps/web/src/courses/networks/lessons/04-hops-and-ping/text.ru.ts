@@ -8,6 +8,9 @@ export default {
   title: 'Ping и hops. Путь конверта по цепочке routers',
   summary:
     'Путь до сайта — цепочка routers, а ping проверяет связь. Найдите участок, где пропала связь.',
+  preview: {
+    alt: 'Схема: packet идёт от ноутбука по цепочке routers, ping получает ответ от каждого hop, и ответы обрываются там, где пропала связь.',
+  },
   labels: {
     phone: { name: 'Phone', note: 'у вас в руке' },
     laptop: { name: 'Laptop', note: 'на столе' },

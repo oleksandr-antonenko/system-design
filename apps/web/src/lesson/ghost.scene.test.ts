@@ -79,6 +79,7 @@ const phasedLesson: LessonDefinition<FlowTypes> = defineLesson(flow, {
 const phasedEntry = fixtureEntry(COURSE, 'phased-lesson', {
   title: 'Phased lesson. A shared design',
   summary: 'The second phase starts from the shared design.',
+  preview: { alt: 'The shared design.' },
   steps: {
     'phase-1': { title: 'Your design', body: 'One server.' },
     'phase-2': {

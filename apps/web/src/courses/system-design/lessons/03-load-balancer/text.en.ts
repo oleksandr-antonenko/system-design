@@ -9,6 +9,9 @@ export default {
   title: 'Load balancer. Sharing the load',
   summary:
     'Horizontal scaling: several servers behind one entry point, health checks and the N+1 rule.',
+  preview: {
+    alt: 'Diagram: a load balancer spreads user requests across servers and takes the failed one out of rotation after its health check fails.',
+  },
   steps: {
     'one-server': {
       title: 'One server',

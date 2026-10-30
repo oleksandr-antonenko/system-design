@@ -8,6 +8,9 @@ export default {
   title: 'Ping and hops. An envelope’s way through several routers',
   summary:
     'The way to a site is a chain of routers, and ping checks the connection. Find the stretch where the connection is lost.',
+  preview: {
+    alt: 'Diagram: a packet travels from a laptop through a chain of routers, ping gets an echo from each hop, and the echoes stop where the link is broken.',
+  },
   labels: {
     phone: { name: 'Phone', note: 'in your hand' },
     laptop: { name: 'Laptop', note: 'on the desk' },
