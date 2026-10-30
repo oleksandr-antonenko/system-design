@@ -450,11 +450,15 @@ const envelopePanel = <ParentMessage>(
     picture.quiz,
     marks => marks.quiz.kind === 'PickLayer',
   )
+  const isPickPending =
+    isPickLayer && Option.exists(picture.quiz, marks => !marks.isAnswered)
   const isShown =
     picture.isOpen('board.envelopeLayers') &&
-    (picture.model.isEnvelopeOpen ||
-      Option.isSome(picture.maybeOpenLevel) ||
-      isPickLayer)
+    (isPickPending ||
+      (!picture.model.isEnvelopeDismissed &&
+        (picture.model.isEnvelopeOpen ||
+          Option.isSome(picture.maybeOpenLevel) ||
+          isPickLayer)))
   if (!isShown) {
     return []
   }
@@ -476,14 +480,17 @@ const envelopePanel = <ParentMessage>(
       const changed = changedFields(previous, leg.hop)
       const keyField = isPickLayer
         ? Option.flatMap(picture.maybeOpenLevel, level =>
-            keyFieldOf(leg.hop, level),
+            keyFieldOf(leg.hop, level, picture.isOpen),
           )
         : Option.none()
-      const isNamesHidden =
-        isPickLayer && Option.exists(picture.quiz, marks => !marks.isAnswered)
+      const isNamesHidden = isPickPending
       const pickedLevels = Option.match(picture.quiz, {
         onNone: () => [],
         onSome: marks => (marks.isAnswered ? marks.picked : []),
+      })
+      const answerLevels = Option.match(picture.quiz, {
+        onNone: () => [],
+        onSome: marks => (marks.isAnswered ? marks.answer : []),
       })
       return [
         h.section(
@@ -493,7 +500,7 @@ const envelopePanel = <ParentMessage>(
               [h.Class('pb-envelope-head')],
               [
                 h.p([], [ui.title(leg.index, leg.count)]),
-                ...(isPickLayer
+                ...(isPickPending
                   ? []
                   : [
                       h.button(
@@ -518,20 +525,27 @@ const envelopePanel = <ParentMessage>(
             ),
             h.ol(
               [h.Class('pb-layers')],
-              Array.map(layerRows(leg.hop), row => {
-                const isOpen = Option.exists(
-                  picture.maybeOpenLevel,
-                  level => level === row.level,
-                )
-                const isPicked = Array.contains(
-                  pickedLevels,
+              Array.map(layerRows(leg.hop, picture.isOpen), row => {
+                const isOpen =
+                  Option.exists(
+                    picture.maybeOpenLevel,
+                    level => level === row.level,
+                  ) ||
+                  Option.exists(
+                    picture.context.maybeHoveredRef,
+                    ref => ref === `env:${row.level}`,
+                  )
+                const isAnswer = Array.contains(
+                  answerLevels,
                   `env:${row.level}`,
                 )
+                const isPicked =
+                  !isAnswer && Array.contains(pickedLevels, `env:${row.level}`)
                 return h.keyed('li')(
                   `${row.position}`,
                   [
                     h.Class(
-                      `pb-layer level-${row.level}${isOpen ? ' open' : ''}${isPicked ? ' picked' : ''}`,
+                      `pb-layer level-${row.level}${isOpen ? ' open' : ''}${isAnswer ? ' answer' : ''}${isPicked ? ' picked' : ''}`,
                     ),
                     h.OnMouseEnter(
                       send(Message.HoveredLayer({ position: row.position })),
@@ -866,7 +880,10 @@ const layerButtons = <ParentMessage>(
                             ),
                           ]),
                     ],
-                    [picture.context.ui.packetBoard.envelope.levels[level]],
+                    [
+                      marks.quiz.names[id] ??
+                        picture.context.ui.packetBoard.envelope.levels[level],
+                    ],
                   )
                 },
               ),

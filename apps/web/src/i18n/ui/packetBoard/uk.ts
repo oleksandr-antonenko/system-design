@@ -34,6 +34,7 @@ export const packetBoardUk: PacketBoardStrings = {
     speed: 'Швидкість',
     legend: 'Легенда',
     hopOf: (what, hop, total) => `${what} · hop ${hop} з ${total}`,
+    packetOf: (packet, total) => `packet ${packet} з ${total}`,
     request: 'конверт',
     reply: 'відповідь',
   },

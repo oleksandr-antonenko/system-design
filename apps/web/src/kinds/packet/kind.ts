@@ -84,7 +84,12 @@ const playsOf = (
   op: PacketOp,
 ): ReadonlyArray<PacketStage> =>
   op._tag === 'Send'
-    ? [{ _tag: 'Play', intent: op.intent }]
+    ? op.intent._tag === 'Raw'
+      ? [
+          { _tag: 'Builder', from: op.intent.from, url: op.intent.url },
+          { _tag: 'Play', intent: op.intent, show: 'request' },
+        ]
+      : [{ _tag: 'Play', intent: op.intent }]
     : op._tag === 'RunCommand'
       ? Array.map(
           Array.dedupeWith(
@@ -107,7 +112,9 @@ const playsOf = (
     устройство получило адрес, показывает выдачу адреса. Одинаковые конверты
     команды (три эха ping) проигрываются один раз: доска показывает первое
     эхо, остальные строки печатает терминал. Если в облаке настоящие
-    транзитные роутеры, оно раскрыто: конверт идёт через них хоп за хопом. */
+    транзитные роутеры, оно раскрыто: конверт идёт через них хоп за хопом.
+    Собранный конверт (`Raw`, урок 7) летит сам, без справочной и
+    рукопожатий, а сборщик остаётся под доской для новой попытки. */
 const moveStage = (
   before: PacketDoc,
   op: PacketOp,
