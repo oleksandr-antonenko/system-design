@@ -224,6 +224,12 @@
   background: var(--board);
   color: var(--muted);
 }
+.panel-section {
+  margin: 6px 0 0;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink);
+}
 .panel-note.warn {
   background: var(--bad-soft);
   color: var(--ink);

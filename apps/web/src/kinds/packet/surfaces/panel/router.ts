@@ -1,11 +1,23 @@
 import { Array, Option, Result, pipe } from 'effect'
 
-import { configureWifi, wifi } from '../../../../net/build'
-import { findDevice, isHost } from '../../../../net/doc'
+import {
+  addRoute,
+  configureWifi,
+  forward,
+  reserve,
+  setDhcpPool,
+  unforward,
+  wifi,
+} from '../../../../net/build'
+import { NetOp, findDevice, isHost } from '../../../../net/doc'
 import type { NetMessage } from '../../../../net/message'
 import {
   type DeviceId,
+  type PortForward,
+  type Proto,
+  type Reservation,
   type Router,
+  type StaticRoute,
   type WifiBand,
 } from '../../../../net/model'
 import {
@@ -16,13 +28,18 @@ import {
 } from '../../../../net/topology'
 import { isValidChannel } from '../../../../net/wifi'
 import type { PacketDoc } from '../../doc'
+import * as Check from './fields'
 import {
+  type Choice,
   type PanelContext,
   type PanelDefinition,
   type PanelTab,
   type Values,
   choice,
   fieldOf,
+  gather,
+  gatherAll,
+  rowsOf,
   values,
 } from './schema'
 
@@ -254,6 +271,385 @@ const devicesTab: PanelTab = {
   save: () => Result.succeed([]),
 }
 
+// ADDRESSES
+
+const blameOn =
+  (field: string, tags: ReadonlyArray<NetMessage['_tag']>) =>
+  (message: NetMessage): Option.Option<string> =>
+    Array.contains(tags, message._tag) ? Option.some(field) : Option.none()
+
+/** Устройства доски, которым можно закрепить адрес: по MAC, с подписью. */
+const deviceChoices = (
+  context: PanelContext,
+  router: Router,
+): ReadonlyArray<Choice> => {
+  const hosts = Array.filter(
+    context.world.doc.devices,
+    (device): device is Extract<typeof device, { _tag: 'Host' }> =>
+      isHost(device) && Option.isNone(device.maybeContainer),
+  )
+  const known = Array.map(hosts, host => host.mac)
+  return [
+    ...Array.map(hosts, host => choice(host.mac, () => context.name(host.id))),
+    ...Array.map(
+      Array.filter(
+        router.dhcp.reservations,
+        reservation => !Array.contains(known, reservation.mac),
+      ),
+      reservation =>
+        choice(reservation.mac, strings =>
+          strings.addresses.otherMac(reservation.mac),
+        ),
+    ),
+  ]
+}
+
+const sameReservation = (left: Reservation, right: Reservation): boolean =>
+  left.mac === right.mac && left.ip === right.ip
+
+const addressesTab: PanelTab = {
+  id: 'addresses',
+  feature: 'router.addresses',
+  label: strings => strings.addresses.tab,
+  fields: context =>
+    Option.match(routerOf(context), {
+      onNone: () => [],
+      onSome: router => {
+        const devices = deviceChoices(context, router)
+        return [
+          {
+            _tag: 'Input',
+            id: 'poolStart',
+            label: strings => strings.addresses.poolStart,
+            input: 'ip',
+          },
+          {
+            _tag: 'Input',
+            id: 'poolEnd',
+            label: strings => strings.addresses.poolEnd,
+            input: 'ip',
+          },
+          {
+            _tag: 'List',
+            id: 'reservations',
+            label: strings => strings.addresses.reservations,
+            columns: [
+              {
+                _tag: 'Select',
+                id: 'device',
+                label: strings => strings.addresses.device,
+                choices: devices,
+              },
+              {
+                _tag: 'Input',
+                id: 'ip',
+                label: strings => strings.addresses.address,
+                input: 'ip',
+              },
+            ],
+            newRow: {
+              device: Option.getOrElse(
+                Option.map(Array.head(devices), first => first.value),
+                () => '',
+              ),
+              ip: '',
+            },
+          },
+        ]
+      },
+    }),
+  read: context =>
+    readRouter(context, router =>
+      values(
+        { poolStart: router.dhcp.start, poolEnd: router.dhcp.end },
+        {
+          reservations: Array.map(router.dhcp.reservations, reservation => ({
+            id: reservation.mac,
+            cells: { device: reservation.mac, ip: reservation.ip },
+          })),
+        },
+      ),
+    ),
+  save: (context, draft, base) =>
+    Option.match(routerOf(context), {
+      onNone: () => Result.succeed([]),
+      onSome: router =>
+        Result.map(
+          gather({
+            start: Check.ip('poolStart', fieldOf(draft, 'poolStart')),
+            end: Check.ip('poolEnd', fieldOf(draft, 'poolEnd')),
+            reservations: gatherAll(
+              Array.map(rowsOf(draft, 'reservations'), row => {
+                const cell = Check.cell<string>('reservations', row)
+                return Result.map(
+                  gather({
+                    mac: cell('device', Check.text),
+                    ip: cell('ip', Check.ip),
+                  }),
+                  ({ mac, ip }): Reservation => ({ mac, ip }),
+                )
+              }),
+            ),
+          }),
+          ({ start, end, reservations }) => {
+            const poolChanged =
+              fieldOf(base, 'poolStart') !== fieldOf(draft, 'poolStart') ||
+              fieldOf(base, 'poolEnd') !== fieldOf(draft, 'poolEnd')
+            const current = router.dhcp.reservations
+            return [
+              ...(poolChanged ? [setDhcpPool(router.id, start, end)] : []),
+              ...Array.map(
+                Check.missingFrom(
+                  current,
+                  reservations,
+                  reservation => reservation.mac,
+                  reservation => reservation.mac,
+                ),
+                reservation =>
+                  NetOp.RemoveReservation({
+                    router: router.id,
+                    mac: reservation.mac,
+                  }),
+              ),
+              ...Array.map(
+                Array.filter(
+                  reservations,
+                  reservation =>
+                    !Array.some(current, other =>
+                      sameReservation(other, reservation),
+                    ),
+                ),
+                reservation =>
+                  reserve(router.id, reservation.mac, reservation.ip),
+              ),
+            ]
+          },
+        ),
+    }),
+  blame: message =>
+    Option.orElse(
+      blameOn('poolStart', [
+        'DhcpPoolOutsideSubnet',
+        'DhcpPoolReversed',
+        'DhcpPoolIncludesRouter',
+      ])(message),
+      () =>
+        blameOn('reservations', [
+          'ReservationOutsideSubnet',
+          'ReservationTaken',
+          'DuplicateMac',
+          'InvalidMac',
+        ])(message),
+    ),
+}
+
+// PORTS
+
+const protoChoices: ReadonlyArray<Choice> = [
+  choice('tcp', () => 'TCP'),
+  choice('udp', () => 'UDP'),
+]
+
+const protoOf = (value: string): Proto => (value === 'udp' ? 'udp' : 'tcp')
+
+const forwardKey = (rule: PortForward): string =>
+  `${rule.proto}:${rule.outsidePort}:${rule.insideIp}:${rule.insidePort}`
+
+const portsTab: PanelTab = {
+  id: 'ports',
+  feature: 'router.ports',
+  label: strings => strings.ports.tab,
+  fields: () => [
+    {
+      _tag: 'List',
+      id: 'forwards',
+      label: strings => strings.ports.rules,
+      columns: [
+        {
+          _tag: 'Select',
+          id: 'proto',
+          label: strings => strings.ports.proto,
+          choices: protoChoices,
+        },
+        {
+          _tag: 'Input',
+          id: 'outsidePort',
+          label: strings => strings.ports.outsidePort,
+          input: 'port',
+        },
+        {
+          _tag: 'Input',
+          id: 'insideIp',
+          label: strings => strings.ports.insideIp,
+          input: 'ip',
+        },
+        {
+          _tag: 'Input',
+          id: 'insidePort',
+          label: strings => strings.ports.insidePort,
+          input: 'port',
+        },
+      ],
+      newRow: { proto: 'tcp', outsidePort: '', insideIp: '', insidePort: '' },
+    },
+  ],
+  read: context =>
+    readRouter(context, router =>
+      values(
+        {},
+        {
+          forwards: Array.map(router.forwards, rule => ({
+            id: `${rule.proto}:${rule.outsidePort}`,
+            cells: {
+              proto: rule.proto,
+              outsidePort: `${rule.outsidePort}`,
+              insideIp: rule.insideIp,
+              insidePort: `${rule.insidePort}`,
+            },
+          })),
+        },
+      ),
+    ),
+  save: (context, draft) =>
+    Option.match(routerOf(context), {
+      onNone: () => Result.succeed([]),
+      onSome: router =>
+        Result.map(
+          gatherAll(
+            Array.map(rowsOf(draft, 'forwards'), row => {
+              const port = Check.cell<number>('forwards', row)
+              return Result.map(
+                gather({
+                  outsidePort: port('outsidePort', Check.port),
+                  insideIp: Check.cell<string>('forwards', row)(
+                    'insideIp',
+                    Check.ip,
+                  ),
+                  insidePort: port('insidePort', Check.port),
+                }),
+                (parsed): PortForward => ({
+                  proto: protoOf(row.cells['proto'] ?? ''),
+                  ...parsed,
+                }),
+              )
+            }),
+          ),
+          rules => [
+            ...Array.map(
+              Check.missingFrom(router.forwards, rules, forwardKey, forwardKey),
+              rule => unforward(router.id, rule.proto, rule.outsidePort),
+            ),
+            ...Array.map(
+              Check.missingFrom(rules, router.forwards, forwardKey, forwardKey),
+              rule => forward(router.id, rule),
+            ),
+          ],
+        ),
+    }),
+  blame: blameOn('forwards', [
+    'ForwardOutsideLan',
+    'ForwardPortTaken',
+    'InvalidPort',
+    'InvalidIp',
+  ]),
+}
+
+// ROUTES
+
+const routeKey = (route: StaticRoute): string =>
+  `${route.network}/${route.prefix}>${route.via}`
+
+const routesTab: PanelTab = {
+  id: 'routes',
+  feature: 'router.routes',
+  label: strings => strings.routes.tab,
+  fields: () => [
+    {
+      _tag: 'List',
+      id: 'routes',
+      label: strings => strings.routes.rules,
+      columns: [
+        {
+          _tag: 'Input',
+          id: 'network',
+          label: strings => strings.routes.network,
+          input: 'cidr',
+          placeholder: () => '10.0.0.0/8',
+        },
+        {
+          _tag: 'Input',
+          id: 'via',
+          label: strings => strings.routes.via,
+          input: 'ip',
+        },
+      ],
+      newRow: { network: '', via: '' },
+    },
+  ],
+  read: context =>
+    readRouter(context, router =>
+      values(
+        {},
+        {
+          routes: Array.map(router.routes, route => ({
+            id: `${route.network}/${route.prefix}`,
+            cells: {
+              network: `${route.network}/${route.prefix}`,
+              via: route.via,
+            },
+          })),
+        },
+      ),
+    ),
+  save: (context, draft) =>
+    Option.match(routerOf(context), {
+      onNone: () => Result.succeed([]),
+      onSome: router =>
+        Result.map(
+          gatherAll(
+            Array.map(rowsOf(draft, 'routes'), row => {
+              const cell = Check.cell<string>('routes', row)
+              return gather({
+                network: cell('network', Check.cidr),
+                via: cell('via', Check.ip),
+              })
+            }),
+          ),
+          rows => {
+            const wanted = Array.map(rows, row => {
+              const [network = '', prefix = '0'] = row.network.split('/')
+              return {
+                network,
+                prefix: globalThis.Number(prefix),
+                via: row.via,
+                cidr: row.network,
+              }
+            })
+            return [
+              ...Array.map(
+                Check.missingFrom(router.routes, wanted, routeKey, routeKey),
+                route =>
+                  NetOp.RemoveRoute({
+                    router: router.id,
+                    network: route.network,
+                    prefix: route.prefix,
+                  }),
+              ),
+              ...Array.map(
+                Check.missingFrom(wanted, router.routes, routeKey, routeKey),
+                route => addRoute(router.id, route.cidr, route.via),
+              ),
+            ]
+          },
+        ),
+    }),
+  blame: blameOn('routes', [
+    'RouteViaOutsideLan',
+    'InvalidIp',
+    'InvalidPrefix',
+  ]),
+}
+
 // PANEL
 
 export const routerPanel: PanelDefinition = {
@@ -266,5 +662,5 @@ export const routerPanel: PanelDefinition = {
       onNone: () => strings.routerTab,
       onSome: router => `${context.name(router.id)} · ${router.lan.ip}`,
     }),
-  tabs: [wifiTab, devicesTab],
+  tabs: [wifiTab, devicesTab, addressesTab, portsTab, routesTab],
 }

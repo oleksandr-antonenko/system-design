@@ -4,9 +4,14 @@ import { Update } from 'foldkit'
 import type { SurfaceDefinition } from '../../../contract'
 import { SurfaceMessage, SurfaceState } from '../../../state'
 import type { PacketTypes } from '../../../types'
+import { composePanel } from './compose'
+import { dnsPanel } from './dns'
+import { meshPanel } from './mesh'
 import * as Panel from './panel'
 import { routerPanel } from './router'
 import type { PanelDefinition } from './schema'
+import { serverPanel } from './server'
+import { vpnPanel } from './vpn'
 
 // Панели настроек как поверхности задачи (design D5 extract-board-kind):
 // у всех панелей одно состояние `PanelSurface` в общем union, а различаются
@@ -36,7 +41,11 @@ export const panelSurface = (
         })(state, message.message)
       : { model: state },
   tabLabel: (context, ui) =>
-    definition.tabLabel(Panel.panelContext(definition, context), ui.panel),
+    definition.tabLabel(
+      Panel.panelContext(definition, context),
+      ui.panel,
+      context.target,
+    ),
   view: (slot, h) =>
     Option.match(readPanel(slot.state), {
       onNone: () => h.empty,
@@ -59,4 +68,9 @@ export const panelSurface = (
 /** Панели вида `packet`: id поверхности задачи — `тип[:устройство]`. */
 export const panelSurfaces: ReadonlyArray<SurfaceDefinition<PacketTypes>> = [
   panelSurface(routerPanel),
+  panelSurface(dnsPanel),
+  panelSurface(serverPanel),
+  panelSurface(vpnPanel),
+  panelSurface(meshPanel),
+  panelSurface(composePanel),
 ]

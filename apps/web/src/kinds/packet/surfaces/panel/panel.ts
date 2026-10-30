@@ -1026,10 +1026,12 @@ const fieldView = <ParentMessage>(
     List: list => listFieldView(ctx, list, h),
     Table: table => tableFieldView(ctx, table, h),
     Note: note =>
-      h.p(
-        [h.Class(`panel-note ${note.tone}`), h.Role('status')],
-        [note.text(ctx.input.strings)],
-      ),
+      note.tone === 'section'
+        ? h.h4([h.Class('panel-section')], [note.text(ctx.input.strings)])
+        : h.p(
+            [h.Class(`panel-note ${note.tone}`), h.Role('status')],
+            [note.text(ctx.input.strings)],
+          ),
     Input: scalar => scalarFieldView(ctx, scalar, h),
     Select: scalar => scalarFieldView(ctx, scalar, h),
     Segmented: scalar => scalarFieldView(ctx, scalar, h),
@@ -1056,7 +1058,9 @@ const fieldPaths = (
             ),
           ),
         ]
-      : [field.id],
+      : isEditableField(field)
+        ? [field.id]
+        : [],
   )
 
 const tabsView = <ParentMessage>(

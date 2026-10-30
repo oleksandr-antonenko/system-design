@@ -5,7 +5,8 @@ import { Schema } from 'effect'
  * план, раздел 3.4). Имя — `<поверхность>.<элемент>`; поверхности:
  * `transport` (кнопки под доской), `board`, `envelope` (конверт), `quiz`,
  * `wifi` (настройки Wi-Fi телефона), `browser`, `terminal`, `router`
- * (вкладки панели роутера), `dnsPanel`, `vpn`. Поверхность видна, если
+ * (вкладки панели роутера), `dnsPanel`, `server` (панель сервера), `vpn`,
+ * `compose` (редактор compose.yaml), `mesh` (своя сеть). Поверхность видна, если
  * открыт хотя бы один её элемент (`isSurfaceOpen`). Порядок — порядок
  * уроков, которые их открывают.
  */
@@ -65,8 +66,10 @@ export const UiFeature = Schema.Literals([
   'terminal.curl',
   'browser.certificate',
   'browser.errCert',
+  'server.site',
+  'server.cert',
   'board.firewall',
-  'router.firewall',
+  'server.firewall',
   'terminal.ss',
   'terminal.ufw',
   'browser.errConnectionTimedOut',
@@ -76,8 +79,10 @@ export const UiFeature = Schema.Literals([
   'board.dockerHost',
   'board.tunnelRelay',
   'terminal.docker',
+  'compose.file',
   'board.fog',
   'terminal.freeInput',
   'board.sandbox',
+  'mesh.members',
 ])
 export type UiFeature = typeof UiFeature.Type

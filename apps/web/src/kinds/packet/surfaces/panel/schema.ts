@@ -185,12 +185,13 @@ export type TableColumn = Readonly<{
   format?: (strings: PanelStrings, value: string) => string
 }>
 
-/** Пояснение над полями: тон `warn` — что-то ждёт действия. */
+/** Пояснение над полями: тон `warn` — что-то ждёт действия, `section` —
+    заголовок группы полей (сервис compose). */
 export type NoteField = Readonly<{
   _tag: 'Note'
   id: string
   text: Text
-  tone: 'info' | 'warn'
+  tone: 'info' | 'warn' | 'section'
 }>
 
 export type Field = ScalarField | ListField | TableField | NoteField
@@ -244,9 +245,12 @@ export type PanelDefinition = Readonly<{
   feature: string
   /** Устройство панели по id поверхности (`vps` у `server:vps`) или по доске. */
   device: (world: PacketDoc, target: string) => Option.Option<DeviceId>
+  /** Подпись вкладки поверхности; `target` — устройство из id поверхности,
+      если его ещё нет на доске. */
   tabLabel: (
     maybeContext: Option.Option<PanelContext>,
     strings: PanelStrings,
+    target: string,
   ) => string
   heading: (context: PanelContext, strings: PanelStrings) => string
   tabs: ReadonlyArray<PanelTab>
