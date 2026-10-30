@@ -966,9 +966,16 @@ const stickerView = <ParentMessage>(
       const isOn =
         picture.model.isStickerOpen ||
         Option.exists(picture.context.maybeHoveredRef, ref => ref === 'sticker')
+      // Наклейка подсказывает только задачу про Wi-Fi: в уроке 4 Wi-Fi
+      // работает, и мигающая наклейка уводила бы не туда.
       const isGhost = Option.exists(
         picture.context.maybeTask,
-        task => task.isGhostShown,
+        task =>
+          task.isGhostShown &&
+          Array.some(
+            task.solution,
+            op => op._tag === 'JoinWifi' || op._tag === 'ConfigureWifi',
+          ),
       )
       return [
         ...(isGhost

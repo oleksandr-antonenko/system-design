@@ -56,9 +56,7 @@ describe('lesson 4: hops and ping', () => {
     scene(
       sceneIn('ru'),
       given(Player.init('networks', lesson, 0)),
-      expect(
-        text('ваш вход в интернет: компания, которой вы платите за интернет'),
-      ).toExist(),
+      expect(text('вход в интернет')).toExist(),
       expect(text('203.0.113.1')).not.toExist(),
       expect(text('192.168.1.42')).toExist(),
     )

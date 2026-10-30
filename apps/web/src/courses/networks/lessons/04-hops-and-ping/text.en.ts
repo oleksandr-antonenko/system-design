@@ -15,15 +15,15 @@ export default {
     router: { name: 'Router', note: 'the post office of your home' },
     isp: {
       name: 'ISP router',
-      note: 'your way into the internet: the company you pay for the internet',
+      note: 'way online',
     },
     core: {
       name: 'Core router',
-      note: 'the ISP’s hub, a big crossroads: roads to other networks start here',
+      note: 'crossroads',
     },
     hosting: {
       name: 'Hosting router',
-      note: 'the network of the company where the shop’s site lives',
+      note: 'site’s network',
     },
     dns: { name: 'DNS server', note: 'your provider’s directory' },
     shop: { name: 'shop.example', note: 'the shop’s site, somewhere far away' },
@@ -61,7 +61,7 @@ The traceroute command shows all the post offices on the way at once. We will lo
       title: 'Task: where the connection is lost',
       body: `Yesterday the shop’s site opened on the laptop, but today it does not. The Wi-Fi is there. Find the stretch where the envelope gets lost, and fix the connection.
 
-The laptop’s terminal has opened next to the board. So far it has one command — ping. Check one by one: does your [[router|router]] answer (its IP address is 192.168.1.1), and does the site shop.example answer? Where the replies stop, there is the break.`,
+The laptop’s terminal has opened under the board. So far it has one command — ping. Check one by one: does your [[router|router]] answer (its IP address is 192.168.1.1), and does the site shop.example answer? Where the replies stop, there is the break.`,
     },
     summary: {
       title: 'Summary',

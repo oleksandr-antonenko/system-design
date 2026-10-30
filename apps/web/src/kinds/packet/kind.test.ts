@@ -102,12 +102,24 @@ describe('packet board kind', () => {
     ).toEqual(['door'])
   })
 
-  test('a ping in the terminal plays its echo once, not once per line', () => {
+  test('a ping in the terminal plays its echo once, through the open cloud of transit routers', () => {
     const world = buildWorld(chainOps)
     expect(kind.moveStage(world, run('laptop', 'ping shop.example'))).toEqual([
+      { _tag: 'Expand', target: 'internet' },
       {
         _tag: 'Play',
         intent: Intent.Ping({ from: 'laptop', host: 'shop.example' }),
+      },
+    ])
+    expect(
+      kind.moveStage(
+        taskStartBoard(phoneOnline, TASK_STEP, {}),
+        send(Intent.Ping({ from: 'phone', host: '198.51.100.10' })),
+      ),
+    ).toEqual([
+      {
+        _tag: 'Play',
+        intent: Intent.Ping({ from: 'phone', host: '198.51.100.10' }),
       },
     ])
   })

@@ -274,9 +274,11 @@
   cursor: pointer;
 }
 .pb-link-hit.plug:hover,
-.pb-link-hit.plug:focus-visible,
-.pb-link-hit.plug.ghost {
+.pb-link-hit.plug:focus-visible {
   stroke: color-mix(in srgb, var(--accent) 26%, transparent);
+}
+.pb-link-hit.plug.ghost {
+  stroke: color-mix(in srgb, var(--accent) 45%, transparent);
 }
 .pb-link-hit.plug.pulse {
   animation: pb-pulse 1.4s ease-in-out infinite;
@@ -964,6 +966,25 @@
   max-height: 180px;
   overflow-y: auto;
 }
+/* Распечатка — под картинкой доски, а не поверх неё: иначе она закрывает
+   конец цепочки роутеров (урок 4). Доска ужимается в оставшееся место. */
+.pb-stage:has(> .pb-printout) {
+  display: flex;
+  flex-direction: column;
+}
+.pb-stage:has(> .pb-printout) > .pb-svg {
+  position: relative;
+  inset: auto;
+  flex: 1;
+  min-height: 0;
+  height: auto;
+}
+.pb-stage > .pb-printout {
+  position: static;
+  flex: none;
+  align-self: flex-end;
+  margin: 0 12px 12px;
+}
 .pb-run-all {
   left: 12px;
   right: 12px;
@@ -1285,6 +1306,21 @@
     min-height: 0;
     aspect-ratio: var(--pb-ratio);
     max-height: 78vh;
+  }
+  .pb-stage:has(> .pb-printout) {
+    aspect-ratio: auto;
+    max-height: none;
+  }
+  .pb-stage:has(> .pb-printout) > .pb-svg {
+    flex: none;
+    width: 100%;
+    aspect-ratio: var(--pb-ratio);
+    max-height: 78vh;
+  }
+  .pb-stage > .pb-printout {
+    align-self: stretch;
+    width: auto;
+    margin: 0 8px 8px;
   }
   .pb-play {
     min-width: 0;

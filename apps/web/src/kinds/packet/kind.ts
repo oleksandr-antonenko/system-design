@@ -52,11 +52,7 @@ const opText = (op: PacketOp): string =>
 
 // MOVES
 
-/** Ход ученика со своей сценой: открытая страница или трассы команды
-    терминала (`ping`, `curl`) проигрываются на доске. Одинаковые конверты
-    команды (три эха ping) проигрываются один раз: доска показывает первое
-    эхо, остальные строки печатает терминал. */
-const moveStage = (
+const playsOf = (
   before: PacketDoc,
   op: PacketOp,
 ): ReadonlyArray<PacketStage> =>
@@ -74,6 +70,22 @@ const moveStage = (
           (intent): PacketStage => ({ _tag: 'Play', intent }),
         )
       : []
+
+/** Ход ученика со своей сценой: открытая страница или трассы команды
+    терминала (`ping`, `curl`) проигрываются на доске. Одинаковые конверты
+    команды (три эха ping) проигрываются один раз: доска показывает первое
+    эхо, остальные строки печатает терминал. Если в облаке настоящие
+    транзитные роутеры, оно раскрыто: конверт идёт через них хоп за хопом. */
+const moveStage = (
+  before: PacketDoc,
+  op: PacketOp,
+): ReadonlyArray<PacketStage> => {
+  const plays = playsOf(before, op)
+  return Array.isReadonlyArrayNonEmpty(plays) &&
+    Array.some(before.doc.devices, device => device._tag === 'Transit')
+    ? [{ _tag: 'Expand', target: 'internet' }, ...plays]
+    : plays
+}
 
 // KIND
 

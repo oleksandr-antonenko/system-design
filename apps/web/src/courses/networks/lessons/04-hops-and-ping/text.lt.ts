@@ -15,15 +15,15 @@ export default {
     router: { name: 'Router', note: 'jūsų namų paštas' },
     isp: {
       name: 'ISP router',
-      note: 'jūsų įėjimas į internetą: įmonė, kuriai mokate už internetą',
+      note: 'į internetą',
     },
     core: {
       name: 'Core router',
-      note: 'tiekėjo mazgas, didelė sankryža: iš čia keliai į kitus tinklus',
+      note: 'sankryža',
     },
     hosting: {
       name: 'Hosting router',
-      note: 'įmonės tinklas, kuriame gyvena parduotuvės svetainė',
+      note: 'svetainės tinklas',
     },
     dns: { name: 'DNS server', note: 'tiekėjo informacijos tarnyba' },
     shop: { name: 'shop.example', note: 'parduotuvės svetainė, kažkur toli' },
@@ -61,7 +61,7 @@ Visus paštus pakeliui iš karto parodo komanda traceroute. Ją aptarsime 8 pamo
       title: 'Užduotis: kur dingo ryšys',
       body: `Vakar parduotuvės svetainė atsidarydavo nešiojamajame kompiuteryje, o šiandien ne. Wi-Fi yra. Raskite, kurioje atkarpoje pradingsta vokas, ir sutaisykite ryšį.
 
-Šalia lentos atsidarė nešiojamojo kompiuterio terminalas. Jame kol kas viena komanda – ping. Patikrinkite paeiliui: ar atsako jūsų [[router|router]] (jo IP address – 192.168.1.1) ir ar atsako svetainė shop.example. Kur atsakymai baigiasi, ten ir trūkis.`,
+Po lenta atsidarė nešiojamojo kompiuterio terminalas. Jame kol kas viena komanda – ping. Patikrinkite paeiliui: ar atsako jūsų [[router|router]] (jo IP address – 192.168.1.1) ir ar atsako svetainė shop.example. Kur atsakymai baigiasi, ten ir trūkis.`,
     },
     summary: {
       title: 'Santrauka',

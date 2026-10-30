@@ -99,18 +99,18 @@ export default defineLesson(packet, {
           }),
         ),
         add(host('printer', 'printer', 110, 430)),
-        add(transit('isp', 490, 300, { ip: '203.0.113.1' })),
-        add(transit('core', 640, 300, { ip: '192.0.2.1' })),
-        add(transit('hosting', 780, 300, { ip: '198.51.100.1' })),
+        add(transit('isp', 530, 300, { ip: '203.0.113.1' })),
+        add(transit('core', 715, 300, { ip: '192.0.2.1' })),
+        add(transit('hosting', 900, 300, { ip: '198.51.100.1' })),
         add(
-          host('dns', 'server', 640, 140, {
+          host('dns', 'server', 715, 130, {
             address: '192.0.2.53/24',
             listeners: [udp(53)],
             records: [{ name: 'shop.example', ip: '198.51.100.10' }],
           }),
         ),
         add(
-          host('shop', 'server', 890, 300, {
+          host('shop', 'server', 900, 470, {
             address: '198.51.100.10/24',
             listeners: [tcp(80), tcp(443)],
             certs: [
