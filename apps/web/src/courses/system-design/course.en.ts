@@ -9,6 +9,6 @@ export default {
     foundations: 'Foundations',
     scaling: 'Scaling',
     distributed: 'Reliability and distribution',
-    hard: 'Hard tasks',
+    hard: 'Advanced System Design',
   },
 } satisfies CourseText<typeof course>
