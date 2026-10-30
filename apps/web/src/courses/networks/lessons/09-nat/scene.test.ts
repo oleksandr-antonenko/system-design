@@ -108,6 +108,20 @@ const forwardPort = (
 }
 
 describe('lesson 9: NAT and port forwarding', () => {
+  test('ru: step 2 opens the router card on its NAT table only, so the board stays visible', () => {
+    scene(
+      sceneIn('ru'),
+      given(Player.init('networks', lesson, 1)),
+      expect(
+        role('complementary', { name: 'Карточка устройства «Router»' }),
+      ).toExist(),
+      expect(text('NAT table')).toExist(),
+      expect(text('WAN')).toExist(),
+      expect(text('ARP table')).toBeAbsent(),
+      expect(text('DHCP leases')).toBeAbsent(),
+    )
+  })
+
   test('ru: one attempt at the question — a wrong chip shows why and the right answer', () => {
     scene(
       sceneIn('ru'),

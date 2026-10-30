@@ -21,7 +21,7 @@ export default {
   steps: {
     'home-only': {
       title: 'Namų adresai – tik namams',
-      body: `Dešinėje lentos pusėje – jūsų draugo namai. Pažiūrėkite į jo [[friend|kompiuterio]] IP address: 192.168.1.100. Lygiai toks pat yra jūsų [[phone|telefono]]. Tai ne klaida: adresus 192.168.… dalija kiekvienas namų router, ir milijonuose namų jie kartojasi. Todėl jie veikia tik savo namuose.
+      body: `Lentoje dabar yra ir jūsų draugo namai. Pažiūrėkite į jo [[friend|kompiuterio]] IP address: 192.168.1.100. Lygiai toks pat yra jūsų [[phone|telefono]]. Tai ne klaida: adresus 192.168.… dalija kiekvienas namų router, ir milijonuose namų jie kartojasi. Todėl jie veikia tik savo namuose.
 
 Paspauskite „Paleisti“: draugas siunčia voką adresu 192.168.1.42 – tai jūsų nešiojamojo kompiuterio adresas. Vokas net neišeina iš jo namų: draugo kompiuteriui tai kaimyno jo paties namuose adresas, o tokio kaimyno ten nėra. Iš išorės jūsų namai matomi vienu adresu – jūsų [[router|router]] išoriniu adresu 203.0.113.7.`,
     },
@@ -68,8 +68,8 @@ Toliau, 10 pamoka: kaip nukreipti savo domain į savo server ir kodėl draugas d
     },
   },
   annotations: {
-    sameAsFriend: () => 'toks pat numeris kaip draugo',
-    sameAsPhone: () => 'toks pat numeris kaip jūsų telefono',
+    sameAsFriend: () => 'toks pat ir pas draugą',
+    sameAsPhone: () => 'toks pat kaip jūsų telefono',
     outside: () => 'iš išorės: 203.0.113.7',
     timedOut: () => 'Connection timed out',
     gameServer: () => 'Minecraft server laukia 25565',

@@ -166,7 +166,22 @@ const changedRow = (
     }),
   )
 
-/** Таблицы карточки: что открыто курсом и подходит устройству. */
+/** Таблицы, которые сцена шага открыла в карточке этого устройства. */
+const askedTables = (
+  picture: Picture,
+  device: Device,
+): ReadonlyArray<DeviceTable> =>
+  Array.getSomes(
+    Array.map(picture.context.stage, item =>
+      item._tag === 'ShowTable' && item.device === device.id
+        ? Option.some(item.table)
+        : Option.none(),
+    ),
+  )
+
+/** Таблицы карточки: те, что открыла сцена (карточка router с урока 9 иначе
+    закрывает всю доску на телефоне), или всё, что открыто курсом и подходит
+    устройству. */
 const tablesFor = (
   picture: Picture,
   device: Device,
@@ -201,18 +216,16 @@ const tablesFor = (
           Array.isReadonlyArrayNonEmpty(device.firewall.rules)),
     ],
   ]
-  return Array.dedupe([
-    ...Array.filter(picture.cardTables, table =>
-      Array.some(candidates, ([candidate]) => candidate === table),
-    ),
-    ...Array.map(
-      Array.filter(
-        candidates,
-        ([, feature, fits]) => fits && picture.isOpen(feature),
-      ),
-      ([table]) => table,
-    ),
-  ])
+  const asked = askedTables(picture, device)
+  return Array.isReadonlyArrayNonEmpty(asked)
+    ? Array.dedupe(asked)
+    : Array.map(
+        Array.filter(
+          candidates,
+          ([, feature, fits]) => fits && picture.isOpen(feature),
+        ),
+        ([table]) => table,
+      )
 }
 
 const sendForm = <ParentMessage>(

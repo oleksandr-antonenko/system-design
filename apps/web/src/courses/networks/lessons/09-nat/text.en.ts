@@ -24,7 +24,7 @@ export default {
   steps: {
     'home-only': {
       title: 'Home addresses are for home only',
-      body: `On the right of the board is your friend’s home. Look at the IP address of his [[friend|computer]]: 192.168.1.100. Your [[phone|phone]] has exactly the same one. That is not a mistake: every home router hands out 192.168.… addresses, and they repeat in millions of homes. That is why they only work inside their own home.
+      body: `Your friend’s home is on the board now. Look at the IP address of his [[friend|computer]]: 192.168.1.100. Your [[phone|phone]] has exactly the same one. That is not a mistake: every home router hands out 192.168.… addresses, and they repeat in millions of homes. That is why they only work inside their own home.
 
 Press “Run”: your friend sends an envelope to 192.168.1.42, your laptop’s address. The envelope does not even leave his home: to his computer this is the address of a neighbour in his own home, and there is no such neighbour there. From outside, your home is seen at one address — the outside address of your [[router|router]], 203.0.113.7.`,
     },
@@ -71,8 +71,8 @@ Next, lesson 10: how to point your own domain at your server and why your friend
     },
   },
   annotations: {
-    sameAsFriend: () => 'the same number as your friend’s',
-    sameAsPhone: () => 'the same number as your phone’s',
+    sameAsFriend: () => 'your friend has it too',
+    sameAsPhone: () => 'same as your phone',
     outside: () => 'outside: 203.0.113.7',
     timedOut: () => 'Connection timed out',
     gameServer: () => 'Minecraft server waits in 25565',

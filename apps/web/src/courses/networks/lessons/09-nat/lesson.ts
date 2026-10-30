@@ -102,16 +102,16 @@ export default defineLesson(packet, {
             reservations: [{ mac: LAPTOP_MAC, ip: '192.168.1.42' }],
           }),
         ),
-        add(host('phone', 'phone', 110, 140, { wifi: homeWifi })),
+        add(host('phone', 'phone', 110, 90, { wifi: homeWifi })),
         add(
-          host('laptop', 'laptop', 110, 250, {
+          host('laptop', 'laptop', 110, 230, {
             mac: LAPTOP_MAC,
             wifi: homeWifi,
           }),
         ),
-        add(host('printer', 'printer', 110, 360)),
+        add(host('printer', 'printer', 110, 370)),
         add(
-          host('pc', 'pc', 110, 470, {
+          host('pc', 'pc', 110, 510, {
             listeners: [tcp(GAME_PORT), tcp(DATABASE_PORT)],
           }),
         ),
@@ -124,7 +124,7 @@ export default defineLesson(packet, {
           }),
         ),
         add(
-          host('shop', 'server', 740, 130, {
+          host('shop', 'server', 740, 200, {
             address: '198.51.100.10/24',
             listeners: [tcp(80), tcp(443)],
             certs: [
@@ -137,13 +137,13 @@ export default defineLesson(packet, {
           }),
         ),
         add(
-          router('friend-router', 720, 430, {
+          router('friend-router', 740, 460, {
             lan: '192.168.1.1/24',
             wan: '203.0.113.77',
             dns: '192.0.2.53',
           }),
         ),
-        add(host('friend', 'pc', 880, 430)),
+        add(host('friend', 'pc', 900, 460)),
         radio('phone', 'router'),
         radio('laptop', 'router'),
         cable('printer', 'router'),
