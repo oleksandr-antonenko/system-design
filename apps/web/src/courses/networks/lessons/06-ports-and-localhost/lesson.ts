@@ -128,7 +128,7 @@ export default defineLesson(packet, {
           'not-found': screenPicture('ERR_NAME_NOT_RESOLVED', 'localhost:5173'),
           offline: screenPicture('ERR_INTERNET_DISCONNECTED', 'localhost:5173'),
         },
-        hideUntilAnswered: ['stage'],
+        hideUntilAnswered: ['play'],
       },
     },
     {

@@ -5,6 +5,7 @@ import { formatNumber } from '../format'
 import { plural } from '../plural'
 import { deviceUk } from './device/uk'
 import { panelUk } from './panel/uk'
+import { packetBoardUk } from './packetBoard/uk'
 import type { UiStrings } from './types'
 
 const inLanguage: UiStrings['inLanguage'] = {
@@ -187,6 +188,7 @@ export const uk = {
   },
   device: deviceUk,
   panel: panelUk,
+  packetBoard: packetBoardUk,
   notFound: {
     title: 'Сторінку не знайдено',
     body: path => `За адресою «${path}» нічого немає.`,

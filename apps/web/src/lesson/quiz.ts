@@ -1,4 +1,4 @@
-import { Option } from 'effect'
+import { Array, Option, Order, pipe } from 'effect'
 
 import type { KindTypes } from '../kinds/contract'
 
@@ -15,6 +15,8 @@ export type QuizKind =
   | 'PickLayer'
   | 'PlaceChips'
   | 'SpotFault'
+  | 'PickRule'
+  | 'Match'
 
 /** Ответ, который считает движок по доске шага: автор его не пишет, и
     ошибиться в нём нельзя. */
@@ -40,6 +42,12 @@ export type QuizSpec<
   /** Что доска прячет до ответа: подсказка виду (у `flow` — `load`, нагрузка
       блоков). */
   hideUntilAnswered?: ReadonlyArray<string>
+  /** Верных ответов несколько: ученик выделяет их и нажимает «Готово».
+      Ответ — `allOf(…)`. У `PickLinks` всегда так. */
+  multiple?: boolean
+  /** `Match` и `PlaceChips`: места, на которые кладут варианты-чипы.
+      Ответ — `matchOf({ место: чип })`. */
+  slots?: ReadonlyArray<string>
 }>
 
 /** Тексты квиза на одном языке. */
@@ -53,17 +61,24 @@ export type QuizTexts<
   wrong?: Readonly<Partial<Record<Candidate, string>>>
   /** Короткая метка на доске у выбранного и у верного ответа. */
   tags?: Readonly<Partial<Record<Candidate, string>>>
+  /** `Match`, `PlaceChips`: текст каждого места (карточки, куда кладут чип). */
+  slots?: Readonly<Record<string, string>>
 }> &
-  (Kind extends 'Choice'
+  (Kind extends 'Choice' | 'Match'
     ? Readonly<{ options: Readonly<Record<Candidate, string>> }>
-    : Readonly<{ options?: never }>)
+    : Readonly<{
+        /** Имена вариантов, которые доска не может назвать сама (строки
+            черновика, чипы). */
+        options?: Readonly<Partial<Record<Candidate, string>>>
+      }>)
 
 export type LooseQuizTexts = Readonly<{
   question: string
   explain: string
   wrong?: Readonly<Partial<Record<string, string>>>
   tags?: Readonly<Partial<Record<string, string>>>
-  options?: Readonly<Record<string, string>>
+  options?: Readonly<Partial<Record<string, string>>>
+  slots?: Readonly<Record<string, string>>
 }>
 
 export const quizAnswer = <T extends KindTypes>(
@@ -72,6 +87,70 @@ export const quizAnswer = <T extends KindTypes>(
   run: T['Run'],
 ): string =>
   typeof quiz.answer === 'string' ? quiz.answer : quiz.answer(doc, run)
+
+// SEVERAL ANSWERS
+
+const PART = '+'
+const PAIR = '='
+
+/** Части ответа: варианты квиза с несколькими ответами или пары
+    «место=чип» у `Match`. */
+export const pickParts = (pick: string): ReadonlyArray<string> =>
+  pick === '' ? [] : pick.split(PART)
+
+/** Ответ из нескольких вариантов, независимо от порядка: `allOf('a', 'b')`. */
+export const allOf = (...ids: ReadonlyArray<string>): string =>
+  pipe(ids, Array.dedupe, Array.sort(Order.String)).join(PART)
+
+/** Ответ `Match`: какой чип на каком месте. */
+export const matchOf = (pairs: Readonly<Record<string, string>>): string =>
+  allOf(...Array.map(Object.entries(pairs), ([slot, chip]) => `${slot}${PAIR}${chip}`))
+
+/** Пара «место=чип» ответа `Match`. */
+export const pairOf = (part: string): readonly [string, string] => {
+  const separator = part.indexOf(PAIR)
+  return separator < 0
+    ? [part, '']
+    : [part.slice(0, separator), part.slice(separator + 1)]
+}
+
+const canonical = (pick: string): string => allOf(...pickParts(pick))
+
+export const isMultiPick = <T extends KindTypes>(quiz: QuizSpec<T>): boolean =>
+  quiz.multiple === true || quiz.kind === 'PickLinks' || quiz.slots !== undefined
+
+/** Выбор ученика годится как ответ: один вариант, несколько разных
+    вариантов или пары «место=чип» с каждым местом не больше одного раза. */
+export const isValidPick = <T extends KindTypes>(
+  quiz: QuizSpec<T>,
+  pick: string,
+): boolean => {
+  const parts = pickParts(pick)
+  const isDistinct = (values: ReadonlyArray<string>) =>
+    Array.dedupe(values).length === values.length
+  if (quiz.slots !== undefined) {
+    const slots = quiz.slots
+    const pairs = Array.map(parts, pairOf)
+    return (
+      Array.isReadonlyArrayNonEmpty(pairs) &&
+      isDistinct(Array.map(pairs, ([slot]) => slot)) &&
+      Array.every(
+        pairs,
+        ([slot, chip]) =>
+          Array.contains(slots, slot) && Array.contains(quiz.candidates, chip),
+      )
+    )
+  }
+  return isMultiPick(quiz)
+    ? Array.isReadonlyArrayNonEmpty(parts) &&
+        isDistinct(parts) &&
+        Array.every(parts, part => Array.contains(quiz.candidates, part))
+    : Array.contains(quiz.candidates, pick)
+}
+
+/** Верен ли выбор: части совпадают с ответом без учёта порядка. */
+export const isCorrectPick = (pick: string, answer: string): boolean =>
+  canonical(pick) === canonical(answer)
 
 /** Квиз выбирают на доске, а не в карточке. */
 export const isBoardQuiz = <T extends KindTypes>(quiz: QuizSpec<T>): boolean =>

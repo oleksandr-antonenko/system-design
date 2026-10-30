@@ -49,7 +49,13 @@ import {
   unlocksOf,
   visibleSurfaces,
 } from './player'
-import { isBoardQuiz } from './quiz'
+import {
+  isBoardQuiz,
+  isCorrectPick,
+  isMultiPick,
+  pairOf,
+  pickParts,
+} from './quiz'
 
 export type PlayerViewInputs = Readonly<{
   locale: Locale
@@ -375,7 +381,7 @@ const taskCardView = <T extends KindTypes>(
         ],
       ),
       h.p([h.Class('task-prompt')], [taskTexts?.prompt ?? '']),
-      ...(isSolved ? [] : [h.p([h.Class('task-how')], [ui.task.howTo])]),
+      ...(isSolved ? [] : [h.p([h.Class('task-how')], [page.lesson.kind.taskHowTo(ui)])]),
       h.ul([h.Class('goals')], goalItems),
       feedback,
       ...(Array.isReadonlyArrayNonEmpty(hints) && !isSolved
@@ -473,13 +479,37 @@ const candidateName = <T extends KindTypes>(
   quiz: CurrentQuiz<T>,
   doc: T['Doc'],
   candidate: string,
-): string =>
-  quiz.spec.kind === 'Choice'
-    ? (page.texts.quizzes?.[quiz.spec.id]?.options?.[candidate] ?? candidate)
-    : Option.match(labelOf(page.texts)(candidate), {
-        onNone: () => page.lesson.kind.targetName(doc, candidate, page.ui),
-        onSome: label => label.name,
-      })
+): string => {
+  const quizTexts = page.texts.quizzes?.[quiz.spec.id]
+  const name = (id: string): string =>
+    quizTexts?.options?.[id] ??
+    quizTexts?.slots?.[id] ??
+    (quiz.spec.kind === 'Choice'
+      ? id
+      : Option.match(labelOf(page.texts)(id), {
+          onNone: () => page.lesson.kind.targetName(doc, id, page.ui),
+          onSome: label => label.name,
+        }))
+  return quiz.spec.slots === undefined
+    ? Array.map(pickParts(candidate), name).join(', ')
+    : Array.map(pickParts(candidate), part => {
+        const [slot, chip] = pairOf(part)
+        return `${name(slot)} — ${name(chip)}`
+      }).join('; ')
+}
+
+/** Почему неверны выбранные варианты: у квиза с несколькими ответами —
+    каждый лишний вариант, у `Match` — каждый чип не на своём месте. */
+const wrongParts = (picked: string, answer: string): ReadonlyArray<string> => {
+  const expected = pickParts(answer)
+  return Array.getSomes(
+    Array.map(pickParts(picked), part =>
+      Array.contains(expected, part)
+        ? Option.none()
+        : Option.some(part.includes('=') ? pairOf(part)[1] : part),
+    ),
+  )
+}
 
 const choicesView = <T extends KindTypes>(
   page: Page<T>,
@@ -573,14 +603,15 @@ const quizCardView = <T extends KindTypes>(
           h.div(
             [h.Class('quiz-result'), h.Role('status')],
             [
-              ...(isCorrect
+              ...(isCorrect || isCorrectPick(picked, answer)
                 ? []
-                : Option.match(
-                    Option.fromNullishOr(quizTexts?.wrong?.[picked]),
-                    {
-                      onNone: () => [],
-                      onSome: wrong => [h.p([h.Class('quiz-wrong')], [wrong])],
-                    },
+                : Array.getSomes(
+                    Array.map(wrongParts(picked, answer), part =>
+                      Option.map(
+                        Option.fromNullishOr(quizTexts?.wrong?.[part]),
+                        wrong => h.p([h.Class('quiz-wrong')], [wrong]),
+                      ),
+                    ),
                   )),
               h.p(
                 [h.Class('quiz-answer')],
@@ -966,6 +997,7 @@ const boardContext = <T extends KindTypes>(
     ui,
     prefersDark: inputs.prefersDark,
     isReducedMotion: model.isReducedMotion,
+    isNarrow: model.isNarrow,
     doc,
     run,
     mode: boardMode(lesson, model),
@@ -984,7 +1016,19 @@ const boardContext = <T extends KindTypes>(
     maybeQuiz: Option.flatMap(currentQuiz(lesson, model), quiz =>
       isBoardQuiz(quiz.spec)
         ? Option.some({
+            kind: quiz.spec.kind,
             candidates: quiz.spec.candidates,
+            multiple: isMultiPick(quiz.spec),
+            slots: quiz.spec.slots ?? [],
+            names: Record.getSomes(
+              Record.map(
+                {
+                  ...texts.quizzes?.[quiz.spec.id]?.options,
+                  ...texts.quizzes?.[quiz.spec.id]?.slots,
+                },
+                name => Option.fromNullishOr(name),
+              ),
+            ),
             maybePicked: Option.map(quiz.maybeAnswer, ({ picked }) => picked),
             maybeAnswer: Option.map(quiz.maybeAnswer, () =>
               correctAnswer(lesson, model, quiz.spec),

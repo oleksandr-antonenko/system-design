@@ -2,6 +2,7 @@ import type { ComponentKind, Region } from '../../domain/catalog'
 import type { DomainMessageTexts } from '../domainMessage'
 import type { Locale } from '../locale'
 import type { DeviceStrings } from './device/types'
+import type { PacketBoardStrings } from './packetBoard/types'
 import type { PanelStrings } from './panel/types'
 
 export type UiStrings = Readonly<{
@@ -137,6 +138,7 @@ export type UiStrings = Readonly<{
   /** Экран устройства и терминал курса сетей. */
   device: DeviceStrings
   panel: PanelStrings
+  packetBoard: PacketBoardStrings
   notFound: Readonly<{
     title: string
     body: (path: string) => string

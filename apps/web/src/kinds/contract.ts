@@ -120,7 +120,14 @@ export type BoardTask<T extends KindTypes> = Readonly<{
 
 /** Квиз текущего шага глазами доски (режим `Pick`). */
 export type BoardQuiz = Readonly<{
+  kind: QuizKind
   candidates: ReadonlyArray<string>
+  /** Несколько ответов и кнопка «Готово» (`allOf`). */
+  multiple: boolean
+  /** Места для чипов `Match` и `PlaceChips`. */
+  slots: ReadonlyArray<string>
+  /** Тексты вариантов и мест из текстов квиза (`options`, `slots`). */
+  names: Readonly<Record<string, string>>
   maybePicked: Option.Option<string>
   /** После попытки — верный ответ, до неё — ничего. */
   maybeAnswer: Option.Option<string>
@@ -137,6 +144,8 @@ export type BoardContext<T extends KindTypes> = Readonly<{
   ui: UiStrings
   prefersDark: boolean
   isReducedMotion: boolean
+  /** Узкий экран: доска раскладывается сверху вниз. */
+  isNarrow: boolean
   doc: T['Doc']
   run: T['Run']
   mode: BoardMode
@@ -325,6 +334,8 @@ export type BoardKind<T extends KindTypes> = Readonly<{
     after: T['Doc'],
     ui: UiStrings,
   ) => ReadonlyArray<OutcomeRow>
+  /** Как решать задачу этого вида: строка под условием в карточке задачи. */
+  taskHowTo: (ui: UiStrings) => string
 
   // TEXT
   proseContext: (doc: T['Doc'], run: T['Run']) => T['Prose']

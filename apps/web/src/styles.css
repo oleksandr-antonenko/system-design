@@ -3,6 +3,7 @@
 @import '@fontsource-variable/literata';
 @import '@fontsource-variable/jetbrains-mono';
 @import './kinds/packet/surfaces/surfaces.css';
+@import './kinds/packet/board.css';
 @import './kinds/packet/surfaces/panel/panel.css';
 
 /* Палитра и шрифты из макета docs/mockups/lesson-load-balancer.html.

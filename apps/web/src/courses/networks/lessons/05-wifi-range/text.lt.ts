@@ -17,13 +17,16 @@ export default {
       name: 'Lemputė',
       note: 'išmanioji lemputė virtuvėje: supranta tik 2,4 GHz',
     },
+    'zone:room': { name: 'Kambarys' },
+    'zone:hall': { name: 'Koridorius' },
+    'zone:kitchen': { name: 'Virtuvė' },
   },
   steps: {
     'floor-plan': {
       title: 'Vaizdas iš viršaus',
       body: `Pažiūrėkime į butą iš viršaus, kaip į planą. [[router|Maršrutizatorius]] stovi kambaryje. Apskritimas aplink jį rodo, kiek toli siekia Wi-Fi: apskritimo viduje ryšys yra, už jo krašto – nėra.
 
-Wi-Fi – tai radijas. Kuo toliau nuo maršrutizatoriaus, tuo tylesnis jo „balsas“. Kaip pokalbis: tame pačiame kambaryje girdisi gerai, iš kito buto galo – prastai. Paspauskite „Paleisti“: [[phone|telefonas]] nueis iš kambario į virtuvę.`,
+Wi-Fi – tai radijas. Kuo toliau nuo maršrutizatoriaus, tuo tylesnis jo „balsas“. Kaip pokalbis: tame pačiame kambaryje girdisi gerai, iš kito buto galo – prastai. Paspauskite „Paleisti“: [[phone|telefonas]] nueis iš kambario į [[zone:kitchen|virtuvę]].`,
     },
     walls: {
       title: 'Sienos slopina',

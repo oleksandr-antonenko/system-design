@@ -5,6 +5,7 @@ import { formatNumber } from '../format'
 import { plural } from '../plural'
 import { deviceLt } from './device/lt'
 import { panelLt } from './panel/lt'
+import { packetBoardLt } from './packetBoard/lt'
 import type { UiStrings } from './types'
 
 const inLanguage: UiStrings['inLanguage'] = {
@@ -186,6 +187,7 @@ export const lt = {
   },
   device: deviceLt,
   panel: panelLt,
+  packetBoard: packetBoardLt,
   notFound: {
     title: 'Puslapis nerastas',
     body: path => `Adresu „${path}“ nieko nėra.`,

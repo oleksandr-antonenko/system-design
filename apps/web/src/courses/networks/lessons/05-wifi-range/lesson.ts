@@ -1,7 +1,13 @@
 import { Array, Option, pipe } from 'effect'
 
 import type { PacketDoc } from '../../../../kinds/packet/doc'
-import { annotate, highlight, packet } from '../../../../kinds/packet/dsl'
+import {
+  annotate,
+  highlight,
+  packet,
+  room,
+  walk,
+} from '../../../../kinds/packet/dsl'
 import { defineLesson } from '../../../../lesson/dsl'
 import {
   add,
@@ -48,9 +54,32 @@ const notConnected =
 
 const QUIZ_CANDIDATES = ['laptop', 'printer', 'phone'] as const
 
+/** Комнаты плана (сценарий, раздел 2): подписи — `labels['zone:…']`. */
+const rooms = [
+  room('room', 20, 40, 450, 520),
+  room('hall', 470, 40, 90, 520),
+  room('kitchen', 560, 40, 380, 520),
+]
+
+/** Телефон идёт из комнаты на кухню: полоски сигнала меняются на ходу. */
+const toKitchen = walk('phone', [
+  [400, 220],
+  [515, 250],
+  [640, 260],
+])
+
 export default defineLesson(packet, {
   slug: 'wifi-range',
-  labels: ['router', 'phone', 'laptop', 'printer', 'bulb'],
+  labels: [
+    'router',
+    'phone',
+    'laptop',
+    'printer',
+    'bulb',
+    'zone:room',
+    'zone:hall',
+    'zone:kitchen',
+  ],
   steps: [
     {
       id: 'floor-plan',
@@ -78,17 +107,22 @@ export default defineLesson(packet, {
         wall(470, 40, 470, 470),
         wall(560, 40, 560, 470),
       ],
-      stage: [highlight('router', 'info')],
+      stage: [...rooms, highlight('router', 'info'), toKitchen],
     },
     {
       id: 'walls',
       ops: [move('phone', 640, 260)],
-      stage: [annotate('phone', 'behindWalls', 'warn')],
+      stage: [
+        ...rooms,
+        annotate('phone', 'behindWalls', 'warn'),
+        highlight('wall:0', 'warn'),
+        highlight('wall:1', 'warn'),
+      ],
     },
     {
       id: 'two-bands',
       ops: [],
-      stage: [annotate('phone', 'onBand24', 'info')],
+      stage: [...rooms, annotate('phone', 'onBand24', 'info'), toKitchen],
     },
     {
       id: 'who-drops',
@@ -98,7 +132,7 @@ export default defineLesson(packet, {
           wifi(SSID, PASSWORD, { band: '5', channel: 36 }),
         ),
       ],
-      stage: [],
+      stage: rooms,
       quiz: {
         id: 'who-drops',
         kind: 'PickDevice',
@@ -113,7 +147,7 @@ export default defineLesson(packet, {
         add(host('bulb', 'bulb', 640, 400, { wifi: remembered })),
         radio('bulb', 'router'),
       ],
-      stage: [],
+      stage: rooms,
       task: {
         id: 'kitchen-wifi',
         palette: [],
@@ -140,7 +174,7 @@ export default defineLesson(packet, {
     {
       id: 'summary',
       ops: [],
-      stage: [annotate('bulb', 'bulbOn', 'ok')],
+      stage: [...rooms, annotate('bulb', 'bulbOn', 'ok')],
     },
   ],
 })

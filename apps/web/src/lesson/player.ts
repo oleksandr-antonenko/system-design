@@ -45,7 +45,14 @@ import {
   taskSurfaces,
   withLesson,
 } from './dsl'
-import { type QuizSpec, isBoardQuiz, quizAnswer, quizOf } from './quiz'
+import {
+  type QuizSpec,
+  isBoardQuiz,
+  isCorrectPick,
+  isValidPick,
+  quizAnswer,
+  quizOf,
+} from './quiz'
 
 // Плеер урока (design D2): шаги, задача, журнал ходов, поверхности. Всё, что
 // зависит от вида доски, он спрашивает у `lesson.kind`.
@@ -100,6 +107,8 @@ export const Model = Schema.Struct({
   toastSerial: Schema.Number,
   maybeHoveredRef: Schema.Option(Schema.String),
   isReducedMotion: Schema.Boolean,
+  /** Узкий экран телефона: доска раскладывается сверху вниз. */
+  isNarrow: Schema.Boolean,
 })
 export type Model = typeof Model.Type
 
@@ -134,6 +143,7 @@ export const Message = defineMessageUnion({
   HoveredReference: { id: Schema.String },
   LeftReference: {},
   ChangedReducedMotion: { isReducedMotion: Schema.Boolean },
+  ChangedNarrowScreen: { isNarrow: Schema.Boolean },
 })
 export type Message = typeof Message.Type
 
@@ -602,6 +612,7 @@ export const init = <T extends KindTypes>(
     toastSerial: 0,
     maybeHoveredRef: Option.none(),
     isReducedMotion: false,
+    isNarrow: false,
   }
   return modifyFields(model, {
     step: () => clampStep(lesson, model, requestedStep),
@@ -757,14 +768,17 @@ const answerQuiz = <T extends KindTypes>(
   Option.match(currentQuiz(lesson, model), {
     onNone: () => ({ model }),
     onSome: ({ spec, maybeAnswer }) =>
-      Option.isSome(maybeAnswer) || !Array.contains(spec.candidates, candidate)
+      Option.isSome(maybeAnswer) || !isValidPick(spec, candidate)
         ? { model }
         : {
             model: modifyFields(model, {
               quizzes: quizzes =>
                 Record.set(quizzes, spec.id, {
                   picked: candidate,
-                  isCorrect: candidate === correctAnswer(lesson, model, spec),
+                  isCorrect: isCorrectPick(
+                    candidate,
+                    correctAnswer(lesson, model, spec),
+                  ),
                 }),
             }),
           },
@@ -1094,6 +1108,9 @@ export const updateWith =
       ChangedReducedMotion: ({ isReducedMotion }) => ({
         model: modifyFields(model, { isReducedMotion: () => isReducedMotion }),
       }),
+      ChangedNarrowScreen: ({ isNarrow }) => ({
+        model: modifyFields(model, { isNarrow: () => isNarrow }),
+      }),
     })
 
 const lessonOf = (model: Model): Option.Option<AnyLesson> =>
@@ -1170,6 +1187,13 @@ export const subscriptions = Subscription.make<Model, Message>()(() => ({
       query: '(prefers-reduced-motion: reduce)',
       mapMatches: isMatching =>
         Message.ChangedReducedMotion({ isReducedMotion: isMatching }),
+    }),
+  ),
+  narrowScreen: Subscription.persistentEntry(
+    Dom.streamFromMediaQuery({
+      query: '(max-width: 600px)',
+      mapMatches: isMatching =>
+        Message.ChangedNarrowScreen({ isNarrow: isMatching }),
     }),
   ),
 }))

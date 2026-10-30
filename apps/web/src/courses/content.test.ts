@@ -18,7 +18,13 @@ import {
 } from '../lesson/dsl'
 import { referencedIds } from '../lesson/markup'
 import { surfaceOf } from '../lesson/player'
-import { isBoardQuiz, quizAnswer, quizFeature, quizOf } from '../lesson/quiz'
+import {
+  isBoardQuiz,
+  isValidPick,
+  quizAnswer,
+  quizFeature,
+  quizOf,
+} from '../lesson/quiz'
 import {
   findCourse,
   findLesson,
@@ -208,7 +214,10 @@ const lessonChecks = <T extends KindTypes>(
           quiz.kind === 'Choice' || Array.contains(kind.quizzes, quiz.kind),
           `${where}: board ${kind.id} has no ${quiz.kind}`,
         ).toBe(true)
-        expect(quiz.candidates, `${where}: answer`).toContain(answer)
+        expect(
+          isValidPick(quiz, answer),
+          `${where}: answer ${answer} is not among the candidates`,
+        ).toBe(true)
         expect(
           quiz.candidates.length >= 2 &&
             quiz.candidates.length <= (isBoardQuiz(quiz) ? 5 : 4),
