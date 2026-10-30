@@ -78,7 +78,7 @@ describe('lesson 2: everyone has an address', () => {
       click(role('button', { name: /▶ Run/ })),
       expect(
         role('img', {
-          name: 'from: Phone (no address), to: everyone on the network',
+          name: 'from: Phone (no IP address), to: everyone on the network',
         }),
       ).toExist(),
     )
@@ -103,7 +103,7 @@ describe('lesson 2: everyone has an address', () => {
     scene(
       sceneIn('ru'),
       given(atTask()),
-      expect(role('button', { name: 'Printer, нет адреса' })).toExist(),
+      expect(role('button', { name: 'Printer, нет IP' })).toExist(),
       click(role('button', { name: 'Laptop, 192.168.1.42' })),
       expect(
         role('complementary', { name: 'Карточка устройства «Laptop»' }),
@@ -128,11 +128,11 @@ describe('lesson 2: everyone has an address', () => {
       ),
       submit(role('form', { name: 'Отправить фото' })),
       click(role('button', { name: /Кабель/ })),
-      click(role('button', { name: 'Printer, нет адреса' })),
+      click(role('button', { name: 'Printer, нет IP' })),
       click(role('button', { name: 'Router, 192.168.1.1' })),
       expect(
         role('img', {
-          name: 'от: Printer (нет адреса), кому: всем в сети',
+          name: 'от: Printer (нет IP), кому: всем в сети',
         }),
       ).toExist(),
       expect(role('button', { name: 'Printer, 192.168.1.101' })).toExist(),
@@ -160,7 +160,7 @@ describe('lesson 2: everyone has an address', () => {
       sceneIn('ru'),
       given(atTask()),
       click(role('button', { name: /Кабель/ })),
-      click(role('button', { name: 'Printer, нет адреса' })),
+      click(role('button', { name: 'Printer, нет IP' })),
       click(role('button', { name: 'Laptop, 192.168.1.42' })),
       expect(
         text(
