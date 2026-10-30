@@ -195,7 +195,7 @@ const elementFeatures = (item: PacketStage): ReadonlyArray<string> =>
                         ? ['envelope.builder']
                         : item._tag === 'Place'
                           ? ['board.sandbox']
-                        : ['board.devices']
+                          : ['board.devices']
 
 /** Элемент сцены и то, что он показывает: договорённость о шифре в показе
     — часть запечатанного конверта, паспорт сайта на доске — тот же просмотр
