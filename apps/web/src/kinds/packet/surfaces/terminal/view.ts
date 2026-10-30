@@ -163,9 +163,7 @@ export const view = <ParentMessage>(
     h.Autocomplete('off'),
     h.Spellcheck(false),
     h.Placeholder(
-      shown.isRunning
-        ? ui.device.running
-        : Option.getOrElse(ghostCommand, () => ''),
+      shown.isRunning ? '' : Option.getOrElse(ghostCommand, () => ''),
     ),
     ...(isEditable
       ? [
@@ -218,6 +216,9 @@ export const view = <ParentMessage>(
                 onNone: () => [],
                 onSome: notice => noticeView(notice, parts),
               }),
+              ...(shown.isRunning
+                ? [h.p([h.Class('terminal-running')], [ui.device.running])]
+                : []),
               h.form(
                 [
                   h.Class('terminal-line'),
@@ -282,7 +283,7 @@ export const view = <ParentMessage>(
                 [
                   suggestion.command.trim(),
                   ...(suggestion.isNew
-                    ? [h.span([h.Class('badge-new')], [ui.board.newBadge])]
+                    ? [h.span([h.Class('terminal-new')], [ui.board.newBadge])]
                     : []),
                 ],
               ),

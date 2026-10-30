@@ -897,7 +897,20 @@
   opacity: 0.5;
   cursor: default;
 }
-.terminal-suggestion .badge-new {
+.terminal-running {
+  margin: 2px 0;
+  color: var(--terminal-dim);
+  font-family:
+    system-ui,
+    -apple-system,
+    'Segoe UI',
+    sans-serif;
+  font-size: 12px;
+}
+.terminal-suggestion .terminal-new {
+  border-radius: 999px;
+  padding: 0 6px;
+  background: rgba(255, 210, 122, 0.15);
   font-family:
     system-ui,
     -apple-system,
