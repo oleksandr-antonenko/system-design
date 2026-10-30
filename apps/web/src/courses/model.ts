@@ -8,6 +8,14 @@ import type { LooseLessonTexts } from '../lesson/dsl'
 export const BoardKindId = Schema.Literals(['flow', 'packet'])
 export type BoardKindId = typeof BoardKindId.Type
 
+/** Как палитра курса подаёт блоки. `progressive` (по умолчанию): блок
+    «новый» в первом уроке, где его ставят в задаче, а раньше стоит в
+    разделе «Позже в курсе (урок N)». `all-known`: ученики курса уже знают
+    весь каталог, и обе метки получают только блоки, которые урок вводит
+    явно (`defineLesson(kind, { introduces })`). */
+export const PaletteMode = Schema.Literals(['progressive', 'all-known'])
+export type PaletteMode = typeof PaletteMode.Type
+
 export type CourseDefinition<
   Id extends string = string,
   Module extends string = string,
@@ -21,6 +29,8 @@ export type CourseDefinition<
   /** Элементы интерфейса, которые могут открыть уроки курса (`unlocks`). */
   features: ReadonlyArray<Feature>
   locales: Array.NonEmptyReadonlyArray<Locale>
+  /** Метки палитры: по умолчанию `progressive`, см. `PaletteMode`. */
+  palette?: PaletteMode
 }>
 
 export const defineCourse = <
@@ -30,6 +40,9 @@ export const defineCourse = <
 >(
   course: CourseDefinition<Id, Module, Feature>,
 ): CourseDefinition<Id, Module, Feature> => course
+
+export const paletteModeOf = (course: CourseDefinition): PaletteMode =>
+  course.palette ?? 'progressive'
 
 export type ModuleOf<Course extends CourseDefinition> =
   Course['modules'][number]

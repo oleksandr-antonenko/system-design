@@ -9,12 +9,14 @@ import {
   withLesson,
 } from '../lesson/dsl'
 import { type Course, type Lesson, assembleCatalog } from './assemble'
-import type {
-  CourseDefinition,
-  CourseText,
-  FeatureOf,
-  LessonMeta,
-  LessonText,
+import {
+  type CourseDefinition,
+  type CourseText,
+  type FeatureOf,
+  type LessonMeta,
+  type LessonText,
+  type PaletteMode,
+  paletteModeOf,
 } from './model'
 import { unlockedIn, unlockedThrough } from './unlocks'
 
@@ -112,16 +114,25 @@ export const findDefinition = (
 export const courseLessons = (course: string): ReadonlyArray<CourseLesson> =>
   Array.getSomes(
     Array.map(lessonsOf(course), lesson =>
-      Option.map(findDefinition(course, lesson.meta.slug), definition => ({
-        order: lesson.meta.order,
-        palette: withLesson(
+      Option.map(findDefinition(course, lesson.meta.slug), definition =>
+        withLesson(
           definition,
-          <T extends KindTypes>(script: LessonDefinition<T>) =>
-            Array.map(lessonPalette(script), item => `${item}`),
+          <T extends KindTypes>(script: LessonDefinition<T>) => ({
+            order: lesson.meta.order,
+            palette: Array.map(lessonPalette(script), item => `${item}`),
+            introduces: Array.map(script.introduces, item => `${item}`),
+          }),
         ),
-      })),
+      ),
     ),
   )
+
+/** Как палитра курса подаёт блоки (`defineCourse({ palette })`). */
+export const coursePaletteMode = (course: string): PaletteMode =>
+  Option.match(findCourse(course), {
+    onNone: () => 'progressive',
+    onSome: found => paletteModeOf(found.definition),
+  })
 
 // UNLOCKS
 

@@ -49,6 +49,7 @@ export default defineCourse({
   modules: ['foundations', 'scaling', 'distributed'],
   features: [], // UI features its lessons may unlock, see below
   locales: ['uk', 'ru', 'en', 'lt'],
+  // palette: 'all-known', // optional: students already know every block, see below
 })
 ```
 
@@ -82,6 +83,16 @@ export default defineLessonMeta(course, {
 ```
 
 **The interface grows with the student.** A lesson shows only what it and earlier lessons of the course have opened. List what your lesson opens in `unlocks`, using the course's feature set (for the networking course: `apps/web/src/courses/networks/features.ts`, e.g. `'terminal.ping'`, `'router.wifi'`, `'browser.addressBar'`). Each feature is opened by exactly one lesson. System Design lessons open nothing.
+
+**The palette follows the course.** By default (`palette: 'progressive'`) a block in the palette gets a “new” badge in the first lesson whose task offers it, and blocks that first appear in later lessons are listed under “Later in the course (lesson N)”. That suits a course that starts from scratch. A course whose students already know every block, such as an advanced course that follows an introductory one, sets `palette: 'all-known'` in `defineCourse`: then no block is “new” and nothing is listed as later. A lesson that brings a block the students have not met names it in `introduces`, and in an `all-known` course only such blocks get the badge in that lesson and are listed as later before it; in a `progressive` course `introduces` marks a block new even before a task offers it:
+
+```ts
+export default defineLesson(flow, {
+  slug: 'full-text-search',
+  introduces: ['search'], // optional: blocks this lesson brings
+  steps: [ … ],
+})
+```
 
 `lesson.ts` is a script for the board kind of its course: `flow` for System Design, `packet` for the networking course (`defineCourse({ board })`). Each step lists the operations that change the board, then what to highlight. The board at step N is all operations of steps 0..N applied in order, so the text and the board never drift apart. The kind comes first in `defineLesson`, and the operations come from that kind's DSL (`apps/web/src/kinds/flow/dsl.ts`, `apps/web/src/kinds/packet/dsl.ts`):
 
