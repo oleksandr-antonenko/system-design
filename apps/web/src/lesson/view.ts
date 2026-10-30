@@ -68,6 +68,9 @@ import {
 export type PlayerViewInputs = Readonly<{
   locale: Locale
   prefersDark: boolean
+  /** Markup the page adds after the last step of this lesson (a slot built
+      by the parent, in its own boundary). */
+  lessonEnd?: (() => Html) | undefined
 }>
 
 /** Урок, его тексты и язык страницы: то, что нужно каждой части вида. */
@@ -77,6 +80,7 @@ type Page<T extends KindTypes> = Readonly<{
   texts: TextsOf<T>
   locale: Locale
   ui: UiStrings
+  lessonEnd?: (() => Html) | undefined
 }>
 
 // TEXT
@@ -896,7 +900,12 @@ const theoryView = <T extends KindTypes>(
                       })
                     : []),
                   ...(index === lesson.steps.length - 1
-                    ? askAiView(page, h)
+                    ? [
+                        ...askAiView(page, h),
+                        ...(page.lessonEnd === undefined
+                          ? []
+                          : [page.lessonEnd()]),
+                      ]
                     : []),
                 ],
               )
@@ -1303,6 +1312,7 @@ export const lessonView = <T extends KindTypes>(
     texts: choice.text,
     locale: inputs.locale,
     ui,
+    lessonEnd: inputs.lessonEnd,
   }
   return h.main(
     [h.Class('lesson-page')],
