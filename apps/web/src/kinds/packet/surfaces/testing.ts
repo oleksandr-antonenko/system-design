@@ -1,7 +1,8 @@
 import { Option } from 'effect'
 
 import type { Lesson } from '../../../courses/assemble'
-import { findLesson } from '../../../courses/registry'
+import { defineLessonMeta } from '../../../courses/model'
+import networks from '../../../courses/networks/course'
 import { type LessonDefinition, defineLesson } from '../../../lesson/dsl'
 import {
   add,
@@ -27,10 +28,10 @@ import { Intent } from '../../../net/packet'
 import type { PacketTypes } from '../../types'
 import { packet } from '../dsl'
 
-// Урок для тестов поверхностей устройств: дом с телефоном без Wi-Fi, кафе
-// и соседи рядом, ноутбук, справочная, магазин и сервер `vps`. Slug — как у
-// урока 14, поэтому открыто всё, что открывают уроки 1–14 (Wi-Fi, сведения
-// о сети, адрес вручную, адресная строка, ошибки, терминал с ufw).
+// Урок-стенд для тестов поверхностей устройств: дом с телефоном без Wi-Fi,
+// кафе и соседи рядом, ноутбук, справочная, магазин и сервер `vps`. Его нет
+// в программе курса, поэтому открыт весь интерфейс курса сетей (Wi-Fi,
+// сведения о сети, адрес вручную, адресная строка, ошибки, терминал с ufw).
 
 export const HOME = 'Router-7C21'
 export const HOME_PASSWORD = '12345678'
@@ -44,7 +45,7 @@ export const shopPage = (from: string) =>
   Intent.Browse({ from, url: 'https://shop.example/' })
 
 export const devices: LessonDefinition<PacketTypes> = defineLesson(packet, {
-  slug: 'dev-networks',
+  slug: 'device-surfaces',
   labels: ['phone', 'laptop', 'router', 'vps'],
   steps: [
     {
@@ -207,8 +208,14 @@ export const devices: LessonDefinition<PacketTypes> = defineLesson(packet, {
 /** Запись реестра для `lessonView`: тексты на английском. */
 export const devicesEntry: Lesson = {
   course: 'networks',
-  folder: '14-dev-networks',
-  meta: Option.getOrThrow(findLesson('networks', 'dev-networks')).meta,
+  folder: '99-device-surfaces',
+  meta: defineLessonMeta(networks, {
+    slug: 'device-surfaces',
+    module: 'developer',
+    order: 99,
+    available: true,
+    locales: ['en'],
+  }),
   texts: [
     {
       locale: 'en',

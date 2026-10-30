@@ -3,7 +3,12 @@ import { Submodel } from 'foldkit'
 import type { Html, HtmlBuilder } from 'foldkit/html'
 
 import { type Lesson, lessonTextFor } from '../courses/assemble'
-import { courseLessons, findDefinition, findLesson } from '../courses/registry'
+import {
+  courseLessons,
+  findDefinition,
+  findLesson,
+  lessonsOf,
+} from '../courses/registry'
 import { renderDomainMessage } from '../i18n/domainMessage'
 import type { Locale } from '../i18n/locale'
 import { type UiStrings, uiFor } from '../i18n/ui'
@@ -14,7 +19,7 @@ import type {
   KindTypes,
 } from '../kinds/contract'
 import type { KindMessage } from '../kinds/state'
-import { courseUrl } from '../route'
+import { courseUrl, lessonUrl } from '../route'
 import { laterInCourse, newInLesson } from './course'
 import {
   type LessonDefinition,
@@ -381,7 +386,9 @@ const taskCardView = <T extends KindTypes>(
         ],
       ),
       h.p([h.Class('task-prompt')], [taskTexts?.prompt ?? '']),
-      ...(isSolved ? [] : [h.p([h.Class('task-how')], [page.lesson.kind.taskHowTo(ui)])]),
+      ...(isSolved
+        ? []
+        : [h.p([h.Class('task-how')], [page.lesson.kind.taskHowTo(ui)])]),
       h.ul([h.Class('goals')], goalItems),
       feedback,
       ...(Array.isReadonlyArrayNonEmpty(hints) && !isSolved
@@ -729,6 +736,68 @@ const askAiView = <T extends KindTypes>(
     ],
   })
 
+/** Конец урока: ссылка на следующий урок курса. После последнего урока
+    курса — конец курса и дорога к программе. */
+const finishView = <T extends KindTypes>(
+  page: Page<T>,
+  h: HtmlBuilder<Message>,
+): Html => {
+  const { lesson, model, locale, ui } = page
+  const lessons = lessonsOf(model.course)
+  const maybeNext = pipe(
+    Array.findFirstIndex(lessons, entry => entry.meta.slug === lesson.slug),
+    Option.flatMap(index => Array.get(lessons, index + 1)),
+  )
+  const backToCourse = h.p(
+    [],
+    [
+      h.a(
+        [h.Href(courseUrl(locale, model.course))],
+        [`← ${ui.lesson.backToCourse}`],
+      ),
+    ],
+  )
+
+  return h.div(
+    [h.Class('finish')],
+    Option.match(maybeNext, {
+      onNone: () => [
+        h.p([h.Class('eyebrow')], [ui.player.courseFinishedTitle]),
+        h.p([], [ui.player.courseFinishedBody]),
+        backToCourse,
+      ],
+      onSome: next => {
+        const { text } = lessonTextFor(next, locale)
+        return [
+          h.p([h.Class('eyebrow')], [ui.player.finishedTitle]),
+          ...(next.meta.available
+            ? [
+                h.p(
+                  [],
+                  [
+                    h.a(
+                      [
+                        h.Href(
+                          lessonUrl({
+                            locale,
+                            course: model.course,
+                            slug: next.meta.slug,
+                            step: Option.none(),
+                          }),
+                        ),
+                      ],
+                      [ui.player.nextLesson(text.title)],
+                    ),
+                  ],
+                ),
+              ]
+            : [h.p([], [ui.player.finishedBody]), backToCourse]),
+        ]
+      },
+    }),
+  )
+}
+
 const theoryView = <T extends KindTypes>(
   page: Page<T>,
   isFallback: boolean,
@@ -824,17 +893,7 @@ const theoryView = <T extends KindTypes>(
               )
             },
           ),
-          ...(isLast
-            ? [
-                h.div(
-                  [h.Class('finish')],
-                  [
-                    h.p([h.Class('eyebrow')], [ui.player.finishedTitle]),
-                    h.p([], [ui.player.finishedBody]),
-                  ],
-                ),
-              ]
-            : []),
+          ...(isLast ? [finishView(page, h)] : []),
         ],
       ),
       h.nav(

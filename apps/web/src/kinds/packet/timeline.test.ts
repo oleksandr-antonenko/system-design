@@ -4,22 +4,29 @@ import { describe, expect, test } from 'vitest'
 import phoneOnline from '../../courses/networks/lessons/01-phone-online/lesson'
 import addresses from '../../courses/networks/lessons/02-addresses/lesson'
 import routing from '../../courses/networks/lessons/08-routing/lesson'
-import vpn, {
-  shopPage as officeShop,
-  wikiPage,
-} from '../../courses/networks/lessons/13-vpn/lesson'
 import { boardAt, taskStartBoard } from '../../lesson/dsl'
 import {
   add,
   cable,
   host,
+  internet,
   radio,
   router,
+  tcp,
   transit,
   udp,
+  vpnClient,
+  vpnConnect,
+  vpnGateway,
   wifi,
 } from '../../net/build'
 import { Intent } from '../../net/packet'
+import {
+  HOME_PASSWORD,
+  HOME_SSID,
+  buildWorld,
+  homeRouter,
+} from '../../net/testing'
 import { type World, emptyWorld, foldWorld } from '../../net/world'
 import { expand, pauseAt, play, walk } from './dsl'
 import { type LayoutInput, layoutBoard } from './layout'
@@ -252,9 +259,82 @@ describe('traceroute probes (lesson 8)', () => {
   })
 })
 
-describe('an envelope in a tunnel (lesson 13)', () => {
+describe('an envelope in a tunnel', () => {
+  // Дом с ноутбуком, магазин в интернете и офис за VPN-шлюзом: клиент VPN на
+  // ноутбуке в режиме «весь трафик», пока не подключён.
+  const officeFromHome = [
+    homeRouter,
+    add(
+      host('laptop', 'laptop', 120, 420, {
+        wifi: { ssid: HOME_SSID, password: HOME_PASSWORD },
+      }),
+    ),
+    add(internet('internet', 500, 300)),
+    add(
+      host('dns', 'server', 500, 100, {
+        address: '192.0.2.53/24',
+        listeners: [udp(53)],
+        records: [
+          { name: 'shop.example', ip: '198.51.100.10' },
+          { name: 'vpn.corp.example', ip: '192.0.2.200' },
+        ],
+      }),
+    ),
+    add(
+      host('shop', 'server', 500, 520, {
+        address: '198.51.100.10/24',
+        listeners: [tcp(80), tcp(443)],
+        certs: [
+          {
+            names: ['shop.example'],
+            issuer: 'Example CA',
+            notAfter: '2027-03-14',
+          },
+        ],
+      }),
+    ),
+    add(
+      vpnGateway('vpn-gw', 720, 300, {
+        wan: '192.0.2.200',
+        lan: '10.20.0.1/16',
+        pool: '10.99.0.0/24',
+        records: [{ name: 'wiki.corp.example', ip: '10.20.0.5' }],
+      }),
+    ),
+    add(
+      host('wiki', 'server', 860, 450, {
+        address: '10.20.0.5/16',
+        gateway: '10.20.0.1',
+        listeners: [tcp(80)],
+      }),
+    ),
+    radio('laptop', 'router'),
+    cable('router', 'internet'),
+    cable('internet', 'dns'),
+    cable('internet', 'shop'),
+    cable('internet', 'vpn-gw'),
+    cable('vpn-gw', 'wiki'),
+    vpnClient('laptop', {
+      gateway: 'vpn-gw',
+      address: '10.99.0.23',
+      mode: 'full',
+      dns: { zone: 'corp.example', server: '10.20.0.1' },
+      connected: false,
+    }),
+  ]
+  const disconnected = buildWorld(officeFromHome)
+  const connected = buildWorld([...officeFromHome, vpnConnect('laptop')])
+  const wikiPage = Intent.Browse({
+    from: 'laptop',
+    url: 'http://wiki.corp.example/',
+  })
+  const shopPage = Intent.Browse({
+    from: 'laptop',
+    url: 'https://shop.example/',
+  })
+
   test('outside it is addressed to the ends of the tunnel; past the gateway — to the real addressee', () => {
-    const trace = traceOfPlay(boardAt(vpn, 2, {}), officeShop)
+    const trace = traceOfPlay(connected, shopPage)
     const lettersOn = (from: string, to: string) =>
       Array.map(
         Array.filter(
@@ -278,7 +358,7 @@ describe('an envelope in a tunnel (lesson 13)', () => {
   })
 
   test('without a tunnel the outer letter is the usual one', () => {
-    const trace = traceOfPlay(boardAt(vpn, 0, {}), wikiPage)
+    const trace = traceOfPlay(disconnected, wikiPage)
     Array.forEach(trace.hops, hop =>
       expect(outerLetterOf(trace, hop)).toEqual(letterOf(trace, hop)),
     )

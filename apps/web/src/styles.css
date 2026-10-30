@@ -360,6 +360,10 @@ h3 {
   font-family: var(--font-prose);
   font-size: 15.5px;
 }
+.finish a {
+  color: var(--accent);
+  text-underline-offset: 3px;
+}
 .theory-nav {
   display: flex;
   justify-content: space-between;

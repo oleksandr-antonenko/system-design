@@ -396,20 +396,23 @@ export type Unlocks = Readonly<{
   newFeatures: ReadonlyArray<string>
 }>
 
+/** Урок, которого нет в программе курса (урок-стенд в тестах), видит весь
+    интерфейс курса, и ничего в нём не помечено новым. */
 export const unlocksOf = (model: Model): Unlocks =>
-  Option.match(
-    Option.all([
-      findCourse(model.course),
-      findLesson(model.course, model.slug),
-    ]),
-    {
-      onNone: () => ({ unlocked: [], newFeatures: [] }),
-      onSome: ([course, lesson]) => ({
-        unlocked: unlockedFeatures(course.definition, lesson.meta.order),
-        newFeatures: newFeaturesOf(course.definition, lesson.meta.order),
+  Option.match(findCourse(model.course), {
+    onNone: () => ({ unlocked: [], newFeatures: [] }),
+    onSome: course =>
+      Option.match(findLesson(model.course, model.slug), {
+        onNone: () => ({
+          unlocked: course.definition.features,
+          newFeatures: [],
+        }),
+        onSome: lesson => ({
+          unlocked: unlockedFeatures(course.definition, lesson.meta.order),
+          newFeatures: newFeaturesOf(course.definition, lesson.meta.order),
+        }),
       }),
-    },
-  )
+  })
 
 // SURFACES
 
