@@ -15,10 +15,10 @@ export default {
     dns: { name: 'DNS server', note: 'your provider’s directory' },
     shop: { name: 'Shop website', note: 'shop.example' },
     'friend-router': {
-      name: 'Router',
+      name: 'Friend’s router',
       note: 'the post office of your friend’s home',
     },
-    friend: { name: 'Laptop', note: 'your friend’s' },
+    friend: { name: 'Friend’s laptop', note: 'your friend’s' },
     'zone:friend-router': { name: 'Friend’s home' },
   },
   steps: {

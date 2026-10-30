@@ -21,10 +21,10 @@ export default {
       note: '“The domain myapp.example is registered”',
     },
     'friend-router': {
-      name: 'Router',
+      name: 'Friend’s router',
       note: 'the post office of your friend’s home',
     },
-    friend: { name: 'Laptop', note: 'your friend’s' },
+    friend: { name: 'Friend’s laptop', note: 'your friend’s' },
     cf: { name: 'DNS server', note: 'your friend’s directory' },
     'zone:friend-router': { name: 'Friend’s home' },
   },

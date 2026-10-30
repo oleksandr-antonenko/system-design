@@ -14,8 +14,8 @@ export default {
     internet: { name: 'Internet', note: 'много сетей' },
     dns: { name: 'DNS server', note: 'справочная провайдера' },
     shop: { name: 'Сайт магазина', note: 'shop.example' },
-    'friend-router': { name: 'Router', note: 'почта дома друга' },
-    friend: { name: 'Laptop', note: 'у друга' },
+    'friend-router': { name: 'Router друга', note: 'почта дома друга' },
+    friend: { name: 'Laptop друга', note: 'у друга' },
     'zone:friend-router': { name: 'Дом друга' },
   },
   steps: {

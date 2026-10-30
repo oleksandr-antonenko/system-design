@@ -14,8 +14,8 @@ export default {
     internet: { name: 'Internet', note: 'daug tinklų' },
     dns: { name: 'DNS server', note: 'tiekėjo informacijos tarnyba' },
     shop: { name: 'Parduotuvės svetainė', note: 'shop.example' },
-    'friend-router': { name: 'Router', note: 'draugo namų paštas' },
-    friend: { name: 'Laptop', note: 'draugo' },
+    'friend-router': { name: 'Draugo router', note: 'draugo namų paštas' },
+    friend: { name: 'Draugo laptop', note: 'draugo' },
     'zone:friend-router': { name: 'Draugo namai' },
   },
   steps: {
