@@ -874,7 +874,7 @@ const paletteView = (
       ...Array.match(inputs.later, {
         onEmpty: () => [],
         onNonEmpty: later => [
-          h.div([h.Class('palette-title')], [ui.board.laterTitle]),
+          h.div([h.Class('palette-title later')], [ui.board.laterTitle]),
           ...Array.map(later, ({ kind, lesson }) =>
             h.keyed('button')(
               `later-${kind}`,

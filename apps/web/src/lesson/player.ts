@@ -1,5 +1,5 @@
 import { Array, Effect, Option, Record, Result, Schema, pipe } from 'effect'
-import { Command, Dom, Subscription, Update } from 'foldkit'
+import { Command, Dom, Render, Subscription, Update } from 'foldkit'
 import { defineMessageUnion } from 'foldkit/message'
 import { defineTaggedUnion } from 'foldkit/schema'
 import { modifyFields } from 'foldkit/struct'
@@ -71,6 +71,16 @@ export const CheckState = defineTaggedUnion({
 })
 export type CheckState = typeof CheckState.Type
 
+/** Текст урока на узком экране, где доска и текст стоят друг под другом.
+    `Hidden`: ученик свернул текст и задачу, чтобы доска заняла экран.
+    Помнит прокрутку страницы и шаг, на котором текст свернули, чтобы
+    вернуть текст туда же. На широком экране не действует. */
+export const TextPanel = defineTaggedUnion({
+  Shown: {},
+  Hidden: { scrollY: Schema.Number, atStep: Schema.Number },
+})
+export type TextPanel = typeof TextPanel.Type
+
 /** Ход из нескольких операций, сделанный одним нажатием: готовый блок на
     доске, сохранение панели. В журнале это одна запись, и «Отменить»
     снимает её целиком, как и «Повторить» возвращает. */
@@ -124,6 +134,7 @@ export const Model = Schema.Struct({
   isReducedMotion: Schema.Boolean,
   /** Узкий экран телефона: доска раскладывается сверху вниз. */
   isNarrow: Schema.Boolean,
+  textPanel: TextPanel,
 })
 export type Model = typeof Model.Type
 
@@ -155,6 +166,9 @@ export const Message = defineMessageUnion({
   CompletedWaitBeforeHidingToast: { serial: Schema.Number },
   CompletedScrollStepIntoView: {},
   ClickedJournalToggle: {},
+  ClickedTextToggle: {},
+  CompletedMeasureTextScroll: { scrollY: Schema.Number },
+  CompletedRestoreTextScroll: {},
   HoveredReference: { id: Schema.String },
   LeftReference: {},
   ChangedReducedMotion: { isReducedMotion: Schema.Boolean },
@@ -200,6 +214,23 @@ export const ScrollStepIntoView = Command.define('ScrollStepIntoView', {
     }).pipe(
       Effect.as(Message.CompletedScrollStepIntoView()),
       Effect.catch(() => Effect.succeed(Message.CompletedScrollStepIntoView())),
+    ),
+})
+
+export const MeasureTextScroll = Command.define('MeasureTextScroll', {
+  messages: [Message.CompletedMeasureTextScroll],
+  execute: Effect.sync(() =>
+    Message.CompletedMeasureTextScroll({ scrollY: globalThis.scrollY }),
+  ),
+})
+
+export const RestoreTextScroll = Command.define('RestoreTextScroll', {
+  args: { scrollY: Schema.Number },
+  messages: [Message.CompletedRestoreTextScroll],
+  execute: ({ scrollY }) =>
+    Render.afterPaint.pipe(
+      Effect.andThen(Effect.sync(() => globalThis.scrollTo({ top: scrollY }))),
+      Effect.as(Message.CompletedRestoreTextScroll()),
     ),
 })
 
@@ -657,6 +688,7 @@ export const init = <T extends KindTypes>(
     maybeHoveredRef: Option.none(),
     isReducedMotion: false,
     isNarrow: false,
+    textPanel: TextPanel.Shown(),
   }
   return modifyFields(model, {
     step: () => clampStep(lesson, model, requestedStep),
@@ -718,7 +750,7 @@ export const goToStep = <T extends KindTypes>(
       isAskAiCopied: () => false,
       maybeSurfaceTab: () => Option.none(),
     }),
-    commands: [ScrollStepIntoView({ step })],
+    commands: isTextShown(model) ? [ScrollStepIntoView({ step })] : [],
     outMessage: OutMessage.ChangedStep({ step }),
   }
 }
@@ -1079,6 +1111,25 @@ const continueReplay = <T extends KindTypes>(
       }),
   })
 
+export const isTextShown = (model: Model): boolean =>
+  model.textPanel._tag === 'Shown'
+
+/** Свернуть текст: сначала запомнить прокрутку, потом свернуть (свёрнутая
+    страница не выше экрана, и прокрутка пропадёт). Развернуть: вернуть
+    прокрутку, а если шаг за это время сменился, показать новый шаг. */
+const toggleText = (model: Model): UpdateReturn =>
+  TextPanel.match(model.textPanel, {
+    Shown: () => ({ model, commands: [MeasureTextScroll()] }),
+    Hidden: ({ scrollY, atStep }) => ({
+      model: modifyFields(model, { textPanel: () => TextPanel.Shown() }),
+      commands: [
+        atStep === model.step
+          ? RestoreTextScroll({ scrollY })
+          : ScrollStepIntoView({ step: model.step }),
+      ],
+    }),
+  })
+
 export const updateWith =
   <T extends KindTypes>(lesson: LessonDefinition<T>) =>
   (model: Model, message: Message): UpdateReturn =>
@@ -1146,6 +1197,13 @@ export const updateWith =
       ClickedJournalToggle: () => ({
         model: modifyFields(model, { isJournalOpen: isOpen => !isOpen }),
       }),
+      ClickedTextToggle: () => toggleText(model),
+      CompletedMeasureTextScroll: ({ scrollY }) => ({
+        model: modifyFields(model, {
+          textPanel: () => TextPanel.Hidden({ scrollY, atStep: model.step }),
+        }),
+      }),
+      CompletedRestoreTextScroll: () => ({ model }),
       HoveredReference: ({ id }) => ({
         model: modifyFields(model, { maybeHoveredRef: () => Option.some(id) }),
       }),

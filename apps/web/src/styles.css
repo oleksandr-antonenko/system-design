@@ -304,24 +304,17 @@ h3 {
 .back-link:hover {
   color: var(--accent);
 }
-/* Картинка урока (docs/plans/lesson-previews.md): тёмная в обеих темах,
-   поэтому фон под ней тот же, пока она грузится. */
-.lesson-hero,
+/* Картинка урока на карте курса (docs/plans/lesson-previews.md): тёмная
+   в обеих темах, поэтому фон под ней тот же, пока она грузится. */
 .lesson-thumb {
   display: block;
   width: 100%;
   height: auto;
   aspect-ratio: 1200 / 630;
-  border-radius: 10px;
+  border-radius: 8px;
   border: 1px solid var(--line);
   background: #111a27;
   object-fit: cover;
-}
-.lesson-hero {
-  margin: 14px 0 4px;
-}
-.lesson-thumb {
-  border-radius: 8px;
 }
 .eyebrow {
   margin: 14px 0 0;
@@ -447,6 +440,66 @@ h3 {
   padding: 12px 28px 12px max(28px, env(safe-area-inset-left, 0px));
   border-top: 1px solid var(--line);
   background: var(--page);
+}
+/* Кнопка «Доска / Текст» и полоса задания шага: только на узком экране
+   (см. «узкий экран»). */
+.text-toggle {
+  display: none;
+  align-items: center;
+  gap: 6px;
+}
+.toggle-icon {
+  width: 16px;
+  height: 16px;
+  flex: none;
+}
+.step-bar {
+  display: none;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 42dvh;
+  overflow-y: auto;
+  padding: 10px max(16px, env(safe-area-inset-right, 0px)) 10px
+    max(16px, env(safe-area-inset-left, 0px));
+  border-top: 1px solid var(--line);
+  background: var(--page);
+}
+.step-bar-text {
+  margin: 0;
+  font-family: var(--font-prose);
+  font-size: 14.5px;
+  line-height: 1.4;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 4;
+  line-clamp: 4;
+  overflow: hidden;
+}
+.step-bar-head {
+  font-family: var(--font-ui);
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+.step-bar-hint,
+.step-bar-feedback {
+  margin: 0;
+  font-size: 12.5px;
+  line-height: 1.45;
+  color: var(--muted);
+}
+.step-bar-feedback.failed {
+  color: var(--bad);
+}
+.step-bar-feedback.solved {
+  color: var(--ok);
+}
+.step-bar-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
 }
 .nav-text {
   flex: 1;
@@ -1471,6 +1524,58 @@ h3 {
     bottom: 0;
     padding-inline: max(16px, env(safe-area-inset-left, 0px))
       max(16px, env(safe-area-inset-right, 0px));
+    padding-bottom: max(12px, env(safe-area-inset-bottom, 0px));
+  }
+  .text-toggle {
+    display: inline-flex;
+  }
+  @media (max-width: 560px) {
+    .nav-text {
+      display: none;
+    }
+  }
+  /* Текст свёрнут: страница снова ровно в экран, как на широком, только
+     колонкой: шкала шагов, доска (прокрутка внутри), задание шага и нижняя
+     панель. */
+  .app-lesson:has(.lesson-page.text-hidden) {
+    height: 100dvh;
+    display: grid;
+    grid-template-rows: auto minmax(0, 1fr);
+  }
+  .lesson-page.text-hidden {
+    display: grid;
+    grid-template-rows: auto minmax(0, 1fr);
+    min-height: 0;
+  }
+  .text-hidden .lesson-main {
+    min-height: 0;
+  }
+  .text-hidden .board-side {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+  }
+  /* Доска, приборы и поверхности остаются своего роста, как в прокрутке
+     страницы; не влезают — листаются внутри. */
+  .text-hidden .board-side > * {
+    flex: none;
+  }
+  .text-hidden .board-side > .board-wrap {
+    flex: 1 0 auto;
+  }
+  /* «Позже в курсе» только рассказывает; ради доски его прячем. */
+  .text-hidden .palette-title.later,
+  .text-hidden .palette-item.locked {
+    display: none;
+  }
+  .text-hidden .theory-scroll {
+    display: none;
+  }
+  .text-hidden .theory-nav {
+    position: static;
+  }
+  .step-bar {
+    display: flex;
   }
   .board-wrap {
     display: flex;
