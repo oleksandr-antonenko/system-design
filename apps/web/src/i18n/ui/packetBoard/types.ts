@@ -203,6 +203,15 @@ export type PacketBoardStrings = Readonly<{
     expected: (what: string) => string
   }>
   fog: string
+  /** Лесенка проверок (урок 15): подписи ступенек английские, как
+      в документации; состояния — на языке ученика. */
+  ladder: Readonly<{
+    title: string
+    idle: string
+    seen: string
+    ok: string
+    bad: string
+  }>
   draft: string
   builder: Readonly<{
     title: string

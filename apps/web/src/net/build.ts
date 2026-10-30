@@ -12,6 +12,7 @@ import {
   Device,
   type DeviceId,
   type DnsZone,
+  type Fault,
   type Firewall,
   type FirewallAction,
   type FirewallProto,
@@ -827,3 +828,17 @@ export const issueCert = (
   device: DeviceId,
   names: ReadonlyArray<string>,
 ): NetOp => NetOp.IssueCertificate({ device, names })
+
+/** Начать с пустой доски: следующая сеть урока строится заново (урок 15). */
+export const reset = (): NetOp => NetOp.Reset()
+
+/** Отчёт для ИИ-ассистента: где поломка и строки вывода — доказательство
+    (текст строки и её метка `LineTag`). */
+export const report = (
+  fault: Fault,
+  evidence: ReadonlyArray<readonly [text: string, tag: string]>,
+): NetOp =>
+  NetOp.Report({
+    fault,
+    evidence: Array.map(evidence, ([text, tag]) => ({ text, tag })),
+  })

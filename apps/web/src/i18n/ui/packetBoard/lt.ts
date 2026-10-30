@@ -223,6 +223,13 @@ export const packetBoardLt: PacketBoardStrings = {
     expected: what => `tikėtasi: ${what}`,
   },
   fog: 'rūkas',
+  ladder: {
+    title: 'Patikros iš apačios į viršų',
+    idle: 'dar netikrinta',
+    seen: 'pažiūrėta',
+    ok: 'patikra praėjo',
+    bad: 'čia gedimas',
+  },
   draft: 'juodraštis',
   builder: {
     title: 'Surinkite voką',

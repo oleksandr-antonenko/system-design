@@ -222,6 +222,13 @@ export const packetBoardEn: PacketBoardStrings = {
     expected: what => `expected: ${what}`,
   },
   fog: 'fog',
+  ladder: {
+    title: 'Checks, bottom up',
+    idle: 'not checked yet',
+    seen: 'looked at',
+    ok: 'check passed',
+    bad: 'broken here',
+  },
   draft: 'draft',
   builder: {
     title: 'Build the envelope',

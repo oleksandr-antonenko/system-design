@@ -1,4 +1,5 @@
 import type { BrowserError } from '../../../net/browser'
+import type { Fault } from '../../../net/model'
 
 /** Экран ошибки браузера: заголовок и строка, как в настоящем браузере на
     языке интерфейса. Код ошибки не переводится. */
@@ -100,4 +101,22 @@ export type DeviceStrings = Readonly<{
   suggestions: string
   interrupt: string
   consoleNote: string
+
+  // REPORT
+  /** Карточка «Отчёт для ИИ-ассистента» (урок 15). */
+  reportTab: string
+  reportTitle: string
+  reportWhat: string
+  reportSymptom: (device: string, url: string) => string
+  reportFixedNow: string
+  reportEvidence: string
+  reportEvidenceHint: string
+  reportNoOutput: string
+  reportPicked: (count: number) => string
+  reportWhere: string
+  reportFaults: Readonly<Record<Fault, string>>
+  reportSend: string
+  reportReply: string
+  reportApply: string
+  reportApplied: string
 }>

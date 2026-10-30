@@ -536,15 +536,46 @@ export const RelaySession = Schema.Struct({
 })
 export type RelaySession = typeof RelaySession.Type
 
-/** Выполненная команда терминала: что напечатано, для цели `RanCommand`. */
+/** Выполненная команда терминала: что напечатано, для цели `RanCommand`;
+    метки строк вывода (`LineTag`) — для лесенки проверок, устройства на
+    путях её конвертов — для тумана (урок 15). */
 export const CommandRecord = Schema.Struct({
   device: DeviceId,
   line: Schema.String,
   program: Schema.String,
   maybeTarget: Schema.Option(Schema.String),
   saw: Schema.Array(Schema.String),
+  tags: Schema.Array(Schema.String),
+  path: Schema.Array(DeviceId),
 })
 export type CommandRecord = typeof CommandRecord.Type
+
+/** Где поломка — варианты отчёта для ИИ-ассистента (урок 15): нет связи
+    или адреса, шлюз, DNS, порт закрыт firewall, сервер слушает только
+    себя, certificate на другое имя. */
+export const Fault = Schema.Literals([
+  'link',
+  'gateway',
+  'dns',
+  'firewall',
+  'loopback',
+  'cert',
+])
+export type Fault = typeof Fault.Type
+
+/** Строка вывода терминала как доказательство: текст и её метка. */
+export const Evidence = Schema.Struct({
+  text: Schema.String,
+  tag: Schema.String,
+})
+export type Evidence = typeof Evidence.Type
+
+/** Отправленный отчёт: диагноз и строки-доказательства. */
+export const ReportRecord = Schema.Struct({
+  fault: Fault,
+  evidence: Schema.Array(Evidence),
+})
+export type ReportRecord = typeof ReportRecord.Type
 
 /** Отправленное учеником намерение и где оно оказалось: для цели
     `Performed`. */
@@ -571,6 +602,7 @@ export const NetState = Schema.Struct({
   relaySessions: Schema.Array(RelaySession),
   commandLog: Schema.Array(CommandRecord),
   performed: Schema.Array(PerformedRecord),
+  reports: Schema.Array(ReportRecord),
   nextPort: Port,
   nextNatPort: Port,
   clock: Schema.Number,
@@ -587,6 +619,7 @@ export const emptyState: NetState = {
   relaySessions: [],
   commandLog: [],
   performed: [],
+  reports: [],
   nextPort: 51514,
   nextNatPort: 40001,
   clock: 0,

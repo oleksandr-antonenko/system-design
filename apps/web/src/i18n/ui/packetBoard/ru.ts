@@ -224,6 +224,13 @@ export const packetBoardRu: PacketBoardStrings = {
     expected: what => `ждали: ${what}`,
   },
   fog: 'туман',
+  ladder: {
+    title: 'Проверки снизу вверх',
+    idle: 'ещё не проверяли',
+    seen: 'посмотрели',
+    ok: 'проверка прошла',
+    bad: 'здесь поломка',
+  },
   draft: 'черновик',
   builder: {
     title: 'Соберите конверт',

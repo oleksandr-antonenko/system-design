@@ -33,7 +33,14 @@ import {
 } from './model'
 import { Intent, type Outcome, type RouteLine, type Trace } from './packet'
 import { certFor } from './tls'
-import { IFACE, hostIface, ownAddresses, routeTable } from './topology'
+import {
+  IFACE,
+  addressOf,
+  hostIface,
+  ownAddresses,
+  routeTable,
+  segmentOf,
+} from './topology'
 import { settle, trace } from './trace'
 
 // Терминал: чистый интерпретатор строки на устройстве. Вывод упрощён в
@@ -72,6 +79,7 @@ export const LineTag = Schema.Literals([
   'dnsFailed',
   'dnsTimeout',
   'gatewayUnreachable',
+  'wrongGateway',
   'timeout',
   'refused',
   'loopbackOnly',
@@ -278,6 +286,18 @@ const ipAddr = (
   )
 }
 
+/** Шлюз — чей-то адрес в сегменте хоста: иначе конверты «не в наш дом»
+    отдавать некому. */
+const isGatewayPresent = (
+  doc: NetDoc,
+  state: NetState,
+  host: Host,
+  gateway: string,
+): boolean =>
+  Array.some(segmentOf(doc, host.id), id =>
+    Option.exists(addressOf(doc, state, id), ip => ip === gateway),
+  )
+
 const ipRoute = (doc: NetDoc, state: NetState, host: Host): CommandResult => {
   const iface = hostIface(doc, state, host)
   const lines = Array.map(routeTable(doc, state, host.id), row =>
@@ -297,9 +317,24 @@ const ipRoute = (doc: NetDoc, state: NetState, host: Host): CommandResult => {
                 )
           }`,
   )
+  const wrong = Array.getSomes(
+    Array.map(routeTable(doc, state, host.id), row =>
+      row.kind === 'default'
+        ? Option.filter(
+            row.maybeVia,
+            via =>
+              row.iface === IFACE && !isGatewayPresent(doc, state, host, via),
+          )
+        : Option.none(),
+    ),
+  )
   return result(
     'ip',
-    Array.map(lines, text => line(text)),
+    Array.map(lines, text =>
+      Array.some(wrong, via => text.startsWith(`default via ${via} `))
+        ? line(text, 'wrongGateway')
+        : line(text),
+    ),
   )
 }
 
@@ -785,10 +820,13 @@ const dig = (
                 line(`;; SERVER: ${server}#53`),
               ]
           : [
-              line(
-                ';; connection timed out; no servers could be reached',
-                'dnsTimeout',
+              ...Array.makeBy(2, () =>
+                line(
+                  `;; communications error to ${server}#53: timed out`,
+                  'dnsTimeout',
+                ),
               ),
+              line(';; no servers could be reached', 'dnsTimeout'),
             ],
         { ops, traces: [asked.trace], maybeTarget: Option.some(name) },
       )
@@ -881,7 +919,7 @@ const curl = (
   )
   return Option.match(outcomeReason(page.outcome), {
     onSome: reason => {
-      if (isNameFailure(reason)) {
+      if (isNameFailure(reason) || nameFailed(page)) {
         return result(
           'curl',
           [
@@ -1107,7 +1145,7 @@ const nc = (
       result(
         'nc',
         [
-          isNameFailure(reason)
+          isNameFailure(reason) || nameFailed(connected)
             ? line(
                 `nc: getaddrinfo for host "${target}" port ${port}: Name or service not known`,
                 'dnsFailed',

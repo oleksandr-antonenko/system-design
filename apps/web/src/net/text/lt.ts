@@ -2,11 +2,13 @@ import { Option } from 'effect'
 
 import { type AcmeProblem } from '../message'
 import {
+  type Fault,
   type FirewallScope,
   type Medium,
   type Security,
   type WifiBand,
 } from '../model'
+import { faultPlace } from '../report'
 import { type NetTexts, type TextContext } from './types'
 
 const band = (value: WifiBand): string =>
@@ -70,6 +72,78 @@ const acme: Readonly<Record<AcmeProblem, string>> = {
   refused: 'port 80 uždarytas',
   timeout: 'port 80 nepasiekiamas',
   'wrong-server': 'šiuo pavadinimu atsako kitas server',
+}
+
+// Ответ ассистента на неверный диагноз в отчёте (урок 15): выбранная
+// ступенька ниже настоящей поломки — она цела; выше — до неё конверт не
+// дошёл; та же — поломка соседняя.
+
+type Below = (ran: boolean, host: string, port: number) => string
+
+const belowFault: Readonly<Record<Fault, Below>> = {
+  link: ran =>
+    ran
+      ? 'IP address yra, ir router atsako: ryšys tvarkingas.'
+      : 'Pirmiausia patikrinkite: ip a — ar yra IP address, paskui ping — ar atsako router.',
+  gateway: ran =>
+    ran
+      ? 'Vokai išeina iš namų: ping 1.1.1.1 atsako.'
+      : 'Patikrinkite: ping 1.1.1.1 — ar vokas išeina iš namų.',
+  dns: (ran, host) =>
+    ran
+      ? 'Vardas randamas: DNS server grąžino adresą.'
+      : `Patikrinkite: nslookup ${host}.`,
+  firewall: (ran, host, port) =>
+    ran
+      ? 'Durys atsidaro: ryšys užmegztas.'
+      : `Patikrinkite: nc -zv ${host} ${port}.`,
+  loopback: ran =>
+    ran
+      ? 'Ryšys atsidarė: serveris klausosi ne tik savęs.'
+      : 'Patikrinkite serveryje: ss -ltn.',
+  cert: ran =>
+    ran
+      ? 'Certificate tinka vardui.'
+      : 'Patikrinkite: curl -v parodys, ką serveris pateikia prisijungiant.',
+}
+
+const aboveFault: Readonly<Record<Fault, string>> = {
+  link: 'Ryšys ir adresas čia niekuo dėti: bėda kitur.',
+  gateway:
+    'Vokas neišeina iš namų, bet priežastis žemiau: ar įrenginys turi IP address?',
+  dns: 'DNS server tikrai neatsakė. Bet ar vokas jį pasiekė? DNS server gyvena išorėje.',
+  firewall: 'Iki durų net neprieita: vokas nepasiekė serverio.',
+  loopback: 'Iki durų net neprieita: vokas nepasiekė serverio.',
+  cert: 'Certificate čia niekuo dėtas: ryšys net neatsidarė.',
+}
+
+const sameFault: Readonly<Partial<Record<Fault, string>>> = {
+  firewall:
+    'Atsisakymas atėjo iškart: vokas atkeliavo, ir jam atsakė „čia nieko nėra“. Firewall paprastai tyli. Pažiūrėkite, kuriuo adresu klausosi serveris: ss -ltn.',
+  loopback:
+    'Tyla, o ne atsisakymas: jei port būtų tuščias, greitai ateitų Connection refused. Serveryje patikrinkite ss -ltn ir sudo ufw status.',
+}
+
+const wrongFault = ({
+  picked,
+  expected,
+  ran,
+  host,
+  port,
+}: Readonly<{
+  picked: Fault
+  expected: Fault
+  ran: boolean
+  host: string
+  port: number
+}>): string => {
+  const place = faultPlace(picked, expected)
+  return place === 'below'
+    ? belowFault[picked](ran, host, port)
+    : place === 'above'
+      ? `${aboveFault[picked]}${ran ? ' Žemesnis laiptelis jau raudonas: ieškokite ten.' : ' Patikrinkite žemesnį laiptelį.'}`
+      : (sameFault[picked] ??
+        'Laiptelis tas pats, bet gedimas kitas. Dar kartą perskaitykite paskutines išvesties eilutes.')
 }
 
 export const lt: NetTexts = {
@@ -328,6 +402,26 @@ export const lt: NetTexts = {
   GoalNoDevice: ({ id }, c) => `Lentoje dar nėra ${of(id, c)}.`,
   SshLockedOut: ({ device }, c) =>
     `Uždarėte ssh patys sau: ${q(device, c)} jūsų daugiau neįleidžia.`,
+  ReportMissing: () =>
+    'Ataskaita dar neišsiųsta: pasirinkite eilutę-įrodymą ir kur gedimas.',
+  ReportAfterFix: () =>
+    'Sutaisėte — puiku. Dabar aprašykite, kas buvo sugedę: ataskaita yra pusė užduoties.',
+  ReportNoEvidence: () =>
+    'Pridėkite įrodymą: spustelėkite išvesties eilutę, kuri rodo gedimą.',
+  ReportWrongFault: wrongFault,
+  ReportTrap: wrongFault,
+  ReportEvidenceOk: () =>
+    'Ši eilutė — geras atsakymas: čia viskas veikia. Reikia eilutės, kurioje matyti bėda.',
+  ReportEvidenceSymptom: () =>
+    'Tai simptomas, o ne priežastis: eilutė kartoja tai, ką parašė naršyklė. Reikia eilutės, kuri parodo, kodėl taip yra.',
+  ReportEvidenceAbove: () =>
+    'Ši eilutė rodo, kur bėdą pastebėjo, o ne kur ji atsitiko. Reikia eilutės iš žemesnio laiptelio.',
+  ReportEvidenceOther: () =>
+    'Ši eilutė apie ką kita. Spustelėkite eilutę, kuri įrodo jūsų diagnozę.',
+  ReportAccepted: () =>
+    'Ataskaita tiksli: asistentas žino, ką taisyti. Spauskite „Pritaikyti“.',
+  ReportConfirmed: () =>
+    'Ataskaita tiksli, ir viskas jau veikia: sutaisėte patys.',
 
   UnknownCommand: ({ command, available }) =>
     `Komandos ${command} čia nėra. Bandykite: ${available.join(', ')}.`,

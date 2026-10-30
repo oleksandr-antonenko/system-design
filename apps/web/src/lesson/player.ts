@@ -491,11 +491,25 @@ export const surfaceContext = <T extends KindTypes>(
       onNone: () => [],
       onSome: ({ spec }) => taskSurfaces(spec),
     }),
+    goals: Option.match(task, {
+      onNone: () => [],
+      onSome: ({ spec }) => Array.map(spec.goals, ({ goal }) => goal),
+    }),
   }
 }
 
+const stepStage = <T extends KindTypes>(
+  lesson: LessonDefinition<T>,
+  model: Model,
+): ReadonlyArray<T['Stage']> =>
+  Option.match(Array.get(lesson.steps, model.step), {
+    onNone: () => [],
+    onSome: found => found.stage,
+  })
+
 /** Сцена на доске: ход ученика, если у последнего хода задачи есть своя
-    сцена (браузер открыл адрес — его трасса), иначе сцена шага. */
+    сцена (браузер открыл адрес — его трасса), иначе сцена шага. Элементы
+    шага, которые вид оставляет на доске (`persists`), видны и в сцене хода. */
 export const boardStage = <T extends KindTypes>(
   lesson: LessonDefinition<T>,
   model: Model,
@@ -511,16 +525,20 @@ export const boardStage = <T extends KindTypes>(
           Array.dropRight(log, 1),
         )
         const stage = lesson.kind.moveStage(before, last)
+        const persists = lesson.kind.stage.persists ?? (() => false)
         return Array.isReadonlyArrayEmpty(stage)
           ? Option.none()
-          : Option.some({ stage, doc: before })
+          : Option.some({
+              stage: [
+                ...Array.filter(stepStage(lesson, model), persists),
+                ...stage,
+              ],
+              doc: before,
+            })
       })
     }),
     Option.getOrElse(() => ({
-      stage: Option.match(Array.get(lesson.steps, model.step), {
-        onNone: () => [],
-        onSome: found => found.stage,
-      }),
+      stage: stepStage(lesson, model),
       doc: currentDoc(lesson, model),
     })),
   )

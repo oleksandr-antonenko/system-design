@@ -94,15 +94,29 @@ const login = (world: World, session: Session): Entry => ({
 
 const disconnected: Entry = { _tag: 'Disconnected' }
 
+/** Моменты после последнего `Reset`: доска началась заново (следующая сеть
+    урока 15), и терминал вместе с ней. */
+export const sinceReset = (
+  moments: ReadonlyArray<Moment>,
+): ReadonlyArray<Moment> =>
+  Option.match(
+    Array.findLastIndex(moments, moment => moment.op._tag === 'Reset'),
+    {
+      onNone: () => moments,
+      onSome: index => Array.drop(moments, index + 1),
+    },
+  )
+
 /** Записи терминала устройства по истории. У сессии ssh — ещё вход, обрыв,
     когда ход ученика закрыл ему вход, и новый вход, когда он снова открыт. */
 export const transcriptOf = (
-  moments: ReadonlyArray<Moment>,
+  allMoments: ReadonlyArray<Moment>,
   device: DeviceId,
   available: ReadonlyArray<TerminalFeature>,
   maybeSession: Option.Option<Session>,
-): ReadonlyArray<Entry> =>
-  Option.match(maybeSession, {
+): ReadonlyArray<Entry> => {
+  const moments = sinceReset(allMoments)
+  return Option.match(maybeSession, {
     onNone: () =>
       Array.flatMap(moments, moment => commandEntry(moment, device, available)),
     onSome: session => {
@@ -128,6 +142,7 @@ export const transcriptOf = (
       ).entries
     },
   })
+}
 
 /** Терминал сервера работает через консоль хостинга: ssh не пускает. */
 export const isConsole = (
