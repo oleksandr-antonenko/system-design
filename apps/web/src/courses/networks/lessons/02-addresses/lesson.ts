@@ -75,7 +75,7 @@ export default defineLesson(packet, {
         cable('router', 'internet'),
         cable('internet', 'shop'),
       ],
-      stage: [play(photo), annotate('laptop', 'photoArrived', 'ok')],
+      stage: [play(photo)],
     },
     {
       id: 'router-gives',

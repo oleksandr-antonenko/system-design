@@ -56,7 +56,6 @@ Toliau, 3 pamoka: svetainės vardas ir jos adresas. Naršyklėje rašote shop.ex
     },
   },
   annotations: {
-    photoArrived: () => 'nuotrauka atėjo',
     gotAddress: () => 'adresas iš router',
     printing: () => 'spausdina',
   },

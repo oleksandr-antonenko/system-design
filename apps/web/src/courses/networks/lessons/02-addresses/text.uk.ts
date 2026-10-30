@@ -56,7 +56,6 @@ Router пам’ятає, які номери вже зайняті, тому в
     },
   },
   annotations: {
-    photoArrived: () => 'фото прийшло',
     gotAddress: () => 'адреса від router',
     printing: () => 'друкує',
   },

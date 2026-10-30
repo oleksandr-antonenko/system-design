@@ -171,12 +171,27 @@ describe('lesson 2: everyone has an address', () => {
     )
   })
 
+  test('en: a photo to a number nobody has is lost at the phone, addressed to that number', () => {
+    scene(
+      sceneIn('en'),
+      given(atTask()),
+      click(role('button', { name: 'Phone, 192.168.1.100' })),
+      type(
+        within(role('form', { name: 'Send a photo' }), role('textbox')),
+        '192.168.1.43',
+      ),
+      submit(role('form', { name: 'Send a photo' })),
+      expect(role('img', { name: 'from: Phone, to: 192.168.1.43' })).toExist(),
+    )
+  })
+
   test('en: the third hint outlines the cable and the address fields; show solution replays the three moves', () => {
     scene(
       sceneIn('en'),
       given(atTask()),
       ...Array.makeBy(3, () => click(role('button', { name: /^Hint/ }))),
       expect(selector('[data-ghost="printer-router"]')).toExist(),
+      expect(selector('.pb-sticker-halo')).not.toExist(),
       click(role('button', { name: 'Phone, 192.168.1.100' })),
       expect(
         within(role('form', { name: 'Send a photo' }), role('textbox')),

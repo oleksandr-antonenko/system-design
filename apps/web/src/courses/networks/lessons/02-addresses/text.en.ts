@@ -59,7 +59,6 @@ Next, lesson 3: a website’s name and its address. You type shop.example in the
     },
   },
   annotations: {
-    photoArrived: () => 'photo arrived',
     gotAddress: () => 'address from the router',
     printing: () => 'printing',
   },
