@@ -234,6 +234,10 @@ export const en = {
     ConnectNotAllowed: ({ from, to, allowed }) =>
       `“${componentName[from]}” does not pass requests to “${componentName[to]}”. Allowed connections: ${kindList(allowed)}.`,
     InvalidCapacity: ({ id }) => `Block ${id} needs a capacity above zero.`,
+    ShareNotForUsers: ({ id }) =>
+      `Only a “Users” block has a share of the load, and ${id} is a different block.`,
+    InvalidShare: ({ id }) =>
+      `The load share of ${id} must be a number above zero.`,
     RegionHasNoBlocks: ({ region }) =>
       `There are no blocks in region “${regionName[region]}”.`,
     GoalSlowResponse: ({ load, p95, max, hottest }) =>
@@ -254,5 +258,7 @@ export const en = {
       overloaded,
     }) =>
       `When region “${regionName[region]}” goes down, ${percent(errorRate)} of requests are lost at ${n(load)} rps; at most ${percent(max)} is allowed.${idList(' Losing requests: ', overloaded)}`,
+    GoalNotCarrying: ({ node, load, carried, min }) =>
+      `At ${n(load)} rps, only ${n(carried)} rps flow through ${node}; it should carry at least ${n(min)} rps.`,
   },
 } satisfies UiStrings

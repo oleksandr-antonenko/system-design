@@ -14,9 +14,17 @@ import { describe, expect, test } from 'vitest'
 import * as Board from '../board/board'
 import loadBalancer from '../courses/system-design/lessons/03-load-balancer/lesson'
 import { type BoardOp, findNode } from '../domain/board'
+import { Goal as FlowGoal } from '../domain/goals'
 import { simulate } from '../domain/simulate'
 import * as FlowBoard from '../kinds/flow/board'
-import { addNode, connect, disconnect, flow } from '../kinds/flow/dsl'
+import {
+  addNode,
+  connect,
+  disconnect,
+  flow,
+  reset,
+  setLoad,
+} from '../kinds/flow/dsl'
 import { outcomeOf } from '../kinds/flow/kind'
 import * as PacketBoard from '../kinds/packet/board'
 import { packet, place } from '../kinds/packet/dsl'
@@ -301,6 +309,105 @@ describe('board editing', () => {
       model(next => {
         expect(taskOf(next).log).toHaveLength(2)
       }),
+    )
+  })
+})
+
+describe('a step that starts from a shared reference', () => {
+  const reference: ReadonlyArray<BoardOp> = [
+    addNode('users', 'client', 100, 280),
+    addNode('app1', 'server', 520, 200),
+    addNode('app2', 'server', 520, 360),
+    connect('users', 'app1'),
+    connect('users', 'app2'),
+  ]
+
+  const phased: LessonDefinition<FlowTypes> = defineLesson(flow, {
+    slug: 'phased',
+    steps: [
+      {
+        id: 'start',
+        ops: [
+          addNode('users', 'client', 100, 280),
+          addNode('app1', 'server', 520, 280),
+          connect('users', 'app1'),
+          setLoad(300),
+        ],
+        stage: [],
+      },
+      {
+        id: 'own-design',
+        ops: [],
+        stage: [],
+        task: {
+          id: 'own-design',
+          palette: ['lb'],
+          goals: [{ id: 'lb', goal: FlowGoal.HasKind({ kind: 'lb' }) }],
+          solution: [addNode('lb-1', 'lb', 300, 280, { locked: false })],
+        },
+      },
+      {
+        id: 'reference',
+        ops: [reset(), ...reference, setLoad(600)],
+        stage: [],
+      },
+    ],
+  })
+
+  const studentMove = addNode('lb-7', 'lb', 300, 130, { locked: false })
+
+  const solvedPhase: Player.Model = {
+    ...Player.init(COURSE, phased, 1),
+    tasks: {
+      'own-design': {
+        log: [KindOp.FlowOp({ op: studentMove })],
+        redo: [],
+        attempts: 1,
+        hintsShown: 0,
+        check: Player.CheckState.Solved({ withHint: false }),
+        maybeReplayIndex: Option.none(),
+      },
+    },
+  }
+
+  const idsAt = (step: number) =>
+    Player.docAt(phased, solvedPhase, step).nodes.map(node => node.id)
+
+  test('the next step starts from the reference, not from the student design', () => {
+    const next = Player.docAt(phased, solvedPhase, 2)
+
+    expect(idsAt(2)).toEqual(['users', 'app1', 'app2'])
+    expect(next.load).toBe(600)
+    expect(simulate(next, next.load).nodes['app2']?.incoming).toBe(300)
+  })
+
+  test('going back to the task shows the student design again', () => {
+    expect(idsAt(1)).toEqual(['users', 'app1', 'lb-7'])
+    expect(
+      Player.currentDoc(phased, { ...solvedPhase, step: 2 }).nodes,
+    ).toEqual(Player.docAt(phased, solvedPhase, 2).nodes)
+    expect(
+      Player.currentDoc(phased, { ...solvedPhase, step: 1 }).nodes.map(
+        node => node.id,
+      ),
+    ).toEqual(['users', 'app1', 'lb-7'])
+  })
+
+  test('the journal shows the reset as one line of the step script', () => {
+    expect(
+      Option.map(Array.get(phased.steps, 2), lessonStep =>
+        lessonStep.ops.map(flow.describeOp),
+      ),
+    ).toEqual(
+      Option.some([
+        'Reset',
+        'AddNode users · client',
+        'AddNode app1 · server',
+        'AddNode app2 · server',
+        'Connect users → app1',
+        'Connect users → app2',
+        'SetLoad 600 rps',
+      ]),
     )
   })
 })

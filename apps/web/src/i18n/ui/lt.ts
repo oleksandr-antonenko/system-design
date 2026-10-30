@@ -238,6 +238,10 @@ export const lt = {
       `„${componentName[from]}“ neperduoda užklausų blokui „${componentName[to]}“. Galimi ryšiai: ${kindList(allowed)}.`,
     InvalidCapacity: ({ id }) =>
       `Blokui ${id} reikia pralaidumo, didesnio už nulį.`,
+    ShareNotForUsers: ({ id }) =>
+      `Apkrovos dalį galima nustatyti tik blokui „Users“, o ${id} – kitas blokas.`,
+    InvalidShare: ({ id }) =>
+      `${id} apkrovos dalis turi būti skaičius, didesnis už nulį.`,
     RegionHasNoBlocks: ({ region }) =>
       `Regione „${regionName[region]}“ blokų nėra.`,
     GoalSlowResponse: ({ load, p95, max, hottest }) =>
@@ -258,5 +262,7 @@ export const lt = {
       overloaded,
     }) =>
       `Sugedus regionui „${regionName[region]}“ ir esant ${n(load)} rps, prarandama ${percent(errorRate)} užklausų, leidžiama ne daugiau kaip ${percent(max)}.${idList(' Užklausas praranda: ', overloaded)}`,
+    GoalNotCarrying: ({ node, load, carried, min }) =>
+      `Esant ${n(load)} rps, per ${node} eina tik ${n(carried)} rps, o reikia bent ${n(min)} rps.`,
   },
 } satisfies UiStrings

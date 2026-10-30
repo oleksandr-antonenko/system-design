@@ -209,6 +209,8 @@ describe('every domain message', () => {
     DomainMessage.DuplicateNodeId({ id: 'lb-1' }),
     DomainMessage.InvalidCapacity({ id: 'limiter-1' }),
     DomainMessage.RegionHasNoBlocks({ region: 'asia' }),
+    DomainMessage.ShareNotForUsers({ id: 'app1' }),
+    DomainMessage.InvalidShare({ id: 'users-eu' }),
     DomainMessage.GoalMissingKind({ kind: 'lb' }),
     DomainMessage.GoalTooFewTargets({
       from: 'lb',
@@ -261,12 +263,18 @@ describe('every domain message', () => {
       max: 0.01,
       overloaded: ['lb-eu'],
     }),
+    DomainMessage.GoalNotCarrying({
+      node: 'cache-1',
+      load: 1200,
+      carried: 0,
+      min: 500,
+    }),
   ]
 
   test('covers every tag', () => {
     const tags = new Set(samples.map(sample => sample._tag))
     expect(tags.size).toBe(samples.length)
-    expect(tags.size).toBe(28)
+    expect(tags.size).toBe(31)
   })
 
   test.each(locales)(

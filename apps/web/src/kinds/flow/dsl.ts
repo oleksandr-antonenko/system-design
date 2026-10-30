@@ -90,3 +90,16 @@ export const failRegion = (region: Region): BoardOp =>
 
 export const recoverRegion = (region: Region): BoardOp =>
   BoardOp.RecoverRegion({ region })
+
+/** Вес группы пользователей в общей нагрузке. По умолчанию у каждой группы
+    вес 1, и нагрузка делится поровну; `setShare('users-us', 3)` рядом с
+    `users-eu` (вес 1) отдаёт американской группе три четверти нагрузки. Цели
+    с `load` масштабируют все группы пропорционально. */
+export const setShare = (id: string, share: number): BoardOp =>
+  BoardOp.SetShare({ id, share })
+
+/** Начать с пустой доски. Шаг поэтапного урока строит общую эталонную схему
+    заново: `ops: [reset(), ...reference, ...twist]`. Нагрузку и доли групп
+    эталон задаёт сам. Вернувшись на прежний шаг, ученик снова видит свою
+    схему. */
+export const reset = (): BoardOp => BoardOp.Reset()

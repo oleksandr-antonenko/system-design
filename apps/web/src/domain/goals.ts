@@ -19,12 +19,22 @@ export const Goal = defineTaggedUnion({
   OnlyThrough: { from: ComponentKind, to: ComponentKind, via: ComponentKind },
   MaxErrorRate: { max: Schema.Number, load: Schema.Number },
   MaxP95: { max: Schema.Number, load: Schema.Number },
+  /** Загрузка блоков вида не выше `max`; с `nodes` — только перечисленных. */
   MaxUtilization: {
     kind: ComponentKind,
     max: Schema.Number,
     load: Schema.Number,
+    nodes: Schema.optionalKey(Schema.Array(Schema.String)),
   },
-  MaxBacklog: { max: Schema.Number, load: Schema.Number },
+  /** Рост очередей не выше `max`; с `nodes` — только у перечисленных блоков. */
+  MaxBacklog: {
+    max: Schema.Number,
+    load: Schema.Number,
+    nodes: Schema.optionalKey(Schema.Array(Schema.String)),
+  },
+  /** Через блок `node` проходит не меньше `min` rps: пустой блок цель не
+      выполняет. */
+  Carries: { node: Schema.String, min: Schema.Number, load: Schema.Number },
   MaxCost: { max: Schema.Number },
   SurvivesFailure: {
     kinds: Schema.Array(ComponentKind),
@@ -90,6 +100,7 @@ export const isHiddenGoal = (goal: Goal): boolean =>
     MaxP95: () => true,
     MaxUtilization: () => true,
     MaxBacklog: () => true,
+    Carries: () => true,
     SurvivesFailure: () => true,
     SurvivesRegionFailure: () => true,
   })
@@ -99,6 +110,12 @@ const TOLERANCE = 1e-9
 
 const isWithin = (value: number, max: number): boolean =>
   value <= max + TOLERANCE
+
+/** Блоки, к которым относится цель: все, если `nodes` не задан. */
+const isListed =
+  (nodes: ReadonlyArray<string> | undefined) =>
+  (node: BoardDoc['nodes'][number]): boolean =>
+    nodes === undefined || Array.contains(nodes, node.id)
 
 const LATENCY_PATH: ReadonlyArray<ComponentKind> = [
   'cdn',
@@ -244,10 +261,11 @@ export const checkGoal = (doc: BoardDoc, goal: Goal): GoalCheck =>
       })
     },
 
-    MaxUtilization: ({ kind, max, load }) => {
+    MaxUtilization: ({ kind, max, load, nodes }) => {
       const result = simulate(doc, load)
       const loaded = pipe(
         nodesOfKind(doc, kind),
+        Array.filter(isListed(nodes)),
         Array.map(node => ({
           id: node.id,
           utilization: result.nodes[node.id]?.utilization ?? 0,
@@ -273,24 +291,40 @@ export const checkGoal = (doc: BoardDoc, goal: Goal): GoalCheck =>
           )
     },
 
-    MaxBacklog: ({ max, load }) => {
+    MaxBacklog: ({ max, load, nodes }) => {
       const result = simulate(doc, load)
+      const checked = Array.filter(doc.nodes, isListed(nodes))
+      const backlogOf = (node: BoardDoc['nodes'][number]): number =>
+        result.nodes[node.id]?.backlog ?? 0
+      const backlog =
+        nodes === undefined
+          ? result.backlog
+          : Number.sumAll(Array.map(checked, backlogOf))
       const growing = pipe(
-        doc.nodes,
-        Array.filter(node => (result.nodes[node.id]?.backlog ?? 0) >= 0.5),
+        checked,
+        Array.filter(node => backlogOf(node) >= 0.5),
         Array.map(node => node.id),
       )
-      return isWithin(result.backlog, max)
+      return isWithin(backlog, max)
         ? met
         : failed(
             DomainMessage.GoalBacklogGrowing({
               load,
-              backlog: result.backlog,
+              backlog,
               max,
               nodes: growing,
             }),
             { focusNodes: growing },
           )
+    },
+
+    Carries: ({ node, min, load }) => {
+      const carried = simulate(doc, load).nodes[node]?.served ?? 0
+      return carried >= min - TOLERANCE
+        ? met
+        : failed(DomainMessage.GoalNotCarrying({ node, load, carried, min }), {
+            focusNodes: Option.isSome(kindOf(doc, node)) ? [node] : [],
+          })
     },
 
     MaxCost: ({ max }) => {
