@@ -50,7 +50,7 @@ Wi-Fi slaptažodis veikia per WPA2 apsaugą arba naujesnę WPA3. Jei visi jūsų
 
 Svečių tinklas – atskiras tinklas su kitu slaptažodžiu. Svečiai gauna internetą, bet nemato jūsų spausdintuvo ir kompiuterio.
 
-Kur pastatyti router: aukščiau ir arčiau buto vidurio, ne spintoje ir ne už veidrodžio. Jei butas didelis, pastato antrą **access point** (lietuviškai – prieigos taškas) arba mesh sistemą: keli router dirba kaip vienas tinklas.`,
+Kur pastatyti router: aukščiau ir arčiau buto vidurio, ne spintoje ir ne už veidrodžio. Jei butas didelis, pastato antrą **access point** (lietuviškai – prieigos taškas) arba mesh sistemą: keli įrenginiai dirba kaip vienas tinklas.`,
       },
     },
     'who-drops': {

@@ -293,7 +293,7 @@ export const ru: NetTexts = {
     `${q(device, c)} отвечает ошибкой ${status}.`,
 
   SeveralAddresses: ({ name, ips }) =>
-    `${name} ведёт сразу на несколько IP: ${ips.join(', ')}. Часть посетителей попадёт не туда.`,
+    `${name} ведёт сразу на несколько адресов: ${ips.join(', ')}. Часть посетителей попадёт не туда.`,
   GoalWifiTooWeak: ({ ap, security: have, want }, c) =>
     `Wi-Fi ${of(ap, c)} — ${security[have]}, а нужно не слабее ${security[want]}.`,
   GoalChannelBusy: ({ ap, others }, c) =>
