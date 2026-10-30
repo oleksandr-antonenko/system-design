@@ -38,8 +38,7 @@ export const packetBoardUk: PacketBoardStrings = {
   caption: {
     idle: 'Натисніть «Пуск» під дошкою: конверт вирушить у дорогу.',
     walkIdle: 'Натисніть «Пуск»: пристрій піде квартирою.',
-    walking: device =>
-      `${device} іде квартирою. Стежте за смужками сигналу.`,
+    walking: device => `${device} іде квартирою. Стежте за смужками сигналу.`,
     waiting: from => `${from} готує конверт.`,
     flying: (from, to, how) => `Конверт їде: ${from} → ${to}${how}.`,
     resting: at => `Конверт біля пристрою «${at}».`,
@@ -52,7 +51,8 @@ export const packetBoardUk: PacketBoardStrings = {
     viaCellular: ' мобільним зв’язком',
     viaTunnel: ' тунелем',
     inside: ' з мережі в мережу',
-    innerHop: 'Конверт іде з мережі в мережу, як посилка з відділення у відділення.',
+    innerHop:
+      'Конверт іде з мережі в мережу, як посилка з відділення у відділення.',
   },
   done: {
     page: 'сторінка відкрилася',

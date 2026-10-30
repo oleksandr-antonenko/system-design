@@ -1350,37 +1350,6 @@ h3 {
   overflow: auto;
   padding: 12px max(16px, env(safe-area-inset-right, 0px)) 14px 16px;
 }
-/* ---------- доска сетей (заготовка до add-network-board) ---------- */
-.packet-board {
-  flex: 1;
-  min-height: 0;
-  overflow: auto;
-  padding: 16px;
-}
-.packet-note {
-  margin: 0 0 12px;
-  color: var(--muted);
-}
-.packet-devices {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: grid;
-  gap: 6px;
-}
-.packet-devices li {
-  display: flex;
-  gap: 10px;
-  align-items: center;
-}
-.packet-devices li.selected {
-  font-weight: 600;
-}
-.packet-hops {
-  font: inherit;
-  color: var(--accent);
-}
-
 /* ---------- узкий экран ---------- */
 @media (max-width: 880px) {
   .app-lesson {

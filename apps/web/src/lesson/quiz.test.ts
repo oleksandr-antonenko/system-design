@@ -13,9 +13,7 @@ import {
 // Ответы из нескольких частей (add-network-board): несколько вариантов
 // (`allOf`) и пары «место=чип» (`matchOf`) сравниваются без учёта порядка.
 
-const spec = (
-  fields: Partial<QuizSpec<FlowTypes>>,
-): QuizSpec<FlowTypes> => ({
+const spec = (fields: Partial<QuizSpec<FlowTypes>>): QuizSpec<FlowTypes> => ({
   id: 'q',
   kind: 'SpotFault',
   candidates: ['a', 'b', 'c'],

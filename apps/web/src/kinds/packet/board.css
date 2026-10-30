@@ -1161,6 +1161,37 @@
   gap: 8px 12px;
 }
 
+/* ---------- экран телефона рядом с доской ---------- */
+/* Как в макете урока 1: в задаче с экраном телефона он стоит справа от
+   доски, а не под ней, и доска не сжимается. */
+@media (min-width: 1100px) {
+  .board-side:has(> .packet-board):has(.surface-panel .device.is-phone) {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(320px, 360px);
+    grid-template-rows: minmax(0, 1fr) auto auto;
+  }
+  .board-side:has(.surface-panel .device.is-phone) > .packet-board {
+    grid-column: 1;
+    grid-row: 1;
+  }
+  .board-side:has(.surface-panel .device.is-phone) > .pb-transport {
+    grid-column: 1;
+    grid-row: 2;
+  }
+  .board-side:has(.surface-panel .device.is-phone) > .surface-host {
+    grid-column: 2;
+    grid-row: 1 / span 3;
+    max-height: none;
+    border-top: 0;
+    border-left: 1px solid var(--line);
+    overflow-y: auto;
+  }
+  .board-side:has(.surface-panel .device.is-phone) > .journal {
+    grid-column: 1;
+    grid-row: 3;
+  }
+}
+
 /* ---------- анимации ---------- */
 @keyframes pb-appear {
   from {

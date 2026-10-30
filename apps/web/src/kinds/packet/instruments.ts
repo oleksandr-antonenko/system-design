@@ -5,11 +5,7 @@ import type { BoardSlot } from '../contract'
 import type { PacketTypes } from '../types'
 import { Message } from './message'
 import { type Picture, pictureOf } from './picture'
-import {
-  nextHopStop,
-  nextStop,
-  previousHopStop,
-} from './timeline'
+import { nextHopStop, nextStop, previousHopStop } from './timeline'
 
 // Транспорт под доской (план 3.1, 3.4): в уроке 1 одна кнопка «Пуск / Ещё
 // раз» и строка, где сейчас конверт; с урока 4 «Шаг» и «хоп N из M»; с
@@ -19,7 +15,9 @@ type Slot<ParentMessage> = BoardSlot<PacketTypes, ParentMessage>
 
 type Tone = 'idle' | 'info' | 'ok' | 'bad'
 
-const captionOf = (picture: Picture): Readonly<{ text: string; tone: Tone }> => {
+const captionOf = (
+  picture: Picture,
+): Readonly<{ text: string; tone: Tone }> => {
   const ui = picture.context.ui.packetBoard.caption
   const moment = picture.moment
   const name = picture.name
@@ -78,21 +76,33 @@ const captionOf = (picture: Picture): Readonly<{ text: string; tone: Tone }> => 
   if (moment._tag === 'Stuck') {
     return {
       text: Option.match(
-        Array.findFirst(picture.timeline.plays, play => Option.isSome(play.maybeDrop)),
-        { onNone: () => '', onSome: play => ui.dropped(picture.reason(play.trace)) },
+        Array.findFirst(picture.timeline.plays, play =>
+          Option.isSome(play.maybeDrop),
+        ),
+        {
+          onNone: () => '',
+          onSome: play => ui.dropped(picture.reason(play.trace)),
+        },
       ),
       tone: 'bad',
     }
   }
   return Option.match(
-    Array.findFirst(picture.timeline.plays, play => Option.isSome(play.maybeDrop)),
+    Array.findFirst(picture.timeline.plays, play =>
+      Option.isSome(play.maybeDrop),
+    ),
     {
-      onSome: play => ({ text: ui.dropped(picture.reason(play.trace)), tone: 'bad' as const }),
+      onSome: play => ({
+        text: ui.dropped(picture.reason(play.trace)),
+        tone: 'bad' as const,
+      }),
       onNone: () =>
         Option.match(Array.last(picture.timeline.legs), {
           onNone: () => ({ text: '', tone: 'idle' as const }),
           onSome: leg => ({
-            text: leg.isReply ? ui.replied(name(leg.to)) : ui.delivered(name(leg.to)),
+            text: leg.isReply
+              ? ui.replied(name(leg.to))
+              : ui.delivered(name(leg.to)),
             tone: 'ok' as const,
           }),
         }),
@@ -106,7 +116,12 @@ const badge = <ParentMessage>(
   h: HtmlBuilder<ParentMessage>,
 ): ReadonlyArray<Html> =>
   picture.isNew(feature)
-    ? [h.span([h.Class('pb-new-tag')], [picture.context.ui.packetBoard.newBadge])]
+    ? [
+        h.span(
+          [h.Class('pb-new-tag')],
+          [picture.context.ui.packetBoard.newBadge],
+        ),
+      ]
     : []
 
 const toolButton = <ParentMessage>(
@@ -116,7 +131,11 @@ const toolButton = <ParentMessage>(
   feature: string,
   label: string,
   message: Message,
-  options: Readonly<{ isPressed?: boolean; isDisabled?: boolean; ariaLabel?: string }> = {},
+  options: Readonly<{
+    isPressed?: boolean
+    isDisabled?: boolean
+    ariaLabel?: string
+  }> = {},
 ): ReadonlyArray<Html> =>
   picture.isOpen(feature)
     ? [
@@ -124,9 +143,15 @@ const toolButton = <ParentMessage>(
           [
             h.Type('button'),
             h.Class(`btn${options.isPressed === true ? ' pressed' : ''}`),
-            ...(options.isPressed === undefined ? [] : [h.AriaPressed(options.isPressed ? 'true' : 'false')]),
-            ...(options.ariaLabel === undefined ? [] : [h.AriaLabel(options.ariaLabel)]),
-            ...(options.isDisabled === true ? [h.Disabled(true)] : [h.OnClick(send(message))]),
+            ...(options.isPressed === undefined
+              ? []
+              : [h.AriaPressed(options.isPressed ? 'true' : 'false')]),
+            ...(options.ariaLabel === undefined
+              ? []
+              : [h.AriaLabel(options.ariaLabel)]),
+            ...(options.isDisabled === true
+              ? [h.Disabled(true)]
+              : [h.OnClick(send(message))]),
           ],
           [label, ...badge(picture, feature, h)],
         ),
@@ -148,8 +173,13 @@ export const instruments = <ParentMessage>(
   const isAtEnd = picture.hasStarted && picture.playhead >= total
   const isMoving =
     picture.hasStarted && picture.playhead < Math.min(slot.model.stopAt, total)
-  const isPaused = picture.hasStarted && !isMoving && !isAtEnd && picture.playhead > 0
-  const runLabel = isAtEnd ? ui.transport.again : isPaused ? ui.transport.resume : ui.transport.run
+  const isPaused =
+    picture.hasStarted && !isMoving && !isAtEnd && picture.playhead > 0
+  const runLabel = isAtEnd
+    ? ui.transport.again
+    : isPaused
+      ? ui.transport.resume
+      : ui.transport.run
   const startAt = isAtEnd || !picture.hasStarted ? 0 : picture.playhead
   const canPlay = hasTrace && !isHidden && !isPicking
   const caption = captionOf(picture)
@@ -173,7 +203,10 @@ export const instruments = <ParentMessage>(
   })
   const isCableTool = picture.model.tool._tag === 'Cable'
   return h.section(
-    [h.AriaLabel(picture.context.ui.lesson.instrumentsRegion), h.Class('hud pb-transport')],
+    [
+      h.AriaLabel(picture.context.ui.lesson.instrumentsRegion),
+      h.Class('hud pb-transport'),
+    ],
     [
       h.div(
         [h.Class('pb-transport-row')],
@@ -183,7 +216,9 @@ export const instruments = <ParentMessage>(
                 h.button(
                   [
                     h.Type('button'),
-                    h.Class(`pb-play${!picture.hasStarted && canPlay && !picture.context.isReducedMotion ? ' nudge' : ''}`),
+                    h.Class(
+                      `pb-play${!picture.hasStarted && canPlay && !picture.context.isReducedMotion ? ' nudge' : ''}`,
+                    ),
                     ...(canPlay
                       ? [
                           h.OnClick(
@@ -198,7 +233,12 @@ export const instruments = <ParentMessage>(
                         ]
                       : [h.Disabled(true)]),
                   ],
-                  [`▶ ${runLabel}`, ...(picture.hasStarted ? [] : badge(picture, 'transport.run', h))],
+                  [
+                    `▶ ${runLabel}`,
+                    ...(picture.hasStarted
+                      ? []
+                      : badge(picture, 'transport.run', h)),
+                  ],
                 ),
               ]
             : []),
@@ -243,7 +283,10 @@ export const instruments = <ParentMessage>(
             'transport.slow',
             ui.transport.slow,
             Message.ClickedSpeed(),
-            { isPressed: slot.model.isSlow, ariaLabel: `${ui.transport.speed} ${ui.transport.slow}` },
+            {
+              isPressed: slot.model.isSlow,
+              ariaLabel: `${ui.transport.speed} ${ui.transport.slow}`,
+            },
           ),
           ...toolButton(
             picture,
@@ -266,9 +309,17 @@ export const instruments = <ParentMessage>(
             h.div(
               [h.Class('pb-tools')],
               [
-                ...toolButton(picture, send, h, 'board.cable', ui.tools.cable, Message.ClickedCableTool(), {
-                  isPressed: isCableTool,
-                }),
+                ...toolButton(
+                  picture,
+                  send,
+                  h,
+                  'board.cable',
+                  ui.tools.cable,
+                  Message.ClickedCableTool(),
+                  {
+                    isPressed: isCableTool,
+                  },
+                ),
                 ...(isCableTool
                   ? [
                       h.span(
@@ -277,7 +328,8 @@ export const instruments = <ParentMessage>(
                           picture.model.tool._tag === 'Cable'
                             ? Option.match(picture.model.tool.maybeFrom, {
                                 onNone: () => ui.tools.cableHint,
-                                onSome: from => ui.tools.cableFrom(picture.name(from)),
+                                onSome: from =>
+                                  ui.tools.cableFrom(picture.name(from)),
                               })
                             : '',
                         ],

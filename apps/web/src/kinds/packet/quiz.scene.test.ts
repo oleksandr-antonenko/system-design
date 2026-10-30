@@ -43,7 +43,11 @@ const network = [
       wifi: wifi('Home', 'password1'),
     }),
   ),
-  add(host('laptop', 'laptop', 110, 300, { wifi: { ssid: 'Home', password: 'password1' } })),
+  add(
+    host('laptop', 'laptop', 110, 300, {
+      wifi: { ssid: 'Home', password: 'password1' },
+    }),
+  ),
   add(transit('isp', 490, 300, { ip: '203.0.113.1' })),
   add(transit('core', 640, 300, { ip: '192.0.2.1' })),
   add(
@@ -122,7 +126,13 @@ const sceneFor = (
   update: (playerModel: Player.Model, playerMessage: Player.Message) =>
     Player.updateWith(lesson)(playerModel, playerMessage),
   view: (playerModel: Player.Model, h: HtmlBuilder<Player.Message>) =>
-    lessonView(lesson, entry, playerModel, { locale: 'en', prefersDark: false }, h),
+    lessonView(
+      lesson,
+      entry,
+      playerModel,
+      { locale: 'en', prefersDark: false },
+      h,
+    ),
 })
 
 const start = (lesson: LessonDefinition<PacketTypes>) =>
@@ -148,9 +158,18 @@ describe('quiz modes on the network board', () => {
   test('PickLayer: a highlighted field and the four layers to choose from', () => {
     const lesson = lessonWith({
       kind: 'PickLayer',
-      candidates: ['env:link', 'env:internet', 'env:transport', 'env:application'],
+      candidates: [
+        'env:link',
+        'env:internet',
+        'env:transport',
+        'env:application',
+      ],
       answer: 'env:transport',
-      stage: [play(browse, { show: 'all' }), pauseAt('isp'), openEnvelope('transport')],
+      stage: [
+        play(browse, { show: 'all' }),
+        pauseAt('isp'),
+        openEnvelope('transport'),
+      ],
     })
     scene(
       sceneFor(lesson),
@@ -167,7 +186,11 @@ describe('quiz modes on the network board', () => {
       kind: 'PickRule',
       candidates: ['rule:shop:1', 'rule:shop:0'],
       answer: 'rule:shop:0',
-      stage: [play(Intent.Connect({ from: 'laptop', host: '198.51.100.10', port: 22 }))],
+      stage: [
+        play(
+          Intent.Connect({ from: 'laptop', host: '198.51.100.10', port: 22 }),
+        ),
+      ],
     })
     scene(
       sceneFor(lesson),

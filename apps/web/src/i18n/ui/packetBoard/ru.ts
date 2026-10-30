@@ -38,7 +38,8 @@ export const packetBoardRu: PacketBoardStrings = {
   caption: {
     idle: 'Нажмите «Пуск» под доской: конверт отправится в путь.',
     walkIdle: 'Нажмите «Пуск»: устройство пойдёт по квартире.',
-    walking: device => `${device} идёт по квартире. Следите за полосками сигнала.`,
+    walking: device =>
+      `${device} идёт по квартире. Следите за полосками сигнала.`,
     waiting: from => `${from} готовит конверт.`,
     flying: (from, to, how) => `Конверт едет: ${from} → ${to}${how}.`,
     resting: at => `Конверт у устройства «${at}».`,
@@ -51,7 +52,8 @@ export const packetBoardRu: PacketBoardStrings = {
     viaCellular: ' по сотовой связи',
     viaTunnel: ' по туннелю',
     inside: ' из сети в сеть',
-    innerHop: 'Конверт идёт из сети в сеть, как посылка из отделения в отделение.',
+    innerHop:
+      'Конверт идёт из сети в сеть, как посылка из отделения в отделение.',
   },
   done: {
     page: 'страница открылась',
@@ -159,7 +161,8 @@ export const packetBoardRu: PacketBoardStrings = {
   },
   tools: {
     cable: 'Кабель',
-    cableHint: 'Нажмите устройство, потом второе: между ними ляжет кабель. Нажмите кабель, чтобы выдернуть его.',
+    cableHint:
+      'Нажмите устройство, потом второе: между ними ляжет кабель. Нажмите кабель, чтобы выдернуть его.',
     cableFrom: device => `Кабель от «${device}»: нажмите второе устройство.`,
     unplug: link => `Выдернуть кабель ${link}`,
     move: 'Двигать устройства',

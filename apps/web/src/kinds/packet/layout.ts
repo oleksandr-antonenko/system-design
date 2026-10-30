@@ -281,7 +281,10 @@ const looseMembers = (
         routers,
         Option.none<Device>(),
         (best, candidate) =>
-          Option.exists(best, current => distanceTo(current) <= distanceTo(candidate))
+          Option.exists(
+            best,
+            current => distanceTo(current) <= distanceTo(candidate),
+          )
             ? best
             : Option.some(candidate),
       )
@@ -449,8 +452,7 @@ const cloudOf = (
   const sy = span.ry / 70
   const flip = (fx: number, fy: number) =>
     input.isNarrow ? ([fy, fx] as const) : ([fx, fy] as const)
-  const isDecorative =
-    input.isCloudOpen && Array.isReadonlyArrayEmpty(internal)
+  const isDecorative = input.isCloudOpen && Array.isReadonlyArrayEmpty(internal)
   return Option.some({
     id: Option.match(internetDevice, {
       onNone: () => 'internet',
@@ -486,7 +488,8 @@ const cloudOf = (
 
 const fixed = (value: number): string => value.toFixed(1)
 
-const pointText = (point: Point): string => `${fixed(point.x)},${fixed(point.y)}`
+const pointText = (point: Point): string =>
+  `${fixed(point.x)},${fixed(point.y)}`
 
 /** Волна радио между двумя точками (макет урока 1). */
 export const wavePath = (from: Point, to: Point): string => {
@@ -600,7 +603,9 @@ export const anchorOf = (
       : shape._tag === 'Cloud'
         ? {
             x: shape.cloud.x,
-            y: shape.cloud.y - shape.cloud.ry * (shape.cloud.isOpen ? 0.2 : 0.42),
+            y:
+              shape.cloud.y -
+              shape.cloud.ry * (shape.cloud.isOpen ? 0.2 : 0.42),
             scale: 0.85,
           }
         : { x: shape.inner.x, y: shape.inner.y - 26, scale: 0.72 },
@@ -608,7 +613,10 @@ export const anchorOf = (
 
 /** Фигура, которая видна вместо устройства: само устройство или облако,
     если устройство спрятано в нём. */
-export const visibleIdOf = (layout: Layout, id: DeviceId): Option.Option<string> =>
+export const visibleIdOf = (
+  layout: Layout,
+  id: DeviceId,
+): Option.Option<string> =>
   Array.contains(layout.inCloud, id)
     ? Option.map(layout.maybeCloud, cloud => cloud.id)
     : Option.isSome(shapeOf(layout, id))
@@ -746,7 +754,10 @@ export const layoutBoard = (input: LayoutInput): Layout => {
     }),
     rooms: Array.map(input.rooms, room => {
       const corner = place({ x: room.x, y: room.y })
-      const opposite = place({ x: room.x + room.width, y: room.y + room.height })
+      const opposite = place({
+        x: room.x + room.width,
+        y: room.y + room.height,
+      })
       return {
         ...room,
         x: Math.min(corner.x, opposite.x),
@@ -785,8 +796,14 @@ export const layoutBoard = (input: LayoutInput): Layout => {
             association._tag === 'Associated'
               ? Option.flatMap(
                   Option.all([
-                    Array.findFirst(doc.devices, device => device.id === link.a),
-                    Array.findFirst(doc.devices, device => device.id === link.b),
+                    Array.findFirst(
+                      doc.devices,
+                      device => device.id === link.a,
+                    ),
+                    Array.findFirst(
+                      doc.devices,
+                      device => device.id === link.b,
+                    ),
                   ]),
                   ([left, right]) => {
                     const station = left._tag === 'Host' ? left : right
@@ -872,7 +889,10 @@ const viewBoxOf = (
       node.y - node.h / 2 - 56,
       node.y + node.h / 2 + 8,
     ]),
-    ...Array.flatMap(layout.zones, zone => [zone.y - zone.roof - 24, zone.y + zone.h]),
+    ...Array.flatMap(layout.zones, zone => [
+      zone.y - zone.roof - 24,
+      zone.y + zone.h,
+    ]),
     ...Option.match(layout.maybeCloud, {
       onNone: () => [],
       onSome: cloud => [cloud.y - cloud.ry - 30, cloud.y + cloud.ry + 14],

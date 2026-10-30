@@ -38,8 +38,7 @@ export const packetBoardLt: PacketBoardStrings = {
   caption: {
     idle: 'Paspauskite „Paleisti“ po lenta: vokas iškeliaus.',
     walkIdle: 'Paspauskite „Paleisti“: įrenginys eis per butą.',
-    walking: device =>
-      `${device} eina per butą. Stebėkite signalo juosteles.`,
+    walking: device => `${device} eina per butą. Stebėkite signalo juosteles.`,
     waiting: from => `${from} ruošia voką.`,
     flying: (from, to, how) => `Vokas keliauja: ${from} → ${to}${how}.`,
     resting: at => `Vokas prie įrenginio „${at}“.`,
@@ -52,7 +51,8 @@ export const packetBoardLt: PacketBoardStrings = {
     viaCellular: ' mobiliuoju ryšiu',
     viaTunnel: ' tuneliu',
     inside: ' iš tinklo į tinklą',
-    innerHop: 'Vokas keliauja iš tinklo į tinklą, kaip siuntinys iš skyriaus į skyrių.',
+    innerHop:
+      'Vokas keliauja iš tinklo į tinklą, kaip siuntinys iš skyriaus į skyrių.',
   },
   done: {
     page: 'puslapis atsidarė',

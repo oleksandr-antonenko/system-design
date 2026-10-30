@@ -114,7 +114,8 @@ export const changedFields = (
               candidate.title === row.title && candidate.level === row.level,
           ),
           Option.match({
-            onNone: () => Array.map(row.fields, field => `${row.title}.${field.key}`),
+            onNone: () =>
+              Array.map(row.fields, field => `${row.title}.${field.key}`),
             onSome: earlier =>
               Array.getSomes(
                 Array.map(row.fields, field =>

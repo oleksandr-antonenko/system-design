@@ -1,10 +1,10 @@
 import { Array, Option, Schema, pipe } from 'effect'
 
+import type { UiStrings } from '../../i18n/ui'
 import { findDevice, isProvider } from '../../net/doc'
 import { type Device, type NetDoc, kindOf } from '../../net/model'
 import { StackLevel, sourceOf } from '../../net/packet'
 import { wifiOf } from '../../net/topology'
-import type { UiStrings } from '../../i18n/ui'
 import type { PacketDoc } from './doc'
 import type { DeviceTable, PacketStage } from './dsl'
 
@@ -37,13 +37,8 @@ export type TargetRef =
 const hasCloud = (doc: NetDoc): boolean => Array.some(doc.devices, isProvider)
 
 /** Номер строки правил: `rule:shop:3`; `rule:shop:default` — «все остальные» (0). */
-const parseRule = (
-  doc: NetDoc,
-  target: string,
-): Option.Option<TargetRef> => {
-  const [device = '', number = ''] = target
-    .slice(RULE_PREFIX.length)
-    .split(':')
+const parseRule = (doc: NetDoc, target: string): Option.Option<TargetRef> => {
+  const [device = '', number = ''] = target.slice(RULE_PREFIX.length).split(':')
   return pipe(
     findDevice(doc, device),
     Option.flatMap(found => {
@@ -66,10 +61,7 @@ export const parseTarget = (
   target: string,
 ): Option.Option<TargetRef> => {
   if (target.startsWith(LINK_PREFIX)) {
-    return Array.some(
-      doc.links,
-      link => `${LINK_PREFIX}${link.id}` === target,
-    )
+    return Array.some(doc.links, link => `${LINK_PREFIX}${link.id}` === target)
       ? Option.some({ _tag: 'Link', link: target.slice(LINK_PREFIX.length) })
       : Option.none()
   }
@@ -213,15 +205,15 @@ export const targetFeatures = (
               ? ['board.draft']
               : ref._tag === 'Wall'
                 ? ['board.floorPlan']
-              : ref._tag === 'Device'
-                ? ref.device._tag === 'Transit'
-                  ? ['board.routerChain']
-                  : kindOf(ref.device) === 'resolver'
-                    ? ['board.dnsServer']
-                    : ref.device._tag === 'Switch'
-                      ? ['board.switch']
-                      : ['board.devices']
-                : ['board.devices'],
+                : ref._tag === 'Device'
+                  ? ref.device._tag === 'Transit'
+                    ? ['board.routerChain']
+                    : kindOf(ref.device) === 'resolver'
+                      ? ['board.dnsServer']
+                      : ref.device._tag === 'Switch'
+                        ? ['board.switch']
+                        : ['board.devices']
+                  : ['board.devices'],
   })
 
 // NAMES

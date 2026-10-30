@@ -104,7 +104,12 @@ export const allOf = (...ids: ReadonlyArray<string>): string =>
 
 /** Ответ `Match`: какой чип на каком месте. */
 export const matchOf = (pairs: Readonly<Record<string, string>>): string =>
-  allOf(...Array.map(Object.entries(pairs), ([slot, chip]) => `${slot}${PAIR}${chip}`))
+  allOf(
+    ...Array.map(
+      Object.entries(pairs),
+      ([slot, chip]) => `${slot}${PAIR}${chip}`,
+    ),
+  )
 
 /** Пара «место=чип» ответа `Match`. */
 export const pairOf = (part: string): readonly [string, string] => {
@@ -117,7 +122,9 @@ export const pairOf = (part: string): readonly [string, string] => {
 const canonical = (pick: string): string => allOf(...pickParts(pick))
 
 export const isMultiPick = <T extends KindTypes>(quiz: QuizSpec<T>): boolean =>
-  quiz.multiple === true || quiz.kind === 'PickLinks' || quiz.slots !== undefined
+  quiz.multiple === true ||
+  quiz.kind === 'PickLinks' ||
+  quiz.slots !== undefined
 
 /** Выбор ученика годится как ответ: один вариант, несколько разных
     вариантов или пары «место=чип» с каждым местом не больше одного раза. */

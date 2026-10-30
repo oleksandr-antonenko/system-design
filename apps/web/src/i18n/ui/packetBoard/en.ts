@@ -52,7 +52,8 @@ export const packetBoardEn: PacketBoardStrings = {
     viaCellular: ' over mobile data',
     viaTunnel: ' through the tunnel',
     inside: ' from network to network',
-    innerHop: 'The envelope goes from network to network, like a parcel between post offices.',
+    innerHop:
+      'The envelope goes from network to network, like a parcel between post offices.',
   },
   done: {
     page: 'the page opened',

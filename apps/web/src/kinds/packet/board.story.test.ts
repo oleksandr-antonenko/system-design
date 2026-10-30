@@ -49,9 +49,13 @@ describe('playback', () => {
       update(input('View')),
       given(Board.initialModel),
       message(Board.Message.ClickedSpeed()),
-      message(Board.Message.ClickedRun({ startAt: 0, stopAt: 1000, total: 1000 })),
+      message(
+        Board.Message.ClickedRun({ startAt: 0, stopAt: 1000, total: 1000 }),
+      ),
       model(next => {
-        expect(Board.frame(next, 40, { isReducedMotion: false }).playhead).toBe(10)
+        expect(Board.frame(next, 40, { isReducedMotion: false }).playhead).toBe(
+          10,
+        )
         expect(Board.interrupt(next)).toEqual({
           ...Board.initialModel,
           isSlow: true,
@@ -64,14 +68,20 @@ describe('playback', () => {
     story(
       update(input('View')),
       given(Board.initialModel),
-      message(Board.Message.ClickedRun({ startAt: 0, stopAt: 3000, total: 3000 })),
+      message(
+        Board.Message.ClickedRun({ startAt: 0, stopAt: 3000, total: 3000 }),
+      ),
       message(Board.Message.ClickedBack({ at: 1040, total: 3000 })),
       model(next => {
         expect([next.playhead, next.stopAt]).toEqual([1040, 1040])
       }),
       message(Board.Message.ClickedRestart()),
       model(next => {
-        expect([next.playhead, next.stopAt, next.hasStarted]).toEqual([0, 0, true])
+        expect([next.playhead, next.stopAt, next.hasStarted]).toEqual([
+          0,
+          0,
+          true,
+        ])
       }),
     )
   })
@@ -82,10 +92,20 @@ describe('quiz picks', () => {
     story(
       update(input('Pick', ['laptop', 'router', 'shop'])),
       given(Board.initialModel),
-      message(Board.Message.ClickedCandidate({ id: 'router', playTo: 2280, total: 7760 })),
+      message(
+        Board.Message.ClickedCandidate({
+          id: 'router',
+          playTo: 2280,
+          total: 7760,
+        }),
+      ),
       expectOutMessage(BoardOutMessage.PickedTarget('router')),
       model(next => {
-        expect([next.playhead, next.stopAt, next.hasStarted]).toEqual([0, 2280, true])
+        expect([next.playhead, next.stopAt, next.hasStarted]).toEqual([
+          0,
+          2280,
+          true,
+        ])
       }),
     )
   })
@@ -94,7 +114,9 @@ describe('quiz picks', () => {
     story(
       update(input('View', [])),
       given(Board.initialModel),
-      message(Board.Message.ClickedCandidate({ id: 'router', playTo: 0, total: 0 })),
+      message(
+        Board.Message.ClickedCandidate({ id: 'router', playTo: 0, total: 0 }),
+      ),
       model(next => {
         expect(next).toEqual(Board.initialModel)
       }),
@@ -102,7 +124,9 @@ describe('quiz picks', () => {
     story(
       update(input('Pick', ['router'])),
       given(Board.initialModel),
-      message(Board.Message.ClickedCandidate({ id: 'phone', playTo: 0, total: 0 })),
+      message(
+        Board.Message.ClickedCandidate({ id: 'phone', playTo: 0, total: 0 }),
+      ),
       model(next => {
         expect(next).toEqual(Board.initialModel)
       }),
@@ -130,7 +154,13 @@ describe('quiz picks', () => {
       update(input('Pick', ['core', 'dns'])),
       given(Board.initialModel),
       message(Board.Message.PressedEnvelope()),
-      message(Board.Message.ReleasedOnCandidate({ id: 'core', playTo: 900, total: 2000 })),
+      message(
+        Board.Message.ReleasedOnCandidate({
+          id: 'core',
+          playTo: 900,
+          total: 2000,
+        }),
+      ),
       expectOutMessage(BoardOutMessage.PickedTarget('core')),
       model(next => {
         expect(next.maybeGrab).toEqual(Option.none())
@@ -165,7 +195,9 @@ describe('board tools', () => {
       message(Board.Message.ClickedCableTool()),
       message(Board.Message.ClickedCableEnd({ id: 'printer' })),
       message(Board.Message.ClickedCableEnd({ id: 'router' })),
-      expectOutMessage(BoardOutMessage.ProposedOps([cable('printer', 'router')])),
+      expectOutMessage(
+        BoardOutMessage.ProposedOps([cable('printer', 'router')]),
+      ),
     )
   })
 
@@ -193,7 +225,9 @@ describe('board tools', () => {
       message(Board.Message.SubmittedSend({ from: 'phone', what: 'photo' })),
       expectOutMessage(
         BoardOutMessage.ProposedOps([
-          send(Intent.Send({ from: 'phone', to: '192.168.1.42', what: 'photo' })),
+          send(
+            Intent.Send({ from: 'phone', to: '192.168.1.42', what: 'photo' }),
+          ),
         ]),
       ),
     )
@@ -246,7 +280,10 @@ describe('board tools', () => {
         ])
       }),
       message(
-        Board.Message.ClickedBuilderSend({ from: 'laptop', url: 'https://shop.example/' }),
+        Board.Message.ClickedBuilderSend({
+          from: 'laptop',
+          url: 'https://shop.example/',
+        }),
       ),
       expectOutMessage(
         BoardOutMessage.ProposedOps([
@@ -277,8 +314,8 @@ describe('a move with its own trace', () => {
       isSlow: true,
       maybeCard: Option.none(),
     })
-    expect(
-      Board.frame(replayed, 50, { isReducedMotion: false }).playhead,
-    ).toBe(12.5)
+    expect(Board.frame(replayed, 50, { isReducedMotion: false }).playhead).toBe(
+      12.5,
+    )
   })
 })

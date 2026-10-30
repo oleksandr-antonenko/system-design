@@ -65,4 +65,3 @@ export const Message = defineMessageUnion({
   ClickedBuilderSend: { from: Schema.String, url: Schema.String },
 })
 export type Message = typeof Message.Type
-

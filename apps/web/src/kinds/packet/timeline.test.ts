@@ -35,10 +35,7 @@ const LESSON_1 = ['transport.run', 'board.devices', 'board.envelope']
 
 const browse = Intent.Browse({ from: 'phone', url: 'https://shop.example/' })
 
-const layoutOf = (
-  world: World,
-  overrides: Partial<LayoutInput> = {},
-) =>
+const layoutOf = (world: World, overrides: Partial<LayoutInput> = {}) =>
   layoutBoard({
     doc: world.doc,
     unlocked: LESSON_1,
@@ -51,7 +48,11 @@ const layoutOf = (
     ...overrides,
   })
 
-const route = (world: World, overrides: Partial<LayoutInput>, stage = [play(browse)]) =>
+const route = (
+  world: World,
+  overrides: Partial<LayoutInput>,
+  stage = [play(browse)],
+) =>
   Array.map(
     timelineOf({
       world,
@@ -199,12 +200,27 @@ describe('layout', () => {
 
   test('transit routers hide in the collapsed cloud and show when it opens', () => {
     const world = foldWorld(emptyWorld, [
-      add(router('router', 300, 300, { lan: '192.168.1.1/24', wan: '203.0.113.7', wifi: wifi('Home', 'password1') })),
+      add(
+        router('router', 300, 300, {
+          lan: '192.168.1.1/24',
+          wan: '203.0.113.7',
+          wifi: wifi('Home', 'password1'),
+        }),
+      ),
       add(transit('isp', 490, 300, { ip: '203.0.113.1' })),
       add(transit('core', 640, 300, { ip: '192.0.2.1' })),
-      add(host('dns', 'server', 640, 140, { address: '192.0.2.53/24', listeners: [udp(53)] })),
+      add(
+        host('dns', 'server', 640, 140, {
+          address: '192.0.2.53/24',
+          listeners: [udp(53)],
+        }),
+      ),
       add(host('shop', 'server', 890, 300, { address: '198.51.100.10/24' })),
-      add(host('phone', 'phone', 110, 170, { wifi: { ssid: 'Home', password: 'password1' } })),
+      add(
+        host('phone', 'phone', 110, 170, {
+          wifi: { ssid: 'Home', password: 'password1' },
+        }),
+      ),
       radio('phone', 'router'),
       cable('router', 'isp'),
       cable('isp', 'core'),
@@ -217,9 +233,11 @@ describe('layout', () => {
     expect(collapsed.inCloud).toEqual(['isp', 'core', 'dns'])
     expect(Array.map(collapsed.nodes, node => node.id)).not.toContain('isp')
     expect(Array.map(opened.nodes, node => node.id)).toContain('isp')
-    expect(
-      Array.map(collapsed.links, link => link.id).sort(),
-    ).toEqual(['core-shop', 'phone-router', 'router-isp'])
+    expect(Array.map(collapsed.links, link => link.id).sort()).toEqual([
+      'core-shop',
+      'phone-router',
+      'router-isp',
+    ])
   })
 
   test('on a narrow screen the board runs top to bottom', () => {

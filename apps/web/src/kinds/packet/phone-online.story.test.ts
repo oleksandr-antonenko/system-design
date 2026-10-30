@@ -29,7 +29,9 @@ describe('lesson 1 through the player', () => {
     story(
       update,
       given(Player.init('networks', phoneOnline, 3)),
-      board(Board.Message.ClickedCandidate({ id: 'shop', playTo: 0, total: 0 })),
+      board(
+        Board.Message.ClickedCandidate({ id: 'shop', playTo: 0, total: 0 }),
+      ),
       model(next => {
         expect(next.quizzes['way-out']).toEqual({
           picked: 'shop',
@@ -37,7 +39,9 @@ describe('lesson 1 through the player', () => {
         })
         expect(Player.maxAllowedStep(phoneOnline, next)).toBe(4)
       }),
-      board(Board.Message.ClickedCandidate({ id: 'router', playTo: 0, total: 0 })),
+      board(
+        Board.Message.ClickedCandidate({ id: 'router', playTo: 0, total: 0 }),
+      ),
       model(next => {
         expect(next.quizzes['way-out']?.picked).toBe('shop')
       }),

@@ -2,13 +2,12 @@ import { Array, Option, pipe } from 'effect'
 import { Mount } from 'foldkit'
 import type { Html, HtmlBuilder } from 'foldkit/html'
 
+import { scanPorts } from '../../net/answers'
 import { type DeviceId, type DeviceKind, kindOf } from '../../net/model'
 import { sourceOf } from '../../net/packet'
-import { scanPorts } from '../../net/answers'
 import { wifiOf } from '../../net/topology'
 import type { BoardSlot, Tone } from '../contract'
 import type { PacketTypes } from '../types'
-import { Message } from './message'
 import { addressesOf, isSealed } from './envelope'
 import { deviceIcons } from './icons'
 import {
@@ -22,11 +21,8 @@ import {
   doublePath,
   shapeOf,
 } from './layout'
-import {
-  boardPanels,
-  quizTray,
-  stageOverlays,
-} from './panels'
+import { Message } from './message'
+import { boardPanels, quizTray, stageOverlays } from './panels'
 import { type Picture, deviceOf, pictureOf, shapeIdOf } from './picture'
 import { DevicePointer } from './pointer'
 import { letterOf } from './timeline'
@@ -154,8 +150,14 @@ const zoneView = <ParentMessage>(
       h.text(
         [
           h.Class('pb-zone-label'),
-          h.Attribute('x', n(zone.kind === 'home' ? zone.x + zone.w / 2 : zone.x + 12)),
-          h.Attribute('y', n(zone.kind === 'home' ? zone.y - zone.roof - 8 : zone.y - 8)),
+          h.Attribute(
+            'x',
+            n(zone.kind === 'home' ? zone.x + zone.w / 2 : zone.x + 12),
+          ),
+          h.Attribute(
+            'y',
+            n(zone.kind === 'home' ? zone.y - zone.roof - 8 : zone.y - 8),
+          ),
           h.TextAnchor(zone.kind === 'home' ? 'middle' : 'start'),
         ],
         [title],
@@ -164,17 +166,18 @@ const zoneView = <ParentMessage>(
   )
 }
 
-const planView = <ParentMessage>(draw: Draw<ParentMessage>): ReadonlyArray<Html> => {
+const planView = <ParentMessage>(
+  draw: Draw<ParentMessage>,
+): ReadonlyArray<Html> => {
   const { h, picture } = draw
   const walls = Array.map(picture.layout.walls, (wall, index) =>
     h.keyed('line')(`wall-${index}`, [
       h.Class(
-        `pb-wall${Array.some(
-          picture.marks,
-          mark => mark.target === `wall:${index}`,
-        )
-          ? ' hl'
-          : ''}`,
+        `pb-wall${
+          Array.some(picture.marks, mark => mark.target === `wall:${index}`)
+            ? ' hl'
+            : ''
+        }`,
       ),
       h.Attribute('x1', n(wall.x1)),
       h.Attribute('y1', n(wall.y1)),
@@ -256,7 +259,8 @@ const cloudView = <ParentMessage>(
     picture.isOpen('board.routerChain') &&
     hasInside &&
     picture.context.mode !== 'Pick'
-  const isPick = isCandidate(picture, cloud.id) || isCandidate(picture, 'internet')
+  const isPick =
+    isCandidate(picture, cloud.id) || isCandidate(picture, 'internet')
   const toggle = send(Message.ClickedCloud({ isOpen: !cloud.isOpen }))
   const pickId = isCandidate(picture, cloud.id) ? cloud.id : 'internet'
   const ellipses = (className: string) =>
@@ -277,13 +281,13 @@ const cloudView = <ParentMessage>(
       ),
       h.DataAttribute('node', cloud.id),
       ...(isPick
-        ? button(
-            draw,
-            title,
-            send(candidateMessage(picture, pickId)),
-          )
+        ? button(draw, title, send(candidateMessage(picture, pickId)))
         : canToggle
-          ? button(draw, cloud.isOpen ? ui.zone.collapse : ui.zone.expand, toggle)
+          ? button(
+              draw,
+              cloud.isOpen ? ui.zone.collapse : ui.zone.expand,
+              toggle,
+            )
           : [h.Role('img'), h.AriaLabel(`${title}: ${sub}`)]),
     ],
     [
@@ -301,7 +305,13 @@ const cloudView = <ParentMessage>(
                 h.Attribute('y', n(labelTop)),
                 h.TextAnchor(picture.layout.isNarrow ? 'start' : 'middle'),
               ],
-              [title, h.tspan([h.Class('pb-sub'), h.Attribute('dx', '8')], [`· ${sub}`])],
+              [
+                title,
+                h.tspan(
+                  [h.Class('pb-sub'), h.Attribute('dx', '8')],
+                  [`· ${sub}`],
+                ),
+              ],
             ),
           ]
         : [
@@ -325,7 +335,12 @@ const cloudView = <ParentMessage>(
             ),
           ]),
       ...(canToggle && picture.isNew('board.routerChain')
-        ? [newBadge(draw, { x: cloud.x + cloud.rx * 0.55, y: cloud.y - cloud.ry * 0.85 })]
+        ? [
+            newBadge(draw, {
+              x: cloud.x + cloud.rx * 0.55,
+              y: cloud.y - cloud.ry * 0.85,
+            }),
+          ]
         : []),
     ],
   )
@@ -361,7 +376,9 @@ const innerView = <ParentMessage>(
       h.keyed('g')(
         `inner-${inner.id}`,
         [
-          h.Class(`pb-inner${isActive(inner.id) || Array.some(picture.litLinks, link => link.split('|').includes(inner.id)) ? ' lit' : ''}`),
+          h.Class(
+            `pb-inner${isActive(inner.id) || Array.some(picture.litLinks, link => link.split('|').includes(inner.id)) ? ' lit' : ''}`,
+          ),
         ],
         [
           h.circle([
@@ -416,7 +433,8 @@ const linkView = <ParentMessage>(
 ): Html => {
   const { h, picture, send } = draw
   const target = `link:${link.id}`
-  const isHiddenLink = Array.contains(picture.hidden, 'links') && link.medium === 'radio'
+  const isHiddenLink =
+    Array.contains(picture.hidden, 'links') && link.medium === 'radio'
   const isLit =
     Array.contains(picture.litLinks, link.id) ||
     (picture.moment._tag === 'Flying' && picture.moment.leg.link === link.id) ||
@@ -435,7 +453,10 @@ const linkView = <ParentMessage>(
     link.isUp ? '' : 'down',
     link.isActive ? '' : 'idle',
     isHiddenLink ? 'unknown' : '',
-    Option.match(mark, { onNone: () => '', onSome: found => `mark-${found.tone}` }),
+    Option.match(mark, {
+      onNone: () => '',
+      onSome: found => `mark-${found.tone}`,
+    }),
   ].join(' ')
   const isVisible = link.isActive || !link.isUp || isHiddenLink
   const label = `${picture.name(link.a)} — ${picture.name(link.b)}: ${linkTitle(picture, link)}`
@@ -444,7 +465,10 @@ const linkView = <ParentMessage>(
     [h.Class('pb-link-group'), h.DataAttribute('link', link.id)],
     isVisible || isPick
       ? [
-          h.path([h.Class(classes), h.Attribute('d', link.d)], [h.title([], [label])]),
+          h.path(
+            [h.Class(classes), h.Attribute('d', link.d)],
+            [h.title([], [label])],
+          ),
           ...(isPick || isUnplugTool
             ? [
                 h.path([
@@ -483,7 +507,10 @@ const linkView = <ParentMessage>(
                           [
                             h.Class('pb-link-badge'),
                             h.Attribute('x', n((link.from.x + link.to.x) / 2)),
-                            h.Attribute('y', n((link.from.y + link.to.y) / 2 - 8)),
+                            h.Attribute(
+                              'y',
+                              n((link.from.y + link.to.y) / 2 - 8),
+                            ),
                             h.TextAnchor('middle'),
                           ],
                           [picture.context.ui.packetBoard.link.band(band)],
@@ -515,10 +542,16 @@ const tunnelViews = <ParentMessage>(
             ),
           ),
           ...Option.toArray(
-            Option.map(device.maybeTunnel, tunnel => [device.id, tunnel.relay, 'relay'] as const),
+            Option.map(
+              device.maybeTunnel,
+              tunnel => [device.id, tunnel.relay, 'relay'] as const,
+            ),
           ),
           ...Option.toArray(
-            Option.map(device.maybeMesh, mesh => [device.id, mesh.relay, 'mesh'] as const),
+            Option.map(
+              device.maybeMesh,
+              mesh => [device.id, mesh.relay, 'mesh'] as const,
+            ),
           ),
         ]
       : [],
@@ -542,9 +575,13 @@ const tunnelViews = <ParentMessage>(
 const isLayerLink = (picture: Picture, link: string): boolean =>
   Option.exists(picture.model.maybeLayer, position =>
     Option.exists(picture.maybeLeg, ({ leg }) =>
-      Option.exists(Array.get(leg.hop.envelope, position), layer =>
-        (layer._tag === 'Ethernet' || layer._tag === 'WiFi' || layer._tag === 'Arp') &&
-        leg.hop.link === link,
+      Option.exists(
+        Array.get(leg.hop.envelope, position),
+        layer =>
+          (layer._tag === 'Ethernet' ||
+            layer._tag === 'WiFi' ||
+            layer._tag === 'Arp') &&
+          leg.hop.link === link,
       ),
     ),
   )
@@ -559,7 +596,9 @@ const layerDevices = (picture: Picture): ReadonlyArray<string> =>
           Option.match(Array.get(leg.hop.envelope, position), {
             onNone: () => [],
             onSome: layer =>
-              layer._tag === 'Ethernet' || layer._tag === 'WiFi' || layer._tag === 'Arp'
+              layer._tag === 'Ethernet' ||
+              layer._tag === 'WiFi' ||
+              layer._tag === 'Arp'
                 ? [leg.hop.from, leg.hop.to]
                 : Option.match(Array.get(picture.timeline.plays, leg.play), {
                     onNone: () => [],
@@ -583,7 +622,10 @@ const iconView = <ParentMessage>(
     Array.map(deviceIcons[kind], d => h.path([h.Attribute('d', d)])),
   )
 
-const newBadge = <ParentMessage>(draw: Draw<ParentMessage>, at: Point): Html => {
+const newBadge = <ParentMessage>(
+  draw: Draw<ParentMessage>,
+  at: Point,
+): Html => {
   const { h, picture } = draw
   const text = picture.context.ui.packetBoard.newBadge
   const width = text.length * 6.4 + 12
@@ -607,7 +649,10 @@ const barsView = <ParentMessage>(
   node: NodeBox,
 ): ReadonlyArray<Html> => {
   const { h, picture } = draw
-  if (Array.contains(picture.hidden, 'links') || Array.contains(picture.hidden, 'bars')) {
+  if (
+    Array.contains(picture.hidden, 'links') ||
+    Array.contains(picture.hidden, 'bars')
+  ) {
     return []
   }
   return Option.match(
@@ -618,7 +663,9 @@ const barsView = <ParentMessage>(
         h.g(
           [
             h.Class('pb-bars'),
-            h.Transform(`translate(${n(node.x + node.w / 2 - 22)},${n(node.y - node.h / 2 + 8)})`),
+            h.Transform(
+              `translate(${n(node.x + node.w / 2 - 22)},${n(node.y - node.h / 2 + 8)})`,
+            ),
             h.Role('img'),
             h.AriaLabel(
               picture.context.ui.packetBoard.signal(
@@ -644,11 +691,15 @@ const barsView = <ParentMessage>(
 }
 
 const isLocked = (picture: Picture, id: DeviceId): boolean =>
-  Option.exists(deviceOf(picture, id), device =>
-    device._tag === 'Internet' ||
-    device._tag === 'Transit' ||
-    (device._tag === 'Host' &&
-      !Array.some(picture.layout.zones, zone => Array.contains(zone.members, id))),
+  Option.exists(
+    deviceOf(picture, id),
+    device =>
+      device._tag === 'Internet' ||
+      device._tag === 'Transit' ||
+      (device._tag === 'Host' &&
+        !Array.some(picture.layout.zones, zone =>
+          Array.contains(zone.members, id),
+        )),
   )
 
 /** Задача разрешает двигать устройства: в эталоне есть перестановка. */
@@ -691,7 +742,11 @@ const moveKeys =
           ? nodeClick(picture, node.id)
           : Option.none()
         : Option.some(
-            Message.PressedMoveKey({ id: node.id, x: device.x + dx, y: device.y + dy }),
+            Message.PressedMoveKey({
+              id: node.id,
+              x: device.x + dx,
+              y: device.y + dy,
+            }),
           )
     })
 
@@ -711,7 +766,10 @@ const nodeView = <ParentMessage>(
       link.medium === 'radio' &&
       !link.isActive &&
       !Array.contains(picture.hidden, 'links') &&
-      Option.exists(deviceOf(picture, node.id), device => device._tag === 'Host'),
+      Option.exists(
+        deviceOf(picture, node.id),
+        device => device._tag === 'Host',
+      ),
   )
   const isHovered = Option.exists(
     picture.context.maybeHoveredRef,
@@ -750,11 +808,23 @@ const nodeView = <ParentMessage>(
         ? [
             h.Role('button'),
             h.Tabindex(0),
-            h.AriaLabel(`${label}. ${picture.context.ui.packetBoard.tools.moveHint}`),
-            h.OnKeyDownPreventDefault(key => Option.map(moveKeys(picture, node)(key), send)),
+            h.AriaLabel(
+              `${label}. ${picture.context.ui.packetBoard.tools.moveHint}`,
+            ),
+            h.OnKeyDownPreventDefault(key =>
+              Option.map(moveKeys(picture, node)(key), send),
+            ),
             h.OnPointerDown(() =>
               Option.flatMap(deviceOf(picture, node.id), device =>
-                Option.some(send(Message.GrabbedDevice({ id: node.id, x: device.x, y: device.y }))),
+                Option.some(
+                  send(
+                    Message.GrabbedDevice({
+                      id: node.id,
+                      x: device.x,
+                      y: device.y,
+                    }),
+                  ),
+                ),
               ),
             ),
             ...Option.match(click, {
@@ -766,16 +836,20 @@ const nodeView = <ParentMessage>(
             onNone: () => [h.Role('img'), h.AriaLabel(label)],
             onSome: message => button(draw, label, send(message)),
           })),
-      ...(Option.exists(picture.model.maybeGrab, grab => grab._tag === 'Envelope') &&
-      isCand
+      ...(Option.exists(
+        picture.model.maybeGrab,
+        grab => grab._tag === 'Envelope',
+      ) && isCand
         ? [
             h.OnPointerUp(() =>
               Option.some(
-                send(Message.ReleasedOnCandidate({
-                  id: node.id,
-                  playTo: firstStop(picture),
-                  total: picture.revealed.totalMs,
-                })),
+                send(
+                  Message.ReleasedOnCandidate({
+                    id: node.id,
+                    playTo: firstStop(picture),
+                    total: picture.revealed.totalMs,
+                  }),
+                ),
               ),
             ),
           ]
@@ -792,7 +866,11 @@ const nodeView = <ParentMessage>(
       ]),
       iconView(h, node.kind, x0 + icon, node.y - 12),
       h.text(
-        [h.Class('pb-title'), h.Attribute('x', n(textX)), h.Attribute('y', n(node.y - 2))],
+        [
+          h.Class('pb-title'),
+          h.Attribute('x', n(textX)),
+          h.Attribute('y', n(node.y - 2)),
+        ],
         [node.text.title],
       ),
       h.text(
@@ -843,9 +921,11 @@ const newFeatureOf = (picture: Picture, id: DeviceId): boolean =>
 const stickerOwner = (picture: Picture): Option.Option<NodeBox> =>
   picture.isOpen('board.routerSticker')
     ? Array.findFirst(picture.layout.nodes, node =>
-        Option.exists(deviceOf(picture, node.id), device =>
-          (device._tag === 'Router' || device._tag === 'AccessPoint') &&
-          Option.isSome(wifiOf(device)),
+        Option.exists(
+          deviceOf(picture, node.id),
+          device =>
+            (device._tag === 'Router' || device._tag === 'AccessPoint') &&
+            Option.isSome(wifiOf(device)),
         ),
       )
     : Option.none()
@@ -871,7 +951,9 @@ const stickerView = <ParentMessage>(
         ...(isGhost
           ? [
               h.rect([
-                h.Class(`pb-sticker-halo${picture.context.isReducedMotion ? '' : ' pulse'}`),
+                h.Class(
+                  `pb-sticker-halo${picture.context.isReducedMotion ? '' : ' pulse'}`,
+                ),
                 h.Attribute('x', n(x - 36)),
                 h.Attribute('y', n(y - 20)),
                 h.Attribute('width', '72'),
@@ -898,14 +980,24 @@ const stickerView = <ParentMessage>(
               h.Attribute('height', '26'),
               h.Attribute('rx', '2.5'),
             ]),
-            h.text([h.Attribute('x', '-24'), h.Attribute('y', '-2.5')], ['Wi-Fi']),
             h.text(
-              [h.Class('small'), h.Attribute('x', '-24'), h.Attribute('y', '8')],
+              [h.Attribute('x', '-24'), h.Attribute('y', '-2.5')],
+              ['Wi-Fi'],
+            ),
+            h.text(
+              [
+                h.Class('small'),
+                h.Attribute('x', '-24'),
+                h.Attribute('y', '8'),
+              ],
               [ui.short],
             ),
             h.path([
               h.Class('pb-code'),
-              h.Attribute('d', 'M10,-8v6M12,-8v6M15,-8v6M17,-8v6M20,-8v6M23,-8v6'),
+              h.Attribute(
+                'd',
+                'M10,-8v6M12,-8v6M15,-8v6M17,-8v6M20,-8v6M23,-8v6',
+              ),
             ]),
           ],
         ),
@@ -929,68 +1021,72 @@ const stickerPopView = <ParentMessage>(
   return Option.match(stickerOwner(picture), {
     onNone: () => [],
     onSome: node =>
-      Option.match(
-        Option.flatMap(deviceOf(picture, node.id), wifiOf),
-        {
-          onNone: () => [],
-          onSome: wifi => {
-            const width = 236
-            const height = 150
-            const viewBox = picture.layout.viewBox
-            const x = Math.min(
-              Math.max(node.x - width / 2, viewBox.x + 6),
-              viewBox.x + viewBox.w - width - 6,
-            )
-            const below = node.y + node.h / 2 + 34
-            const y =
-              below + height > viewBox.y + viewBox.h
-                ? node.y - node.h / 2 - height - 12
-                : below
-            return [
-              h.foreignObject(
-                [
-                  h.Attribute('x', n(x)),
-                  h.Attribute('y', n(y)),
-                  h.Attribute('width', `${width}`),
-                  h.Attribute('height', `${height}`),
-                ],
-                [
-                  h.div(
-                    [h.Class('pb-sticker-pop'), h.Role('dialog'), h.AriaLabel(ui.title)],
-                    [
-                      h.div(
-                        [h.Class('pb-sticker-head')],
-                        [
-                          ui.title,
-                          h.button(
-                            [
-                              h.Type('button'),
-                              h.Class('pb-x'),
-                              h.AriaLabel(ui.close),
-                              h.OnClick(send(Message.ClickedCloseSticker())),
-                            ],
-                            ['×'],
-                          ),
-                        ],
-                      ),
-                      h.dl(
-                        [],
-                        [
-                          h.dt([], [ui.ssid]),
-                          h.dd([], [wifi.ssid]),
-                          h.dt([], [ui.password]),
-                          h.dd([], [wifi.security === 'open' ? '—' : wifi.password]),
-                        ],
-                      ),
-                      h.p([h.Class('pb-sticker-note')], [ui.note]),
-                    ],
-                  ),
-                ],
-              ),
-            ]
-          },
+      Option.match(Option.flatMap(deviceOf(picture, node.id), wifiOf), {
+        onNone: () => [],
+        onSome: wifi => {
+          const width = 236
+          const height = 150
+          const viewBox = picture.layout.viewBox
+          const x = Math.min(
+            Math.max(node.x - width / 2, viewBox.x + 6),
+            viewBox.x + viewBox.w - width - 6,
+          )
+          const below = node.y + node.h / 2 + 34
+          const y =
+            below + height > viewBox.y + viewBox.h
+              ? node.y - node.h / 2 - height - 12
+              : below
+          return [
+            h.foreignObject(
+              [
+                h.Attribute('x', n(x)),
+                h.Attribute('y', n(y)),
+                h.Attribute('width', `${width}`),
+                h.Attribute('height', `${height}`),
+              ],
+              [
+                h.div(
+                  [
+                    h.Class('pb-sticker-pop'),
+                    h.Role('dialog'),
+                    h.AriaLabel(ui.title),
+                  ],
+                  [
+                    h.div(
+                      [h.Class('pb-sticker-head')],
+                      [
+                        ui.title,
+                        h.button(
+                          [
+                            h.Type('button'),
+                            h.Class('pb-x'),
+                            h.AriaLabel(ui.close),
+                            h.OnClick(send(Message.ClickedCloseSticker())),
+                          ],
+                          ['×'],
+                        ),
+                      ],
+                    ),
+                    h.dl(
+                      [],
+                      [
+                        h.dt([], [ui.ssid]),
+                        h.dd([], [wifi.ssid]),
+                        h.dt([], [ui.password]),
+                        h.dd(
+                          [],
+                          [wifi.security === 'open' ? '—' : wifi.password],
+                        ),
+                      ],
+                    ),
+                    h.p([h.Class('pb-sticker-note')], [ui.note]),
+                  ],
+                ),
+              ],
+            ),
+          ]
         },
-      ),
+      }),
   })
 }
 
@@ -1007,7 +1103,9 @@ const haloView = <ParentMessage>(
 ): ReadonlyArray<Html> => {
   const { h, picture } = draw
   return Option.match(
-    Option.flatMap(shapeIdOf(picture, target), id => shapeOf(picture.layout, id)),
+    Option.flatMap(shapeIdOf(picture, target), id =>
+      shapeOf(picture.layout, id),
+    ),
     {
       onNone: () => [],
       onSome: shape => {
@@ -1045,7 +1143,10 @@ const noteAnchor = (
 ): Option.Option<Readonly<{ x: number; top: number; bottom: number }>> =>
   target.startsWith('link:')
     ? Option.map(
-        Array.findFirst(picture.layout.links, link => `link:${link.id}` === target),
+        Array.findFirst(
+          picture.layout.links,
+          link => `link:${link.id}` === target,
+        ),
         link => {
           const x = (link.from.x + link.to.x) / 2
           const y = (link.from.y + link.to.y) / 2
@@ -1053,7 +1154,9 @@ const noteAnchor = (
         },
       )
     : Option.map(
-        Option.flatMap(shapeIdOf(picture, target), id => shapeOf(picture.layout, id)),
+        Option.flatMap(shapeIdOf(picture, target), id =>
+          shapeOf(picture.layout, id),
+        ),
         shape =>
           shape._tag === 'Box'
             ? {
@@ -1067,7 +1170,11 @@ const noteAnchor = (
                   top: shape.cloud.y - shape.cloud.ry,
                   bottom: shape.cloud.y + shape.cloud.ry,
                 }
-              : { x: shape.inner.x, top: shape.inner.y - 12, bottom: shape.inner.y + 12 },
+              : {
+                  x: shape.inner.x,
+                  top: shape.inner.y - 12,
+                  bottom: shape.inner.y + 12,
+                },
       )
 
 const noteView = <ParentMessage>(
@@ -1100,7 +1207,10 @@ const noteView = <ParentMessage>(
           key,
           [h.Class(`pb-note ${toneClass(tone)}`)],
           [
-            h.path([h.Class('pb-stem'), h.Attribute('d', `M${n(anchor.x)},${n(stemFrom)} V${n(stemTo)}`)]),
+            h.path([
+              h.Class('pb-stem'),
+              h.Attribute('d', `M${n(anchor.x)},${n(stemFrom)} V${n(stemTo)}`),
+            ]),
             h.rect([
               h.Attribute('x', n(x)),
               h.Attribute('y', n(y)),
@@ -1109,7 +1219,11 @@ const noteView = <ParentMessage>(
               h.Attribute('rx', '6'),
             ]),
             h.text(
-              [h.Attribute('x', n(x + width / 2)), h.Attribute('y', n(y + 15)), h.TextAnchor('middle')],
+              [
+                h.Attribute('x', n(x + width / 2)),
+                h.Attribute('y', n(y + 15)),
+                h.TextAnchor('middle'),
+              ],
               [text],
             ),
           ],
@@ -1121,55 +1235,65 @@ const noteView = <ParentMessage>(
 
 // SCAN, DRAFT
 
-const scanViews = <ParentMessage>(draw: Draw<ParentMessage>): ReadonlyArray<Html> => {
+const scanViews = <ParentMessage>(
+  draw: Draw<ParentMessage>,
+): ReadonlyArray<Html> => {
   const { h, picture } = draw
   if (!picture.isOpen('board.portScan')) {
     return []
   }
   const ui = picture.context.ui.packetBoard.scan
-  return Array.flatMap(
-    picture.context.stage,
-    (item): ReadonlyArray<Html> =>
-      item._tag !== 'Scan'
-        ? []
-        : Option.match(
-            Option.flatMap(shapeIdOf(picture, item.target), id => shapeOf(picture.layout, id)),
-            {
-              onNone: () => [],
-              onSome: shape => {
-                const centre = centreOf(shape)
-                const results = scanPorts(
-                  picture.context.doc.doc,
-                  picture.context.run.settled,
-                  item.from,
-                  item.target,
-                  item.ports,
-                )
-                return Array.map(results, (result, index) =>
-                  h.keyed('g')(
-                    `scan-${item.target}-${result.port}`,
-                    [
-                      h.Class(`pb-scan ${result.status}`),
-                      h.Transform(`translate(${n(centre.x + 92)},${n(centre.y - 30 + index * 19)})`),
-                    ],
-                    [
-                      h.rect([h.Attribute('width', '84'), h.Attribute('height', '16'), h.Attribute('rx', '8')]),
-                      h.text(
-                        [h.Attribute('x', '8'), h.Attribute('y', '12')],
-                        [
-                          `${result.port} ${result.status === 'open' ? '✓' : result.status === 'closed' ? '✕' : '…'} ${result.status === 'open' ? ui.open : result.status === 'closed' ? ui.closed : ui.filtered}`,
-                        ],
-                      ),
-                    ],
-                  ),
-                )
-              },
-            },
+  return Array.flatMap(picture.context.stage, (item): ReadonlyArray<Html> =>
+    item._tag !== 'Scan'
+      ? []
+      : Option.match(
+          Option.flatMap(shapeIdOf(picture, item.target), id =>
+            shapeOf(picture.layout, id),
           ),
+          {
+            onNone: () => [],
+            onSome: shape => {
+              const centre = centreOf(shape)
+              const results = scanPorts(
+                picture.context.doc.doc,
+                picture.context.run.settled,
+                item.from,
+                item.target,
+                item.ports,
+              )
+              return Array.map(results, (result, index) =>
+                h.keyed('g')(
+                  `scan-${item.target}-${result.port}`,
+                  [
+                    h.Class(`pb-scan ${result.status}`),
+                    h.Transform(
+                      `translate(${n(centre.x + 92)},${n(centre.y - 30 + index * 19)})`,
+                    ),
+                  ],
+                  [
+                    h.rect([
+                      h.Attribute('width', '84'),
+                      h.Attribute('height', '16'),
+                      h.Attribute('rx', '8'),
+                    ]),
+                    h.text(
+                      [h.Attribute('x', '8'), h.Attribute('y', '12')],
+                      [
+                        `${result.port} ${result.status === 'open' ? '✓' : result.status === 'closed' ? '✕' : '…'} ${result.status === 'open' ? ui.open : result.status === 'closed' ? ui.closed : ui.filtered}`,
+                      ],
+                    ),
+                  ],
+                ),
+              )
+            },
+          },
+        ),
   )
 }
 
-const draftViews = <ParentMessage>(draw: Draw<ParentMessage>): ReadonlyArray<Html> => {
+const draftViews = <ParentMessage>(
+  draw: Draw<ParentMessage>,
+): ReadonlyArray<Html> => {
   const { h, picture, send } = draw
   const ops = Array.flatMap(picture.previews, preview => preview.ops)
   return Array.getSomes(
@@ -1177,7 +1301,10 @@ const draftViews = <ParentMessage>(draw: Draw<ParentMessage>): ReadonlyArray<Htm
       const id = `draft:${index}`
       const isPick = isCandidate(picture, id)
       const mark = Array.findLast(picture.marks, found => found.target === id)
-      const tone = Option.match(mark, { onNone: () => '', onSome: found => ` mark-${found.tone}` })
+      const tone = Option.match(mark, {
+        onNone: () => '',
+        onSome: found => ` mark-${found.tone}`,
+      })
       const device =
         op._tag === 'AddDevice'
           ? op.device.id
@@ -1189,12 +1316,16 @@ const draftViews = <ParentMessage>(draw: Draw<ParentMessage>): ReadonlyArray<Htm
                 ? op.a
                 : ''
       return Option.map(
-        Option.flatMap(visibleIdOptional(picture, device), shapeId => shapeOf(picture.layout, shapeId)),
+        Option.flatMap(visibleIdOptional(picture, device), shapeId =>
+          shapeOf(picture.layout, shapeId),
+        ),
         shape => {
           const centre = centreOf(shape)
           const text = picture.context.maybeQuiz.pipe(
             Option.flatMap(quiz => Option.fromNullishOr(quiz.names[id])),
-            Option.getOrElse(() => `${picture.context.ui.packetBoard.draft}: ${op._tag}`),
+            Option.getOrElse(
+              () => `${picture.context.ui.packetBoard.draft}: ${op._tag}`,
+            ),
           )
           const width = Math.min(text.length * 6.4 + 18, 260)
           const y = centre.y + 40 + (index % 3) * 22
@@ -1203,10 +1334,16 @@ const draftViews = <ParentMessage>(draw: Draw<ParentMessage>): ReadonlyArray<Htm
             [
               h.Class(`pb-draft${isPick ? ' cand' : ''}${tone}`),
               h.Transform(`translate(${n(centre.x - width / 2)},${n(y)})`),
-              ...(isPick ? button(draw, text, send(candidateMessage(picture, id))) : []),
+              ...(isPick
+                ? button(draw, text, send(candidateMessage(picture, id)))
+                : []),
             ],
             [
-              h.rect([h.Attribute('width', n(width)), h.Attribute('height', '19'), h.Attribute('rx', '6')]),
+              h.rect([
+                h.Attribute('width', n(width)),
+                h.Attribute('height', '19'),
+                h.Attribute('rx', '6'),
+              ]),
               h.text([h.Attribute('x', '9'), h.Attribute('y', '13.5')], [text]),
             ],
           )
@@ -1216,8 +1353,10 @@ const draftViews = <ParentMessage>(draw: Draw<ParentMessage>): ReadonlyArray<Htm
   )
 }
 
-const visibleIdOptional = (picture: Picture, id: string): Option.Option<string> =>
-  id === '' ? Option.none() : shapeIdOf(picture, id)
+const visibleIdOptional = (
+  picture: Picture,
+  id: string,
+): Option.Option<string> => (id === '' ? Option.none() : shapeIdOf(picture, id))
 
 // ENVELOPE
 
@@ -1249,9 +1388,10 @@ const letterPlace = (picture: Picture): Option.Option<LetterPlace> => {
   }
   if (moment._tag === 'Done' && picture.hasStarted) {
     return Option.flatMap(
-      Array.findFirst(picture.timeline.plays, play => Option.isSome(play.maybeDrop)),
-      play =>
-        Option.flatMap(play.maybeDrop, drop => anchor(drop.at)),
+      Array.findFirst(picture.timeline.plays, play =>
+        Option.isSome(play.maybeDrop),
+      ),
+      play => Option.flatMap(play.maybeDrop, drop => anchor(drop.at)),
     )
   }
   return Option.none()
@@ -1296,17 +1436,27 @@ const letterView = <ParentMessage>(
       })
       const addresses = Option.flatMap(legHop, leg => addressesOf(leg.hop))
       const isAddressShown =
-        picture.isOpen('board.addresses') && !Array.contains(picture.hidden, 'addresses')
+        picture.isOpen('board.addresses') &&
+        !Array.contains(picture.hidden, 'addresses')
       const fromText = `${picture.name(letter.from)}${isAddressShown ? Option.match(addresses, { onNone: () => '', onSome: found => ` ${found.from}` }) : ''}`
       const toText = `${picture.name(letter.to)}${isAddressShown ? Option.match(addresses, { onNone: () => '', onSome: found => ` ${found.to}` }) : ''}`
-      const protocol = Option.match(legHop, { onNone: () => 'data', onSome: leg => leg.protocol })
+      const protocol = Option.match(legHop, {
+        onNone: () => 'data',
+        onSome: leg => leg.protocol,
+      })
       const isReply = Option.exists(legHop, leg => leg.isReply)
       const isLayered = picture.isOpen('board.envelopeLayers')
       const isColoured = picture.isOpen('board.legend')
       const sealed =
-        picture.isOpen('board.sealedEnvelope') && Option.exists(legHop, leg => isSealed(leg.hop))
+        picture.isOpen('board.sealedEnvelope') &&
+        Option.exists(legHop, leg => isSealed(leg.hop))
       const width = Math.ceil(
-        Math.max(ui.envelope.from.length + fromText.length, ui.envelope.to.length + toText.length) * 6.9 + 28,
+        Math.max(
+          ui.envelope.from.length + fromText.length,
+          ui.envelope.to.length + toText.length,
+        ) *
+          6.9 +
+          28,
       )
       const height = 44
       const viewBox = picture.layout.viewBox
@@ -1319,10 +1469,11 @@ const letterView = <ParentMessage>(
         Math.max(place.y, viewBox.y + scaled.h / 2 + 4),
         viewBox.y + viewBox.h - scaled.h / 2 - 4,
       )
-      const isNextHop = Option.exists(
-        picture.quiz,
-        marks => marks.quiz.kind === 'NextHop' && !marks.isAnswered,
-      ) && picture.context.mode === 'Pick'
+      const isNextHop =
+        Option.exists(
+          picture.quiz,
+          marks => marks.quiz.kind === 'NextHop' && !marks.isAnswered,
+        ) && picture.context.mode === 'Pick'
       const canOpen = isLayered && !isNextHop && Option.isSome(legHop)
       const label = `${ui.envelope.from} ${fromText}, ${ui.envelope.to} ${toText}`
       return [
@@ -1340,15 +1491,23 @@ const letterView = <ParentMessage>(
               ].join(' '),
             ),
             h.DataAttribute('letter', 'true'),
-            h.Transform(`translate(${n(x)},${n(y)}) scale(${place.scale.toFixed(3)})`),
+            h.Transform(
+              `translate(${n(x)},${n(y)}) scale(${place.scale.toFixed(3)})`,
+            ),
             ...(isNextHop
               ? [
                   h.Role('img'),
                   h.AriaLabel(`${label}. ${ui.quiz.dragEnvelope}`),
-                  h.OnPointerDown(() => Option.some(send(Message.PressedEnvelope()))),
+                  h.OnPointerDown(() =>
+                    Option.some(send(Message.PressedEnvelope())),
+                  ),
                 ]
               : canOpen
-                ? button(draw, `${ui.envelope.open}: ${label}`, send(Message.ClickedEnvelope()))
+                ? button(
+                    draw,
+                    `${ui.envelope.open}: ${label}`,
+                    send(Message.ClickedEnvelope()),
+                  )
                 : [h.Role('img'), h.AriaLabel(label)]),
           ],
           [
@@ -1371,7 +1530,11 @@ const letterView = <ParentMessage>(
                   ),
                 ]),
                 h.text(
-                  [h.Class('pb-letter-text'), h.Attribute('x', n(-width / 2 + 10)), h.Attribute('y', n(-height / 2 + 24))],
+                  [
+                    h.Class('pb-letter-text'),
+                    h.Attribute('x', n(-width / 2 + 10)),
+                    h.Attribute('y', n(-height / 2 + 24)),
+                  ],
                   [h.tspan([h.Class('k')], [ui.envelope.from]), ` ${fromText}`],
                 ),
                 h.text(
@@ -1385,7 +1548,12 @@ const letterView = <ParentMessage>(
                 ...(isLayered
                   ? [
                       h.g(
-                        [h.Class('pb-letter-tag'), h.Transform(`translate(${n(width / 2 - 8)},${n(-height / 2 - 8)})`)],
+                        [
+                          h.Class('pb-letter-tag'),
+                          h.Transform(
+                            `translate(${n(width / 2 - 8)},${n(-height / 2 - 8)})`,
+                          ),
+                        ],
                         [
                           h.rect([
                             h.Attribute('x', '-40'),
@@ -1394,7 +1562,11 @@ const letterView = <ParentMessage>(
                             h.Attribute('rx', '7.5'),
                           ]),
                           h.text(
-                            [h.Attribute('x', '-18'), h.Attribute('y', '11'), h.TextAnchor('middle')],
+                            [
+                              h.Attribute('x', '-18'),
+                              h.Attribute('y', '11'),
+                              h.TextAnchor('middle'),
+                            ],
                             [sealed ? '🔒 TLS' : protocol.toUpperCase()],
                           ),
                         ],
@@ -1418,7 +1590,9 @@ const lastAddressee = (play: Picture['timeline']['plays'][number]): DeviceId =>
 
 // BOARD
 
-const modeChip = <ParentMessage>(draw: Draw<ParentMessage>): ReadonlyArray<Html> => {
+const modeChip = <ParentMessage>(
+  draw: Draw<ParentMessage>,
+): ReadonlyArray<Html> => {
   const { h, picture } = draw
   const ui = picture.context.ui.packetBoard
   return picture.context.mode === 'Pick'
@@ -1433,7 +1607,9 @@ const svgView = <ParentMessage>(draw: Draw<ParentMessage>): Html => {
   const { layout } = picture
   const viewBox = layout.viewBox
   const cloud = layout.maybeCloud
-  const isFog = Array.some(picture.context.stage, item => item._tag === 'Fog') && picture.isOpen('board.fog')
+  const isFog =
+    Array.some(picture.context.stage, item => item._tag === 'Fog') &&
+    picture.isOpen('board.fog')
   return h.svg(
     [
       h.Class('pb-svg'),
@@ -1494,7 +1670,13 @@ const svgView = <ParentMessage>(draw: Draw<ParentMessage>): Html => {
         [h.Class('pb-layer-over')],
         [
           ...Array.flatMap(picture.marks, (mark, index) =>
-            haloView(draw, mark.target, mark.tone, mark.isPulsing, `halo-${index}-${mark.target}`),
+            haloView(
+              draw,
+              mark.target,
+              mark.tone,
+              mark.isPulsing,
+              `halo-${index}-${mark.target}`,
+            ),
           ),
           ...Array.flatMap(picture.notes, (note, index) =>
             noteView(
@@ -1537,7 +1719,11 @@ export const view = <ParentMessage>(
           h.Class('pb-stage board-surface'),
           h.Style({ '--pb-ratio': `${viewBox.w} / ${viewBox.h}` }),
           ...(canMove(picture)
-            ? [h.OnMount(Mount.mapMessage(DevicePointer(), slot.toParentMessage))]
+            ? [
+                h.OnMount(
+                  Mount.mapMessage(DevicePointer(), slot.toParentMessage),
+                ),
+              ]
             : []),
         ],
         [

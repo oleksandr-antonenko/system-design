@@ -1,7 +1,7 @@
 import { Option } from 'effect'
 
-import { expand, packet, pauseAt, play } from '../../../../kinds/packet/dsl'
 import type { PacketDoc } from '../../../../kinds/packet/doc'
+import { expand, packet, pauseAt, play } from '../../../../kinds/packet/dsl'
 import { defineLesson } from '../../../../lesson/dsl'
 import { exitOf } from '../../../../net/answers'
 import {
@@ -123,7 +123,10 @@ export default defineLesson(packet, {
             'neighbour',
             480,
             40,
-            wifi('Router-3A90', 'their-own-secret', { band: '2.4', channel: 1 }),
+            wifi('Router-3A90', 'their-own-secret', {
+              band: '2.4',
+              channel: 1,
+            }),
           ),
         ),
         forgetWifi('phone'),

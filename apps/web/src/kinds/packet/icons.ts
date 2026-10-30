@@ -68,7 +68,5 @@ export const deviceIcons: Readonly<Record<DeviceKind, ReadonlyArray<string>>> =
       'M12 3.5a8.5 8.5 0 1 1 0 17a8.5 8.5 0 1 1 0-17z',
       'M8 10l4-3.5L16 10M8 14l4 3.5 4-3.5',
     ],
-    internet: [
-      'M7 18.5a4.5 4.5 0 0 1-.6-9A6 6 0 0 1 18 8.5a4 4 0 0 1-.5 10z',
-    ],
+    internet: ['M7 18.5a4.5 4.5 0 0 1-.6-9A6 6 0 0 1 18 8.5a4 4 0 0 1-.5 10z'],
   }

@@ -1,16 +1,16 @@
 import { Array, Option, Order, pipe } from 'effect'
 import type { Html, HtmlBuilder } from 'foldkit/html'
 
+import type { ProtocolName } from '../../i18n/ui/packetBoard/types'
 import { runAll } from '../../net/answers'
 import { macsOf } from '../../net/doc'
 import type { Device, DeviceId, NetState } from '../../net/model'
 import { type Hop, type StackLevel, TableChange } from '../../net/packet'
 import { addressOf, routeTable } from '../../net/topology'
 import { runInTerminal } from '../../net/world'
-import type { ProtocolName } from '../../i18n/ui/packetBoard/types'
-import { Message } from './message'
 import type { DeviceTable } from './dsl'
 import { changedFields, keyFieldOf, layerRows } from './envelope'
+import { Message } from './message'
 import { type Picture, deviceOf, pairsOf } from './picture'
 
 // HTML поверх доски сетей: карточка устройства, конверт по слоям, распечатка
@@ -61,14 +61,11 @@ const tableRows = (
     )
   }
   if (table === 'routes') {
-    return Array.map(
-      routeTable(picture.context.doc.doc, state, id),
-      row => [
-        `${row.network}/${row.prefix}`,
-        Option.getOrElse(row.maybeVia, () => row.kind),
-        row.iface,
-      ],
-    )
+    return Array.map(routeTable(picture.context.doc.doc, state, id), row => [
+      `${row.network}/${row.prefix}`,
+      Option.getOrElse(row.maybeVia, () => row.kind),
+      row.iface,
+    ])
   }
   if (table === 'leases') {
     return Array.map(
@@ -163,7 +160,10 @@ const changedRow = (
   )
 
 /** Таблицы карточки: что открыто курсом и подходит устройству. */
-const tablesFor = (picture: Picture, device: Device): ReadonlyArray<DeviceTable> => {
+const tablesFor = (
+  picture: Picture,
+  device: Device,
+): ReadonlyArray<DeviceTable> => {
   const isHost = device._tag === 'Host'
   const isRouter = device._tag === 'Router'
   const candidates: ReadonlyArray<readonly [DeviceTable, string, boolean]> = [
@@ -175,8 +175,24 @@ const tablesFor = (picture: Picture, device: Device): ReadonlyArray<DeviceTable>
     ['leases', 'board.natTable', isRouter],
     ['nat', 'board.natTable', isRouter],
     ['dns', 'board.resolverCache', isHost && device.resolver],
-    ['records', 'board.resolverCache', (isHost || isRouter) && Array.isReadonlyArrayNonEmpty(device._tag === 'Host' || device._tag === 'Router' ? device.zones : [])],
-    ['rules', 'board.firewall', (isHost || isRouter) && (device._tag === 'Host' || device._tag === 'Router') && (device.firewall.enabled || Array.isReadonlyArrayNonEmpty(device.firewall.rules))],
+    [
+      'records',
+      'board.resolverCache',
+      (isHost || isRouter) &&
+        Array.isReadonlyArrayNonEmpty(
+          device._tag === 'Host' || device._tag === 'Router'
+            ? device.zones
+            : [],
+        ),
+    ],
+    [
+      'rules',
+      'board.firewall',
+      (isHost || isRouter) &&
+        (device._tag === 'Host' || device._tag === 'Router') &&
+        (device.firewall.enabled ||
+          Array.isReadonlyArrayNonEmpty(device.firewall.rules)),
+    ],
   ]
   return Array.dedupe([
     ...Array.filter(picture.cardTables, table =>
@@ -254,11 +270,23 @@ const cardView = <ParentMessage>(
       onSome: device => {
         const title = picture.name(device.id)
         const note = picture.note(device.id)
-        const address = addressOf(picture.context.doc.doc, picture.state, device.id)
+        const address = addressOf(
+          picture.context.doc.doc,
+          picture.state,
+          device.id,
+        )
         const tables = tablesFor(picture, device)
         const facts: ReadonlyArray<readonly [string, string]> = [
-          ...(picture.isOpen('board.addresses') && (device._tag === 'Host' || device._tag === 'Router' || device._tag === 'Transit')
-            ? [[ui.address, Option.getOrElse(address, () => ui.noAddress)] as const]
+          ...(picture.isOpen('board.addresses') &&
+          (device._tag === 'Host' ||
+            device._tag === 'Router' ||
+            device._tag === 'Transit')
+            ? [
+                [
+                  ui.address,
+                  Option.getOrElse(address, () => ui.noAddress),
+                ] as const,
+              ]
             : []),
           ...(device._tag === 'Router' && picture.isOpen('board.routes')
             ? [['WAN', device.wan.ip] as const]
@@ -278,7 +306,9 @@ const cardView = <ParentMessage>(
                     [],
                     [
                       h.h3([], [title]),
-                      ...(note === '' ? [] : [h.p([h.Class('pb-card-note')], [note])]),
+                      ...(note === ''
+                        ? []
+                        : [h.p([h.Class('pb-card-note')], [note])]),
                     ],
                   ),
                   h.button(
@@ -312,7 +342,11 @@ const cardView = <ParentMessage>(
                   [
                     h.p([h.Class('pb-card-section')], [ui.tables[table]]),
                     Array.match(rows, {
-                      onEmpty: () => h.p([h.Class('pb-empty')], [table === 'ports' ? ui.noPorts : ui.empty]),
+                      onEmpty: () =>
+                        h.p(
+                          [h.Class('pb-empty')],
+                          [table === 'ports' ? ui.noPorts : ui.empty],
+                        ),
                       onNonEmpty: found =>
                         h.table(
                           [],
@@ -324,7 +358,12 @@ const cardView = <ParentMessage>(
                                   row.join('|'),
                                   [
                                     h.Class(
-                                      changedRow(picture.changes, device.id, table, row)
+                                      changedRow(
+                                        picture.changes,
+                                        device.id,
+                                        table,
+                                        row,
+                                      )
                                         ? 'changed'
                                         : '',
                                     ),
@@ -378,26 +417,28 @@ const envelopePanel = <ParentMessage>(
         pipe(
           found.trace.hops,
           Array.filter(
-            hop => hop.packet === leg.hop.packet && hop.arrivedAt < leg.hop.arrivedAt,
+            hop =>
+              hop.packet === leg.hop.packet &&
+              hop.arrivedAt < leg.hop.arrivedAt,
           ),
           Array.last,
         ),
       )
       const changed = changedFields(previous, leg.hop)
       const keyField = isPickLayer
-        ? Option.flatMap(picture.maybeOpenLevel, level => keyFieldOf(leg.hop, level))
+        ? Option.flatMap(picture.maybeOpenLevel, level =>
+            keyFieldOf(leg.hop, level),
+          )
         : Option.none()
-      const isNamesHidden = isPickLayer && Option.exists(picture.quiz, marks => !marks.isAnswered)
+      const isNamesHidden =
+        isPickLayer && Option.exists(picture.quiz, marks => !marks.isAnswered)
       const pickedLevels = Option.match(picture.quiz, {
         onNone: () => [],
         onSome: marks => (marks.isAnswered ? marks.picked : []),
       })
       return [
         h.section(
-          [
-            h.Class('pb-envelope'),
-            h.AriaLabel(ui.title(leg.index, leg.count)),
-          ],
+          [h.Class('pb-envelope'), h.AriaLabel(ui.title(leg.index, leg.count))],
           [
             h.div(
               [h.Class('pb-envelope-head')],
@@ -418,28 +459,50 @@ const envelopePanel = <ParentMessage>(
                     ]),
               ],
             ),
-            h.p([h.Class('pb-hint')], [isPickLayer ? picture.context.ui.packetBoard.quiz.layerQuestion : ui.layersHint]),
+            h.p(
+              [h.Class('pb-hint')],
+              [
+                isPickLayer
+                  ? picture.context.ui.packetBoard.quiz.layerQuestion
+                  : ui.layersHint,
+              ],
+            ),
             h.ol(
               [h.Class('pb-layers')],
               Array.map(layerRows(leg.hop), row => {
-                const isOpen = Option.exists(picture.maybeOpenLevel, level => level === row.level)
-                const isPicked = Array.contains(pickedLevels, `env:${row.level}`)
+                const isOpen = Option.exists(
+                  picture.maybeOpenLevel,
+                  level => level === row.level,
+                )
+                const isPicked = Array.contains(
+                  pickedLevels,
+                  `env:${row.level}`,
+                )
                 return h.keyed('li')(
                   `${row.position}`,
                   [
                     h.Class(
                       `pb-layer level-${row.level}${isOpen ? ' open' : ''}${isPicked ? ' picked' : ''}`,
                     ),
-                    h.OnMouseEnter(send(Message.HoveredLayer({ position: row.position }))),
+                    h.OnMouseEnter(
+                      send(Message.HoveredLayer({ position: row.position })),
+                    ),
                     h.OnMouseLeave(send(Message.LeftLayer())),
                     h.Tabindex(0),
-                    h.OnFocus(send(Message.HoveredLayer({ position: row.position }))),
+                    h.OnFocus(
+                      send(Message.HoveredLayer({ position: row.position })),
+                    ),
                     h.OnBlur(send(Message.LeftLayer())),
                   ],
                   [
                     h.span(
                       [h.Class('pb-layer-title')],
-                      [isNamesHidden ? '' : row.title, isNamesHidden ? '' : h.small([], [` · ${ui.levels[row.level]}`])],
+                      [
+                        isNamesHidden ? '' : row.title,
+                        isNamesHidden
+                          ? ''
+                          : h.small([], [` · ${ui.levels[row.level]}`]),
+                      ],
                     ),
                     h.span(
                       [h.Class('pb-fields')],
@@ -451,9 +514,14 @@ const envelopePanel = <ParentMessage>(
                             h.Class(
                               `pb-field${Array.contains(changed, id) ? ' changed' : ''}${isKey ? ' key' : ''}`,
                             ),
-                            ...(Array.contains(changed, id) ? [h.Title(ui.changed)] : []),
+                            ...(Array.contains(changed, id)
+                              ? [h.Title(ui.changed)]
+                              : []),
                           ],
-                          [isNamesHidden && !isKey ? '' : `${field.key} `, h.b([], [field.value])],
+                          [
+                            isNamesHidden && !isKey ? '' : `${field.key} `,
+                            h.b([], [field.value]),
+                          ],
                         )
                       }),
                     ),
@@ -483,13 +551,24 @@ const printouts = <ParentMessage>(
                 `printout-${item.device}-${item.command}`,
                 [h.Class('pb-printout')],
                 [
-                  h.figcaption([], [picture.context.ui.packetBoard.printout(picture.name(item.device))]),
+                  h.figcaption(
+                    [],
+                    [
+                      picture.context.ui.packetBoard.printout(
+                        picture.name(item.device),
+                      ),
+                    ],
+                  ),
                   h.pre(
                     [],
                     [
                       [
                         `$ ${item.command}`,
-                        ...runInTerminal(picture.context.doc, item.device, item.command)[0].output,
+                        ...runInTerminal(
+                          picture.context.doc,
+                          item.device,
+                          item.command,
+                        )[0].output,
                       ].join('\n'),
                     ],
                   ),
@@ -549,14 +628,29 @@ const finalRun = <ParentMessage>(
                               row.id,
                               [h.Class(isAsExpected ? 'ok' : 'bad')],
                               [
-                                h.td([], [Array.map(result.devices, picture.name).join(' → ')]),
+                                h.td(
+                                  [],
+                                  [
+                                    Array.map(
+                                      result.devices,
+                                      picture.name,
+                                    ).join(' → '),
+                                  ],
+                                ),
                                 h.td(
                                   [],
                                   [
                                     `${isAsExpected ? '✓' : '✕'} ${result.delivered ? ui.reach : ui.blocked}`,
                                     ...(isAsExpected
                                       ? []
-                                      : [h.small([], [` · ${ui.expected(row.expect === 'reach' ? ui.reach : ui.blocked)}`])]),
+                                      : [
+                                          h.small(
+                                            [],
+                                            [
+                                              ` · ${ui.expected(row.expect === 'reach' ? ui.reach : ui.blocked)}`,
+                                            ],
+                                          ),
+                                        ]),
                                   ],
                                 ),
                                 h.td([], [`${result.hops}`]),
@@ -588,13 +682,14 @@ const legend = <ParentMessage>(
             h.p([h.Class('pb-card-section')], [ui.title]),
             h.ul(
               [],
-              Array.map(
-                LEGEND,
-                protocol =>
-                  h.li(
-                    [h.Class(`proto-${protocol}`)],
-                    [h.span([h.Class('pb-swatch'), h.AriaHidden(true)]), ui.protocols[protocol]],
-                  ),
+              Array.map(LEGEND, protocol =>
+                h.li(
+                  [h.Class(`proto-${protocol}`)],
+                  [
+                    h.span([h.Class('pb-swatch'), h.AriaHidden(true)]),
+                    ui.protocols[protocol],
+                  ],
+                ),
               ),
             ),
             h.p(
@@ -646,16 +741,25 @@ const doneButton = <ParentMessage>(
   h.div(
     [h.Class('pb-done')],
     [
-      h.span([h.Class('pb-hint')], [picture.context.ui.packetBoard.quiz.selected(count)]),
+      h.span(
+        [h.Class('pb-hint')],
+        [picture.context.ui.packetBoard.quiz.selected(count)],
+      ),
       h.button(
         [
           h.Type('button'),
           h.Class('btn primary'),
           ...(isReady
-            ? [h.OnClick(send(Message.ClickedDone({
-                  playTo: picture.revealed.totalMs,
-                  total: picture.revealed.totalMs,
-                })))]
+            ? [
+                h.OnClick(
+                  send(
+                    Message.ClickedDone({
+                      playTo: picture.revealed.totalMs,
+                      total: picture.revealed.totalMs,
+                    }),
+                  ),
+                ),
+              ]
             : [h.Disabled(true)]),
         ],
         [picture.context.ui.packetBoard.quiz.done],
@@ -675,9 +779,15 @@ const layerButtons = <ParentMessage>(
         ? []
         : [
             h.div(
-              [h.Class('pb-tray-buttons'), h.Role('group'), h.AriaLabel(picture.context.ui.packetBoard.quiz.layerQuestion)],
+              [
+                h.Class('pb-tray-buttons'),
+                h.Role('group'),
+                h.AriaLabel(picture.context.ui.packetBoard.quiz.layerQuestion),
+              ],
               Array.map(
-                Array.filter(LEVELS, level => Array.contains(marks.quiz.candidates, `env:${level}`)),
+                Array.filter(LEVELS, level =>
+                  Array.contains(marks.quiz.candidates, `env:${level}`),
+                ),
                 level => {
                   const id = `env:${level}`
                   const state = marks.isAnswered
@@ -694,11 +804,17 @@ const layerButtons = <ParentMessage>(
                       h.Class(`quiz-option${state}`),
                       ...(marks.isAnswered || picture.context.mode !== 'Pick'
                         ? [h.Disabled(true)]
-                        : [h.OnClick(send(Message.ClickedCandidate({
-                            id,
-                            playTo: picture.playhead,
-                            total: picture.revealed.totalMs,
-                          })))]),
+                        : [
+                            h.OnClick(
+                              send(
+                                Message.ClickedCandidate({
+                                  id,
+                                  playTo: picture.playhead,
+                                  total: picture.revealed.totalMs,
+                                }),
+                              ),
+                            ),
+                          ]),
                     ],
                     [picture.context.ui.packetBoard.envelope.levels[level]],
                   )
@@ -716,11 +832,15 @@ const ruleTable = <ParentMessage>(
   Option.match(picture.quiz, {
     onNone: () => [],
     onSome: marks => {
-      const rules = Array.filter(marks.quiz.candidates, id => id.startsWith('rule:'))
+      const rules = Array.filter(marks.quiz.candidates, id =>
+        id.startsWith('rule:'),
+      )
       if (marks.quiz.kind !== 'PickRule' && Array.isReadonlyArrayEmpty(rules)) {
         return []
       }
-      const devices = Array.dedupe(Array.map(rules, id => id.split(':')[1] ?? ''))
+      const devices = Array.dedupe(
+        Array.map(rules, id => id.split(':')[1] ?? ''),
+      )
       return Array.flatMap(devices, deviceId =>
         Option.match(deviceOf(picture, deviceId), {
           onNone: () => [],
@@ -731,14 +851,24 @@ const ruleTable = <ParentMessage>(
                 `rules-${deviceId}`,
                 [h.Class('pb-rules')],
                 [
-                  h.p([h.Class('pb-card-section')], [picture.context.ui.packetBoard.quiz.rulesTitle(picture.name(deviceId))]),
+                  h.p(
+                    [h.Class('pb-card-section')],
+                    [
+                      picture.context.ui.packetBoard.quiz.rulesTitle(
+                        picture.name(deviceId),
+                      ),
+                    ],
+                  ),
                   h.div(
                     [h.Role('group')],
                     Array.map(rows, (row, index) => {
                       const id = `rule:${deviceId}:${index + 1 > rows.length - 1 ? 'default' : index + 1}`
                       const candidate = Array.findFirst(
                         rules,
-                        rule => rule === id || (index === rows.length - 1 && rule === `rule:${deviceId}:0`),
+                        rule =>
+                          rule === id ||
+                          (index === rows.length - 1 &&
+                            rule === `rule:${deviceId}:0`),
                       )
                       const target = Option.getOrElse(candidate, () => id)
                       const state = marks.isAnswered
@@ -751,7 +881,9 @@ const ruleTable = <ParentMessage>(
                           ? ' selected'
                           : ''
                       const canPick =
-                        Option.isSome(candidate) && !marks.isAnswered && picture.context.mode === 'Pick'
+                        Option.isSome(candidate) &&
+                        !marks.isAnswered &&
+                        picture.context.mode === 'Pick'
                       return h.keyed('button')(
                         target,
                         [
@@ -799,7 +931,9 @@ const chipsTray = <ParentMessage>(
       }
       const ui = picture.context.ui.packetBoard.quiz
       const name = (id: string) => marks.quiz.names[id] ?? picture.name(id)
-      const placements = marks.isAnswered ? pairsOf(marks.picked) : picture.model.placements
+      const placements = marks.isAnswered
+        ? pairsOf(marks.picked)
+        : picture.model.placements
       const answer = pairsOf(marks.answer)
       const placed = Object.values(placements)
       const isLive = !marks.isAnswered && picture.context.mode === 'Pick'
@@ -808,12 +942,17 @@ const chipsTray = <ParentMessage>(
           [h.Class('pb-chips'), h.Role('group'), h.AriaLabel(ui.chips)],
           Array.map(marks.quiz.candidates, chip => {
             const isUsed = Array.contains(placed, chip)
-            const isPicked = Option.exists(picture.model.maybeChip, picked => picked === chip)
+            const isPicked = Option.exists(
+              picture.model.maybeChip,
+              picked => picked === chip,
+            )
             return h.keyed('button')(
               `chip-${chip}`,
               [
                 h.Type('button'),
-                h.Class(`pb-chip${isUsed ? ' used' : ''}${isPicked ? ' picked' : ''}`),
+                h.Class(
+                  `pb-chip${isUsed ? ' used' : ''}${isPicked ? ' picked' : ''}`,
+                ),
                 h.AriaPressed(isPicked ? 'true' : 'false'),
                 ...(isLive
                   ? [
@@ -833,7 +972,9 @@ const chipsTray = <ParentMessage>(
             const chip = Option.fromNullishOr(placements[slot])
             const expected = Option.fromNullishOr(answer[slot])
             const state = marks.isAnswered
-              ? Option.exists(chip, found => Option.exists(expected, wanted => wanted === found))
+              ? Option.exists(chip, found =>
+                  Option.exists(expected, wanted => wanted === found),
+                )
                 ? ' right'
                 : ' wrong'
               : ''
@@ -841,7 +982,12 @@ const chipsTray = <ParentMessage>(
               `slot-${slot}`,
               [
                 h.Class(`pb-slot${state}`),
-                ...(isLive ? [h.AllowDrop(), h.OnDrop(send(Message.DroppedOnSlot({ slot })))] : []),
+                ...(isLive
+                  ? [
+                      h.AllowDrop(),
+                      h.OnDrop(send(Message.DroppedOnSlot({ slot }))),
+                    ]
+                  : []),
               ],
               [
                 h.div([h.Class('pb-slot-text')], [name(slot)]),
@@ -855,7 +1001,9 @@ const chipsTray = <ParentMessage>(
                         onSome: name,
                       })}`,
                     ),
-                    ...(isLive ? [h.OnClick(send(Message.ClickedSlot({ slot })))] : [h.Disabled(true)]),
+                    ...(isLive
+                      ? [h.OnClick(send(Message.ClickedSlot({ slot })))]
+                      : [h.Disabled(true)]),
                   ],
                   [
                     Option.match(chip, {
@@ -867,7 +1015,9 @@ const chipsTray = <ParentMessage>(
                 ...(marks.isAnswered && state === ' wrong'
                   ? Option.match(expected, {
                       onNone: () => [],
-                      onSome: wanted => [h.p([h.Class('pb-hint')], [`→ ${name(wanted)}`])],
+                      onSome: wanted => [
+                        h.p([h.Class('pb-hint')], [`→ ${name(wanted)}`]),
+                      ],
                     })
                   : []),
               ],
@@ -880,7 +1030,10 @@ const chipsTray = <ParentMessage>(
                 picture,
                 send,
                 h,
-                Array.every(marks.quiz.slots, slot => placements[slot] !== undefined),
+                Array.every(
+                  marks.quiz.slots,
+                  slot => placements[slot] !== undefined,
+                ),
                 Object.keys(placements).length,
               ),
             ]
@@ -904,7 +1057,14 @@ const builderPanel = <ParentMessage>(
           const isLive = picture.context.mode === 'Edit'
           const headers = picture.model.headers
           const loose = Array.filter(
-            Array.sort(LEVELS, Order.mapInput(Order.String, (level: StackLevel) => picture.context.ui.packetBoard.envelope.levels[level])),
+            Array.sort(
+              LEVELS,
+              Order.mapInput(
+                Order.String,
+                (level: StackLevel) =>
+                  picture.context.ui.packetBoard.envelope.levels[level],
+              ),
+            ),
             level => !Array.contains(headers, level),
           )
           return [
@@ -917,17 +1077,24 @@ const builderPanel = <ParentMessage>(
                 h.div(
                   [h.Class('pb-chips')],
                   Array.map(loose, level => {
-                    const isPicked = Option.exists(picture.model.maybeHeader, picked => picked === level)
+                    const isPicked = Option.exists(
+                      picture.model.maybeHeader,
+                      picked => picked === level,
+                    )
                     return h.keyed('button')(
                       `header-${level}`,
                       [
                         h.Type('button'),
-                        h.Class(`pb-chip level-${level}${isPicked ? ' picked' : ''}`),
+                        h.Class(
+                          `pb-chip level-${level}${isPicked ? ' picked' : ''}`,
+                        ),
                         h.AriaPressed(isPicked ? 'true' : 'false'),
                         ...(isLive
                           ? [
                               h.Draggable(true),
-                              h.OnDragStart(send(Message.DraggedHeader({ level }))),
+                              h.OnDragStart(
+                                send(Message.DraggedHeader({ level })),
+                              ),
                               h.OnClick(send(Message.ClickedHeader({ level }))),
                             ]
                           : [h.Disabled(true)]),
@@ -944,7 +1111,12 @@ const builderPanel = <ParentMessage>(
                       [
                         h.Class('pb-slot'),
                         ...(isLive
-                          ? [h.AllowDrop(), h.OnDrop(send(Message.DroppedOnHeaderSlot({ position })))]
+                          ? [
+                              h.AllowDrop(),
+                              h.OnDrop(
+                                send(Message.DroppedOnHeaderSlot({ position })),
+                              ),
+                            ]
                           : []),
                       ],
                       [
@@ -952,7 +1124,11 @@ const builderPanel = <ParentMessage>(
                           [h.Class('pb-slot-text')],
                           [
                             ui.position(position + 1),
-                            position === 0 ? ` · ${ui.outside}` : position === 3 ? ` · ${ui.inside}` : '',
+                            position === 0
+                              ? ` · ${ui.outside}`
+                              : position === 3
+                                ? ` · ${ui.inside}`
+                                : '',
                           ],
                         ),
                         h.button(
@@ -964,18 +1140,26 @@ const builderPanel = <ParentMessage>(
                                 Array.get(headers, position),
                                 {
                                   onNone: () =>
-                                    picture.context.ui.packetBoard.quiz.slotEmpty,
+                                    picture.context.ui.packetBoard.quiz
+                                      .slotEmpty,
                                   onSome: headerName,
                                 },
                               )}`,
                             ),
                             ...(isLive
-                              ? [h.OnClick(send(Message.ClickedHeaderSlot({ position })))]
+                              ? [
+                                  h.OnClick(
+                                    send(
+                                      Message.ClickedHeaderSlot({ position }),
+                                    ),
+                                  ),
+                                ]
                               : [h.Disabled(true)]),
                           ],
                           [
                             Option.match(Array.get(headers, position), {
-                              onNone: () => picture.context.ui.packetBoard.quiz.slotEmpty,
+                              onNone: () =>
+                                picture.context.ui.packetBoard.quiz.slotEmpty,
                               onSome: headerName,
                             }),
                           ],
@@ -991,7 +1175,9 @@ const builderPanel = <ParentMessage>(
                       [
                         h.Type('button'),
                         h.Class('btn'),
-                        ...(isLive ? [h.OnClick(send(Message.ClickedBuilderReset()))] : [h.Disabled(true)]),
+                        ...(isLive
+                          ? [h.OnClick(send(Message.ClickedBuilderReset()))]
+                          : [h.Disabled(true)]),
                       ],
                       [ui.reset],
                     ),
@@ -1000,7 +1186,16 @@ const builderPanel = <ParentMessage>(
                         h.Type('button'),
                         h.Class('btn primary'),
                         ...(isLive && headers.length === 4
-                          ? [h.OnClick(send(Message.ClickedBuilderSend({ from: item.from, url: item.url })))]
+                          ? [
+                              h.OnClick(
+                                send(
+                                  Message.ClickedBuilderSend({
+                                    from: item.from,
+                                    url: item.url,
+                                  }),
+                                ),
+                              ),
+                            ]
                           : [h.Disabled(true)]),
                       ],
                       [ui.send],

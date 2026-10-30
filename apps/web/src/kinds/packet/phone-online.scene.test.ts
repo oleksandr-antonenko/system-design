@@ -60,7 +60,9 @@ describe('lesson 1 on the network board', () => {
       expect(role('button', { name: /▶ Run/ })).toExist(),
       expect(role('button', { name: 'Step ▸' })).not.toExist(),
       expect(role('button', { name: /Undo/ })).not.toExist(),
-      expect(text('Press “Run” under the board to send the envelope.')).toExist(),
+      expect(
+        text('Press “Run” under the board to send the envelope.'),
+      ).toExist(),
       click(role('button', { name: /▶ Run/ })),
       expect(text('Laptop is preparing the envelope.')).toExist(),
     )
@@ -80,7 +82,9 @@ describe('lesson 1 on the network board', () => {
     scene(
       sceneIn('en'),
       given(atStep(3)),
-      expect(role('button', { name: 'Wi-Fi router, your home post office' })).toExist(),
+      expect(
+        role('button', { name: 'Wi-Fi router, your home post office' }),
+      ).toExist(),
       expect(role('button', { name: 'Laptop, on the desk' })).toExist(),
       expect(role('button', { name: /▶ Run/ })).toBeDisabled(),
       click(role('button', { name: 'Wi-Fi router, your home post office' })),
@@ -118,7 +122,9 @@ describe('lesson 1 on the network board', () => {
       expect(role('dialog', { name: 'Sticker on the router' })).toExist(),
       expect(text('Router-7C21')).toExist(),
       expect(text('12345678')).toExist(),
-      expect(text('Solve the task on the board and in the panels below it.')).toExist(),
+      expect(
+        text('Solve the task on the board and in the panels below it.'),
+      ).toExist(),
       click(role('button', { name: /^Router-7C21,/ })),
       type(label('Password'), '12345678'),
       click(role('button', { name: 'Join' })),

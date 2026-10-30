@@ -161,24 +161,27 @@ describe.each(Array.map(networksLessons, lesson => [lesson.slug, lesson]))(
       })
     })
 
-    test.each(texts)('$locale: terminal commands in texts and hints', ({ text }) => {
-      const prose = [
-        ...Object.values(text.steps ?? {}).flatMap(step => [
-          typeof step.body === 'string' ? step.body : '',
-          step.more?.body ?? '',
-        ]),
-        ...Object.values(text.tasks ?? {}).flatMap(task => [
-          task.prompt,
-          ...task.hints,
-        ]),
-        ...Object.values(text.quizzes ?? {}).flatMap(quiz => [
-          quiz.question,
-          quiz.explain,
-        ]),
-      ]
-      prose.forEach(part =>
-        expect(missing(unlocked, commandsIn(part)), part).toEqual([]),
-      )
-    })
+    test.each(texts)(
+      '$locale: terminal commands in texts and hints',
+      ({ text }) => {
+        const prose = [
+          ...Object.values(text.steps ?? {}).flatMap(step => [
+            typeof step.body === 'string' ? step.body : '',
+            step.more?.body ?? '',
+          ]),
+          ...Object.values(text.tasks ?? {}).flatMap(task => [
+            task.prompt,
+            ...task.hints,
+          ]),
+          ...Object.values(text.quizzes ?? {}).flatMap(quiz => [
+            quiz.question,
+            quiz.explain,
+          ]),
+        ]
+        prose.forEach(part =>
+          expect(missing(unlocked, commandsIn(part)), part).toEqual([]),
+        )
+      },
+    )
   },
 )

@@ -111,7 +111,8 @@ const shownPackets = (
   return Array.isReadonlyArrayNonEmpty(talk)
     ? Array.filter(
         packets,
-        packet => Array.contains(talk, packet) || Array.contains(refusals, packet),
+        packet =>
+          Array.contains(talk, packet) || Array.contains(refusals, packet),
       )
     : Array.filter(packets, packet => {
         const protocol = protocolOfPacket(packet)
@@ -241,7 +242,10 @@ const packetLegs = (
     Array.filter(hop => hop.packet === packet),
     Array.map(hop =>
       Option.map(
-        Option.all([visibleIdOf(layout, hop.from), visibleIdOf(layout, hop.to)]),
+        Option.all([
+          visibleIdOf(layout, hop.from),
+          visibleIdOf(layout, hop.to),
+        ]),
         ([from, to]) => ({ from, to, hop }),
       ),
     ),
@@ -250,7 +254,8 @@ const packetLegs = (
   )
   const cloudId = Option.match(layout.maybeCloud, {
     onNone: () => '',
-    onSome: cloud => (Array.isReadonlyArrayNonEmpty(cloud.inner) ? cloud.id : ''),
+    onSome: cloud =>
+      Array.isReadonlyArrayNonEmpty(cloud.inner) ? cloud.id : '',
   })
   const make = (
     from: string,
@@ -381,7 +386,11 @@ export const timelineOf = (input: TimelineInput): Timeline => {
     Array.flatMap(plays, ({ play, trace }, playIndex) => {
       const source = sourceOf(trace.intent)
       return Array.flatMap(
-        shownPackets(trace, play.show ?? defaultShow(input.unlocked), isDnsShown),
+        shownPackets(
+          trace,
+          play.show ?? defaultShow(input.unlocked),
+          isDnsShown,
+        ),
         packet =>
           packetLegs(
             input.layout,
@@ -395,16 +404,10 @@ export const timelineOf = (input: TimelineInput): Timeline => {
     }),
   )
   const walks = Array.filter(input.stage, isWalk)
-  const walkMs = Array.reduce(
-    walks,
-    0,
-    (longest, walk) =>
-      Math.max(longest, Math.max(walk.points.length - 1, 0) * WALK_SEGMENT_MS),
+  const walkMs = Array.reduce(walks, 0, (longest, walk) =>
+    Math.max(longest, Math.max(walk.points.length - 1, 0) * WALK_SEGMENT_MS),
   )
-  const stuck = Array.some(
-    plays,
-    ({ maybeDrop }) => Option.isSome(maybeDrop),
-  )
+  const stuck = Array.some(plays, ({ maybeDrop }) => Option.isSome(maybeDrop))
   const legsMs = Array.isReadonlyArrayEmpty(legs)
     ? Array.isReadonlyArrayNonEmpty(plays)
       ? LEAD_MS + SLOT_MS
@@ -470,18 +473,26 @@ export const momentAt = (
     return { _tag: 'Done' }
   }
   if (playhead < timeline.walkMs) {
-    return { _tag: 'Walking', progress: playhead / Math.max(timeline.walkMs, 1) }
+    return {
+      _tag: 'Walking',
+      progress: playhead / Math.max(timeline.walkMs, 1),
+    }
   }
   const local = playhead - timeline.walkMs
   return Array.match(timeline.legs, {
     onEmpty: (): Moment =>
       Option.match(
-        Array.findFirst(timeline.plays, ({ maybeDrop }) => Option.isSome(maybeDrop)),
+        Array.findFirst(timeline.plays, ({ maybeDrop }) =>
+          Option.isSome(maybeDrop),
+        ),
         {
           onNone: () => ({ _tag: 'Done' }),
           onSome: ({ maybeDrop }) => ({
             _tag: 'Stuck',
-            at: Option.match(maybeDrop, { onNone: () => '', onSome: drop => drop.at }),
+            at: Option.match(maybeDrop, {
+              onNone: () => '',
+              onSome: drop => drop.at,
+            }),
             progress: local / (LEAD_MS + SLOT_MS),
           }),
         },
@@ -514,9 +525,7 @@ export const legsDone = (timeline: Timeline, playhead: number): number =>
     0,
     Math.min(
       timeline.legs.length,
-      Math.floor(
-        (playhead - timeline.walkMs - LEAD_MS - FLY_MS) / SLOT_MS + 1,
-      ),
+      Math.floor((playhead - timeline.walkMs - LEAD_MS - FLY_MS) / SLOT_MS + 1),
     ),
   )
 
@@ -564,7 +573,10 @@ export const walkPositions = (
         const progress = hasStarted
           ? Math.min(playhead, timeline.walkMs) / WALK_SEGMENT_MS
           : 0
-        const segment = Math.min(Math.floor(progress), Math.max(segments - 1, 0))
+        const segment = Math.min(
+          Math.floor(progress),
+          Math.max(segments - 1, 0),
+        )
         const within = Math.min(progress - segment, 1)
         return Option.map(
           Option.all([
