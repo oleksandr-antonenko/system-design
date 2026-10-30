@@ -119,9 +119,8 @@ export const addressSettings = (
     }
   })
 
-/** Открытая страница: последний адрес, который устройство открыло, на мире
-    до этого хода. */
-export const currentPage = (context: Context): Option.Option<Browsed> =>
+/** Последний адрес, который устройство открыло, на мире до этого хода. */
+const openedPage = (context: Context): Option.Option<Browsed> =>
   pipe(
     momentsOf(context.history),
     Array.findLast(
@@ -144,4 +143,24 @@ export const currentPage = (context: Context): Option.Option<Browsed> =>
           )
         : Option.none(),
     ),
+  )
+
+/** Стартовая страница браузера (`homePage` устройства) на нынешней сети:
+    видна, как только открывается, а до того браузер пуст. */
+const homePage = (context: Context): Option.Option<Browsed> =>
+  pipe(
+    hostOf(context),
+    Option.flatMap(host => host.maybeHomePage),
+    Option.map(url =>
+      browse(context.doc.doc, context.doc.state, context.target, url),
+    ),
+    Option.filter(browsed => browsed.view._tag === 'Page'),
+  )
+
+/** Открытая страница: последняя открытая, а если устройство ещё ничего не
+    открывало — стартовая. */
+export const currentPage = (context: Context): Option.Option<Browsed> =>
+  pipe(
+    openedPage(context),
+    Option.orElse(() => homePage(context)),
   )

@@ -123,6 +123,9 @@ export type HostOptions = Readonly<{
   manualDns?: ReadonlyArray<Ip>
   wifiBands?: ReadonlyArray<Band>
   wifi?: Readonly<{ ssid: string; password: string }>
+  /** Стартовая страница браузера (`https://shop.example/`): экран
+      устройства покажет её сам, как только она откроется. */
+  homePage?: string
   listeners?: ReadonlyArray<Listener>
   records?: ReadonlyArray<RecordInput>
   zones?: ReadonlyArray<DnsZone>
@@ -155,6 +158,7 @@ export const host = (
   maybeDnsOverride: Option.fromNullishOr(options.manualDns),
   wifiBands: options.wifiBands ?? defaultBands[kind],
   maybeWifiProfile: Option.fromNullishOr(options.wifi),
+  maybeHomePage: Option.fromNullishOr(options.homePage),
   listeners: options.listeners ?? [],
   zones: [...zonesFrom(options.records ?? []), ...(options.zones ?? [])],
   resolver: options.resolver ?? false,

@@ -26,6 +26,8 @@ import { sendIntent } from '../../../../net/world'
 // docs/mockups/networks-lesson-1.html). Новые слова — «роутер» и
 // «интернет»; адресов, портов и слоёв на доске нет. Справочная (DNS) есть
 // в документе, чтобы имя сайта работало, но доска покажет её с урока 3.
+// Стартовая страница браузера телефона — магазин: в задаче она откроется
+// сама, как только телефон подключится к Wi-Fi.
 
 const SSID = 'Router-7C21'
 const PASSWORD = '12345678'
@@ -47,6 +49,7 @@ export default defineLesson(packet, {
         add(
           host('phone', 'phone', 130, 210, {
             wifi: { ssid: SSID, password: PASSWORD },
+            homePage: browse.url,
           }),
         ),
         add(
