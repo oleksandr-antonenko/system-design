@@ -10,6 +10,7 @@ import {
   LoadLesson,
   Message,
   Model,
+  initialDesktopNotice,
   initialLanguageMenu,
   update,
 } from './main'
@@ -34,6 +35,7 @@ const lessonPage = (load: Option.Option<LessonLoad>) =>
       onNone: () => ({}),
       onSome: state => ({ [`${COURSE}/${SLUG}`]: state }),
     }),
+    desktopNotice: initialDesktopNotice(),
   })
 
 afterEach(async () => {

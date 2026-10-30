@@ -441,17 +441,11 @@ h3 {
   border-top: 1px solid var(--line);
   background: var(--page);
 }
-/* Кнопка «Доска / Текст» и полоса задания шага: только на узком экране
-   (см. «узкий экран»). */
-.text-toggle {
+/* Переходы «на доску» и «← Текст» и полоса задания шага: только на узком
+   экране (см. «узкий экран»). */
+.to-board-row,
+.to-text {
   display: none;
-  align-items: center;
-  gap: 6px;
-}
-.toggle-icon {
-  width: 16px;
-  height: 16px;
-  flex: none;
 }
 .step-bar {
   display: none;
@@ -1491,6 +1485,43 @@ h3 {
   overflow: auto;
   padding: 12px max(16px, env(safe-area-inset-right, 0px)) 14px 16px;
 }
+/* Совет проходить уроки на компьютере: показывается один раз на телефоне. */
+.desktop-notice-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgb(15 23 42 / 0.45);
+}
+.desktop-notice-panel {
+  position: fixed;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: min(360px, calc(100vw - 32px));
+  display: grid;
+  gap: 12px;
+  padding: 20px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--page);
+  color: var(--ink);
+  box-shadow: 0 18px 50px rgb(0 0 0 / 0.25);
+}
+.desktop-notice-title {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+}
+.desktop-notice-body {
+  margin: 0;
+  font-family: var(--font-prose);
+  font-size: 15.5px;
+  line-height: 1.5;
+}
+.desktop-notice-panel .btn {
+  justify-self: stretch;
+  justify-content: center;
+  min-height: 44px;
+}
 /* ---------- узкий экран ---------- */
 @media (max-width: 880px) {
   .app-lesson {
@@ -1509,6 +1540,8 @@ h3 {
   }
   .theory {
     border-right: 0;
+  }
+  .shows-board .theory {
     border-top: 1px solid var(--line);
   }
   .theory-scroll {
@@ -1516,63 +1549,76 @@ h3 {
     padding-inline: max(16px, env(safe-area-inset-left, 0px))
       max(16px, env(safe-area-inset-right, 0px));
   }
-  .step-next {
+  /* Один шаг за раз: пройденные шаги остаются на шкале сверху. */
+  .step.past {
+    display: none;
+  }
+  .step-next,
+  .task-actions,
+  .nav-prev {
+    display: none;
+  }
+
+  /* Текст шага: только текст, в конце большая кнопка на доску. */
+  .shows-text .board-side,
+  .shows-text .theory-nav {
+    display: none;
+  }
+  .to-board-row {
+    display: block;
+    margin-top: 22px;
+    padding-bottom: max(20px, env(safe-area-inset-bottom, 0px));
+  }
+  .to-board {
+    width: 100%;
+    min-height: 48px;
+    justify-content: center;
+    font-size: 15px;
+  }
+
+  /* Доска: страница ровно в экран, колонкой: шкала шагов, доска
+     (прокрутка внутри), задание шага и нижняя панель. */
+  .app-lesson:has(.lesson-page.shows-board) {
+    height: 100dvh;
+    display: grid;
+    grid-template-rows: auto minmax(0, 1fr);
+  }
+  .lesson-page.shows-board {
+    display: grid;
+    grid-template-rows: auto minmax(0, 1fr);
+    min-height: 0;
+  }
+  .shows-board .lesson-main {
+    min-height: 0;
+  }
+  .shows-board .board-side {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+  }
+  /* Доска, приборы и поверхности остаются своего роста; не влезают —
+     листаются внутри. */
+  .shows-board .board-side > * {
+    flex: none;
+  }
+  .shows-board .board-side > .board-wrap {
+    flex: 1 0 auto;
+  }
+  .shows-board .theory-scroll {
     display: none;
   }
   .theory-nav {
-    position: sticky;
-    bottom: 0;
     padding-inline: max(16px, env(safe-area-inset-left, 0px))
       max(16px, env(safe-area-inset-right, 0px));
     padding-bottom: max(12px, env(safe-area-inset-bottom, 0px));
   }
-  .text-toggle {
+  .to-text {
     display: inline-flex;
   }
   @media (max-width: 560px) {
     .nav-text {
       display: none;
     }
-  }
-  /* Текст свёрнут: страница снова ровно в экран, как на широком, только
-     колонкой: шкала шагов, доска (прокрутка внутри), задание шага и нижняя
-     панель. */
-  .app-lesson:has(.lesson-page.text-hidden) {
-    height: 100dvh;
-    display: grid;
-    grid-template-rows: auto minmax(0, 1fr);
-  }
-  .lesson-page.text-hidden {
-    display: grid;
-    grid-template-rows: auto minmax(0, 1fr);
-    min-height: 0;
-  }
-  .text-hidden .lesson-main {
-    min-height: 0;
-  }
-  .text-hidden .board-side {
-    flex: 1;
-    min-height: 0;
-    overflow-y: auto;
-  }
-  /* Доска, приборы и поверхности остаются своего роста, как в прокрутке
-     страницы; не влезают — листаются внутри. */
-  .text-hidden .board-side > * {
-    flex: none;
-  }
-  .text-hidden .board-side > .board-wrap {
-    flex: 1 0 auto;
-  }
-  /* «Позже в курсе» только рассказывает; ради доски его прячем. */
-  .text-hidden .palette-title.later,
-  .text-hidden .palette-item.locked {
-    display: none;
-  }
-  .text-hidden .theory-scroll {
-    display: none;
-  }
-  .text-hidden .theory-nav {
-    position: static;
   }
   .step-bar {
     display: flex;
@@ -1581,21 +1627,38 @@ h3 {
     display: flex;
     flex-direction: column;
   }
+  /* Палитра — одна полоса доступных блоков, листается вбок. «Позже в
+     курсе» только рассказывает; на телефоне ради доски его нет. */
   .board-palette {
     flex-direction: row;
-    flex-wrap: wrap;
-    overflow: visible;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    overflow-y: hidden;
+    overscroll-behavior-x: contain;
+    scrollbar-width: none;
     border-right: 0;
     border-bottom: 1px solid var(--line);
-    padding-inline: max(16px, env(safe-area-inset-left, 0px))
-      max(16px, env(safe-area-inset-right, 0px));
+    padding: 8px max(16px, env(safe-area-inset-right, 0px)) 8px
+      max(16px, env(safe-area-inset-left, 0px));
   }
   .palette-title,
-  .palette-note {
-    width: 100%;
+  .palette-note,
+  .palette-item.locked {
+    display: none;
   }
   .palette-item {
-    flex: 1 1 130px;
+    flex: none;
+    padding: 6px 10px 6px 8px;
+    gap: 7px;
+    grid-template-columns: 20px auto;
+  }
+  .palette-item svg {
+    width: 20px;
+    height: 20px;
+  }
+  .palette-item .name {
+    white-space: nowrap;
+    overflow-wrap: normal;
   }
   /* Ужатая в ширину телефона доска нечитаема (масштаб ≈0,42, подписи ≈5px).
      Держим её не уже 720px (масштаб 0,8, заголовки узлов 10px) и даём

@@ -812,62 +812,69 @@ const finishView = <T extends KindTypes>(
   )
 }
 
-// TEXT TOGGLE
+// PHONE VIEWS
 
-// На телефоне доска стоит над текстом, и ученик листает туда-сюда. Кнопка в
-// нижней панели сворачивает текст и задачу, доска занимает экран; нижняя
-// панель остаётся, а над ней короткая полоса с заданием шага, чтобы
-// проверять решение, не разворачивая текст. Раскладку меняет CSS только на
-// узком экране, поэтому на широком всё как прежде.
+// Где текст и доска не помещаются рядом, виден один из них. Шаг открывается
+// текстом; кнопка в конце текста ведёт на доску, а «← Текст» в нижней панели
+// доски возвращает к тексту на то же место. Над панелью доски короткая
+// полоса с заданием шага, чтобы проверять решение, не возвращаясь к тексту.
+// Раскладку меняет CSS только на узком экране, на широком всё как прежде.
 
 const LESSON_TEXT_ID = 'lesson-text'
+const LESSON_BOARD_ID = 'lesson-board'
 
-const iconAttributes = (h: HtmlBuilder<Message>) => [
-  h.ViewBox('0 0 24 24'),
-  h.AriaHidden(true),
-  h.Class('toggle-icon'),
-  h.Attribute('fill', 'none'),
-  h.Attribute('stroke', 'currentColor'),
-  h.Attribute('stroke-width', '1.8'),
-  h.Attribute('stroke-linecap', 'round'),
-  h.Attribute('stroke-linejoin', 'round'),
-]
-
-const boardIconView = (h: HtmlBuilder<Message>): Html =>
-  h.svg(iconAttributes(h), [
-    h.path([
-      h.Attribute(
-        'd',
-        'M3.5 5.5h17v13h-17zM7 9.5h3v3H7zM14 12h3v3h-3zM10 11l4 2',
-      ),
-    ]),
-  ])
-
-const textIconView = (h: HtmlBuilder<Message>): Html =>
-  h.svg(iconAttributes(h), [
-    h.path([h.Attribute('d', 'M5 6h14M5 10h14M5 14h14M5 18h9')]),
-  ])
-
-const textToggleView = <T extends KindTypes>(
-  { model, ui }: Page<T>,
+/** Кнопка в конце текста шага: «Смотреть на доске», «К задаче» или
+    «К вопросу», если на вопрос отвечают на доске. */
+const toBoardView = <T extends KindTypes>(
+  { lesson, model, ui }: Page<T>,
   h: HtmlBuilder<Message>,
 ): Html => {
-  const isShown = isTextShown(model)
-  return h.button(
+  const isBoardQuestion = Option.exists(
+    currentQuiz(lesson, model),
+    quiz => isBoardQuiz(quiz.spec) && Option.isNone(quiz.maybeAnswer),
+  )
+  const label = Option.isSome(currentTask(lesson, model))
+    ? ui.player.toTask
+    : isBoardQuestion
+      ? ui.player.toQuestion
+      : ui.player.toBoard
+  return h.div(
+    [h.Class('to-board-row')],
     [
-      h.Type('button'),
-      h.Class('btn text-toggle'),
-      h.AriaControls(LESSON_TEXT_ID),
-      h.AriaExpanded(isShown),
-      h.AriaLabel(isShown ? ui.player.showBoardLabel : ui.player.showTextLabel),
-      h.OnClick(Message.ClickedTextToggle()),
-    ],
-    [
-      isShown ? boardIconView(h) : textIconView(h),
-      h.span([], [isShown ? ui.player.showBoard : ui.player.showText]),
+      h.button(
+        [
+          h.Type('button'),
+          h.Class('btn primary to-board'),
+          h.AriaControls(LESSON_BOARD_ID),
+          h.AriaExpanded(!isTextShown(model)),
+          h.OnClick(Message.ClickedShowBoard()),
+        ],
+        [label],
+      ),
     ],
   )
 }
+
+/** «← Текст» в нижней панели доски. */
+const toTextView = <T extends KindTypes>(
+  { model, ui }: Page<T>,
+  h: HtmlBuilder<Message>,
+): ReadonlyArray<Html> =>
+  isTextShown(model)
+    ? []
+    : [
+        h.button(
+          [
+            h.Type('button'),
+            h.Class('btn to-text'),
+            h.AriaControls(LESSON_TEXT_ID),
+            h.AriaExpanded(false),
+            h.AriaLabel(ui.player.toTextLabel),
+            h.OnClick(Message.ClickedShowText()),
+          ],
+          [ui.player.toText],
+        ),
+      ]
 
 const taskBarView = <T extends KindTypes>(
   page: Page<T>,
@@ -1095,6 +1102,7 @@ const theoryView = <T extends KindTypes>(
                         onSome: task => [taskCardView(page, task, doc, h)],
                       })
                     : []),
+                  ...(index === model.step ? [toBoardView(page, h)] : []),
                   ...(index === lesson.steps.length - 1
                     ? [
                         ...askAiView(page, h),
@@ -1117,7 +1125,7 @@ const theoryView = <T extends KindTypes>(
           h.button(
             [
               h.Type('button'),
-              h.Class('btn'),
+              h.Class('btn nav-prev'),
               ...(model.step === 0
                 ? [h.Disabled(true)]
                 : [h.OnClick(Message.ClickedPrevious())]),
@@ -1136,7 +1144,7 @@ const theoryView = <T extends KindTypes>(
                     : ui.player.navHint,
             ],
           ),
-          textToggleView(page, h),
+          ...toTextView(page, h),
           h.button(
             [
               h.Type('button'),
@@ -1513,7 +1521,13 @@ export const lessonView = <T extends KindTypes>(
     lessonEnd: inputs.lessonEnd,
   }
   return h.main(
-    [h.Class(isTextShown(model) ? 'lesson-page' : 'lesson-page text-hidden')],
+    [
+      h.Class(
+        isTextShown(model)
+          ? 'lesson-page shows-text'
+          : 'lesson-page shows-board',
+      ),
+    ],
     [
       timelineView(page, h),
       h.div(
@@ -1521,7 +1535,11 @@ export const lessonView = <T extends KindTypes>(
         [
           theoryView(page, choice.isFallback, choice.shownIn, h),
           h.section(
-            [h.AriaLabel(ui.lesson.boardRegion), h.Class('board-side')],
+            [
+              h.AriaLabel(ui.lesson.boardRegion),
+              h.Class('board-side'),
+              h.Id(LESSON_BOARD_ID),
+            ],
             [
               ...boardViews(page, inputs, h),
               ...surfaceHostView(page, h),

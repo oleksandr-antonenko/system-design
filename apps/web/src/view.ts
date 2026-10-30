@@ -1,6 +1,8 @@
 import { Array, Option, Record } from 'effect'
 import type { Document, Html, HtmlBuilder } from 'foldkit/html'
 
+import { Dialog } from '@foldkit/ui'
+
 import {
   type Course,
   type Lesson,
@@ -31,6 +33,58 @@ import {
 import { pageTitle } from './pageTitle'
 import { lessonThumbnailView } from './previewView'
 import { AppRoute, courseUrl, homeUrl, lessonUrl, localeOf } from './route'
+
+// DESKTOP NOTICE
+
+const desktopNoticeView = (
+  model: Model,
+  ui: UiStrings,
+  h: HtmlBuilder<Message>,
+): Html =>
+  h.submodel({
+    slotId: 'desktop-notice',
+    model: model.desktopNotice.dialog,
+    view: Dialog.view,
+    toParentMessage: message => Message.GotDesktopNoticeMessage({ message }),
+    viewInputs: {
+      hasDescription: true,
+      toView: ({
+        dialog,
+        backdrop,
+        panel,
+        title,
+        description,
+        initialFocus,
+        closeButton,
+        isVisible,
+      }) =>
+        h.dialog(
+          [...dialog, h.Class('desktop-notice')],
+          isVisible
+            ? [
+                h.div([...backdrop, h.Class('desktop-notice-backdrop')]),
+                h.div(
+                  [...panel, h.Class('desktop-notice-panel')],
+                  [
+                    h.h2(
+                      [...title, h.Class('desktop-notice-title')],
+                      [ui.desktopNotice.title],
+                    ),
+                    h.p(
+                      [...description, h.Class('desktop-notice-body')],
+                      [ui.desktopNotice.body],
+                    ),
+                    h.button(
+                      [...closeButton, ...initialFocus, h.Class('btn primary')],
+                      [ui.desktopNotice.ok],
+                    ),
+                  ],
+                ),
+              ]
+            : [],
+        ),
+    },
+  })
 
 // HEADER
 
@@ -651,7 +705,11 @@ export const view = (model: Model, h: HtmlBuilder<Message>): Document => {
             : 'flex min-h-screen flex-col bg-bg text-ink',
         ),
       ],
-      [headerView(model, locale, ui, h), content],
+      [
+        headerView(model, locale, ui, h),
+        content,
+        desktopNoticeView(model, ui, h),
+      ],
     ),
   }
 }

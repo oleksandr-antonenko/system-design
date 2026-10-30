@@ -43,6 +43,7 @@ import {
   ReplaceStepUrl,
   SaveLocale,
   init,
+  initialDesktopNotice,
   initialLanguageMenu,
   update,
 } from './main'
@@ -56,6 +57,7 @@ const at = (route: AppRoute, locale: Locale) =>
     prefersDark: false,
     lessonSessions: {},
     lessonLoads: {},
+    desktopNotice: initialDesktopNotice(),
   })
 
 describe('header', () => {
@@ -342,6 +344,8 @@ const openLesson = (path: string) =>
       maybeSavedLocale: Option.some('ru'),
       browserLanguages: ['ru-RU'],
       prefersDark: false,
+      isStackedScreen: false,
+      isDesktopNoticeDismissed: false,
     }),
     Option.getOrThrowWith(
       fromString(`http://localhost${path}`),

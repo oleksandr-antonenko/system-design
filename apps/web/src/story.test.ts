@@ -18,6 +18,7 @@ import {
   RevealLessonStep,
   SaveLocale,
   init,
+  initialDesktopNotice,
   initialLanguageMenu,
   update,
 } from './main'
@@ -33,6 +34,8 @@ const flags = (saved: string | null, browserLanguages: ReadonlyArray<string>) =>
     maybeSavedLocale: Option.fromNullishOr(saved),
     browserLanguages,
     prefersDark: false,
+    isStackedScreen: false,
+    isDesktopNoticeDismissed: false,
   })
 
 const LOAD_BALANCER = 'system-design/load-balancer'
@@ -219,6 +222,7 @@ const onLesson = (locale: 'ru' | 'en') =>
     prefersDark: false,
     lessonSessions: {},
     lessonLoads: {},
+    desktopNotice: initialDesktopNotice(),
   })
 
 describe('update', () => {

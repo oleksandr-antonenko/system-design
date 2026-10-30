@@ -71,15 +71,16 @@ export const CheckState = defineTaggedUnion({
 })
 export type CheckState = typeof CheckState.Type
 
-/** Текст урока на узком экране, где доска и текст стоят друг под другом.
-    `Hidden`: ученик свернул текст и задачу, чтобы доска заняла экран.
-    Помнит прокрутку страницы и шаг, на котором текст свернули, чтобы
-    вернуть текст туда же. На широком экране не действует. */
-export const TextPanel = defineTaggedUnion({
-  Shown: {},
-  Hidden: { scrollY: Schema.Number, atStep: Schema.Number },
+/** Что видно на узком экране, где текст и доска не помещаются рядом:
+    один из двух видов, никогда оба. Шаг открывается текстом (`Text`);
+    кнопка в конце текста ведёт на доску (`Board`), которая помнит
+    прокрутку текста, чтобы «← Текст» вернул ученика туда же. На широком
+    экране текст и доска стоят рядом, и поле ни на что не влияет. */
+export const PhoneView = defineTaggedUnion({
+  Text: {},
+  Board: { textScrollY: Schema.Number },
 })
-export type TextPanel = typeof TextPanel.Type
+export type PhoneView = typeof PhoneView.Type
 
 /** Ход из нескольких операций, сделанный одним нажатием: готовый блок на
     доске, сохранение панели. В журнале это одна запись, и «Отменить»
@@ -134,9 +135,15 @@ export const Model = Schema.Struct({
   isReducedMotion: Schema.Boolean,
   /** Узкий экран телефона: доска раскладывается сверху вниз. */
   isNarrow: Schema.Boolean,
-  textPanel: TextPanel,
+  /** Текст и доска не помещаются рядом (до 880px): виден один из них. */
+  isStacked: Schema.Boolean,
+  phoneView: PhoneView,
 })
 export type Model = typeof Model.Type
+
+/** Ширина, на которой текст и доска перестают помещаться рядом; та же,
+    что в `@media (max-width: 880px)` стилей. */
+export const STACKED_QUERY = '(max-width: 880px)'
 
 // MESSAGE
 
@@ -166,13 +173,15 @@ export const Message = defineMessageUnion({
   CompletedWaitBeforeHidingToast: { serial: Schema.Number },
   CompletedScrollStepIntoView: {},
   ClickedJournalToggle: {},
-  ClickedTextToggle: {},
+  ClickedShowBoard: {},
+  ClickedShowText: {},
   CompletedMeasureTextScroll: { scrollY: Schema.Number },
   CompletedRestoreTextScroll: {},
   HoveredReference: { id: Schema.String },
   LeftReference: {},
   ChangedReducedMotion: { isReducedMotion: Schema.Boolean },
   ChangedNarrowScreen: { isNarrow: Schema.Boolean },
+  ChangedStackedScreen: { isStacked: Schema.Boolean },
 })
 export type Message = typeof Message.Type
 
@@ -688,7 +697,8 @@ export const init = <T extends KindTypes>(
     maybeHoveredRef: Option.none(),
     isReducedMotion: false,
     isNarrow: false,
-    textPanel: TextPanel.Shown(),
+    isStacked: false,
+    phoneView: PhoneView.Text(),
   }
   return modifyFields(model, {
     step: () => clampStep(lesson, model, requestedStep),
@@ -749,8 +759,13 @@ export const goToStep = <T extends KindTypes>(
       maybeHoveredRef: () => Option.none(),
       isAskAiCopied: () => false,
       maybeSurfaceTab: () => Option.none(),
+      phoneView: () => PhoneView.Text(),
     }),
-    commands: isTextShown(model) ? [ScrollStepIntoView({ step })] : [],
+    commands: [
+      model.isStacked
+        ? RestoreTextScroll({ scrollY: 0 })
+        : ScrollStepIntoView({ step }),
+    ],
     outMessage: OutMessage.ChangedStep({ step }),
   }
 }
@@ -1112,21 +1127,20 @@ const continueReplay = <T extends KindTypes>(
   })
 
 export const isTextShown = (model: Model): boolean =>
-  model.textPanel._tag === 'Shown'
+  model.phoneView._tag === 'Text'
 
-/** Свернуть текст: сначала запомнить прокрутку, потом свернуть (свёрнутая
-    страница не выше экрана, и прокрутка пропадёт). Развернуть: вернуть
-    прокрутку, а если шаг за это время сменился, показать новый шаг. */
-const toggleText = (model: Model): UpdateReturn =>
-  TextPanel.match(model.textPanel, {
-    Shown: () => ({ model, commands: [MeasureTextScroll()] }),
-    Hidden: ({ scrollY, atStep }) => ({
-      model: modifyFields(model, { textPanel: () => TextPanel.Shown() }),
-      commands: [
-        atStep === model.step
-          ? RestoreTextScroll({ scrollY })
-          : ScrollStepIntoView({ step: model.step }),
-      ],
+/** На доску: сначала запомнить прокрутку текста, потом спрятать его
+    (без текста страница не выше экрана, и прокрутка пропадёт). */
+const showBoard = (model: Model): UpdateReturn =>
+  isTextShown(model) ? { model, commands: [MeasureTextScroll()] } : { model }
+
+/** К тексту: вернуть ту прокрутку, с которой ученик ушёл на доску. */
+const showText = (model: Model): UpdateReturn =>
+  PhoneView.match(model.phoneView, {
+    Text: () => ({ model }),
+    Board: ({ textScrollY }) => ({
+      model: modifyFields(model, { phoneView: () => PhoneView.Text() }),
+      commands: [RestoreTextScroll({ scrollY: textScrollY })],
     }),
   })
 
@@ -1197,10 +1211,11 @@ export const updateWith =
       ClickedJournalToggle: () => ({
         model: modifyFields(model, { isJournalOpen: isOpen => !isOpen }),
       }),
-      ClickedTextToggle: () => toggleText(model),
+      ClickedShowBoard: () => showBoard(model),
+      ClickedShowText: () => showText(model),
       CompletedMeasureTextScroll: ({ scrollY }) => ({
         model: modifyFields(model, {
-          textPanel: () => TextPanel.Hidden({ scrollY, atStep: model.step }),
+          phoneView: () => PhoneView.Board({ textScrollY: scrollY }),
         }),
       }),
       CompletedRestoreTextScroll: () => ({ model }),
@@ -1216,6 +1231,9 @@ export const updateWith =
       }),
       ChangedNarrowScreen: ({ isNarrow }) => ({
         model: modifyFields(model, { isNarrow: () => isNarrow }),
+      }),
+      ChangedStackedScreen: ({ isStacked }) => ({
+        model: modifyFields(model, { isStacked: () => isStacked }),
       }),
     })
 
@@ -1300,6 +1318,13 @@ export const subscriptions = Subscription.make<Model, Message>()(() => ({
       query: '(max-width: 600px)',
       mapMatches: isMatching =>
         Message.ChangedNarrowScreen({ isNarrow: isMatching }),
+    }),
+  ),
+  stackedScreen: Subscription.persistentEntry(
+    Dom.streamFromMediaQuery({
+      query: STACKED_QUERY,
+      mapMatches: isMatching =>
+        Message.ChangedStackedScreen({ isStacked: isMatching }),
     }),
   ),
 }))

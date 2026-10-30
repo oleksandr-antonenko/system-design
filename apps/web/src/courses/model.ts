@@ -31,6 +31,9 @@ export type CourseDefinition<
   locales: Array.NonEmptyReadonlyArray<Locale>
   /** Метки палитры: по умолчанию `progressive`, см. `PaletteMode`. */
   palette?: PaletteMode
+  /** На узком экране при первом уроке курса один раз сказать, что уроки
+      удобнее проходить на компьютере. По умолчанию нет. */
+  recommendsDesktop?: boolean
 }>
 
 export const defineCourse = <
@@ -43,6 +46,9 @@ export const defineCourse = <
 
 export const paletteModeOf = (course: CourseDefinition): PaletteMode =>
   course.palette ?? 'progressive'
+
+export const recommendsDesktopOf = (course: CourseDefinition): boolean =>
+  course.recommendsDesktop ?? false
 
 export type ModuleOf<Course extends CourseDefinition> =
   Course['modules'][number]

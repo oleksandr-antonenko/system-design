@@ -8,4 +8,5 @@ export default defineCourse({
   modules: ['local', 'internet', 'developer'],
   features: UiFeature.literals,
   locales: ['uk', 'ru', 'en', 'lt'],
+  recommendsDesktop: true,
 })

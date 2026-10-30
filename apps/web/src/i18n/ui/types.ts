@@ -111,16 +111,25 @@ export type UiStrings = Readonly<{
     courseFinishedTitle: string
     courseFinishedBody: string
     answerFirst: string
-    /** Phone toggle in the bottom bar: hides the lesson text so the board
-        fills the screen, and brings it back. */
-    showBoard: string
-    showText: string
-    showBoardLabel: string
-    showTextLabel: string
+    /** Phones show the step's text or the board, one at a time. The button
+        at the end of the text opens the board: plain, on a task step, or on
+        a question answered on the board. */
+    toBoard: string
+    toTask: string
+    toQuestion: string
+    /** The board's bottom bar: back to the step's text. */
+    toText: string
+    toTextLabel: string
     moreBadge: string
     askAiTitle: string
     copy: string
     copied: string
+  }>
+  /** Shown once on a phone in a course that recommends a computer. */
+  desktopNotice: Readonly<{
+    title: string
+    body: string
+    ok: string
   }>
   quiz: Readonly<{
     heading: string
