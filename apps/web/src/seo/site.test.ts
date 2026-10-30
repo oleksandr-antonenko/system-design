@@ -93,10 +93,10 @@ describe('prerendered pages', () => {
     expect(pages).toHaveLength(locales.length + courseCount + lessonCount)
     expect(Array.dedupe(Array.map(pages, pageFile))).toHaveLength(pages.length)
     expect(Array.map(Array.take(pages, 4), pageFile)).toEqual([
-      'uk/index.html',
-      'ru/index.html',
       'en/index.html',
       'lt/index.html',
+      'ru/index.html',
+      'uk/index.html',
     ])
     expect(fileNamed('en/networks/index.html')).toContain(
       '<a href="/en/networks/lessons/phone-online">',
