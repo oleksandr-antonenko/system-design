@@ -183,13 +183,18 @@ export const annotate = <const Key extends string>(
   tone: Tone,
 ): PacketAnnotate<Key> => ({ _tag: 'Annotate', target, key, tone })
 
+/** `after` в сцене урока — подготовка, которую доска не показывает: так урок 9
+    проигрывает разговор с сайтом без вопроса справочной (ноутбук уже знает
+    адрес), а таблицы на доске растут только от показанной трассы. */
 export const play = (
   intent: Intent,
-  options: Readonly<{ show?: PlayShow }> = {},
-): Play =>
-  options.show === undefined
-    ? { _tag: 'Play', intent }
-    : { _tag: 'Play', intent, show: options.show }
+  options: Readonly<{ show?: PlayShow; after?: ReadonlyArray<NetOp> }> = {},
+): Play => ({
+  _tag: 'Play',
+  intent,
+  ...(options.show === undefined ? {} : { show: options.show }),
+  ...(options.after === undefined ? {} : { after: options.after }),
+})
 
 export const pauseAt = (device: DeviceId): PauseAt => ({
   _tag: 'PauseAt',
