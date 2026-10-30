@@ -111,6 +111,12 @@ export type UiStrings = Readonly<{
     courseFinishedTitle: string
     courseFinishedBody: string
     answerFirst: string
+    /** Phone toggle in the bottom bar: hides the lesson text so the board
+        fills the screen, and brings it back. */
+    showBoard: string
+    showText: string
+    showBoardLabel: string
+    showTextLabel: string
     moreBadge: string
     askAiTitle: string
     copy: string

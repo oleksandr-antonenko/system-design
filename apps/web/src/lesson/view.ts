@@ -4,7 +4,6 @@ import type { Html, HtmlBuilder } from 'foldkit/html'
 
 import { type LocalizedText, lessonTextFor, textFor } from '../courses/assemble'
 import type { LessonMeta, LessonText } from '../courses/model'
-import { previewOf } from '../courses/previews'
 import {
   courseLessons,
   coursePaletteMode,
@@ -23,7 +22,6 @@ import type {
   KindTypes,
 } from '../kinds/contract'
 import type { KindMessage } from '../kinds/state'
-import { lessonHeroView } from '../previewView'
 import { courseUrl, lessonUrl } from '../route'
 import { laterInCourse, newInLesson } from './course'
 import {
@@ -52,6 +50,7 @@ import {
   isEditable,
   isPicking,
   isReplaying,
+  isTextShown,
   maxAllowedStep,
   opsOf,
   surfaceContext,
@@ -813,6 +812,200 @@ const finishView = <T extends KindTypes>(
   )
 }
 
+// TEXT TOGGLE
+
+// На телефоне доска стоит над текстом, и ученик листает туда-сюда. Кнопка в
+// нижней панели сворачивает текст и задачу, доска занимает экран; нижняя
+// панель остаётся, а над ней короткая полоса с заданием шага, чтобы
+// проверять решение, не разворачивая текст. Раскладку меняет CSS только на
+// узком экране, поэтому на широком всё как прежде.
+
+const LESSON_TEXT_ID = 'lesson-text'
+
+const iconAttributes = (h: HtmlBuilder<Message>) => [
+  h.ViewBox('0 0 24 24'),
+  h.AriaHidden(true),
+  h.Class('toggle-icon'),
+  h.Attribute('fill', 'none'),
+  h.Attribute('stroke', 'currentColor'),
+  h.Attribute('stroke-width', '1.8'),
+  h.Attribute('stroke-linecap', 'round'),
+  h.Attribute('stroke-linejoin', 'round'),
+]
+
+const boardIconView = (h: HtmlBuilder<Message>): Html =>
+  h.svg(iconAttributes(h), [
+    h.path([
+      h.Attribute(
+        'd',
+        'M3.5 5.5h17v13h-17zM7 9.5h3v3H7zM14 12h3v3h-3zM10 11l4 2',
+      ),
+    ]),
+  ])
+
+const textIconView = (h: HtmlBuilder<Message>): Html =>
+  h.svg(iconAttributes(h), [
+    h.path([h.Attribute('d', 'M5 6h14M5 10h14M5 14h14M5 18h9')]),
+  ])
+
+const textToggleView = <T extends KindTypes>(
+  { model, ui }: Page<T>,
+  h: HtmlBuilder<Message>,
+): Html => {
+  const isShown = isTextShown(model)
+  return h.button(
+    [
+      h.Type('button'),
+      h.Class('btn text-toggle'),
+      h.AriaControls(LESSON_TEXT_ID),
+      h.AriaExpanded(isShown),
+      h.AriaLabel(isShown ? ui.player.showBoardLabel : ui.player.showTextLabel),
+      h.OnClick(Message.ClickedTextToggle()),
+    ],
+    [
+      isShown ? boardIconView(h) : textIconView(h),
+      h.span([], [isShown ? ui.player.showBoard : ui.player.showText]),
+    ],
+  )
+}
+
+const taskBarView = <T extends KindTypes>(
+  page: Page<T>,
+  task: CurrentTask<T>,
+  h: HtmlBuilder<Message>,
+): Html => {
+  const { lesson, model, texts, ui } = page
+  const taskTexts = texts.tasks?.[task.spec.id]
+  const isSolved = task.state.check._tag === 'Solved'
+  const replaying = isReplaying(lesson, model)
+  const maybeLastHint = Array.last(
+    Array.take(taskTexts?.hints ?? [], task.state.hintsShown),
+  )
+  return h.section(
+    [
+      h.Class(`step-bar${isSolved ? ' solved' : ''}`),
+      h.AriaLabel(ui.task.heading),
+    ],
+    [
+      h.p(
+        [h.Class('step-bar-text')],
+        [
+          h.span(
+            [h.Class('step-bar-head')],
+            [isSolved ? ui.task.solved : ui.task.heading],
+          ),
+          ` ${taskTexts?.prompt ?? ''}`,
+        ],
+      ),
+      CheckState.match(task.state.check, {
+        Unchecked: () => h.empty,
+        Failed: ({ failure }) =>
+          h.p(
+            [h.Class('step-bar-feedback failed'), h.Role('alert')],
+            [messageText(page, failure)],
+          ),
+        Solved: () =>
+          h.p(
+            [h.Class('step-bar-feedback solved')],
+            [taskTexts?.solvedNote ?? ''],
+          ),
+      }),
+      ...(isSolved
+        ? []
+        : [
+            Option.match(maybeLastHint, {
+              onNone: () => h.empty,
+              onSome: hint => h.p([h.Class('step-bar-hint')], [hint]),
+            }),
+            h.div(
+              [h.Class('step-bar-actions')],
+              [
+                h.button(
+                  [
+                    h.Type('button'),
+                    h.Class('btn primary'),
+                    ...(isEditable(lesson, model)
+                      ? [h.OnClick(Message.ClickedCheck())]
+                      : [h.Disabled(true)]),
+                  ],
+                  [ui.task.check],
+                ),
+                h.button(
+                  [
+                    h.Type('button'),
+                    h.Class('btn'),
+                    ...(task.state.hintsShown >= 3 || replaying
+                      ? [h.Disabled(true)]
+                      : [h.OnClick(Message.ClickedHint())]),
+                  ],
+                  [ui.task.hint(task.state.hintsShown, 3)],
+                ),
+              ],
+            ),
+          ]),
+    ],
+  )
+}
+
+const quizBarView = <T extends KindTypes>(
+  page: Page<T>,
+  quiz: CurrentQuiz<T>,
+  doc: T['Doc'],
+  h: HtmlBuilder<Message>,
+): Html => {
+  const { ui } = page
+  const question = page.texts.quizzes?.[quiz.spec.id]?.question ?? ''
+  const answer = correctAnswer(page.lesson, page.model, quiz.spec)
+  return h.section(
+    [h.Class('step-bar'), h.AriaLabel(ui.quiz.heading)],
+    Option.match(quiz.maybeAnswer, {
+      onNone: () => [
+        h.p(
+          [h.Class('step-bar-text')],
+          [
+            h.span([h.Class('step-bar-head')], [ui.quiz.heading]),
+            ` ${question}`,
+          ],
+        ),
+        isBoardQuiz(quiz.spec)
+          ? h.p([h.Class('step-bar-hint')], [ui.quiz.pickOnBoard])
+          : choicesView(page, quiz, doc, answer, h),
+      ],
+      onSome: ({ isCorrect }) => [
+        h.p(
+          [
+            h.Class(`step-bar-feedback ${isCorrect ? 'solved' : 'failed'}`),
+            h.Role('status'),
+          ],
+          [
+            `${isCorrect ? '✓' : '✕'} ${isCorrect ? ui.quiz.correct : ui.quiz.incorrect}. `,
+            ui.quiz.answerWas(candidateName(page, quiz, doc, answer)),
+          ],
+        ),
+      ],
+    }),
+  )
+}
+
+/** Задание текущего шага над нижней панелью, пока текст свёрнут. */
+const stepBarView = <T extends KindTypes>(
+  page: Page<T>,
+  h: HtmlBuilder<Message>,
+): ReadonlyArray<Html> => {
+  const { lesson, model } = page
+  const doc = docAt(lesson, model, model.step)
+  return Option.match(currentTask(lesson, model), {
+    onSome: task => [taskBarView(page, task, h)],
+    onNone: () =>
+      Option.match(currentQuiz(lesson, model), {
+        onNone: () => [],
+        onSome: quiz => [quizBarView(page, quiz, doc, h)],
+      }),
+  })
+}
+
+// THEORY VIEW
+
 const theoryView = <T extends KindTypes>(
   page: Page<T>,
   isFallback: boolean,
@@ -835,17 +1028,12 @@ const theoryView = <T extends KindTypes>(
     [h.AriaLabel(ui.lesson.theoryRegion), h.Class('theory')],
     [
       h.div(
-        [h.Class('theory-scroll')],
+        [h.Class('theory-scroll'), h.Id(LESSON_TEXT_ID)],
         [
           h.a(
             [h.Href(courseUrl(locale, model.course)), h.Class('back-link')],
             [`← ${ui.lesson.backToCourse}`],
           ),
-          Option.match(Option.flatMap(maybeEntry, previewOf), {
-            onNone: () => h.empty,
-            onSome: preview =>
-              lessonHeroView(preview, texts.preview.alt, shownIn, h),
-          }),
           h.p([h.Class('eyebrow')], [ui.home.lessonNumber(order)]),
           h.h1([h.Lang(shownIn), h.Class('lesson-title')], [texts.title]),
           isFallback
@@ -922,6 +1110,7 @@ const theoryView = <T extends KindTypes>(
           ...(isLast ? [finishView(page, h)] : []),
         ],
       ),
+      ...(isTextShown(model) ? [] : stepBarView(page, h)),
       h.nav(
         [h.Class('theory-nav')],
         [
@@ -947,6 +1136,7 @@ const theoryView = <T extends KindTypes>(
                     : ui.player.navHint,
             ],
           ),
+          textToggleView(page, h),
           h.button(
             [
               h.Type('button'),
@@ -1323,7 +1513,7 @@ export const lessonView = <T extends KindTypes>(
     lessonEnd: inputs.lessonEnd,
   }
   return h.main(
-    [h.Class('lesson-page')],
+    [h.Class(isTextShown(model) ? 'lesson-page' : 'lesson-page text-hidden')],
     [
       timelineView(page, h),
       h.div(

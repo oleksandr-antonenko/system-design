@@ -748,3 +748,59 @@ describe('animation', () => {
     })
   })
 })
+
+describe('phone: hiding the lesson text', () => {
+  const measured = (scrollY: number) =>
+    Command.resolve(
+      Player.MeasureTextScroll,
+      Player.Message.CompletedMeasureTextScroll({ scrollY }),
+    )
+
+  test('the toggle remembers the scroll, hides the text and brings it back there', () => {
+    story(
+      Player.update,
+      given(Player.init(COURSE, lesson, 0)),
+      message(Player.Message.ClickedTextToggle()),
+      Command.expectExact(Player.MeasureTextScroll()),
+      measured(640),
+      model(next => {
+        expect(next.textPanel).toEqual(
+          Player.TextPanel.Hidden({ scrollY: 640, atStep: 0 }),
+        )
+      }),
+      message(Player.Message.ClickedTextToggle()),
+      model(next => {
+        expect(next.textPanel).toEqual(Player.TextPanel.Shown())
+      }),
+      Command.expectExact(Player.RestoreTextScroll({ scrollY: 640 })),
+      Command.resolve(
+        Player.RestoreTextScroll,
+        Player.Message.CompletedRestoreTextScroll(),
+      ),
+    )
+  })
+
+  test('Next and Back keep the text hidden and leave the page scroll alone', () => {
+    story(
+      Player.update,
+      given(Player.init(COURSE, lesson, 0)),
+      message(Player.Message.ClickedTextToggle()),
+      measured(0),
+      message(Player.Message.ClickedNext()),
+      expectOutMessage(Player.OutMessage.ChangedStep({ step: 1 })),
+      Command.expectNone(),
+      message(Player.Message.ClickedNext()),
+      message(Player.Message.ClickedPrevious()),
+      model(next => {
+        expect(next.step).toBe(1)
+        expect(next.textPanel._tag).toBe('Hidden')
+      }),
+      message(Player.Message.ClickedTextToggle()),
+      model(next => {
+        expect(next.textPanel).toEqual(Player.TextPanel.Shown())
+      }),
+      Command.expectExact(Player.ScrollStepIntoView({ step: 1 })),
+      scrolled,
+    )
+  })
+})

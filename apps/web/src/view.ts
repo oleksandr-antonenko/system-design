@@ -28,7 +28,7 @@ import {
   currentSession,
 } from './main'
 import { pageTitle } from './pageTitle'
-import { lessonHeroView, lessonThumbnailView } from './previewView'
+import { lessonThumbnailView } from './previewView'
 import {
   AppRoute,
   courseOf,
@@ -558,16 +558,6 @@ const lessonView = (
             ],
             [`← ${ui.lesson.backToCourse}`],
           ),
-          Option.match(previewOf(lesson), {
-            onNone: () => h.empty,
-            onSome: preview =>
-              lessonHeroView(
-                preview,
-                choice.text.preview.alt,
-                choice.shownIn,
-                h,
-              ),
-          }),
           h.p(
             [
               h.Class(

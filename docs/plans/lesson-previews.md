@@ -1,13 +1,13 @@
 # Lesson previews
 
-Every lesson has a preview image: a hero above the lesson title, a thumbnail on the course map and the `og:image` of the lesson page. The images form one series across all courses: serious, technical, calm. This file is the style guide and the shared part of the generation prompt; each lesson keeps its own subject in `preview.md` next to its texts, so any image can be regenerated.
+Every lesson has a preview image: a thumbnail on the course map, the `og:image` of the lesson page and the picture in its prerendered `<noscript>` summary. The lesson page itself does not show it: on a phone a picture between the board and the title only adds scrolling. The images form one series across all courses: serious, technical, calm. This file is the style guide and the shared part of the generation prompt; each lesson keeps its own subject in `preview.md` next to its texts, so any image can be regenerated.
 
 ## Files of a lesson
 
 ```
 courses/<course>/lessons/NN-slug/
   preview.md          the subject of the image (the prompt for this lesson)
-  preview.webp        1200 × 630, about 80–120 KB: hero and og:image
+  preview.webp        1200 × 630, about 80–120 KB: og:image and prerendered page
   preview-600.webp    600 × 315: course map
   text.<locale>.ts    preview: { alt } — the alt text in that language
 ```
