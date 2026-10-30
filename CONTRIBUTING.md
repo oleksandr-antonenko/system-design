@@ -14,7 +14,7 @@ pnpm dev        # http://localhost:5173
 pnpm check      # what CI runs: types, lint, tests
 ```
 
-No `.env` is needed.
+No `.env` and no external services are needed: the app is a static single-page site.
 
 ## How courses and lessons are organized
 

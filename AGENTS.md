@@ -1,6 +1,6 @@
 # Agent notes
 
-Interactive System Design course: theory on the left, a live board on the right, hands-on tasks solved on the board. Public repository; lessons are contributed as modules via pull requests.
+Interactive System Design course: theory on the left, a live board on the right, hands-on tasks solved on the board. Public repository; lessons are contributed as modules via pull requests. The app is a static single-page site: `apps/web` is the whole product.
 
 Read before writing code:
 
@@ -16,7 +16,6 @@ Read before writing code:
 | `apps/web/src/i18n` | Locales, plural rules, number formatting, typed UI dictionaries, domain message texts |
 | `apps/web/src/courses` | One folder per course (`<course-id>/course.ts`, `course.<locale>.ts`, `lessons/NN-slug/`), auto-registered by `registry.ts` |
 | `apps/web/src/kinds` | Board kinds behind the `BoardKind` contract (`contract.ts`): `flow` (System Design) and `packet` (networks); `state.ts` holds the Schema unions the player stores |
-| `apps/server` | Node + Effect HTTP server: serves the web build and `/api` |
 | `patches/` | pnpm patches for dependencies (see below) |
 | `docs/` | Plans, roadmap, the lesson mockup |
 
@@ -28,8 +27,8 @@ Read before writing code:
 - **Courses and lessons are modules.** A course is a folder `apps/web/src/courses/<course-id>/` with `course.ts` (`defineCourse({ id, order, board, modules, features, locales })`) and `course.<locale>.ts` (title, tagline, module titles). A lesson is a folder `courses/<course-id>/lessons/NN-slug/` with `meta.ts` (`defineLessonMeta(course, { slug, module, order, available, locales, unlocks })`) and `text.<locale>.ts`; no edits to shared files. A course or lesson declares its languages and must be complete in each; missing languages fall back to English with a visible notice. Lessons are found by course + slug (`findLesson(course, slug)`), never by slug alone.
 - **Routes:** `/:locale/` catalogue, `/:locale/:course/` course map, `/:locale/:course/lessons/:slug?step=N` lesson (`homeUrl`, `courseUrl`, `lessonUrl` in `route.ts`). Old `/:locale/lessons/:slug` links redirect to the `system-design` course.
 - **Board kinds.** The player, lesson DSL, journal, hints, task surfaces and content tests work only through `BoardKind` (`apps/web/src/kinds/contract.ts`). A lesson is `defineLesson(kind, { slug, steps })`; a new kind is a new `kinds/<kind>/` folder plus a variant in each union of `kinds/state.ts` and a line in `kinds/types.ts`.
-- **The UI grows with the student.** A lesson lists the UI features it opens in `meta.unlocks`, taken from its course's `features` (for `networks`: `UiFeature` in `courses/networks/features.ts`). Code asks `isUnlocked(course, lessonOrder, feature)` / `unlockedFeatures` / `newFeatures` from `courses/registry.ts`, never compares lesson numbers.
-- **Zero-config local run.** `pnpm install && pnpm dev` must work without `.env` or external services. Secrets are required only with `NODE_ENV=production`.
+- **The UI grows with the student.** A lesson lists the UI features it opens in `meta.unlocks`, taken from its course's `features` (for `networks`: `UiFeature` in `courses/networks/features.ts`). Code asks `isUnlocked(course, lessonOrder, feature)` / `unlockedFeatures` / `newFeatures` from `courses/registry.ts`, never compares lesson numbers. A test lesson whose slug the course does not list sees the whole interface of its course, so tests need not borrow the slug of a real lesson to open features.
+- **Zero-config, static app.** `pnpm install && pnpm dev` must work without `.env` or external services. The build (`apps/web/dist`) is plain static files with no environment variables or secrets; any static host that answers unknown paths with `index.html` can serve it.
 - **No infrastructure details in the repo**: no server addresses, ssh ports, user names or credentials. The server is described only as "the owner's home server".
 - **Deployment lives outside the repo**: no CI workflows, deploy scripts, hosting configs or deploy plans (including OpenSpec changes). A push to `main` is deployed by the server itself, which runs `pnpm check` first; run `pnpm check` before merging.
 - **Quiet test output**: `vitest run --silent --reporter=dot`, `tsc --noEmit --pretty false`, `oxlint --quiet`.
@@ -38,8 +37,8 @@ Read before writing code:
 ## Commands
 
 ```sh
-pnpm dev      # web on :5173 (proxies /api) + server on :3620
-pnpm check    # typecheck + lint + tests for all packages
-pnpm build    # web, then server
-pnpm start    # serve the build from apps/server (PORT, HOST, WEB_DIST, APP_VERSION)
+pnpm dev      # web app on :5173
+pnpm check    # typecheck + lint + tests
+pnpm build    # static build into apps/web/dist
+pnpm preview  # serve the build on :4173
 ```

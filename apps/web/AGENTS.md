@@ -10,7 +10,7 @@ subtree_prompted: false
 
 ## Project Notes
 
-Project-wide rules (languages, lessons as modules, Effect 4.1 override, no infrastructure details) live in the root [`AGENTS.md`](../../AGENTS.md).
+Project-wide rules (languages, lessons as modules, Effect 4.1 override, a static app with zero config, no infrastructure details) live in the root [`AGENTS.md`](../../AGENTS.md).
 
 - Locale is part of every route (`/{uk|ru|en|lt}/...`); `localeOf(route)` is the only source of the current language.
 - UI text comes from `uiFor(locale)` (`src/i18n/ui`); never inline user-facing strings in views.
