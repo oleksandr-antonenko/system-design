@@ -30,6 +30,7 @@ const commandFeatures: Readonly<Record<string, string>> = {
   dig: 'terminal.dig',
   curl: 'terminal.curl',
   ss: 'terminal.ss',
+  nc: 'terminal.nc',
   ufw: 'terminal.ufw',
   docker: 'terminal.docker',
   arp: 'terminal.arp',
