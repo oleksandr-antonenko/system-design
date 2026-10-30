@@ -56,6 +56,7 @@ export const uk = {
   siteTagline: 'Теорія на живій схемі та задачі власноруч',
   courseSwitcherLabel: 'Курс',
   languageSwitcherLabel: 'Мова',
+  currentLanguage: 'поточна',
   inLanguage,
   kindHint,
   regionName,

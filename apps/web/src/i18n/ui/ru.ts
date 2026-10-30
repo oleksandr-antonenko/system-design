@@ -56,6 +56,7 @@ export const ru = {
   siteTagline: 'Теория на живой схеме и задачи своими руками',
   courseSwitcherLabel: 'Курс',
   languageSwitcherLabel: 'Язык',
+  currentLanguage: 'текущий',
   inLanguage,
   kindHint,
   regionName,

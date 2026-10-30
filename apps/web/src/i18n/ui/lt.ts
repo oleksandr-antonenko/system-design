@@ -59,6 +59,7 @@ export const lt = {
   siteTagline: 'Teorija gyvoje schemoje ir praktinės užduotys',
   courseSwitcherLabel: 'Kursas',
   languageSwitcherLabel: 'Kalba',
+  currentLanguage: 'dabartinė',
   inLanguage,
   kindHint,
   regionName,

@@ -11,6 +11,8 @@ export type UiStrings = Readonly<{
   siteTagline: string
   courseSwitcherLabel: string
   languageSwitcherLabel: string
+  /** Помечает текущий язык в меню языков для чтения с экрана. */
+  currentLanguage: string
   inLanguage: Readonly<Record<Locale, string>>
   /** Родное название элемента и короткое объяснение; подпись — `componentName`. */
   kindHint: Readonly<Record<ComponentKind, string>>

@@ -55,6 +55,7 @@ export const en = {
   siteTagline: 'Theory on a live board and hands-on tasks',
   courseSwitcherLabel: 'Course',
   languageSwitcherLabel: 'Language',
+  currentLanguage: 'current',
   inLanguage,
   kindHint,
   regionName,
