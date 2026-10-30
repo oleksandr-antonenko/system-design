@@ -92,13 +92,13 @@ const screenOf = (
   )
 
 describe('one screen per device', () => {
-  test('wifi:phone and browser:phone share one tab that opens on the first declared app', () => {
+  test('wifi:phone and browser:phone share one tab that opens on the first declared app, first in the switch', () => {
     expect(
       Array.map(Player.visibleSurfaces(devices, atJoin()), ({ id }) => id),
     ).toEqual(['browser:phone'])
     expect(appsOf(contextOf(atJoin(), 'phone'), 'browser')).toEqual([
-      'settings',
       'browser',
+      'settings',
     ])
     expect(
       Option.map(screenOf(atJoin(), 'browser:phone'), current => current.app),

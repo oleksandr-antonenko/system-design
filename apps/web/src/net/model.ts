@@ -349,6 +349,8 @@ export const Device = defineTaggedUnion({
     maybeDnsOverride: Schema.Option(Schema.Array(Ip)),
     wifiBands: Schema.Array(Band),
     maybeWifiProfile: Schema.Option(WifiProfile),
+    /** Стартовая страница браузера: открывается, когда устройство в сети. */
+    maybeHomePage: Schema.Option(Schema.String),
     listeners: Schema.Array(Listener),
     zones: Schema.Array(DnsZone),
     resolver: Schema.Boolean,
