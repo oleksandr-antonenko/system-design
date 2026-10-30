@@ -22,12 +22,12 @@ const missesInto = (sim: SimResult, id: string) => edge(sim, 'cache-1', id)
 export default {
   title: 'Sharding',
   summary:
-    'Kaip padalyti duomenis tarp kelių databases: shard key, hot shards, užklausos per visus shards ir resharding.',
+    'Kaip padalyti duomenis tarp nepriklausomų databases: shard key, hot shards, užklausos per visus shards ir resharding.',
   steps: {
     'one-primary': {
       title: 'Prekyvietė su viena database',
       body: ({ sim }) =>
-        `Parduotuvė tapo prekyviete su tūkstančiais pardavėjų, ir apkrova dabar matuojama tūkstančiais rps. Kad viskas tilptų lentoje, blokas „Server“ šioje pamokoje reiškia **šešių servers grupę** už savo load balancer: nuo [[group1|group1]] iki [[group4|group4]], po ${n(2400)} rps grupei. Užklausas iš [[users|Users]] tarp grupių paskirsto DNS.
+        `Parduotuvė tapo prekyviete su tūkstančiais pardavėjų, ir apkrova dabar matuojama tūkstančiais rps. Kad viskas tilptų lentoje, blokas „Server“ šioje pamokoje reiškia **servers grupę** (jų – šeši) už savo load balancer: nuo [[group1|group1]] iki [[group4|group4]], po ${n(2400)} rps grupei. Užklausas iš [[users|Users]] tarp grupių paskirsto DNS.
 
 Skaitymas eina per [[cache-1|cache]] iš 4 pamokos: į ${percent(simulationRules.cacheHitShare)} užklausų jis atsako pats, ir tik **cache misses** (nepataikymai į podėlį) pasiekia [[db|database]]. Rašymo cache neperims: užsakymą, mokėjimą ar likučio sandėlyje pakeitimą turi išsaugoti pati database.
 
@@ -43,15 +43,15 @@ Abu srautai padvigubėjo kartu su apkrova. O jei išpardavimas pavyks, kitais me
     'replicas-wont-help': {
       title: 'Kodėl read replicas nepadės',
       body: ({ sim }) =>
-        `6 pamokoje read replicas perėmė skaitymą ir taip išgelbėjo database. Čia jos galėtų perimti tik cache misses. Rašymas vis tiek keliauja į primary, o kiekviena read replica turi jį pakartoti. Kad ir kiek read replicas pridėtumėte, ant [[db|primary]] liks ${n(writesInto(sim, 'db'))} rps rašymo, ${percent(writesInto(sim, 'db') / capacity)} jos pajėgumo, ir jokios atsargos kitam išpardavimui.
+        `6 pamokoje read replicas perėmė skaitymą ir taip išgelbėjo database. Čia jos galėtų perimti tik cache misses. Rašymas vis tiek keliauja į primary, o kiekviena read replica turi jį pakartoti. Pridėkite read replicas kiek norite: ant [[db|primary]] vis tiek liks ${n(writesInto(sim, 'db'))} rps rašymo, ${percent(writesInto(sim, 'db') / capacity)} jos pajėgumo, ir jokios atsargos kitam išpardavimui.
 
 Galingesnė database duos šiek tiek laiko, bet jos lubos arti, o galingiausios mašinos kainuoja milžiniškus pinigus. Viena database tiesiog negali priimti tiek įrašų. Vadinasi, dalyti teks pačius **duomenis**.`,
     },
     'split-data': {
       title: 'Užduotis: shards',
-      body: `**Sharding** (lietuviškai – skaidymas į šardus) padalija duomenis tarp kelių nepriklausomų databases – **shards** (šardų). Kiekvienas shard saugo tik savo duomenų dalį, pavyzdžiui, pusę naudotojų su visais jų užsakymais, krepšeliais ir atsiliepimais, ir gauna skaitymo bei rašymo užklausas tik tai daliai.
+      body: `**Sharding** (lietuviškai – skaidymas į šardus) padalija duomenis tarp nepriklausomų databases – **shards** (šardų). Kiekvienas shard saugo tik savo duomenų dalį, pavyzdžiui, pusę naudotojų su visais jų užsakymais, krepšeliais ir atsiliepimais, ir gauna skaitymo bei rašymo užklausas tik tai daliai.
 
-Kuris shard saugo įrašą, lemia **shard key** (skaidymo raktas), pavyzdžiui, naudotojo id. Servers grupės ir cache pagal raktą apskaičiuoja, kur siųsti kiekvieną užklausą, todėl kiekvienam iš jų reikia ryšio su kiekvienu shard. Lentoje blokas, prijungtas prie kelių databases, savo rašymą arba cache misses dalija joms po lygiai, tarsi raktas naudotojus padalytų po lygiai.
+Kuris shard saugo įrašą, lemia **shard key** (skaidymo raktas), pavyzdžiui, naudotojo id. Servers grupės ir cache pagal raktą apskaičiuoja, kur siųsti kiekvieną užklausą, todėl kiekvienam iš jų reikia ryšio su kiekvienu shard. Lentoje blokas, sujungtas su keliais „Database“ blokais, savo rašymą arba cache misses dalija joms po lygiai, tarsi raktas naudotojus padalytų po lygiai.
 
 Paletėje yra database: ji taps antruoju shard.`,
     },
@@ -66,7 +66,7 @@ Lenta apkrovą dalija po lygiai, kaip ir esant gerai parinktam raktui. Praktikoj
     resharding: {
       title: 'Užklausos per visus shards ir resharding',
       body: ({ sim }) =>
-        `Kai kurios užklausos netinka raktui. Pardavėjas nori matyti visus savo prekių užsakymus, bet tie užsakymai priklauso pirkėjams iš visų shards. Tokią užklausą tenka išsiųsti **į visus shards** ir sujungti atsakymus (**scatter-gather**, „išsiųsti ir surinkti“), o ji veikia tik taip greitai, kaip lėčiausias shard. JOIN tarp shards nebepadarysi, o transakcijai, apimančiai du shards, pavyzdžiui, pinigų pervedimui tarp dviejų naudotojų, reikia specialių protokolų. Tokias užklausas paprastai aptarnauja atskira duomenų kopija, sutvarkyta pagal kitą raktą, pavyzdžiui, **search index** (lietuviškai – paieškos indeksas; plačiau apie jį 12 pamokoje).
+        `Kai kurios užklausos netinka raktui. Pardavėjas nori matyti visus savo prekių užsakymus, bet tie užsakymai priklauso pirkėjams iš visų shards. Tokią užklausą tenka išsiųsti **į visus shards** ir sujungti atsakymus (**scatter-gather**, „išsiųsti ir surinkti“), o ji veikia tik taip greitai, kaip lėčiausias shard. JOIN tarp shards nebepadarysi, o transakcijai, apimančiai daugiau nei vieną shard, pavyzdžiui, pinigų pervedimui tarp dviejų naudotojų, reikia specialių protokolų. Tokias užklausas paprastai aptarnauja atskira duomenų kopija, sutvarkyta pagal kitą raktą, pavyzdžiui, **search index** (lietuviškai – paieškos indeksas; plačiau apie jį 12 pamokoje).
 
 Praėjo metai, apkrova – ${n(sim.load)} rps. ${
           utilization(sim, 'db') > 0.8
@@ -74,7 +74,7 @@ Praėjo metai, apkrova – ${n(sim.load)} rps. ${
             : `Jūsų shards dar turi atsargos (${percent(utilization(sim, 'db'))}), bet augimas pasivys ir juos.`
         } Čia ir prasideda **resharding** (duomenų perskirstymo) skausmas. Pagal taisyklę „maiša moduliu 2“ perėjus prie „moduliu 3“, maždaug du trečdaliai visų įrašų turi persikelti į kitą shard: terabaitus tenka kopijuoti nestabdant parduotuvės.
 
-Todėl resharding planuojamas iš anksto. Duomenys dalijami į daug mažų **logical shards** (loginių šardų), tarkime, 256, išdėstytų keliose databases, o nauja database perima dalį jų ištisai. Tą pačią problemą sprendžia **consistent hashing** (nuoseklusis maišymas): pridėjus shard, persikelia tik nedidelė raktų dalis.`,
+Todėl resharding planuojamas iš anksto. Duomenys dalijami į mažus **logical shards** (loginius šardus), tarkime, į 256, ir išdėstomi po esamas databases, o nauja database perima dalį jų ištisai. Tą pačią problemą sprendžia **consistent hashing** (nuoseklusis maišymas): pridėjus shard, persikelia tik nedidelė raktų dalis.`,
     },
     summary: {
       title: 'Santrauka',
@@ -105,13 +105,13 @@ Ir dar vienas dalykas: kiekvienas shard yra **vienintelė** savo naudotojų duom
     'split-data': {
       prompt: `Padalykite duomenis tarp shards taip, kad kiekvienai database liktų atsarga esant ${n(6400)} rps.`,
       goals: {
-        'servers-use-shards': 'Servers grupės rašo į du shards',
-        'cache-uses-shards': 'Cache savo misses skaito iš dviejų shards',
+        'servers-use-shards': 'Servers grupės rašo į du „Database“ blokus',
+        'cache-uses-shards': 'Cache savo misses skaito iš dviejų „Database“ blokų',
         'shard-headroom': `Kiekvienas shard apkrautas ne daugiau kaip 80 % esant ${n(6400)} rps`,
         'holds-load': `Atlaiko ${n(6400)} rps, kai klaidų mažiau nei 1 %`,
       },
       hints: [
-        'Nė viena database nepriims viso rašymo. Jo srautą reikia padalyti tarp kelių databases.',
+        'Nė viena database nepriims viso rašymo. Jo srautą reikia padalyti tarp kelių „Database“ blokų.',
         'Pastatykite antrą database šalia pirmosios ir prijunkite prie jos kiekvieną servers grupę ir cache. Senus ryšius palikite: kiekvienas shard saugo savo duomenų dalį.',
         'Lentoje atsirado punktyrinis kontūras. Pastatykite database ten ir nutieskite pažymėtus ryšius nuo visų keturių grupių ir nuo cache.',
       ],

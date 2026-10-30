@@ -13,7 +13,7 @@ export default {
   steps: {
     'count-spares': {
       title: 'Suskaičiuokime atsarginius',
-      body: `Vėl parduotuvė: [[users|Users]] per [[lb-1|load balancer]] kreipiasi į tris servers, o servers duomenis rašo į [[db|database]]. Apkrova 600 rps, viskas žalia.
+      body: `Vėl parduotuvė: [[users|Users]] per [[lb-1|load balancer]] kreipiasi į tris „Server“ blokus, o šie duomenis rašo į [[db|database]]. Apkrova 600 rps, viskas žalia.
 
 3 pamokoje servers gavo **N+1** taisyklę: jų yra trys, o šiai apkrovai pakanka dviejų. Jei bet kuris sugenda, jo dalį perima likę. Dabar pažiūrėkite į kitus blokus. Load balancer vienas ir database viena, ir atsarginių jie neturi.`,
     },
@@ -21,13 +21,13 @@ export default {
       title: 'Sugedo load balancer',
       body: `Load balancer irgi yra server, tik su kita programa. Naktį įdiegta nevykusi konfigūracija, atnaujintas branduolys, sudegė tinklo plokštė – ir [[lb-1|lb-1]] nustojo atsakinėti.
 
-Visi trys servers tvarkingi, bet stovi be darbo: naudotojai žino vieną adresą, ir juo niekas neatsako. Klaidos 100 %. **Health check** (sveikatos patikra) čia irgi nepadės: sugedo būtent tas blokas, kuris ją atlieka.`,
+Visi trys „Server“ blokai tvarkingi, bet stovi be darbo: naudotojai žino vieną adresą, ir juo niekas neatsako. Klaidos 100 %. **Health check** (sveikatos patikra) čia irgi nepadės: sugedo būtent tas blokas, kuris ją atlieka.`,
     },
     'database-down': {
       title: 'Sugedo database',
       body: `Load balancer grįžo. Dabar sugenda [[db|database]]: diske baigėsi vieta, mašina persikrovė po atnaujinimo arba duomenų centre visa spinta liko be elektros.
 
-Servers ir toliau gauna užklausas, bet neturi kur skaityti ir rašyti: savų duomenų jie nelaiko (2 pamoka). Kiekviena užklausa baigiasi klaida, ir klaidų vėl 100 %. Trys servers ir load balancer be savo vienintelės database yra bevertiai.
+Servers ir toliau gauna užklausas, bet neturi kur skaityti ir rašyti: savų duomenų jie nelaiko (2 pamoka). Kiekviena užklausa baigiasi klaida, ir klaidų vėl 100 %. Servers ir load balancer be savo vienintelės database yra bevertiai.
 
 Yra kai kas blogiau už prastovą. Jei miršta pats diskas, o kopijos nėra, parduotuvės užsakymai dingsta visam laikui. Netekti prieigos valandai ir netekti duomenų visam laikui – dvi skirtingos bėdos, ir prie to dar grįšime.`,
     },
@@ -60,7 +60,7 @@ Su duomenimis irgi yra kabliukas. Read replica įrašus paprastai gauna su nedid
       body: ({ sim }) =>
         `Senoji primary sutaisyta. Tikrovėje ji grįžta kaip naujosios primary read replica, o mūsų lentoje tiesiog užima savo ankstesnę vietą.
 
-Dabar kiekvienas blokas turi atsarginį: du load balancers, N+1 servers, database ir read replica. Kaina matyti prietaise „Kaina“: ${dollars(sim.costPerHour)} per valandą vietoj 2,30 $. Dubliavimas visada kainuoja, todėl jis pirmiausia taikomas ten, kur vienas gedimas sustabdo viską.
+Dabar kiekvienas blokas turi atsarginį: load balancer – antrą load balancer, servers – vieną daugiau, nei reikia (N+1), database – read replica. Kaina matyti prietaise „Kaina“: ${dollars(sim.costPerHour)} per valandą vietoj 2,30 $. Dubliavimas visada kainuoja, todėl jis pirmiausia taikomas ten, kur vienas gedimas sustabdo viską.
 
 **Availability** (prieinamumas) – laiko dalis, kai sistema atsako. Jis skaičiuojamas „devynetais“: 99,9 % leidžia beveik 9 valandas prastovos per metus, 99,99 % – tik 53 minutes. **Durability** (patvarumas) – pažadas, kad patvirtinti duomenys niekada nedings. Read replica padidina availability, bet lygiai taip pat stropiai nukopijuoja ir atsitiktinį ištrynimą. Durability užtikrinti reikia **backups** (atsarginių kopijų), o vertingiausiems duomenims – sinchroninės replikacijos (synchronous replication).
 
@@ -86,14 +86,14 @@ Mūsų atsarginiai blokai kol kas stovi viename duomenų centre. Praktikoje jie 
       prompt:
         'Pašalinkite SPOF: parduotuvė turi atlaikyti bet kurio load balancer, server ar database gedimą.',
       goals: {
-        'two-balancers': 'Users sujungti su dviem load balancers',
+        'two-balancers': 'Users sujungti su dviem „Load balancer“ blokais',
         'replica-exists': 'Lentoje yra read replica',
         'survives-failure':
           'Esant 600 rps, atlaiko bet kurio load balancer, server ar database gedimą, kai klaidų ne daugiau nei 1 %',
       },
       hints: [
         'Paklauskite apie kiekvieną bloką: kas nutiks, jei jis suges? Servers atsarginį jau turi, o load balancer ir database – ne.',
-        'Pridėkite antrą load balancer, sujunkite jį su visais trimis servers ir prijunkite prie jo bloką „Users“. Tada pridėkite read replica ir sujunkite su ja kiekvieną server, neištrindami ryšių su database.',
+        'Pridėkite antrą load balancer, sujunkite jį su visais trimis „Server“ blokais ir prijunkite prie jo bloką „Users“. Tada pridėkite read replica ir sujunkite su ja kiekvieną server, neištrindami ryšių su database.',
         'Lentoje atsirado punktyriniai kontūrai. Pastatykite ten load balancer ir read replica ir nutieskite pažymėtus ryšius.',
       ],
       solvedNote:

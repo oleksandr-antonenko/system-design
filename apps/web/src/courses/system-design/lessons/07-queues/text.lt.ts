@@ -21,7 +21,7 @@ export default {
   steps: {
     'in-request': {
       title: 'Viskas užklausos viduje',
-      body: `Internetinė parduotuvė paaugo. Užklausas iš [[users|Users]] priima du programos servers, [[app1|app1]] ir [[app2|app2]], o duomenis saugo [[db|database]]. Load balancer iš 3 pamokos lentoje nenupieštas, kad užtektų vietos: blokas „Users“ pats po lygiai paskirsto užklausas tarp servers, kaip tai darytų load balancer.
+      body: `Internetinė parduotuvė paaugo. Užklausas iš [[users|Users]] priima du „Server“ blokai, [[app1|app1]] ir [[app2|app2]], o duomenis saugo [[db|database]]. Load balancer iš 3 pamokos lentoje nenupieštas, kad užtektų vietos: blokas „Users“ pats po lygiai paskirsto užklausas tarp servers, kaip tai darytų load balancer.
 
 Kai pirkėjas pateikia užsakymą, server jį išsaugo, išsiunčia patvirtinimo laišką, sugeneruoja PDF sąskaitą ir tik tada atsako. Pašto paslauga atsako maždaug per sekundę, PDF generavimas apkrauna procesorių, o pirkėjas visą tą laiką žiūri į besisukantį ratuką. Toks pat darbas slepiasi nuotraukų įkėlime, registracijoje, slaptažodžio atkūrime. Šios pamokos modelyje kiekviena užklausa, kurią apdoroja server, palieka vieną tokį foninį **darbą** (job).
 
@@ -31,7 +31,7 @@ Kol užklausa juo užsiėmusi, server negali imti kitų, todėl spėja apie **15
       title: 'Išpardavimas',
       body: `Prasidėjo išpardavimas, ir apkrova išaugo iki **500 rps**. Kiekvienas [[app1|server]] spėja savo 150 užklausų per sekundę, o likusias 100 atmeta: **40 %** pirkėjų gauna klaidą, o tiems, kuriems pasisekė, atsakymo tenka laukti ilgiau nei sekundę.
 
-Labiausiai apmaudu, kad paspaudus mygtuką pirkėjui laiško nereikia. Jam svarbu viena: užsakymas išsaugotas. Tačiau lėtas darbas laiko užklausą, ir jam ištempti reikėtų dvigubai daugiau servers: keturių vietoj dviejų.`,
+Labiausiai apmaudu, kad paspaudus mygtuką pirkėjui laiško nereikia. Jam svarbu viena: užsakymas išsaugotas. Tačiau lėtas darbas laiko užklausą, ir jam ištempti reikėtų keturių „Server“ blokų vietoj dviejų.`,
     },
     background: {
       title: 'Vėliau, fone',
@@ -59,7 +59,7 @@ Jei workers atlieka mažiau, nei ateina, queue **auga**: užrašas ant bloko „
         if (growth < 1) {
           return `${opening}
 
-Jūsų workers spėja net per šuolį: kartu jie gali atlikti daugiau nei 700 darbų per sekundę, ir queue neauga. Trys workers, kurių pakanka 500 rps, atliktų 600 darbų per sekundę: queue augtų po 100 kas sekundę, ir per dešimt minučių susikauptų ${n(60000)} laiškų. Po šuolio jie juos apdorotų per dešimt minučių.
+Jūsų workers spėja net per šuolį: kartu jie gali atlikti daugiau nei 700 darbų per sekundę, ir queue neauga. Trys „Worker“ blokai, kurių pakanka 500 rps, atliktų 600 darbų per sekundę: queue augtų po 100 kas sekundę, ir per dešimt minučių susikauptų ${n(60000)} laiškų. Po šuolio jie juos apdorotų per dešimt minučių.
 
 ${queuePoint}`
         }
@@ -125,7 +125,7 @@ Taisyklės trumpos. Workers skaičiuojami įprastai apkrovai, ir stebimas queue 
   tasks: {
     'add-queue': {
       prompt:
-        'Iškelkite lėtą darbą į queue ir pastatykite tiek workers, kad esant 500 rps queue neaugtų.',
+        'Iškelkite lėtą darbą į queue ir pastatykite tiek „Worker“ blokų, kad esant 500 rps queue neaugtų.',
       goals: {
         'queue-exists': 'Lentoje yra queue',
         'servers-enqueue': 'Kiekvienas server deda darbus į queue',

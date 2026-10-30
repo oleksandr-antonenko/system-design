@@ -20,7 +20,7 @@ export default {
   steps: {
     'normal-day': {
       title: 'Įprasta diena',
-      body: `Grįžkime prie parduotuvės, kurioje už load balancer stovi trys servers. Kad lenta būtų paprastesnė, cache, CDN ir read replicas iš ankstesnių pamokų pašalinome.
+      body: `Grįžkime prie parduotuvės, kurioje už load balancer stovi trys „Server“ blokai. Kad lenta būtų paprastesnė, cache, CDN ir read replicas iš ankstesnių pamokų pašalinome.
 
 [[users|Users]] ateina į [[lb-1|load balancer]], o jis skirsto užklausas į [[app1|app1]], [[app2|app2]] ir [[app3|app3]]. Kiekvienas server apdoroja 400 rps, kartu jie atlaiko **1200 rps**.
 
@@ -69,7 +69,7 @@ Lentoje robotai atsirėmė į savo limitus, o pirkėjų programėlės sulėtino 
       title: 'Santrauka',
       body: `Išpardavimas baigėsi, apkrova grįžo iki 600 rps. [[limiter-1|Rate limiter]] praleidžia viską: įprastą dieną jo nesimato. Jis kainuoja 0,05 $ per valandą.
 
-Palyginkite su kitu keliu – nusipirkti servers piko apkrovai. Kad priimtumėte 2000 rps su atsarga, prireiktų septynių servers vietoj trijų, 2,80 $ per valandą vietoj 1,20 $, ir visą likusį laiką jie stovėtų be darbo. Ir tai neišgelbėtų: [[db|database]] atlaiko 1500 rps, o esant 2000 pati ims prarasti užklausas. Limitas saugo ne tik servers, bet ir viską, kas yra už jų.
+Palyginkite su kitu keliu – nusipirkti servers piko apkrovai. Kad priimtumėte 2000 rps su atsarga, prireiktų septynių „Server“ blokų vietoj trijų, 2,80 $ per valandą vietoj 1,20 $, ir visą likusį laiką jie stovėtų be darbo. Ir tai neišgelbėtų: [[db|database]] atlaiko 1500 rps, o esant 2000 pati ims prarasti užklausas. Limitas saugo ne tik servers, bet ir viską, kas yra už jų.
 
 Praktikoje rate limiter būna **API gateway** (API šliuzo) dalis arba jį turi pats load balancer, ir jis dirba kartu su **autoscaling** (automatiniu plėtimu): autoscaling prideda servers, kai apkrova auga tolygiai, o rate limiter atlaiko staigių šuolių ir godžių klientų smūgį. 9 pamokoje aptarsime apkrovą, kuri yra ne šuolis, o tolygus rašymo augimas, su kuriuo viena database nebesusidoroja.`,
     },

@@ -14,7 +14,7 @@ export default {
   steps: {
     catalog: {
       title: 'Katalogas',
-      body: `Prekyvietė su milijonu prekių. Šioje lentoje kiekviena užklausa – tai katalogo pakeitimas: pardavėjai keičia kainas, likučius ir aprašymus, apie 150 pakeitimų per sekundę. Pardavėjai čia – blokas [[users|Users]]. Jų užklausas priima du servers, [[app1|app1]] ir [[app2|app2]], o kiekvieną pakeitimą išsaugo [[db|database]]. Kaip ir 7 pamokoje, load balancer nenupieštas, kad užtektų vietos.
+      body: `Prekyvietė su milijonu prekių. Šioje lentoje kiekviena užklausa – tai katalogo pakeitimas: pardavėjai keičia kainas, likučius ir aprašymus, apie 150 pakeitimų per sekundę. Pardavėjai čia – blokas [[users|Users]]. Jų užklausas priima du „Server“ blokai, [[app1|app1]] ir [[app2|app2]], o kiekvieną pakeitimą išsaugo [[db|database]]. Kaip ir 7 pamokoje, load balancer nenupieštas, kad užtektų vietos.
 
 Database – **source of truth** (tiesos šaltinis): jei kas nors su ja nesutampa, teisi database.`,
     },
@@ -50,7 +50,7 @@ Atkreipkite dėmesį: analitikai iš servers nieko nereikia, jai pakanka užsipr
 
 [[search|Search index]] priima visus: jis atlaiko apie ${n(1500)}. Analitikos [[worker-1|worker]] spėja tik 200 per sekundę, o likusius 100 per sekundę event bus laiko jam. Tai yra subscriber **lag** (atsilikimas), ir lentoje jis matomas taip pat, kaip queue augimas. Per dvidešimt minučių analitika atsiliks ${n(120000)} įvykių. Niekas neprarandama: event bus saugo įvykius (Kafka laiko juos dienomis), ir worker vėliau juos perskaitys nuo ten, kur sustojo. Po įkėlimo, esant 150 pakeitimų per sekundę, jis turės 50 per sekundę atsargą ir pasivys maždaug per 40 minučių. Ataskaitoms 40 minučių vėlavimas priimtinas.
 
-Pastebėkite: event bus nelaukia lėčiausio subscriber. Pardavėjai išsaugo pakeitimus kaip įprastai, o search index lieka šviežias. Antras analitikos worker, užsiprenumeravęs event bus, nepadėtų: jis gautų savo pilną kopiją ir kiekvieną pakeitimą suskaičiuotų du kartus. Kad vieno subscriber srautą padalytų keliems workers, Kafka turi **consumer groups** (vartotojų grupes): grupės viduje įvykiai dalijami kaip queue, o kiekviena grupė gauna savo kopiją.`,
+Pastebėkite: event bus nelaukia lėčiausio subscriber. Pardavėjai išsaugo pakeitimus kaip įprastai, o search index lieka šviežias. Antras analitikos worker, užsiprenumeravęs event bus, nepadėtų: jis gautų savo pilną kopiją ir kiekvieną pakeitimą suskaičiuotų du kartus. Kad vieno subscriber srautą padalytų tarp workers, Kafka turi **consumer groups** (vartotojų grupes): grupės viduje įvykiai dalijami kaip queue, o kiekviena grupė gauna savo kopiją.`,
     },
     'index-down': {
       title: 'Search index nepasiekiamas',

@@ -52,7 +52,7 @@ Duomenys telpa į vieną lentelę **links**: code (**primary key**, pirminis rak
       title: 'Užduotis: schema',
       body: `Jūsų ėjimas. Paletėje – visi kurso blokai: CDN, load balancer, server, cache ir read replica. [[db|Database]] jau lentoje, ir mūsų rašymui pakaks vienos.
 
-Reikalavimai tapo tikslais po lenta. Biudžetas skaičiuojamas iš karto, o visa kita tikrinama simuliacija paspaudus „Tikrinti“. Prieš piešdami suskaičiuokite: kiek servers reikia 2000 rps ir kiek jie kainuoja?`,
+Reikalavimai tapo tikslais po lenta. Biudžetas skaičiuojamas iš karto, o visa kita tikrinama simuliacija paspaudus „Tikrinti“. Prieš piešdami suskaičiuokite: kiek „Server“ blokų reikia 2000 rps ir kiek jie kainuoja?`,
     },
     review: {
       title: 'Aptarimas',
@@ -133,8 +133,8 @@ Reikalavimai tapo tikslais po lenta. Biudžetas skaičiuojamas iš karto, o visa
         budget: 'Kainuoja ne daugiau kaip 4 $ per valandą',
       },
       hints: [
-        'Pirmiausia suskaičiuokite. Jei kiekviena užklausa pasiektų servers, 2000 rps reikėtų penkių servers ir atsarginio. Tai 2,40 $, o kartu su database, read replica ir dviem load balancers biudžetas jau viršytas. Didžiąją srauto dalį reikia atsakyti dar jai nepasiekus servers.',
-        'Pastatykite prie įėjimo CDN: jis pats atsako į populiarius nukreipimus, tai 60 % užklausų, ir iki servers ateina tik 800 rps. Už jo – du load balancers, trys servers (du neša apkrovą, trečias atsarginis) ir read replica. Sujunkite kiekvieną server ir su database, ir su read replica, kad read replica galėtų perimti rašymą.',
+        'Pirmiausia suskaičiuokite. Jei kiekviena užklausa pasiektų servers, 2000 rps reikėtų penkių „Server“ blokų ir atsarginio. Tai 2,40 $, o kartu su database, read replica ir dviem „Load balancer“ blokais biudžetas jau viršytas. Didžiąją srauto dalį reikia atsakyti dar jai nepasiekus servers.',
+        'Pastatykite prie įėjimo CDN: jis pats atsako į populiarius nukreipimus, tai 60 % užklausų, ir iki servers ateina tik 800 rps. Už jo – du „Load balancer“ blokai, trys „Server“ blokai (du neša apkrovą, trečias atsarginis) ir read replica. Sujunkite kiekvieną server ir su database, ir su read replica, kad read replica galėtų perimti rašymą.',
         'Lentoje atsirado punktyrinis kontūras. Pastatykite blokus ten ir nutieskite pažymėtus ryšius.',
       ],
       solvedNote:
