@@ -995,9 +995,16 @@ const stickerView = <ParentMessage>(
       const isOn =
         picture.model.isStickerOpen ||
         Option.exists(picture.context.maybeHoveredRef, ref => ref === 'sticker')
+      // Наклейка мигает с третьей подсказкой, только если эталон что-то
+      // делает с Wi-Fi: в задаче про кабель и адреса она ни при чём.
       const isGhost = Option.exists(
         picture.context.maybeTask,
-        task => task.isGhostShown,
+        task =>
+          task.isGhostShown &&
+          Array.some(
+            task.solution,
+            op => op._tag === 'JoinWifi' || op._tag === 'ConfigureWifi',
+          ),
       )
       return [
         ...(isGhost
@@ -1647,11 +1654,15 @@ const letterView = <ParentMessage>(
   })
 }
 
+/** Кому адресован конверт, который не ушёл: у отправки на адрес (урок 2)
+    — то, что ввёл ученик, а не последний, кто слышал поиск MAC. */
 const lastAddressee = (play: Picture['timeline']['plays'][number]): DeviceId =>
-  Option.match(Array.last(play.trace.hops), {
-    onNone: () => play.trace.outcome.at,
-    onSome: hop => hop.to,
-  })
+  play.trace.intent._tag === 'Send' && play.trace.intent.to.trim() !== ''
+    ? play.trace.intent.to.trim()
+    : Option.match(Array.last(play.trace.hops), {
+        onNone: () => play.trace.outcome.at,
+        onSome: hop => hop.to,
+      })
 
 // BOARD
 
