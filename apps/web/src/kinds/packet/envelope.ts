@@ -183,6 +183,14 @@ export const changedFields = (
     },
   })
 
+/** Вопрос «у кого этот адрес?» (ARP): он идёт всем в сети, а последний хоп
+    его пакета — лишь последний, кто его услышал, а не адресат. */
+export const isAddressQuestion = (hop: Hop): boolean =>
+  Array.some(
+    hop.envelope,
+    layer => layer._tag === 'Arp' && layer.kind === 'request',
+  )
+
 /** Адреса конверта для подписи с урока 2: IP отправителя и получателя
     (у поиска MAC — кого ищут). */
 export const addressesOf = (

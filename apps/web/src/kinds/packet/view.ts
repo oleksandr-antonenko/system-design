@@ -13,7 +13,7 @@ import { levelOf, sourceOf } from '../../net/packet'
 import { wifiOf } from '../../net/topology'
 import type { BoardSlot, Tone } from '../contract'
 import type { PacketTypes } from '../types'
-import { addressesOf, isSealed } from './envelope'
+import { addressesOf, isAddressQuestion, isSealed } from './envelope'
 import { deviceIcons } from './icons'
 import {
   type CloudShape,
@@ -1546,10 +1546,10 @@ const letterView = <ParentMessage>(
         !Array.contains(picture.hidden, 'addresses')
       // Выдача адреса (урок 2): у спрашивающего ещё нет номера, вопрос
       // идёт всем; ответ «для всех» несёт только имя получателя.
-      const isBroadcast = Option.exists(
-        addresses,
-        found => found.to === BROADCAST,
-      )
+      // Вопрос «у кого этот адрес?» (ARP) тоже идёт всем в сети.
+      const isBroadcast =
+        Option.exists(legHop, leg => isAddressQuestion(leg.hop)) ||
+        Option.exists(addresses, found => found.to === BROADCAST)
       const isAskingAll =
         isBroadcast && !Option.exists(legHop, leg => leg.isReply)
       const fromAddress = Option.map(addresses, found =>
