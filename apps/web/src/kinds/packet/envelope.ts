@@ -14,6 +14,8 @@ export type LayerRow = Readonly<{
   level: StackLevel
   title: string
   fields: ReadonlyArray<Field>
+  /** Слой внутри шифра запечатанного конверта: полей не видно. */
+  isSealed: boolean
 }>
 
 const option = <A>(value: Option.Option<A>, show: (a: A) => string): string =>
@@ -62,6 +64,10 @@ const fieldsOf = (layer: Layer): ReadonlyArray<Field> =>
         onSome: status => ({ key: 'status', value: `${status}` }),
       }),
       { key: 'host', value: http.host },
+      ...Array.map(http.fields, field => ({
+        key: field.name,
+        value: field.value,
+      })),
     ],
     Tunnel: tunnel => [{ key: 'kind', value: tunnel.kind }],
     Payload: payload => [
@@ -105,28 +111,38 @@ const isFieldShown =
       onSome: isOpen,
     })
 
+const isCipher = (layer: Layer): boolean =>
+  layer._tag === 'Tls' && layer.kind === 'data'
+
 /** Слои конверта снаружи внутрь: то, что открыто к уроку (`isOpen`, по
-    умолчанию всё). В запечатанном конверте (TLS с урока 11) прикладной слой
-    виден, только если сцена его открыла. */
+    умолчанию всё). С урока 11 конверт запечатан: слои под шифром TLS видны
+    только по названию, их полей не прочитать. */
 export const layerRows = (
   hop: Hop,
   isOpen: (feature: string) => boolean = () => true,
 ): ReadonlyArray<LayerRow> => {
   const hasPage = Array.some(hop.envelope, layer => layer._tag === 'Http')
+  const isSealedShown = isOpen(SEALED_FEATURE)
+  const cipher = Array.findFirstIndex(hop.envelope, isCipher)
   return Array.getSomes(
-    Array.map(hop.envelope, (layer, position) =>
-      layer._tag === 'Tls' && hasPage && !isOpen(SEALED_FEATURE)
+    Array.map(hop.envelope, (layer, position) => {
+      const isSealed =
+        isSealedShown && Option.exists(cipher, index => position > index)
+      return layer._tag === 'Tls' && hasPage && !isSealedShown
         ? Option.none()
         : Option.some({
             position,
             level: levelOf(layer),
             title: titles[layer._tag],
-            fields: Array.filter(
-              fieldsOf(layer),
-              isFieldShown(isOpen, titles[layer._tag]),
-            ),
-          }),
-    ),
+            fields: isSealed
+              ? []
+              : Array.filter(
+                  fieldsOf(layer),
+                  isFieldShown(isOpen, titles[layer._tag]),
+                ),
+            isSealed,
+          })
+    }),
   )
 }
 
@@ -188,7 +204,7 @@ export const keyFieldOf = (
 ): Option.Option<string> =>
   pipe(
     layerRows(hop, isOpen),
-    Array.findLast(row => row.level === level),
+    Array.findLast(row => row.level === level && !row.isSealed),
     Option.flatMap(row =>
       Option.map(
         Array.findLast(row.fields, field => field.key !== 'op'),
@@ -199,7 +215,4 @@ export const keyFieldOf = (
 
 /** Конверт запечатан: внутри TLS — прикладной слой не прочитать. */
 export const isSealed = (hop: Hop): boolean =>
-  Array.some(
-    hop.envelope,
-    layer => layer._tag === 'Tls' && layer.kind === 'data',
-  )
+  Array.some(hop.envelope, isCipher)

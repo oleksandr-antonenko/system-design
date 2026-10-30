@@ -67,9 +67,10 @@ export type PacketAnnotate<Key extends string = string> = Readonly<{
 /** Что показывает проигрывание: `letters` — только конверты разговора
     (запрос и ответ, без поиска MAC, DHCP и рукопожатий; вопрос справочной —
     с урока 3), `request` — только запрос и ответ, без справочной даже после
-    урока 3, `all` — все пакеты трассы с цветом протокола. По умолчанию `all`
-    открывает урок 7 (легенда цветов), до него — `letters`. */
-export type PlayShow = 'letters' | 'request' | 'all'
+    урока 3, `handshake` — разговор и перед ним договорённость о шифре (TLS
+    hello, урок 11), `all` — все пакеты трассы с цветом протокола. По
+    умолчанию `all` открывает урок 7 (легенда цветов), до него — `letters`. */
+export type PlayShow = 'letters' | 'request' | 'handshake' | 'all'
 
 /** Проиграть трассу намерения на доске. Состояние сети не меняется: это
     показ, а не операция (её делает `send`). `after` — операции, после
@@ -155,6 +156,14 @@ export type Room = Readonly<{
     «Отправить» пишет в журнал `send(Raw)`. */
 export type Builder = Readonly<{ _tag: 'Builder'; from: DeviceId; url: string }>
 
+/** Паспорт сайта (урок 11): карточка certificate сервера и три проверки
+    браузера для имени `name` — имя, срок, кто выдал. */
+export type ShowCert = Readonly<{
+  _tag: 'ShowCert'
+  device: DeviceId
+  name: string
+}>
+
 export type PacketStage =
   | PacketHighlight
   | PacketAnnotate
@@ -171,6 +180,7 @@ export type PacketStage =
   | Walk
   | Room
   | Builder
+  | ShowCert
 
 export const highlight = (
   target: PacketTarget,
@@ -261,4 +271,10 @@ export const builder = (from: DeviceId, url: string): Builder => ({
   _tag: 'Builder',
   from,
   url,
+})
+
+export const showCert = (device: DeviceId, name: string): ShowCert => ({
+  _tag: 'ShowCert',
+  device,
+  name,
 })

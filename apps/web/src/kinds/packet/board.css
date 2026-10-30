@@ -705,6 +705,7 @@
 .pb-envelope,
 .pb-legend,
 .pb-printout,
+.pb-cert,
 .pb-run-all {
   position: absolute;
   z-index: 3;
@@ -920,6 +921,23 @@
   border-radius: 3px;
   padding: 0 2px;
 }
+/* Запечатанный конверт (урок 11): слой под шифром виден только названием. */
+.pb-layer.sealed {
+  border-style: dashed;
+  border-left-style: solid;
+  background: repeating-linear-gradient(
+    -45deg,
+    transparent 0 6px,
+    color-mix(in srgb, var(--muted) 10%, transparent) 6px 12px
+  );
+}
+.pb-layer.sealed .pb-fields {
+  display: none;
+}
+.pb-sealed {
+  color: var(--muted);
+  font-style: italic;
+}
 .pb-legend {
   top: 12px;
   left: 12px;
@@ -995,24 +1013,59 @@
   max-height: 180px;
   overflow-y: auto;
 }
-/* Распечатка — под картинкой доски, а не поверх неё: иначе она закрывает
-   конец цепочки роутеров (урок 4). Доска ужимается в оставшееся место. */
-.pb-stage:has(> .pb-printout) {
+/* Распечатка и паспорт сайта — под картинкой доски, а не поверх неё: иначе
+   они закрывают конец цепочки роутеров (урок 4) и серверы справа (урок 11).
+   Доска ужимается в оставшееся место. */
+.pb-stage:has(> .pb-printout),
+.pb-stage:has(> .pb-cert) {
   display: flex;
   flex-direction: column;
 }
-.pb-stage:has(> .pb-printout) > .pb-svg {
+.pb-stage:has(> .pb-printout) > .pb-svg,
+.pb-stage:has(> .pb-cert) > .pb-svg {
   position: relative;
   inset: auto;
   flex: 1;
   min-height: 0;
   height: auto;
 }
-.pb-stage > .pb-printout {
+.pb-stage > .pb-printout,
+.pb-stage > .pb-cert {
   position: static;
   flex: none;
   align-self: flex-end;
   margin: 0 12px 12px;
+}
+/* Паспорт сайта (урок 11): поля certificate и три проверки браузера. */
+.pb-cert {
+  width: min(360px, calc(100% - 24px));
+  padding: 10px 12px;
+  display: grid;
+  gap: 6px;
+}
+.pb-cert-checks {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 2px;
+}
+.pb-cert-checks li {
+  display: flex;
+  gap: 6px;
+  align-items: baseline;
+}
+.pb-cert-checks li > span:first-child {
+  font-weight: 700;
+  width: 1em;
+  text-align: center;
+}
+.pb-cert-checks li.ok > span:first-child {
+  color: var(--ok);
+}
+.pb-cert-checks li.bad {
+  color: var(--bad);
+  font-weight: 600;
 }
 .pb-run-all {
   left: 12px;
@@ -1224,6 +1277,14 @@
   gap: 8px 12px;
 }
 
+/* Панель под доской (сервер, роутер) и кнопки проигрывания с урока 7 вместе
+   выше, чем остаётся экрана: доска ужимается, а не наезжает на кнопки. */
+@media (min-width: 881px) {
+  .board-side:has(> .surface-host) > .packet-board > .pb-stage {
+    min-height: 200px;
+  }
+}
+
 /* ---------- экран телефона рядом с доской ---------- */
 /* Как в макете урока 1: в задаче с экраном телефона он стоит справа от
    доски, а не под ней, и доска не сжимается. */
@@ -1336,17 +1397,20 @@
     aspect-ratio: var(--pb-ratio);
     max-height: 78vh;
   }
-  .pb-stage:has(> .pb-printout) {
+  .pb-stage:has(> .pb-printout),
+  .pb-stage:has(> .pb-cert) {
     aspect-ratio: auto;
     max-height: none;
   }
-  .pb-stage:has(> .pb-printout) > .pb-svg {
+  .pb-stage:has(> .pb-printout) > .pb-svg,
+  .pb-stage:has(> .pb-cert) > .pb-svg {
     flex: none;
     width: 100%;
     aspect-ratio: var(--pb-ratio);
     max-height: 78vh;
   }
-  .pb-stage > .pb-printout {
+  .pb-stage > .pb-printout,
+  .pb-stage > .pb-cert {
     align-self: stretch;
     width: auto;
     margin: 0 8px 8px;

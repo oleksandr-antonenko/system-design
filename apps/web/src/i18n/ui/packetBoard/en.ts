@@ -190,6 +190,20 @@ export const packetBoardEn: PacketBoardStrings = {
     rulesTitle: device => `Firewall rules: “${device}”`,
   },
   printout: device => `Terminal: ${device}`,
+  cert: {
+    title: device => `Certificate: ${device}`,
+    issuedTo: 'Issued to',
+    issuedBy: 'Issued by',
+    validUntil: 'Valid until',
+    none: 'no certificate',
+    checks: {
+      name: 'the name matches the address',
+      date: 'not expired',
+      issuer: 'issued by an authority the browser trusts',
+    },
+    passed: 'yes',
+    failed: 'no',
+  },
   scan: {
     title: (from, target) => `${from} knocks on the ports of ${target}`,
     open: 'open',

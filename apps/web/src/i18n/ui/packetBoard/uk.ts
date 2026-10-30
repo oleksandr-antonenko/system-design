@@ -190,6 +190,20 @@ export const packetBoardUk: PacketBoardStrings = {
     rulesTitle: device => `Firewall rules: «${device}»`,
   },
   printout: device => `Термінал: ${device}`,
+  cert: {
+    title: device => `Certificate: ${device}`,
+    issuedTo: 'Issued to',
+    issuedBy: 'Issued by',
+    validUntil: 'Valid until',
+    none: 'certificate немає',
+    checks: {
+      name: 'ім’я збігається з адресою',
+      date: 'термін не минув',
+      issuer: 'виданий центром, якому браузер довіряє',
+    },
+    passed: 'так',
+    failed: 'ні',
+  },
   scan: {
     title: (from, target) => `Port scan: ${from} → ${target}`,
     open: 'відкрито',

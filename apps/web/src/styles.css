@@ -1297,6 +1297,9 @@ h3 {
   font-size: 15px;
   line-height: 1.5;
   white-space: pre-wrap;
+  /* Коды ошибок вроде NET::ERR_CERT_COMMON_NAME_INVALID длиннее строки
+     телефона: шаблон переносит их, а не раздвигает страницу. */
+  overflow-wrap: anywhere;
 }
 .ask-ai-actions {
   display: flex;

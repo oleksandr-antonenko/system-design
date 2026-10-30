@@ -172,6 +172,18 @@ export type PacketBoardStrings = Readonly<{
     rulesTitle: (device: string) => string
   }>
   printout: (device: string) => string
+  /** Паспорт сайта на доске (урок 11): поля certificate — английские, как
+      в самом certificate; три проверки браузера — на языке ученика. */
+  cert: Readonly<{
+    title: (device: string) => string
+    issuedTo: string
+    issuedBy: string
+    validUntil: string
+    none: string
+    checks: Readonly<{ name: string; date: string; issuer: string }>
+    passed: string
+    failed: string
+  }>
   scan: Readonly<{
     title: (from: string, target: string) => string
     open: string

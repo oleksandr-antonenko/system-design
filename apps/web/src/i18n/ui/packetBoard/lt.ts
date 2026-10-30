@@ -191,6 +191,20 @@ export const packetBoardLt: PacketBoardStrings = {
     rulesTitle: device => `Firewall rules: „${device}“`,
   },
   printout: device => `Terminalas: ${device}`,
+  cert: {
+    title: device => `Certificate: ${device}`,
+    issuedTo: 'Issued to',
+    issuedBy: 'Issued by',
+    validUntil: 'Valid until',
+    none: 'certificate nėra',
+    checks: {
+      name: 'vardas sutampa su adresu',
+      date: 'galiojimas nepasibaigęs',
+      issuer: 'išdavė centras, kuriuo naršyklė pasitiki',
+    },
+    passed: 'taip',
+    failed: 'ne',
+  },
   scan: {
     title: (from, target) => `Port scan: ${from} → ${target}`,
     open: 'atvira',

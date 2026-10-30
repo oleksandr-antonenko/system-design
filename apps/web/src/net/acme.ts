@@ -32,6 +32,25 @@ const caOf = (doc: NetDoc): Option.Option<Host> =>
       device._tag === 'Host' && Option.isSome(device.maybeCaIssuer),
   )
 
+/** Что делает центр сертификации при выпуске: по имени открывает путь
+    файла-пароля по http:// (вопрос справочной — внутри трассы). Доска
+    проигрывает эти конверты после «Выпустить» (урок 11). */
+export const challengeIntents = (
+  doc: NetDoc,
+  device: DeviceId,
+  names: ReadonlyArray<string>,
+): ReadonlyArray<Intent> =>
+  Option.match(caOf(doc), {
+    onNone: () => [],
+    onSome: ca =>
+      Array.map(names, name =>
+        Intent.Fetch({
+          from: ca.id,
+          url: `http://${name.trim().toLowerCase()}${challengePath(device)}`,
+        }),
+      ),
+  })
+
 type Checked = Readonly<{
   state: NetState
   traces: ReadonlyArray<Trace>

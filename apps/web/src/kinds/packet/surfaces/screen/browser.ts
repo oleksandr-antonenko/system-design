@@ -77,8 +77,14 @@ const securityBadge = <ParentMessage>(
               ]
             : [
                 h.span(
-                  [h.Class('browser-unsafe')],
-                  [openLockIcon(h), ui.device.notSecure],
+                  [h.Class('browser-unsafe'), h.Title(ui.device.notSecure)],
+                  [
+                    openLockIcon(h),
+                    h.span(
+                      [h.Class('browser-unsafe-text')],
+                      [ui.device.notSecure],
+                    ),
+                  ],
                 ),
               ],
       })
