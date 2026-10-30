@@ -3,7 +3,6 @@ import { Mount } from 'foldkit'
 import type { Html, HtmlBuilder } from 'foldkit/html'
 
 import { scanPorts } from '../../net/answers'
-import type { NetOp } from '../../net/doc'
 import {
   type DeviceId,
   type DeviceKind,
@@ -30,7 +29,14 @@ import {
 } from './layout'
 import { Message } from './message'
 import { boardPanels, quizTray, stageOverlays } from './panels'
-import { type Picture, deviceOf, pictureOf, shapeIdOf } from './picture'
+import {
+  DRAFT_ROW,
+  type Picture,
+  deviceOf,
+  draftDevice,
+  pictureOf,
+  shapeIdOf,
+} from './picture'
 import { DevicePointer } from './pointer'
 import { type OwnerOf, letterOf } from './timeline'
 
@@ -1431,14 +1437,6 @@ const scanViews = <ParentMessage>(
   )
 }
 
-/** Устройство, у которого черновик рисует строку операции. */
-const draftDevice = (op: NetOp): string =>
-  'device' in op && typeof op.device === 'string'
-    ? op.device
-    : 'router' in op && typeof op.router === 'string'
-      ? op.router
-      : ''
-
 /** Черновик сцены (`preview`): новые устройства и кабели черновика стоят на
     доске пунктиром, а остальные операции — строки под своим устройством,
     одна под другой. Устройство и кабель строк не получают: их видно и так. */
@@ -1456,14 +1454,10 @@ const draftViews = <ParentMessage>(
         onNone: () => '',
         onSome: found => ` mark-${found.tone}`,
       })
-      const device =
-        op._tag === 'AddDevice' || op._tag === 'Connect' ? '' : draftDevice(op)
+      const device = draftDevice(op)
       const row = Array.filter(
         Array.take(ops, index),
-        earlier =>
-          earlier._tag !== 'AddDevice' &&
-          earlier._tag !== 'Connect' &&
-          draftDevice(earlier) === device,
+        earlier => draftDevice(earlier) === device,
       ).length
       return Option.map(
         Option.flatMap(visibleIdOptional(picture, device), shapeId =>
@@ -1482,7 +1476,7 @@ const draftViews = <ParentMessage>(
           )
           const width = Math.min(text.length * 6.4 + 18, 260)
           const below = shape._tag === 'Box' ? shape.node.h / 2 + 6 : 40
-          const y = centre.y + below + row * 22
+          const y = centre.y + below + row * DRAFT_ROW
           return h.keyed('g')(
             `draft-${index}`,
             [

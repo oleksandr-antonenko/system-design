@@ -90,6 +90,8 @@ export type LayoutInput = Readonly<{
   /** Устройства в пути (`walk`) или в руке ученика: координаты документа. */
   moved: Readonly<Record<DeviceId, Point>>
   text: (id: DeviceId) => NodeText
+  /** Сколько места оставить под устройством: строки черновика сцены. */
+  below?: Readonly<Record<DeviceId, number>>
 }>
 
 // SHAPES
@@ -826,7 +828,10 @@ export const layoutBoard = (input: LayoutInput): Layout => {
       )
     : []
   const withLinks: Layout = { ...partial, links, rings, bars }
-  return { ...withLinks, viewBox: viewBoxOf(withLinks, metrics) }
+  return {
+    ...withLinks,
+    viewBox: viewBoxOf(withLinks, metrics, input.below ?? {}),
+  }
 }
 
 const linkShape = (
@@ -873,6 +878,7 @@ const MARGIN = 28
 const viewBoxOf = (
   layout: Layout,
   metrics: Metrics,
+  below: Readonly<Record<DeviceId, number>>,
 ): Readonly<{ x: number; y: number; w: number; h: number }> => {
   const xs = [
     ...Array.flatMap(layout.nodes, node => [
@@ -889,7 +895,7 @@ const viewBoxOf = (
   const ys = [
     ...Array.flatMap(layout.nodes, node => [
       node.y - node.h / 2 - 56,
-      node.y + node.h / 2 + 8,
+      node.y + node.h / 2 + 8 + (below[node.id] ?? 0),
     ]),
     ...Array.flatMap(layout.zones, zone => [
       zone.y - zone.roof - 24,
