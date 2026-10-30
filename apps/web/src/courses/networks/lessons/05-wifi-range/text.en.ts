@@ -14,13 +14,16 @@ export default {
       name: 'Light bulb',
       note: 'a smart bulb in the kitchen: it only understands 2.4 GHz',
     },
+    'zone:room': { name: 'Living room' },
+    'zone:hall': { name: 'Hall' },
+    'zone:kitchen': { name: 'Kitchen' },
   },
   steps: {
     'floor-plan': {
       title: 'Seen from above',
       body: `Let’s look at the flat from above, like a floor plan. The [[router|router]] stands in the living room. The circle around it shows how far the Wi-Fi reaches: inside the circle there is a connection, beyond its edge there is none.
 
-Wi-Fi is radio. The farther from the router, the quieter its “voice”. Like talking: in the same room you hear well, from the other end of the flat badly. Press “Run”: the [[phone|phone]] will walk from the living room to the kitchen.`,
+Wi-Fi is radio. The farther from the router, the quieter its “voice”. Like talking: in the same room you hear well, from the other end of the flat badly. Press “Run”: the [[phone|phone]] will walk from the living room to the [[zone:kitchen|kitchen]].`,
     },
     walls: {
       title: 'Walls muffle the signal',
