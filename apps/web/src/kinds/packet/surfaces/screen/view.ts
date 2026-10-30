@@ -19,21 +19,31 @@ import { settingsView } from './settings'
 
 type Context = SurfaceContext<PacketTypes>
 
-/** Приложения экрана: те, чьи поверхности объявила задача и открыл курс.
-    Без задачи (вне шага задачи) — приложение самой поверхности. */
+const appSurfaces: ReadonlyArray<readonly [App, string]> = [
+  ['settings', 'wifi'],
+  ['browser', 'browser'],
+]
+
+/** Приложения экрана: те, чьи поверхности объявила задача и открыл курс, в
+    порядке объявления — экран открывается на первом, и в переключателе оно
+    первое. Без задачи (вне шага задачи) — приложение самой поверхности. */
 export const appsOf = (context: Context, own: App): ReadonlyArray<App> => {
-  const declared = Array.filter(
-    [
-      ['settings', 'wifi'],
-      ['browser', 'browser'],
-    ] satisfies ReadonlyArray<readonly [App, string]>,
-    ([, type]) =>
-      Array.contains(context.surfaces, `${type}:${context.target}`) &&
-      isSurfaceOpen(context.unlocked, type),
+  const declared = Array.getSomes(
+    Array.map(context.surfaces, id =>
+      Option.map(
+        Array.findFirst(
+          appSurfaces,
+          ([, type]) =>
+            id === `${type}:${context.target}` &&
+            isSurfaceOpen(context.unlocked, type),
+        ),
+        ([app]) => app,
+      ),
+    ),
   )
-  return Array.match(declared, {
+  return Array.match(Array.dedupe(declared), {
     onEmpty: () => [own],
-    onNonEmpty: apps => Array.map(apps, ([app]) => app),
+    onNonEmpty: apps => apps,
   })
 }
 

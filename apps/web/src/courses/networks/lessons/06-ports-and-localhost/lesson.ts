@@ -94,6 +94,13 @@ export default defineLesson(packet, {
           host('shop', 'server', 818, 325, {
             address: '198.51.100.10/24',
             listeners: [tcp(80), tcp(443)],
+            certs: [
+              {
+                names: ['shop.example'],
+                issuer: 'Example CA',
+                notAfter: '2030-12-31',
+              },
+            ],
           }),
         ),
         radio('phone', 'router'),
