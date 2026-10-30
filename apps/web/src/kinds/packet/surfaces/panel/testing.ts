@@ -81,5 +81,6 @@ export const surfaceFor = (
   history: [],
   journal: [],
   surfaces: [],
+  goals: [],
   ...overrides,
 })

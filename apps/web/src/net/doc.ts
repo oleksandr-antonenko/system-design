@@ -31,6 +31,8 @@ import {
   DnsRecord,
   type DnsZone,
   DockerBridge,
+  Evidence,
+  Fault,
   Firewall,
   type FirewallRule,
   type Host,
@@ -57,6 +59,7 @@ import {
   VpnMode,
   Wall,
   WifiConfig,
+  emptyNet,
   linkIdOf,
 } from './model'
 import { Intent } from './packet'
@@ -179,9 +182,10 @@ export const ZoneRecord = Schema.Struct({
 })
 
 /** Операции документа и мира. `Send`, `Wait`, `FastForward`, `FlushDns`,
-    `RunCommand` и `IssueCertificate` меняют состояние сети или зависят от
-    него: их применяет `applyWorld` (`world.ts`), а `apply` оставляет
-    документ без изменений. */
+    `RunCommand`, `IssueCertificate` и `Report` меняют состояние сети или
+    зависят от него: их применяет `applyWorld` (`world.ts`), а `apply`
+    оставляет документ без изменений. `Reset` начинает с пустой доски: урок
+    из нескольких сетей подряд (урок 15) строит каждую заново. */
 export const NetOp = defineTaggedUnion({
   AddDevice: { device: Device },
   RemoveDevice: { id: DeviceId },
@@ -258,6 +262,8 @@ export const NetOp = defineTaggedUnion({
   FlushDns: { device: DeviceId },
   RunCommand: { device: DeviceId, line: Schema.String },
   IssueCertificate: { device: DeviceId, names: Schema.Array(Schema.String) },
+  Report: { fault: Fault, evidence: Schema.Array(Evidence) },
+  Reset: {},
 })
 export type NetOp = typeof NetOp.Type
 
@@ -1656,6 +1662,8 @@ export const apply = (doc: NetDoc, op: NetOp): NetResult =>
     FlushDns: () => Result.succeed(doc),
     RunCommand: () => Result.succeed(doc),
     IssueCertificate: () => Result.succeed(doc),
+    Report: () => Result.succeed(doc),
+    Reset: () => Result.succeed(emptyNet),
   })
 
 /** Свёртка операций документа: отказанная операция пропускается, как на

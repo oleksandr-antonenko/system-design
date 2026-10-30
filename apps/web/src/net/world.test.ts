@@ -95,6 +95,8 @@ describe('world fold', () => {
         program: 'ip',
         maybeTarget: Option.none(),
         saw: ['192.168.1.42'],
+        tags: ['plain'],
+        path: [],
       },
     ])
     expect(Result.isFailure(applyWorld(start, run('nobody', 'ip a')))).toBe(

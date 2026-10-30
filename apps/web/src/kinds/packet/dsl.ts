@@ -29,6 +29,7 @@ export type PacketSurface =
   | `wifi:${DeviceId}`
   | `terminal:${DeviceId}`
   | `browser:${DeviceId}`
+  | 'report'
 
 // STAGE
 
@@ -132,8 +133,16 @@ export type RunRow = Readonly<{
 export type RunAll = Readonly<{ _tag: 'RunAll'; rows: ReadonlyArray<RunRow> }>
 
 /** Туман: видны только эти устройства и то, до чего дотянулись команды
-    терминала (журнал команд). */
+    терминала (журнал команд): сами устройства, цели и пути их конвертов.
+    Туман остаётся на доске и во время ходов ученика. */
 export type Fog = Readonly<{ _tag: 'Fog'; visible: ReadonlyArray<DeviceId> }>
+
+/** Лесенка проверок (урок 15): адрес, шлюз, DNS, port, приложение снизу
+    вверх у левого края доски. Каждая команда терминала зажигает свою
+    ступеньку: зелёным, если проверка прошла, красным — если нет. Ступеньки
+    считаются по журналу команд мира, поэтому лесенка остаётся на доске и
+    во время ходов ученика. */
+export type Ladder = Readonly<{ _tag: 'Ladder' }>
 
 /** Устройство проходит по точкам, полоски сигнала меняются на ходу. */
 export type Walk = Readonly<{
@@ -182,6 +191,7 @@ export type PacketStage =
   | Preview
   | RunAll
   | Fog
+  | Ladder
   | Walk
   | Room
   | Builder
@@ -259,6 +269,8 @@ export const fog = (visible: ReadonlyArray<DeviceId>): Fog => ({
   _tag: 'Fog',
   visible,
 })
+
+export const ladder = (): Ladder => ({ _tag: 'Ladder' })
 
 export const walk = (
   device: DeviceId,

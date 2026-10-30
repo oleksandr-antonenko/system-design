@@ -3,6 +3,7 @@ import { defineTaggedUnion } from 'foldkit/schema'
 
 import {
   DeviceId,
+  Fault,
   FirewallScope,
   Ip,
   LinkId,
@@ -233,6 +234,31 @@ export const NetMessage = defineTaggedUnion({
   GoalNoDevice: { id: DeviceId },
   SshLockedOut: { device: DeviceId },
   GoalThrough: { device: DeviceId },
+
+  // Отчёт для ИИ-ассистента (урок 15): ответ на отправленный отчёт
+  ReportMissing: {},
+  ReportAfterFix: {},
+  ReportNoEvidence: {},
+  ReportWrongFault: {
+    picked: Fault,
+    expected: Fault,
+    ran: Schema.Boolean,
+    host: Schema.String,
+    port: Port,
+  },
+  ReportTrap: {
+    picked: Fault,
+    expected: Fault,
+    ran: Schema.Boolean,
+    host: Schema.String,
+    port: Port,
+  },
+  ReportEvidenceOk: {},
+  ReportEvidenceSymptom: {},
+  ReportEvidenceAbove: {},
+  ReportEvidenceOther: {},
+  ReportAccepted: { fault: Fault },
+  ReportConfirmed: { fault: Fault },
 
   // Терминал и прочие подсказки
   UnknownCommand: {

@@ -228,7 +228,8 @@ const lessonChecks = <T extends KindTypes>(
             quizFeature(quiz.kind),
           )
         }
-        if (isBoardQuiz(quiz)) {
+        // NOTE: чипы `Match` и `PlaceChips` — тексты, а не цели на доске.
+        if (isBoardQuiz(quiz) && quiz.slots === undefined) {
           quiz.candidates.forEach(candidate =>
             expect(
               Option.isSome(kind.resolveTarget(doc, candidate)),

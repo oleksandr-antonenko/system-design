@@ -367,6 +367,7 @@ const fogVisible = (
     const seen = Array.flatMap(world.state.commandLog, record => [
       record.device,
       ...record.saw,
+      ...record.path,
       ...Option.toArray(record.maybeTarget),
     ])
     const settled = settle(world.doc, world.state)

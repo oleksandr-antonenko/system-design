@@ -1551,3 +1551,166 @@
     transition: none;
   }
 }
+
+/* ---------- лесенка проверок (урок 15) ---------- */
+/* Колонка у левого края доски: ступеньки снизу вверх, доска ужимается
+   справа от неё. На узком экране — полоса над доской слева направо. */
+.pb-ladder {
+  font-size: 11.5px;
+  background: var(--page);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 8px;
+  box-shadow: 0 16px 34px -22px var(--pb-shadow);
+}
+.pb-ladder-title {
+  margin: 0 0 6px 2px;
+  font-size: 10.5px;
+  color: var(--muted);
+}
+.pb-rungs {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.pb-rung {
+  display: grid;
+  grid-template-columns: 18px minmax(0, auto);
+  column-gap: 7px;
+  align-items: center;
+  padding: 4px 8px 4px 5px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--board);
+}
+.pb-rung-mark {
+  grid-row: span 2;
+  width: 18px;
+  height: 18px;
+  display: grid;
+  place-items: center;
+  border: 1.5px solid var(--node-line);
+  border-radius: 50%;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1;
+}
+.pb-rung-name {
+  font-weight: 600;
+  color: var(--ink);
+}
+.pb-rung-cmd {
+  grid-column: 2;
+  max-width: 150px;
+  overflow: hidden;
+  font-size: 10px;
+  color: var(--muted);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.pb-rung.idle .pb-rung-name {
+  color: var(--muted);
+}
+.pb-rung.seen .pb-rung-mark {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.pb-rung.ok {
+  border-color: color-mix(in srgb, var(--ok) 45%, var(--line));
+  background: var(--ok-soft);
+}
+.pb-rung.ok .pb-rung-mark {
+  border-color: var(--ok);
+  background: var(--ok);
+  color: var(--page);
+}
+.pb-rung.bad {
+  border-color: var(--bad);
+  background: var(--bad-soft);
+}
+.pb-rung.bad .pb-rung-mark {
+  border-color: var(--bad);
+  background: var(--bad);
+  color: var(--page);
+}
+.pb-stage:has(> .pb-ladder) {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  grid-template-rows: minmax(0, 1fr);
+  grid-auto-rows: auto;
+}
+.pb-stage > .pb-ladder {
+  position: relative;
+  z-index: 3;
+  grid-column: 1;
+  grid-row: 1;
+  align-self: center;
+  margin: 12px 0 12px 12px;
+}
+.pb-stage:has(> .pb-ladder) > .pb-svg {
+  position: relative;
+  inset: auto;
+  grid-column: 2;
+  grid-row: 1;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+}
+.pb-stage:has(> .pb-ladder) > .pb-printout {
+  grid-column: 1 / -1;
+  justify-self: end;
+}
+@media (max-width: 880px) {
+  .pb-stage:has(> .pb-ladder) {
+    aspect-ratio: auto;
+    max-height: none;
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto;
+  }
+  .pb-stage > .pb-ladder {
+    order: -1;
+    grid-row: auto;
+    align-self: stretch;
+    margin: 8px 8px 0;
+    padding: 5px;
+  }
+  .pb-ladder-title {
+    display: none;
+  }
+  .pb-rungs {
+    flex-direction: row-reverse;
+    gap: 3px;
+  }
+  .pb-rung {
+    flex: 1;
+    min-width: 0;
+    grid-template-columns: 14px minmax(0, 1fr);
+    column-gap: 3px;
+    padding: 3px;
+  }
+  .pb-rung-mark {
+    grid-row: auto;
+    width: 14px;
+    height: 14px;
+    border-width: 1.5px;
+    font-size: 9px;
+  }
+  .pb-rung-name {
+    font-size: 9.5px;
+    line-height: 1.15;
+    overflow-wrap: anywhere;
+  }
+  .pb-rung-cmd {
+    display: none;
+  }
+  .pb-stage:has(> .pb-ladder) > .pb-svg {
+    grid-column: 1;
+    grid-row: auto;
+    height: auto;
+    aspect-ratio: var(--pb-ratio);
+    max-height: 78vh;
+  }
+}

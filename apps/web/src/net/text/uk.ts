@@ -2,11 +2,13 @@ import { Option } from 'effect'
 
 import { type AcmeProblem } from '../message'
 import {
+  type Fault,
   type FirewallScope,
   type Medium,
   type Security,
   type WifiBand,
 } from '../model'
+import { faultPlace } from '../report'
 import { type NetTexts, type TextContext } from './types'
 
 const band = (value: WifiBand): string =>
@@ -58,6 +60,78 @@ const acme: Readonly<Record<AcmeProblem, string>> = {
   refused: 'port 80 закритий',
   timeout: 'port 80 не відповідає',
   'wrong-server': 'за цією назвою відповідає інший server',
+}
+
+// Ответ ассистента на неверный диагноз в отчёте (урок 15): выбранная
+// ступенька ниже настоящей поломки — она цела; выше — до неё конверт не
+// дошёл; та же — поломка соседняя.
+
+type Below = (ran: boolean, host: string, port: number) => string
+
+const belowFault: Readonly<Record<Fault, Below>> = {
+  link: ran =>
+    ran
+      ? 'IP address є, і router відповідає: зв’язок у порядку.'
+      : 'Перевірте спершу: ip a — чи є IP address, потім ping до router.',
+  gateway: ran =>
+    ran
+      ? 'Конверти виходять із дому: ping 1.1.1.1 відповідає.'
+      : 'Перевірте: ping 1.1.1.1 — чи виходить конверт із дому.',
+  dns: (ran, host) =>
+    ran
+      ? 'Ім’я знаходиться: DNS server повернув адресу.'
+      : `Перевірте: nslookup ${host}.`,
+  firewall: (ran, host, port) =>
+    ran
+      ? 'Двері відчиняються: з’єднання встановлено.'
+      : `Перевірте: nc -zv ${host} ${port}.`,
+  loopback: ran =>
+    ran
+      ? 'З’єднання відкрилося: сервер слухає не тільки себе.'
+      : 'Перевірте на сервері: ss -ltn.',
+  cert: ran =>
+    ran
+      ? 'Certificate підходить до імені.'
+      : 'Перевірте: curl -v покаже, що сервер показує під час входу.',
+}
+
+const aboveFault: Readonly<Record<Fault, string>> = {
+  link: 'Зв’язок і адреса тут ні до чого: біда в іншому місці.',
+  gateway:
+    'Конверт не йде далі дому, але причина нижче: чи є в пристрою IP address?',
+  dns: 'DNS server і справді не відповів. Але чи дійшов до нього конверт? DNS server живе зовні.',
+  firewall: 'До дверей справа не дійшла: конверт не дістався до сервера.',
+  loopback: 'До дверей справа не дійшла: конверт не дістався до сервера.',
+  cert: 'До certificate справа не дійшла: з’єднання навіть не відкрилося.',
+}
+
+const sameFault: Readonly<Partial<Record<Fault, string>>> = {
+  firewall:
+    'Відмова прийшла одразу: конверт дійшов, і йому відповіли «тут нікого». Firewall зазвичай мовчить. Подивіться, на якій адресі слухає сервер: ss -ltn.',
+  loopback:
+    'Тиша, а не відмова: якби port ніхто не слухав, прийшов би швидкий Connection refused. Перевірте на сервері ss -ltn і sudo ufw status.',
+}
+
+const wrongFault = ({
+  picked,
+  expected,
+  ran,
+  host,
+  port,
+}: Readonly<{
+  picked: Fault
+  expected: Fault
+  ran: boolean
+  host: string
+  port: number
+}>): string => {
+  const place = faultPlace(picked, expected)
+  return place === 'below'
+    ? belowFault[picked](ran, host, port)
+    : place === 'above'
+      ? `${aboveFault[picked]}${ran ? ' Сходинка нижче вже червона: шукайте там.' : ' Перевірте сходинку нижче.'}`
+      : (sameFault[picked] ??
+        'Сходинка та сама, але поломка інша. Перечитайте останні рядки виводу.')
 }
 
 export const uk: NetTexts = {
@@ -323,6 +397,25 @@ export const uk: NetTexts = {
   GoalNoDevice: ({ id }, c) => `На дошці ще немає ${of(id, c)}.`,
   SshLockedOut: ({ device }, c) =>
     `Ви закрили вхід по ssh самі собі: ${q(device, c)} більше вас не пускає.`,
+  ReportMissing: () =>
+    'Звіт ще не надіслано: виберіть рядок-доказ і де поломка.',
+  ReportAfterFix: () =>
+    'Полагодили — чудово. Тепер опишіть, що було зламано: звіт — половина задачі.',
+  ReportNoEvidence: () =>
+    'Додайте доказ: натисніть рядок виводу, який показує поломку.',
+  ReportWrongFault: wrongFault,
+  ReportTrap: wrongFault,
+  ReportEvidenceOk: () =>
+    'Цей рядок — добра відповідь: тут усе працює. Потрібен рядок, де видно біду.',
+  ReportEvidenceSymptom: () =>
+    'Це симптом, а не причина: рядок повторює те, що написав браузер. Потрібен рядок, який показує, чому так.',
+  ReportEvidenceAbove: () =>
+    'Цей рядок показує, де біду помітили, а не де вона сталася. Потрібен рядок зі сходинки нижче.',
+  ReportEvidenceOther: () =>
+    'Цей рядок про інше. Натисніть рядок, який доводить ваш діагноз.',
+  ReportAccepted: () =>
+    'Звіт точний: асистент знає, що лагодити. Натисніть «Застосувати».',
+  ReportConfirmed: () => 'Звіт точний, і все вже працює: ви полагодили самі.',
 
   UnknownCommand: ({ command, available }) =>
     `Команди ${command} тут немає. Спробуйте: ${available.join(', ')}.`,

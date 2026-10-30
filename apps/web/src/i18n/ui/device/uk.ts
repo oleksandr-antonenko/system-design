@@ -141,4 +141,29 @@ export const deviceUk: DeviceStrings = {
   interrupt: 'Зупинити програму (Ctrl+C)',
   consoleNote:
     'Вхід через ssh закрито. Це консоль хостингу: вона працює напряму, без ssh.',
+
+  reportTab: 'Звіт для ШІ',
+  reportTitle: 'Звіт для ШІ-асистента',
+  reportWhat: 'Що не працює',
+  reportSymptom: (device, url) => `${device} не відкриває ${url}`,
+  reportFixedNow: 'Зараз уже відкривається.',
+  reportEvidence: 'Доказ',
+  reportEvidenceHint:
+    'Натисніть рядок виводу, який доводить поломку, — не більше двох рядків.',
+  reportNoOutput:
+    'Тут з’явиться вивід команд із термінала. Запустіть перевірки знизу вгору.',
+  reportPicked: count => `Вибрано рядків: ${count} з 2`,
+  reportWhere: 'Де поломка',
+  reportFaults: {
+    link: 'Немає зв’язку чи адреси',
+    gateway: 'Gateway: конверт не виходить із дому',
+    dns: 'DNS: довідкова не перетворює ім’я на адресу',
+    firewall: 'Firewall не пускає на port',
+    loopback: 'Сервер слухає тільки себе (127.0.0.1)',
+    cert: 'Certificate виписано на інше ім’я',
+  },
+  reportSend: 'Надіслати звіт',
+  reportReply: 'Відповідь асистента',
+  reportApply: 'Застосувати',
+  reportApplied: 'Виправлення застосовано.',
 }

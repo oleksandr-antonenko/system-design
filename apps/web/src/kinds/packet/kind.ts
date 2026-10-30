@@ -22,6 +22,7 @@ import {
 import type { PacketStage } from './dsl'
 import * as PacketInstruments from './instruments'
 import { panelSurfaces } from './surfaces/panel/surfaces'
+import { reportSurface } from './surfaces/report/surface'
 import { browserPicture } from './surfaces/screen/browser'
 import { browserSurface, wifiSurface } from './surfaces/screen/surface'
 import { terminalSurface } from './surfaces/terminal/surface'
@@ -174,6 +175,7 @@ export const packet: BoardKind<PacketTypes> = {
     annotationKey: item =>
       item._tag === 'Annotate' ? Option.some(item.key) : Option.none(),
     describe: item => `${item._tag} ${fieldsText(item)}`,
+    persists: item => item._tag === 'Fog' || item._tag === 'Ladder',
   },
   targetName,
   describeOp: opText,
@@ -218,7 +220,13 @@ export const packet: BoardKind<PacketTypes> = {
     view: PacketView.view,
     instruments: PacketInstruments.instruments,
   },
-  surfaces: [wifiSurface, browserSurface, terminalSurface, ...panelSurfaces],
+  surfaces: [
+    wifiSurface,
+    browserSurface,
+    terminalSurface,
+    ...panelSurfaces,
+    reportSurface,
+  ],
 
   quizzes: [
     'PickDevice',
