@@ -9,6 +9,7 @@ data/
 *.tsbuildinfo
 .DS_Store
 .playwright-mcp/
+.shots/
 coverage/
 .data/
 repos/
