@@ -126,7 +126,6 @@ describe('server terminal', () => {
       expect(
         text('Last login: Thu Oct 29 21:14:03 2026 from 203.0.113.7'),
       ).toExist(),
-      expect(role('button', { name: 'sudo ufw status' })).toExist(),
       type(role('textbox', { name: 'Command' }), 'sudo ufw enable'),
       submit(role('form', { name: 'Command' })),
       expect(text('client_loop: send disconnect: Broken pipe')).toExist(),

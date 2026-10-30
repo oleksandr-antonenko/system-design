@@ -12,9 +12,6 @@ import {
 import { describe, expect, test } from 'vitest'
 
 import * as Board from '../board/board'
-import shipIt, {
-  serverTemplate,
-} from '../courses/networks/lessons/16-ship-it/lesson'
 import loadBalancer from '../courses/system-design/lessons/03-load-balancer/lesson'
 import { type BoardOp, findNode } from '../domain/board'
 import { simulate } from '../domain/simulate'
@@ -22,10 +19,12 @@ import * as FlowBoard from '../kinds/flow/board'
 import { addNode, connect, disconnect, flow } from '../kinds/flow/dsl'
 import { outcomeOf } from '../kinds/flow/kind'
 import * as PacketBoard from '../kinds/packet/board'
-import { packet } from '../kinds/packet/dsl'
+import { packet, place } from '../kinds/packet/dsl'
 import { BoardMessage, KindOp } from '../kinds/state'
-import type { FlowTypes } from '../kinds/types'
-import type { LessonDefinition } from './dsl'
+import type { FlowTypes, PacketTypes } from '../kinds/types'
+import { add, cable, host, internet, router, tcp, wifi } from '../net/build'
+import { Goal } from '../net/goals'
+import { type LessonDefinition, defineLesson } from './dsl'
 import * as Player from './player'
 
 const lesson: LessonDefinition<FlowTypes> = loadBalancer
@@ -307,23 +306,70 @@ describe('board editing', () => {
 })
 
 describe('journal', () => {
-  test('a move of several operations is one entry: one undo takes it all back, one redo returns it', () => {
-    const ship: Player.Model = {
-      ...Player.init('networks', shipIt, 0),
-      quizzes: {
-        'launch-checklist': {
-          picked: 'draft:2+draft:6+draft:7',
-          isCorrect: true,
+  /** Заготовка из нескольких операций: сервер в интернете и его кабель. */
+  const serverTemplate = [
+    add(
+      host('vps', 'server', 700, 300, {
+        address: '198.51.100.20/24',
+        listeners: [tcp(22)],
+      }),
+    ),
+    cable('internet', 'vps'),
+  ]
+
+  const placing: LessonDefinition<PacketTypes> = defineLesson(packet, {
+    slug: 'place-template',
+    steps: [
+      {
+        id: 'home',
+        ops: [
+          add(
+            router('router', 300, 300, {
+              lan: '192.168.1.1/24',
+              wan: '203.0.113.7',
+              wifi: wifi('Home', 'password1'),
+            }),
+          ),
+          add(internet('internet', 500, 300)),
+          cable('router', 'internet'),
+        ],
+        stage: [],
+      },
+      {
+        id: 'ship',
+        ops: [],
+        stage: [place(serverTemplate)],
+        task: {
+          id: 'ship',
+          palette: [],
+          surfaces: ['board'],
+          goals: [
+            {
+              id: 'ssh',
+              goal: Goal.Listening({
+                device: 'vps',
+                proto: 'tcp',
+                port: 22,
+                maybeBind: Option.none(),
+              }),
+            },
+          ],
+          solution: serverTemplate,
         },
       },
-      step: 2,
-    }
-    const update = Player.updateWith(shipIt)
+    ],
+  })
+
+  test('a move of several operations is one entry: one undo takes it all back, one redo returns it', () => {
+    const update = Player.updateWith(placing)
     const logOf = (playerModel: Player.Model) =>
       Player.taskStateOf(playerModel, 'ship')
     story(
       update,
-      given(ship),
+      given(Player.init('networks', placing, 1)),
+      model(start => {
+        expect(start.step).toBe(1)
+      }),
       message(
         Player.Message.GotBoardMessage({
           message: packet.board.message.wrap(

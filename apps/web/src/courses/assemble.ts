@@ -479,6 +479,31 @@ export const assembleCatalog = (sources: CatalogSources): AssembledCatalog => {
   }
 }
 
+// MODULES
+
+export type CourseModule = Readonly<{
+  module: string
+  lessons: Array.NonEmptyReadonlyArray<Lesson>
+}>
+
+/** Модули курса с их уроками в порядке курса. Модуль без уроков не
+    показывается: его уроков в этой сборке нет. */
+export const courseModules = (course: Course): ReadonlyArray<CourseModule> =>
+  Array.getSomes(
+    Array.map(course.definition.modules, module =>
+      Option.map(
+        Array.match(
+          Array.filter(course.lessons, lesson => lesson.meta.module === module),
+          {
+            onEmpty: () => Option.none(),
+            onNonEmpty: lessons => Option.some(lessons),
+          },
+        ),
+        lessons => ({ module, lessons }),
+      ),
+    ),
+  )
+
 // TEXT CHOICE
 
 export type TextChoice<Text> = Readonly<{

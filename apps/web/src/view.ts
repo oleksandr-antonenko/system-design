@@ -1,9 +1,10 @@
-import { Array, Option, pipe } from 'effect'
+import { Array, Option } from 'effect'
 import type { Document, Html, HtmlBuilder } from 'foldkit/html'
 
 import {
   type Course,
   type Lesson,
+  courseModules,
   courseTextFor,
   lessonTextFor,
 } from './courses/assemble'
@@ -327,7 +328,7 @@ const courseMapView = (
         ],
         [choice.text.tagline],
       ),
-      ...Array.map(course.definition.modules, module =>
+      ...Array.map(courseModules(course), ({ module, lessons }) =>
         h.keyed('section')(
           module,
           [h.Class('mb-10')],
@@ -343,10 +344,8 @@ const courseMapView = (
             ),
             h.ol(
               [h.Class('m-0 list-none p-0')],
-              pipe(
-                course.lessons,
-                Array.filter(lesson => lesson.meta.module === module),
-                Array.map(lesson => lessonCardView(lesson, locale, ui, h)),
+              Array.map(lessons, lesson =>
+                lessonCardView(lesson, locale, ui, h),
               ),
             ),
           ],

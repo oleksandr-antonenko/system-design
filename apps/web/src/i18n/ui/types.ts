@@ -97,6 +97,9 @@ export type UiStrings = Readonly<{
     journalNote: string
     finishedTitle: string
     finishedBody: string
+    nextLesson: (title: string) => string
+    courseFinishedTitle: string
+    courseFinishedBody: string
     answerFirst: string
     moreBadge: string
     askAiTitle: string

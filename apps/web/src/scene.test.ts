@@ -23,10 +23,11 @@ import { describe, test } from 'vitest'
 
 import * as Board from './board/board'
 import { BoardPointer } from './board/pointer'
-import { lessonTextFor } from './courses/assemble'
-import { lessonsOf } from './courses/registry'
+import { courseTextFor, lessonTextFor } from './courses/assemble'
+import { findCourse, lessonsOf } from './courses/registry'
 import type { BoardOp } from './domain/board'
 import type { Locale } from './i18n/locale'
+import { uiFor } from './i18n/ui'
 import { addNode, connect } from './kinds/flow/dsl'
 import { KindOp } from './kinds/state'
 import * as Player from './lesson/player'
@@ -148,7 +149,12 @@ describe('catalogue', () => {
         within(role('main'), role('link', { name: 'Tinklai vaibkoderiams' })),
       ).toHaveAttr('href', '/lt/networks/'),
       expect(within(role('main'), text('13 pamokų'))).toExist(),
-      expect(within(role('main'), text('16 pamokų'))).toExist(),
+      expect(
+        within(
+          role('main'),
+          text(uiFor('lt').home.lessonCount(lessonsOf('networks').length)),
+        ),
+      ).toExist(),
       expectAll(all.text('Netrukus')).toHaveCount(0),
     )
   })
@@ -184,11 +190,12 @@ describe('course map', () => {
     )
   })
 
-  test('the networking course shows 16 lessons in three modules; only available ones are links', () => {
-    const available = Array.filter(
-      lessonsOf('networks'),
-      lesson => lesson.meta.available,
-    )
+  test('the networking course shows its lessons under their modules; only available ones are links', () => {
+    const lessons = lessonsOf('networks')
+    const available = Array.filter(lessons, lesson => lesson.meta.available)
+    const course = Option.getOrThrow(findCourse('networks'))
+    const moduleTitle = (module: string) =>
+      courseTextFor(course, 'ru').text.modules[module] ?? module
     scene(
       { update, view },
       given(at(AppRoute.Course({ locale: 'ru', course: 'networks' }), 'ru')),
@@ -197,10 +204,16 @@ describe('course map', () => {
       ).toExist(),
       expect(role('heading', { name: 'Как устроена домашняя сеть' })).toExist(),
       expect(role('heading', { name: 'Интернет' })).toExist(),
-      expect(role('heading', { name: 'Сеть разработчика' })).toExist(),
-      expectAll(all.selector('main li')).toHaveCount(16),
+      ...Array.map(course.definition.modules, module =>
+        Array.some(lessons, lesson => lesson.meta.module === module)
+          ? expect(role('heading', { name: moduleTitle(module) })).toExist()
+          : expect(role('heading', { name: moduleTitle(module) })).toBeAbsent(),
+      ),
+      expectAll(all.selector('main li')).toHaveCount(lessons.length),
       expectAll(all.selector('main a')).toHaveCount(available.length),
-      expectAll(all.text('Скоро')).toHaveCount(16 - available.length),
+      expectAll(all.text('Скоро')).toHaveCount(
+        lessons.length - available.length,
+      ),
       expect(role('link', { name: 'Ports: квартиры в одном доме' })).toHaveAttr(
         'href',
         '/ru/networks/lessons/ports-and-localhost',

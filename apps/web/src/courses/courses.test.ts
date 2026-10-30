@@ -5,6 +5,7 @@ import { type Locale, locales } from '../i18n/locale'
 import {
   type CatalogSources,
   assembleCatalog,
+  courseModules,
   courseTextFor,
   lessonTextFor,
 } from './assemble'
@@ -56,9 +57,9 @@ describe('course registry', () => {
     })
   })
 
-  test('Networking shows the 16 lessons of the programme; available ones have a script', () => {
+  test('Networking opens with lessons 1–11 in order; available ones have a script', () => {
     const lessons = lessonsOf('networks')
-    expect(lessons.map(lesson => lesson.meta.slug)).toEqual([
+    expect(Array.take(lessons, 11).map(lesson => lesson.meta.slug)).toEqual([
       'phone-online',
       'addresses',
       'site-names',
@@ -70,18 +71,20 @@ describe('course registry', () => {
       'nat',
       'dns-records',
       'https',
-      'firewall',
-      'vpn',
-      'dev-networks',
-      'troubleshooting',
-      'ship-it',
     ])
-    expect(lessons.map(lesson => lesson.meta.order)).toEqual(Array.range(1, 16))
-    expect(lessons.map(lesson => lesson.meta.module)).toEqual([
+    expect(lessons.map(lesson => lesson.meta.order)).toEqual(
+      Array.range(1, lessons.length),
+    )
+    expect(Array.take(lessons, 11).map(lesson => lesson.meta.module)).toEqual([
       ...Array.replicate('local', 7),
       ...Array.replicate('internet', 4),
-      ...Array.replicate('developer', 5),
     ])
+    expect(
+      Array.drop(lessons, 11).every(
+        lesson => lesson.meta.module === 'developer',
+      ),
+      'lessons after the eleventh belong to the developer module',
+    ).toBe(true)
     expect(
       lessons
         .filter(lesson => lesson.meta.available)
@@ -128,11 +131,25 @@ describe('course registry', () => {
 })
 
 describe('unlocks in the real courses (plan 3.4)', () => {
-  test('every Networking feature is unlocked by exactly one lesson', () => {
-    const unlocked = lessonsOf('networks').flatMap(
-      lesson => lesson.meta.unlocks,
-    )
-    expect(sorted(unlocked)).toEqual(sorted(UiFeature.literals))
+  test('each Networking lesson opens the next run of features in the list', () => {
+    const runs = Array.reduce(
+      lessonsOf('networks'),
+      { from: 0, runs: Array.empty<readonly [string, string]>() },
+      (state, lesson) => {
+        const to = state.from + lesson.meta.unlocks.length
+        return {
+          from: to,
+          runs: [
+            ...state.runs,
+            [
+              sorted(lesson.meta.unlocks).join(' '),
+              sorted(UiFeature.literals.slice(state.from, to)).join(' '),
+            ] as const,
+          ],
+        }
+      },
+    ).runs
+    runs.forEach(([opened, listed]) => expect(opened).toBe(listed))
   })
 
   test('ping opens in lesson 4 and stays open afterwards', () => {
@@ -159,8 +176,13 @@ describe('unlocks in the real courses (plan 3.4)', () => {
     expect(isSurfaceOpen(unlockedFeatures(networks, 5), 'router')).toBe(true)
   })
 
-  test('the last lesson has everything open', () => {
-    expect(unlockedFeatures(networks, 16)).toEqual(UiFeature.literals)
+  test('the last lesson has everything the lessons open', () => {
+    const lessons = lessonsOf('networks')
+    const opened = lessons.flatMap(lesson => lesson.meta.unlocks)
+    const last = Option.getOrThrow(Array.last(lessons))
+    expect(unlockedFeatures(networks, last.meta.order)).toEqual(
+      UiFeature.literals.slice(0, opened.length),
+    )
   })
 
   test('System Design unlocks nothing', () => {
@@ -389,6 +411,32 @@ describe('assembleCatalog', () => {
       'duplicate course order "2" in lessons, twin',
     ])
     expect(assembled.courses).toEqual([])
+  })
+
+  test('a module without lessons is left out of the course outline', () => {
+    const assembled = assembleCatalog(
+      demo(
+        {
+          './demo/lessons/01-intro/meta.ts': meta({ module: 'advanced' }),
+          './demo/lessons/02-next/meta.ts': meta({
+            slug: 'next',
+            order: 2,
+            module: 'advanced',
+          }),
+        },
+        { ...lessonTexts('01-intro'), ...lessonTexts('02-next') },
+      ),
+    )
+
+    expect(assembled.problems).toEqual([])
+    expect(
+      assembled.courses.flatMap(course =>
+        courseModules(course).map(
+          ({ module, lessons }) =>
+            `${module}: ${lessons.map(lesson => lesson.meta.slug).join(', ')}`,
+        ),
+      ),
+    ).toEqual(['advanced: intro, next'])
   })
 
   test('courses are ordered by their place in the catalogue', () => {

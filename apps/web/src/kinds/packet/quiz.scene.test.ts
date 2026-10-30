@@ -1,10 +1,10 @@
-import { Option } from 'effect'
 import type { HtmlBuilder } from 'foldkit/html'
 import { click, expect, given, role, scene, text } from 'foldkit/scene'
 import { describe, test } from 'vitest'
 
 import type { Lesson } from '../../courses/assemble'
-import { findLesson } from '../../courses/registry'
+import { defineLessonMeta } from '../../courses/model'
+import networks from '../../courses/networks/course'
 import {
   type LessonDefinition,
   type LessonStep,
@@ -31,7 +31,7 @@ import { expand, openEnvelope, packet, pauseAt, play } from './dsl'
 
 // Виды квизов на доске сетей (план 3.3): кандидаты на доске, клик и
 // клавиатура, «Готово» у квиза с несколькими ответами, чипы на места.
-// Урок для теста берёт slug урока 16: к нему открыт весь интерфейс.
+// Урока-стенда нет в программе курса, поэтому ему открыт весь интерфейс.
 
 const browse = Intent.Browse({ from: 'laptop', url: 'http://198.51.100.10/' })
 
@@ -77,7 +77,7 @@ type QuizCase = Readonly<{
 
 const lessonWith = (quiz: QuizCase): LessonDefinition<PacketTypes> =>
   defineLesson(packet, {
-    slug: 'ship-it',
+    slug: 'quiz-kinds',
     steps: [
       {
         id: 'quiz',
@@ -95,14 +95,20 @@ const lessonWith = (quiz: QuizCase): LessonDefinition<PacketTypes> =>
     ],
   })
 
-const meta = Option.getOrThrow(findLesson('networks', 'ship-it')).meta
+const meta = defineLessonMeta(networks, {
+  slug: 'quiz-kinds',
+  module: 'developer',
+  order: 99,
+  available: true,
+  locales: ['en'],
+})
 
 const entryWith = (
   options: Readonly<Record<string, string>> = {},
   slots: Readonly<Record<string, string>> = {},
 ): Lesson => ({
   course: 'networks',
-  folder: '16-ship-it',
+  folder: '99-quiz-kinds',
   meta,
   texts: [
     {

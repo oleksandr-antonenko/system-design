@@ -25,25 +25,27 @@ pnpm install
 pnpm dev
 ```
 
-Open <http://localhost:5173>. No `.env` and no external services are needed for local development.
+Open <http://localhost:5173>. No `.env` and no external services are needed.
+
+The app is a static single-page site. `pnpm build` writes it to `apps/web/dist`; any static host can serve that folder, as long as it answers unknown paths with `index.html` so that links to lessons open directly.
 
 ## Commands
 
 | Command | What it does |
 |---|---|
-| `pnpm dev` | Web app on :5173 (with `/api` proxied) and the server on :3620, both reloading on change |
-| `pnpm check` | Type check, lint and tests for all packages |
+| `pnpm dev` | Web app on :5173, reloading on change |
+| `pnpm check` | Type check, lint and tests |
 | `pnpm test` | Tests only |
-| `pnpm build` | Production build of the web app, then the server |
-| `pnpm start` | Serve the production build (`PORT`, `HOST`, `WEB_DIST`, `APP_VERSION`) |
+| `pnpm build` | Production build into `apps/web/dist` |
+| `pnpm preview` | Serve the production build locally on :4173 |
 
 ## Project layout
 
 ```
-apps/web      Foldkit app: routes, views, i18n, lesson modules
-apps/server   Effect HTTP server: serves the web build and /api
-docs/         Architecture plans, roadmap, mockup
+apps/web      Foldkit app: routes, views, i18n, courses and lesson modules
+docs/         Architecture plans, roadmap, mockups
 openspec/     Specs and planned changes (OpenSpec)
+patches/      pnpm patches for dependencies
 ```
 
 ## Contributing

@@ -13,7 +13,7 @@
 **Non-Goals:**
 
 - `NextHop`, `PickLinks`, `PickLayer`, `PlaceChips`, `SpotFault`, картинки вариантов (экраны браузера) — `add-network-board`.
-- Запись «с первой попытки» в аккаунт — `add-learning-progress`.
+- Сохранение результата «с первой попытки» между сессиями.
 
 ## Decisions
 
