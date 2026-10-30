@@ -19,6 +19,26 @@ export type ComponentKind = typeof ComponentKind.Type
 export const componentKinds: ReadonlyArray<ComponentKind> =
   ComponentKind.literals
 
+/**
+ * Подпись блока на доске, в палитре и в обратной связи. Не переводится: в
+ * любом языке интерфейса элементы системы называются по-английски, как в
+ * документации и консолях. Родное объяснение лежит в словаре (`kindHint`).
+ */
+export const componentName: Readonly<Record<ComponentKind, string>> = {
+  client: 'Users',
+  cdn: 'CDN',
+  limiter: 'Rate limiter',
+  lb: 'Load balancer',
+  server: 'Server',
+  cache: 'Cache',
+  queue: 'Queue',
+  events: 'Event bus',
+  worker: 'Worker',
+  db: 'Database',
+  replica: 'Read replica',
+  search: 'Search index',
+}
+
 export const Region = Schema.Literals(['eu', 'us', 'asia'])
 export type Region = typeof Region.Type
 

@@ -1,11 +1,11 @@
 import { Array } from 'effect'
 
-import type { ComponentKind } from '../../domain/catalog'
+import { type ComponentKind, componentName } from '../../domain/catalog'
 import { formatNumber } from '../format'
 import { plural } from '../plural'
 import { deviceLt } from './device/lt'
-import { panelLt } from './panel/lt'
 import { packetBoardLt } from './packetBoard/lt'
+import { panelLt } from './panel/lt'
 import type { UiStrings } from './types'
 
 const inLanguage: UiStrings['inLanguage'] = {
@@ -15,19 +15,22 @@ const inLanguage: UiStrings['inLanguage'] = {
   lt: 'lietuvių kalba',
 }
 
-const kindName: UiStrings['kindName'] = {
-  client: 'Naudotojai',
-  cdn: 'CDN',
-  limiter: 'Ribotuvas',
-  lb: 'Balansuotuvas',
-  server: 'Serveris',
-  cache: 'Podėlis',
-  queue: 'Eilė',
-  events: 'Įvykių magistralė',
-  worker: 'Vykdytojas',
-  db: 'Duomenų bazė',
-  replica: 'Bazės replika',
-  search: 'Paieškos indeksas',
+const kindHint: UiStrings['kindHint'] = {
+  client: 'Naudotojai: žmonės ir programos, siunčiantys užklausas',
+  cdn: 'Turinio pristatymo tinklas: pateikia statinius failus iš serverių, esančių arti naudotojo',
+  limiter: 'Užklausų dažnio ribotuvas: atmeta užklausas, viršijančias limitą',
+  lb: 'Apkrovos balansavimo priemonė: paskirsto užklausas serveriams',
+  server: 'Programos serveris: vykdo kodą ir atsako į užklausas',
+  cache:
+    'Podėlis: laiko dažnus atsakymus atmintyje ir mažina duomenų bazės apkrovą',
+  queue: 'Pranešimų eilė: kaupia užduotis, kol jas paima vykdytojai',
+  events:
+    'Įvykių magistralė: pristato kiekvieną įvykį visiems prenumeratoriams',
+  worker: 'Foninis vykdytojas: atlieka užduotis iš eilės',
+  db: 'Duomenų bazė: saugo sistemos duomenis',
+  replica:
+    'Skaitymo replika: duomenų bazės kopija, atsakanti į skaitymo užklausas',
+  search: 'Paieškos indeksas: greitai randa įrašus pagal tekstą',
 }
 
 const regionName: UiStrings['regionName'] = {
@@ -41,7 +44,7 @@ const percent = (ratio: number) => `${n(ratio * 100)} %`
 const perHour = (dollars: number) =>
   `${dollars.toFixed(2).replace('.', ',')} $/val.`
 const kindList = (kinds: ReadonlyArray<ComponentKind>) =>
-  kinds.map(kind => kindName[kind]).join(', ')
+  kinds.map(kind => componentName[kind]).join(', ')
 const idList = (lead: string, ids: ReadonlyArray<string>) =>
   Array.isReadonlyArrayNonEmpty(ids) ? `${lead}${ids.join(', ')}.` : ''
 
@@ -51,7 +54,7 @@ export const lt = {
   courseSwitcherLabel: 'Kursas',
   languageSwitcherLabel: 'Kalba',
   inLanguage,
-  kindName,
+  kindHint,
   regionName,
   home: {
     heading: 'Kurso programa',
@@ -96,7 +99,7 @@ export const lt = {
     rejecting: rps => `atmesta ${n(rps)}/s`,
     zoneDown: region => `${regionName[region]} · regionas neveikia`,
     edgeFlow: rps => `${n(rps)} rps`,
-    ghost: kind => `čia: ${kindName[kind]}`,
+    ghost: kind => `čia: ${componentName[kind]}`,
     modePick: 'Klausimas · pasirinkite lentoje',
     loadHidden: 'apkrova paslėpta iki atsakymo',
   },
@@ -104,9 +107,9 @@ export const lt = {
     load: 'Apkrova',
     errors: 'Klaidos',
     p95: 'p95 atsakas',
-    database: 'Užklausos į bazę',
+    database: 'Database apkrova',
     rejected: 'Atmesta',
-    backlog: 'Eilė auga',
+    backlog: 'Queue auga',
     cost: 'Kaina',
     rps: value => `${n(value)} rps`,
     growth: value => `+${n(value)} rps`,
@@ -165,7 +168,7 @@ export const lt = {
     showSolution: 'Rodyti sprendimą',
     resultErrors: 'Klaidos',
     resultP95: 'p95 atsakas',
-    resultServers: 'Serverių apkrova',
+    resultServers: 'Server apkrova',
     resultCost: 'Kaina',
     continueLesson: 'Toliau →',
     surfaces: 'Kur spręsti užduotį',
@@ -201,33 +204,33 @@ export const lt = {
     ConnectSelf: () => 'Bloko negalima sujungti su pačiu savimi.',
     ConnectDuplicate: () => 'Toks ryšys jau yra.',
     ConnectIntoClients: () =>
-      'Į naudotojus užklausos neateina: jie yra srauto šaltinis.',
+      'Į bloką „Users“ užklausos neateina: jis yra srauto šaltinis.',
     ConnectClientsToDatabase: () =>
-      'Naudotojai nesikreipia į bazę tiesiogiai. Tarp jų turi būti serveris.',
+      '„Users“ nesikreipia į „Database“ tiesiogiai. Tarp jų turi būti „Server“.',
     ConnectServerToServer: () =>
-      'Serveriai neperduoda užklausų vieni kitiems. Apkrovą paskirsto balansuotuvas.',
+      'Blokai „Server“ neperduoda užklausų vieni kitiems. Apkrovą paskirsto „Load balancer“.',
     ConnectBalancerToDatabase: () =>
-      'Balansuotuvas skirsto užklausas serveriams, o ne bazei.',
+      '„Load balancer“ skirsto užklausas blokams „Server“, o ne „Database“.',
     ConnectWrongDirection: () =>
-      'Užklausos eina iš kairės į dešinę: naudotojai, balansuotuvas, serveriai, bazė.',
+      'Užklausos eina iš kairės į dešinę: Users, Load balancer, Server, Database.',
     NodeIsPartOfTask: ({ id }) =>
       `Blokas ${id} yra užduoties sąlygos dalis, jo ištrinti negalima.`,
     UnknownNode: ({ id }) => `Bloko ${id} lentoje nėra.`,
     DuplicateNodeId: ({ id }) => `Blokas pavadinimu ${id} jau yra.`,
     GoalMissingKind: ({ kind }) =>
-      `Lentoje dar nėra bloko „${kindName[kind]}“. Jis yra paletėje kairėje.`,
+      `Lentoje dar nėra bloko „${componentName[kind]}“. Jis yra paletėje kairėje.`,
     GoalTooFewTargets: ({ from, to, have, need }) =>
-      `Ryšių nuo „${kindName[from]}“ iki blokų „${kindName[to]}“: ${n(have)} iš ${n(need)}. Nutieskite trūkstamus.`,
+      `Ryšių nuo „${componentName[from]}“ iki blokų „${componentName[to]}“: ${n(have)} iš ${n(need)}. Nutieskite trūkstamus.`,
     GoalDirectPath: ({ from, via, targets }) =>
-      `„${kindName[from]}“ kreipiasi į ${targets.join(', ')} tiesiogiai, aplenkdami bloką „${kindName[via]}“. Spustelėkite paryškintą ryšį ir ištrinkite jį.`,
+      `„${componentName[from]}“ kreipiasi į ${targets.join(', ')} tiesiogiai, aplenkdami bloką „${componentName[via]}“. Spustelėkite paryškintą ryšį ir ištrinkite jį.`,
     GoalNotConnected: ({ from, via }) =>
-      `Nėra ryšio nuo „${kindName[from]}“ iki bloko „${kindName[via]}“: užklausoms nėra kur eiti.`,
+      `Nėra ryšio nuo „${componentName[from]}“ iki bloko „${componentName[via]}“: užklausoms nėra kur eiti.`,
     GoalTooManyErrors: ({ load, errorRate, overloaded }) =>
       `Esant ${n(load)} rps prarandama ${percent(errorRate)} užklausų. Užklausas praranda: ${overloaded.join(', ')}.`,
     ConnectFromSink: ({ from }) =>
-      `Bloke „${kindName[from]}“ užklausos kelias baigiasi: toliau jis nieko neperduoda.`,
+      `Bloke „${componentName[from]}“ užklausos kelias baigiasi: toliau jis nieko neperduoda.`,
     ConnectNotAllowed: ({ from, to, allowed }) =>
-      `„${kindName[from]}“ neperduoda užklausų blokui „${kindName[to]}“. Galimi ryšiai: ${kindList(allowed)}.`,
+      `„${componentName[from]}“ neperduoda užklausų blokui „${componentName[to]}“. Galimi ryšiai: ${kindList(allowed)}.`,
     InvalidCapacity: ({ id }) =>
       `Blokui ${id} reikia pralaidumo, didesnio už nulį.`,
     RegionHasNoBlocks: ({ region }) =>
@@ -235,13 +238,13 @@ export const lt = {
     GoalSlowResponse: ({ load, p95, max, hottest }) =>
       `Esant ${n(load)} rps, p95 yra ${n(p95)} ms – daugiau nei riba ${n(max)} ms.${idList(' Labiausiai apkrautas blokas: ', hottest)}`,
     GoalOverUtilized: ({ kind, load, utilization, max, nodes }) =>
-      `Esant ${n(load)} rps, blokai „${kindName[kind]}“ apkrauti iki ${percent(utilization)} – daugiau nei riba ${percent(max)}: ${nodes.join(', ')}.`,
+      `Esant ${n(load)} rps, blokai „${componentName[kind]}“ apkrauti iki ${percent(utilization)} – daugiau nei riba ${percent(max)}: ${nodes.join(', ')}.`,
     GoalBacklogGrowing: ({ load, backlog, max, nodes }) =>
-      `Esant ${n(load)} rps, eilės auga ${n(backlog)} rps, leidžiama ${n(max)} rps.${idList(' Nespėja: ', nodes)}`,
+      `Esant ${n(load)} rps, queues auga ${n(backlog)} rps, leidžiama ${n(max)} rps.${idList(' Nespėja: ', nodes)}`,
     GoalTooExpensive: ({ cost, max }) =>
       `Sistema kainuoja ${perHour(cost)} – daugiau nei biudžetas ${perHour(max)}.`,
     GoalFailureNotSurvived: ({ id, kind, load, errorRate, max }) =>
-      `Sugedus ${id} („${kindName[kind]}“) ir esant ${n(load)} rps, prarandama ${percent(errorRate)} užklausų, leidžiama ne daugiau kaip ${percent(max)}.`,
+      `Sugedus ${id} („${componentName[kind]}“) ir esant ${n(load)} rps, prarandama ${percent(errorRate)} užklausų, leidžiama ne daugiau kaip ${percent(max)}.`,
     GoalRegionFailureNotSurvived: ({
       region,
       load,

@@ -13,6 +13,7 @@ import {
 import {
   type ComponentKind,
   catalog,
+  componentName,
   hasFiniteCapacity,
   isSink,
 } from '../domain/catalog'
@@ -247,7 +248,8 @@ const nodeView = (
             ),
           ]
         : [h.Role('img')]),
-      h.AriaLabel(`${ui.kindName[node.kind]} ${node.id}, ${subText}`),
+      h.AriaLabel(`${componentName[node.kind]} ${node.id}, ${subText}`),
+      h.AriaDescription(ui.kindHint[node.kind]),
     ],
     [
       h.rect([
@@ -266,7 +268,7 @@ const nodeView = (
           h.Attribute('x', '46'),
           h.Attribute('y', hasCapacity ? '24' : '27'),
         ],
-        [node.id === 'users' ? ui.kindName.client : node.id],
+        [node.id === 'users' ? componentName.client : node.id],
       ),
       h.text(
         [
@@ -801,6 +803,9 @@ export const particleShapes = (
 
 // PALETTE
 
+const paletteTooltip = (hint: string, note: string): string =>
+  `${hint}\n${note}`
+
 const paletteTag = (
   kind: ComponentKind,
   inputs: BoardViewInputs,
@@ -836,7 +841,12 @@ const paletteView = (
             ...(isEditable
               ? [h.OnClick(Message.ClickedPaletteItem({ kind }))]
               : [h.Disabled(true)]),
-            h.Title(isEditable ? ui.board.paletteHint : ui.board.paletteClosed),
+            h.Title(
+              paletteTooltip(
+                ui.kindHint[kind],
+                isEditable ? ui.board.paletteHint : ui.board.paletteClosed,
+              ),
+            ),
           ],
           [
             h.svg(
@@ -846,7 +856,7 @@ const paletteView = (
             h.span(
               [],
               [
-                h.span([h.Class('name')], [ui.kindName[kind]]),
+                h.span([h.Class('name')], [componentName[kind]]),
                 h.span([h.Class(tag.isNew ? 'tag new' : 'tag')], [tag.text]),
               ],
             ),
@@ -867,6 +877,7 @@ const paletteView = (
                 h.Type('button'),
                 h.Class('palette-item locked'),
                 h.Disabled(true),
+                h.Title(ui.kindHint[kind]),
               ],
               [
                 h.svg(
@@ -876,7 +887,7 @@ const paletteView = (
                 h.span(
                   [],
                   [
-                    h.span([h.Class('name')], [ui.kindName[kind]]),
+                    h.span([h.Class('name')], [componentName[kind]]),
                     h.span(
                       [h.Class('tag')],
                       [ui.board.lockedUntilLesson(lesson)],

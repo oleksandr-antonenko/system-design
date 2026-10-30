@@ -7,6 +7,7 @@ import {
   emptyBoard,
   findNode,
 } from '../../domain/board'
+import { componentName } from '../../domain/catalog'
 import { checkGoal, isHiddenGoal } from '../../domain/goals'
 import { simulate } from '../../domain/simulate'
 import { renderDomainMessage } from '../../i18n/domainMessage'
@@ -172,10 +173,10 @@ export const flow: BoardKind<FlowTypes> = {
       item._tag === 'Annotate' ? Option.some(item.key) : Option.none(),
     describe: stageText,
   },
-  targetName: (doc, target, ui) =>
+  targetName: (doc, target) =>
     Option.match(resolveKey(doc, target), {
       onNone: () => target,
-      onSome: id => (id === 'users' ? ui.kindName.client : id),
+      onSome: id => (id === 'users' ? componentName.client : id),
     }),
   describeOp: opText,
   moveStage: () => [],

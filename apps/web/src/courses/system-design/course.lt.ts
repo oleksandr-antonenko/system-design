@@ -4,7 +4,7 @@ import type course from './course'
 export default {
   title: 'System Design',
   tagline:
-    'Balansuotuvai, podėliai, eilės ir regionai: sukurkite sistemą, kuri atlaiko apkrovą',
+    'Load balancers, caches, queues ir regionai: sukurkite sistemą, kuri atlaiko apkrovą',
   modules: {
     foundations: 'Pagrindai',
     scaling: 'Mastelio didinimas',
