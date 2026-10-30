@@ -10,7 +10,7 @@ import { findLesson } from '../../../registry'
 import lesson from './lesson'
 
 // Урок 3 глазами ученика: вопрос «кому первый конверт» на доске, задача на
-// экране телефона — руками (браузер, сведения о сети, DNS «Автоматически»,
+// экране телефона — руками (браузер, сведения о сети, DNS «Автоматически (выдаёт router)»,
 // «Обновить») и через «Показать решение».
 
 const entry = Option.getOrThrow(findLesson('networks', 'site-names'))
@@ -41,7 +41,7 @@ describe('lesson 3: the name and the address', () => {
     scene(
       sceneIn('ru'),
       given(atQuiz()),
-      click(role('button', { name: /^Wi-Fi router,/ })),
+      click(role('button', { name: /^Router,/ })),
       expect(text(/Через router конверт пройдёт/)).toExist(),
       expect(text('передаёт, но не адресат')).toExist(),
       expect(text('первый адресат')).toExist(),
@@ -84,7 +84,7 @@ describe('lesson 3: the name and the address', () => {
       expect(role('heading', { name: 'Router-7C21' })).toExist(),
       expect(text('192.168.1.100')).toExist(),
       click(role('button', { name: /^Настроить DNS/ })),
-      click(role('radio', { name: 'Автоматически (от роутера)' })),
+      click(role('radio', { name: 'Автоматически (выдаёт router)' })),
       expect(text('192.0.2.53')).toExist(),
       click(role('tab', { name: 'Браузер' })),
       click(role('button', { name: 'Обновить' })),

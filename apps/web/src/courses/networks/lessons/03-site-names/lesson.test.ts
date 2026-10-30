@@ -113,7 +113,7 @@ describe('lesson 3: a site’s name and its address', () => {
       maybeFog: Option.none(),
       rooms: [],
       moved: {},
-      text: id => ({ title: id, sub: '' }),
+      text: id => ({ title: id, sub: '', hint: '' }),
     })
     const timeline = timelineOf({
       world,

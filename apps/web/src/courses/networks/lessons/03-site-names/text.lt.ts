@@ -6,10 +6,10 @@ export default {
   summary:
     'DNS paverčia svetainės vardą adresu, kaip kontaktai telefone. Sutaisykite svetainę, kuri „neatsidaro“.',
   labels: {
-    phone: { name: 'Telefonas', note: 'jūsų rankoje' },
-    laptop: { name: 'Nešiojamasis kompiuteris', note: 'ant stalo' },
+    phone: { name: 'Phone', note: 'jūsų rankoje' },
+    laptop: { name: 'Laptop', note: 'ant stalo' },
     router: {
-      name: 'Wi-Fi router',
+      name: 'Router',
       note: 'jūsų namų paštas: išduoda adresus ir praneša, kur informacijos tarnyba',
     },
     internet: { name: 'Internet', note: 'daug tinklų' },
@@ -63,7 +63,7 @@ Toliau, 4 pamoka: vokas keliauja per kelis pašto skyrius. Sužinosime, kiek sky
   },
   annotations: {
     siteName: () => 'shop.example',
-    notAsked: () => 'neklausta: adresas jau kontaktuose',
+    notAsked: () => 'neklausta: adresą jau žino DNS cache',
   },
   quizzes: {
     'who-first': {
@@ -94,7 +94,7 @@ Toliau, 4 pamoka: vokas keliauja per kelis pašto skyrius. Sužinosime, kiek sky
       hints: [
         'ERR_NAME_NOT_RESOLVED reiškia: telefonas nesužinojo adreso pagal vardą. Ko jis klausia adresų? Pažiūrėkite į eilutę DNS tinklo informacijoje.',
         'Eilutė DNS tuščia, o šalia parašyta „Rankiniu būdu“: telefonui nėra ko paklausti. Tegul informacijos tarnybos adresą praneša router – taip pat, kaip jis išduoda telefonui numerį.',
-        'Paspauskite „Nustatyti DNS“, pasirinkite „Automatiškai“ ir įkelkite puslapį naršyklėje iš naujo.',
+        'Paspauskite „Nustatyti DNS“, pasirinkite „Automatiškai (suteikia router)“ ir įkelkite puslapį naršyklėje iš naujo.',
       ],
       solvedNote:
         'Telefonas vėl žino, ko klausti adresų: informacijos tarnybos adresą jam praneša router. Vardas virto adresu, ir puslapis atsidarė.',
@@ -103,13 +103,13 @@ Toliau, 4 pamoka: vokas keliauja per kelis pašto skyrius. Sužinosime, kiek sky
   feedback: {
     NoDnsServer: 'Telefonui nėra ko paklausti adreso: eilutė DNS tuščia.',
     InvalidIp:
-      'Į eilutę DNS rašomas informacijos tarnybos adresas – keturi skaičiai, o ne svetainės vardas.',
+      'Į laukelį „IP address“ rašomas informacijos tarnybos adresas – keturi skaičiai, o ne svetainės vardas.',
     PortClosed: ({ device }) =>
       device === 'router'
-        ? 'Supaprastinta: šis mokomasis router į klausimus apie vardus pats neatsako, jis tik praneša telefonui informacijos tarnybos adresą. Daug tikrų modelių moka tokius klausimus persiųsti. Pasirinkite „Automatiškai“.'
+        ? 'Supaprastinta: šis mokomasis router į klausimus apie vardus pats neatsako, jis tik praneša telefonui informacijos tarnybos adresą. Daug tikrų modelių moka tokius klausimus persiųsti. Pasirinkite „Automatiškai (suteikia router)“.'
         : device === 'shop'
-          ? 'Šiuo adresu gyvena parduotuvės svetainė, o ne informacijos tarnyba: į klausimus apie vardus ji neatsako. Paprasčiausia pasirinkti „Automatiškai“.'
-          : 'Šiuo adresu niekas neatsako į klausimus apie vardus. Paprasčiausia pasirinkti „Automatiškai“.',
+          ? 'Šiuo adresu gyvena parduotuvės svetainė, o ne informacijos tarnyba: į klausimus apie vardus ji neatsako. Paprasčiausia pasirinkti „Automatiškai (suteikia router)“.'
+          : 'Šiuo adresu niekas neatsako į klausimus apie vardus. Paprasčiausia pasirinkti „Automatiškai (suteikia router)“.',
   },
   askAi: {
     lead: 'Jei svetainė „nerandama“, pridėkite klaidos kodą ir tinklo informaciją:',

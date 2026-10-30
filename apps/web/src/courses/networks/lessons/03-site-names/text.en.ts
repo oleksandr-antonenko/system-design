@@ -9,7 +9,7 @@ export default {
     phone: { name: 'Phone', note: 'in your hand' },
     laptop: { name: 'Laptop', note: 'on the desk' },
     router: {
-      name: 'Wi-Fi router',
+      name: 'Router',
       note: 'the post office of your home: hands out addresses and tells where the directory is',
     },
     internet: { name: 'Internet', note: 'many networks' },
@@ -63,7 +63,7 @@ Next, lesson 4: an envelope passes through several post offices. We will find ou
   },
   annotations: {
     siteName: () => 'shop.example',
-    notAsked: () => 'not asked: the address is already in the contacts',
+    notAsked: () => 'not asked: the address is already in the DNS cache',
   },
   quizzes: {
     'who-first': {
@@ -94,7 +94,7 @@ Next, lesson 4: an envelope passes through several post offices. We will find ou
       hints: [
         'ERR_NAME_NOT_RESOLVED means the phone couldn’t find out the address for the name. Whom does it ask for addresses? Look at the DNS line in the network details.',
         'The DNS line is empty, and next to it is “Manual”: the phone has no one to ask. Let the router tell it the directory’s address — just as it gives the phone its number.',
-        'Press “Configure DNS”, choose “Automatic” and reload the page in the browser.',
+        'Press “Configure DNS”, choose “Automatic (from the router)” and reload the page in the browser.',
       ],
       solvedNote:
         'The phone knows whom to ask for addresses again: the router tells it the directory’s address. The name turned into an address, and the page opened.',
@@ -104,13 +104,13 @@ Next, lesson 4: an envelope passes through several post offices. We will find ou
     NoDnsServer:
       'The phone has no one to ask for the address: the DNS line is empty.',
     InvalidIp:
-      'The DNS line takes the directory’s address — four numbers, not a site name.',
+      'The “IP address” field takes the directory’s address — four numbers, not a site name.',
     PortClosed: ({ device }) =>
       device === 'router'
-        ? 'Simplified: this training router doesn’t answer questions about names itself; it only tells the phone the directory’s address. Many real routers can forward such questions. Choose “Automatic”.'
+        ? 'Simplified: this training router doesn’t answer questions about names itself; it only tells the phone the directory’s address. Many real routers can forward such questions. Choose “Automatic (from the router)”.'
         : device === 'shop'
-          ? 'This address belongs to the shop website, not the directory: it doesn’t answer questions about names. The simplest fix is to choose “Automatic”.'
-          : 'No one at this address answers questions about names. The simplest fix is to choose “Automatic”.',
+          ? 'This address belongs to the shop website, not the directory: it doesn’t answer questions about names. The simplest fix is to choose “Automatic (from the router)”.'
+          : 'No one at this address answers questions about names. The simplest fix is to choose “Automatic (from the router)”.',
   },
   askAi: {
     lead: 'If a site “can’t be found”, attach the error code and the network details:',
