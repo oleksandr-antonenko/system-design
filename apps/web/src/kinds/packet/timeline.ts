@@ -73,11 +73,16 @@ export const protocolOf = (envelope: ReadonlyArray<Layer>): Protocol => {
                   : 'tcp'
 }
 
-const isConversation = (protocol: Protocol, isDnsShown: boolean): boolean =>
+const isConversation = (
+  protocol: Protocol,
+  isDnsShown: boolean,
+  isTlsShown: boolean,
+): boolean =>
   protocol === 'http' ||
   protocol === 'data' ||
   protocol === 'icmp' ||
-  (protocol === 'dns' && isDnsShown)
+  (protocol === 'dns' && isDnsShown) ||
+  (protocol === 'tls' && isTlsShown)
 
 const isRefusal = (hop: Hop): boolean =>
   Array.some(
@@ -103,13 +108,16 @@ const dhcpLetters = (
 }
 
 /** Какие пакеты трассы показывать. `letters`: только разговор — запрос и
-    ответ (и вопрос справочной, если она уже открыта); у выдачи адреса —
-    вопрос и ответ DHCP; без них — всё, кроме поиска MAC и DHCP. */
+    ответ (и вопрос справочной, если она уже открыта); `request` — то же без
+    справочной; у выдачи адреса — вопрос и ответ DHCP; без них — всё, кроме
+    поиска MAC и DHCP. `handshake`: разговор и договорённость о шифре перед
+    ним (TLS hello). */
 const shownPackets = (
   trace: Trace,
   show: PlayShow,
-  isDnsShown: boolean,
+  isDirectoryOpen: boolean,
 ): ReadonlyArray<number> => {
+  const isDnsShown = isDirectoryOpen && show !== 'request'
   const packets = Array.dedupe(Array.map(trace.hops, hop => hop.packet))
   const protocolOfPacket = (packet: number): Protocol =>
     Option.match(
@@ -120,7 +128,7 @@ const shownPackets = (
     return packets
   }
   const talk = Array.filter(packets, packet =>
-    isConversation(protocolOfPacket(packet), isDnsShown),
+    isConversation(protocolOfPacket(packet), isDnsShown, show === 'handshake'),
   )
   const refusals = Array.filter(packets, packet =>
     Array.some(trace.hops, hop => hop.packet === packet && isRefusal(hop)),
@@ -163,6 +171,10 @@ export type Leg = Readonly<{
   /** Номер хопа в своём конверте и сколько их всего (счётчик урока 4). */
   index: number
   count: number
+  /** Номер конверта в своём проигрывании и сколько их там всего (счётчик
+      полной трассы урока 7). */
+  envelope: number
+  envelopes: number
 }>
 
 export type PlayResult = Readonly<{
@@ -298,7 +310,7 @@ const innerPath = (
     },
   })
 
-type RawLeg = Omit<Leg, 'index' | 'count'>
+type RawLeg = Omit<Leg, 'index' | 'count' | 'envelope' | 'envelopes'>
 
 /** Перелёты одного пакета: хопы на видимых фигурах, без хопов внутри
     свёрнутого облака; в облаке-картинке — через сети. */
@@ -429,7 +441,23 @@ const withCounts = (legs: ReadonlyArray<RawLeg>): ReadonlyArray<Leg> =>
       Array.take(legs, position),
       other => other.play === leg.play && other.packet === leg.packet,
     )
-    return { ...leg, index: before.length + 1, count: same.length }
+    const envelopes = Array.dedupe(
+      Array.map(
+        Array.filter(legs, other => other.play === leg.play),
+        other => other.packet,
+      ),
+    )
+    return {
+      ...leg,
+      index: before.length + 1,
+      count: same.length,
+      envelope:
+        Option.getOrElse(
+          Array.findFirstIndex(envelopes, packet => packet === leg.packet),
+          () => 0,
+        ) + 1,
+      envelopes: envelopes.length,
+    }
   })
 
 export type TimelineInput = Readonly<{

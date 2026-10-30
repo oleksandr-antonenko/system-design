@@ -50,6 +50,26 @@ export const certFor = (host: Host, name: string): Option.Option<Cert> =>
     Option.orElse(() => Array.head(host.certs)),
   )
 
+/** Три проверки браузера по отдельности: имя из адреса есть в certificate,
+    срок не вышел, издатель доверенный. Паспорт сайта на доске (урок 11)
+    ставит у каждой галочку или крест. */
+export type CertChecks = Readonly<{
+  name: boolean
+  date: boolean
+  issuer: boolean
+}>
+
+export const certChecks = (
+  doc: NetDoc,
+  clock: number,
+  name: string,
+  cert: Cert,
+): CertChecks => ({
+  name: Array.some(cert.names, pattern => nameMatches(pattern, name)),
+  date: cert.notAfter >= dateAt(clock),
+  issuer: Array.contains(trustedIssuers(doc), cert.issuer),
+})
+
 /** Проверки браузера по порядку: издатель доверенный, имя совпадает,
     срок не вышел. Первая неудача — код ошибки. */
 export const certProblem = (

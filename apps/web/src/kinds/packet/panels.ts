@@ -5,7 +5,7 @@ import { renderDomainMessage } from '../../i18n/domainMessage'
 import type { ProtocolName } from '../../i18n/ui/packetBoard/types'
 import { networkAddress } from '../../net/address'
 import { runAll } from '../../net/answers'
-import { macsOf } from '../../net/doc'
+import { findHost, macsOf } from '../../net/doc'
 import type { Device, DeviceId, NetState } from '../../net/model'
 import {
   type Hop,
@@ -13,6 +13,7 @@ import {
   TableChange,
   sourceOf,
 } from '../../net/packet'
+import { certChecks, certFor } from '../../net/tls'
 import {
   type RouteRow,
   addressOf,
@@ -199,7 +200,22 @@ const changedRow = (
     }),
   )
 
-/** Таблицы карточки: что открыто курсом и подходит устройству. */
+/** Таблицы, которые сцена шага открыла в карточке этого устройства. */
+const askedTables = (
+  picture: Picture,
+  device: Device,
+): ReadonlyArray<DeviceTable> =>
+  Array.getSomes(
+    Array.map(picture.context.stage, item =>
+      item._tag === 'ShowTable' && item.device === device.id
+        ? Option.some(item.table)
+        : Option.none(),
+    ),
+  )
+
+/** Таблицы карточки: те, что открыла сцена (карточка router с урока 9 иначе
+    закрывает всю доску на телефоне), или всё, что открыто курсом и подходит
+    устройству. */
 const tablesFor = (
   picture: Picture,
   device: Device,
@@ -234,18 +250,16 @@ const tablesFor = (
           Array.isReadonlyArrayNonEmpty(device.firewall.rules)),
     ],
   ]
-  return Array.dedupe([
-    ...Array.filter(picture.cardTables, table =>
-      Array.some(candidates, ([candidate]) => candidate === table),
-    ),
-    ...Array.map(
-      Array.filter(
-        candidates,
-        ([, feature, fits]) => fits && picture.isOpen(feature),
-      ),
-      ([table]) => table,
-    ),
-  ])
+  const asked = askedTables(picture, device)
+  return Array.isReadonlyArrayNonEmpty(asked)
+    ? Array.dedupe(asked)
+    : Array.map(
+        Array.filter(
+          candidates,
+          ([, feature, fits]) => fits && picture.isOpen(feature),
+        ),
+        ([table]) => table,
+      )
 }
 
 const sendForm = <ParentMessage>(
@@ -487,11 +501,15 @@ const envelopePanel = <ParentMessage>(
     picture.quiz,
     marks => marks.quiz.kind === 'PickLayer',
   )
+  const isPickPending =
+    isPickLayer && Option.exists(picture.quiz, marks => !marks.isAnswered)
   const isShown =
     picture.isOpen('board.envelopeLayers') &&
-    (picture.model.isEnvelopeOpen ||
-      Option.isSome(picture.maybeOpenLevel) ||
-      isPickLayer)
+    (isPickPending ||
+      (!picture.model.isEnvelopeDismissed &&
+        (picture.model.isEnvelopeOpen ||
+          Option.isSome(picture.maybeOpenLevel) ||
+          isPickLayer)))
   if (!isShown) {
     return []
   }
@@ -513,14 +531,17 @@ const envelopePanel = <ParentMessage>(
       const changed = changedFields(previous, leg.hop)
       const keyField = isPickLayer
         ? Option.flatMap(picture.maybeOpenLevel, level =>
-            keyFieldOf(leg.hop, level),
+            keyFieldOf(leg.hop, level, picture.isOpen),
           )
         : Option.none()
-      const isNamesHidden =
-        isPickLayer && Option.exists(picture.quiz, marks => !marks.isAnswered)
+      const isNamesHidden = isPickPending
       const pickedLevels = Option.match(picture.quiz, {
         onNone: () => [],
         onSome: marks => (marks.isAnswered ? marks.picked : []),
+      })
+      const answerLevels = Option.match(picture.quiz, {
+        onNone: () => [],
+        onSome: marks => (marks.isAnswered ? marks.answer : []),
       })
       return [
         h.section(
@@ -530,7 +551,7 @@ const envelopePanel = <ParentMessage>(
               [h.Class('pb-envelope-head')],
               [
                 h.p([], [ui.title(leg.index, leg.count)]),
-                ...(isPickLayer
+                ...(isPickPending
                   ? []
                   : [
                       h.button(
@@ -555,20 +576,27 @@ const envelopePanel = <ParentMessage>(
             ),
             h.ol(
               [h.Class('pb-layers')],
-              Array.map(layerRows(leg.hop), row => {
-                const isOpen = Option.exists(
-                  picture.maybeOpenLevel,
-                  level => level === row.level,
-                )
-                const isPicked = Array.contains(
-                  pickedLevels,
+              Array.map(layerRows(leg.hop, picture.isOpen), row => {
+                const isOpen =
+                  Option.exists(
+                    picture.maybeOpenLevel,
+                    level => level === row.level,
+                  ) ||
+                  Option.exists(
+                    picture.context.maybeHoveredRef,
+                    ref => ref === `env:${row.level}`,
+                  )
+                const isAnswer = Array.contains(
+                  answerLevels,
                   `env:${row.level}`,
                 )
+                const isPicked =
+                  !isAnswer && Array.contains(pickedLevels, `env:${row.level}`)
                 return h.keyed('li')(
                   `${row.position}`,
                   [
                     h.Class(
-                      `pb-layer level-${row.level}${isOpen ? ' open' : ''}${isPicked ? ' picked' : ''}`,
+                      `pb-layer level-${row.level}${isOpen ? ' open' : ''}${isAnswer ? ' answer' : ''}${isPicked ? ' picked' : ''}${row.isSealed ? ' sealed' : ''}`,
                     ),
                     h.OnMouseEnter(
                       send(Message.HoveredLayer({ position: row.position })),
@@ -611,6 +639,9 @@ const envelopePanel = <ParentMessage>(
                         )
                       }),
                     ),
+                    ...(row.isSealed
+                      ? [h.span([h.Class('pb-sealed')], [`🔒 ${ui.sealed}`])]
+                      : []),
                   ],
                 )
               }),
@@ -664,6 +695,87 @@ const printouts = <ParentMessage>(
             ],
       )
     : []
+
+/** Паспорт сайта (урок 11): certificate, который сервер покажет для имени,
+    и три проверки браузера — галочка или крест. Без certificate — строка
+    «certificate нет». */
+const certCards = <ParentMessage>(
+  picture: Picture,
+  h: HtmlBuilder<ParentMessage>,
+): ReadonlyArray<Html> => {
+  const ui = picture.context.ui.packetBoard.cert
+  const world = picture.context.doc
+  return picture.isOpen('browser.certificate')
+    ? Array.flatMap(picture.context.stage, item => {
+        if (item._tag !== 'ShowCert') {
+          return []
+        }
+        const maybeCert = Option.flatMap(
+          findHost(world.doc, item.device),
+          server => certFor(server, item.name),
+        )
+        const check = (label: string, isPassed: boolean) =>
+          h.li(
+            [
+              h.Class(isPassed ? 'ok' : 'bad'),
+              h.AriaLabel(`${label}: ${isPassed ? ui.passed : ui.failed}`),
+            ],
+            [
+              h.span([h.AriaHidden(true)], [isPassed ? '✓' : '✗']),
+              h.span([h.AriaHidden(true)], [label]),
+            ],
+          )
+        return [
+          h.keyed('section')(
+            `cert-${item.device}-${item.name}`,
+            [
+              h.Class('pb-cert'),
+              h.AriaLabel(ui.title(picture.name(item.device))),
+            ],
+            [
+              h.p(
+                [h.Class('pb-card-section')],
+                [ui.title(picture.name(item.device))],
+              ),
+              ...Option.match(maybeCert, {
+                onNone: () => [h.p([h.Class('pb-hint')], [ui.none])],
+                onSome: cert => {
+                  const checks = certChecks(
+                    world.doc,
+                    picture.context.run.settled.clock,
+                    item.name,
+                    cert,
+                  )
+                  const facts: ReadonlyArray<readonly [string, string]> = [
+                    [ui.issuedTo, cert.names.join(', ')],
+                    [ui.issuedBy, cert.issuer],
+                    [ui.validUntil, cert.notAfter],
+                  ]
+                  return [
+                    h.dl(
+                      [h.Class('pb-card-facts')],
+                      Array.flatMap(facts, ([label, value]) => [
+                        h.dt([], [label]),
+                        h.dd([], [value]),
+                      ]),
+                    ),
+                    h.ul(
+                      [h.Class('pb-cert-checks')],
+                      [
+                        check(ui.checks.name, checks.name),
+                        check(ui.checks.date, checks.date),
+                        check(ui.checks.issuer, checks.issuer),
+                      ],
+                    ),
+                  ]
+                },
+              }),
+            ],
+          ),
+        ]
+      })
+    : []
+}
 
 const finalRun = <ParentMessage>(
   picture: Picture,
@@ -804,6 +916,7 @@ export const stageOverlays = <ParentMessage>(
 ): ReadonlyArray<Html> => [
   ...legend(picture, h),
   ...printouts(picture, h),
+  ...certCards(picture, h),
   ...finalRun(picture, h),
 ]
 
@@ -903,7 +1016,10 @@ const layerButtons = <ParentMessage>(
                             ),
                           ]),
                     ],
-                    [picture.context.ui.packetBoard.envelope.levels[level]],
+                    [
+                      marks.quiz.names[id] ??
+                        picture.context.ui.packetBoard.envelope.levels[level],
+                    ],
                   )
                 },
               ),

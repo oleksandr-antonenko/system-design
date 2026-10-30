@@ -648,15 +648,21 @@ export const pictureOf = (context: Context, model: Model): Picture => {
           },
         })
       : []
-  // Таблицы нескольких устройств: карточка — у того, где сейчас конверт.
+  // `hideUntilAnswered: ['tables']`: таблицы сцены открываются только после
+  // ответа, иначе таймер в карточке подсказывает ответ квиза. Таблицы
+  // нескольких устройств: карточка — у того, где сейчас конверт.
+  const stageTables = Array.contains(hidden, 'tables')
+    ? []
+    : stageItems(stage, 'ShowTable')
   const envelopeAt = Option.map(maybeLeg, ({ leg }) =>
     moment._tag === 'Resting' ? leg.hop.to : leg.hop.from,
   )
-  const tables = stageItems(stage, 'ShowTable')
   const cardFromStage = pipe(
     envelopeAt,
-    Option.flatMap(at => Array.findFirst(tables, item => item.device === at)),
-    Option.orElse(() => Array.head(tables)),
+    Option.flatMap(at =>
+      Array.findFirst(stageTables, item => item.device === at),
+    ),
+    Option.orElse(() => Array.head(stageTables)),
     Option.map(item => item.device),
   )
   const maybeCard = Option.orElse(model.maybeCard, () => cardFromStage)
@@ -695,7 +701,7 @@ export const pictureOf = (context: Context, model: Model): Picture => {
     changes,
     maybeRoute,
     maybeCard,
-    cardTables: Array.map(tables, item => item.table),
+    cardTables: Array.map(stageTables, item => item.table),
     maybeOpenLevel: Option.map(
       Array.head(stageItems(stage, 'OpenEnvelope')),
       item => item.level,

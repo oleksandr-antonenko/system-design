@@ -5,7 +5,7 @@ export default defineLessonMeta(course, {
   slug: 'dns-records',
   module: 'internet',
   order: 10,
-  available: false,
+  available: true,
   locales: ['uk', 'ru', 'en', 'lt'],
   unlocks: [
     'board.resolverCache',

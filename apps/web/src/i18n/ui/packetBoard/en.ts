@@ -33,6 +33,7 @@ export const packetBoardEn: PacketBoardStrings = {
     speed: 'Speed',
     legend: 'Legend',
     hopOf: (what, hop, total) => `${what} · hop ${hop} of ${total}`,
+    packetOf: (packet, total) => `packet ${packet} of ${total}`,
     request: 'envelope',
     reply: 'reply',
   },
@@ -190,6 +191,20 @@ export const packetBoardEn: PacketBoardStrings = {
     rulesTitle: device => `Firewall rules: “${device}”`,
   },
   printout: device => `Terminal: ${device}`,
+  cert: {
+    title: device => `Certificate: ${device}`,
+    issuedTo: 'Issued to',
+    issuedBy: 'Issued by',
+    validUntil: 'Valid until',
+    none: 'no certificate',
+    checks: {
+      name: 'the name matches the address',
+      date: 'not expired',
+      issuer: 'issued by an authority the browser trusts',
+    },
+    passed: 'yes',
+    failed: 'no',
+  },
   scan: {
     title: (from, target) => `${from} knocks on the ports of ${target}`,
     open: 'open',

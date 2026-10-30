@@ -5,7 +5,7 @@ export default defineLessonMeta(course, {
   slug: 'https',
   module: 'internet',
   order: 11,
-  available: false,
+  available: true,
   locales: ['uk', 'ru', 'en', 'lt'],
   unlocks: [
     'board.sealedEnvelope',

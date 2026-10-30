@@ -65,10 +65,12 @@ export type PacketAnnotate<Key extends string = string> = Readonly<{
 }>
 
 /** Что показывает проигрывание: `letters` — только конверты разговора
-    (запрос и ответ, без поиска MAC, DHCP и рукопожатий), `all` — все
-    пакеты трассы с цветом протокола. По умолчанию `all` открывает урок 7
-    (легенда цветов), до него — `letters`. */
-export type PlayShow = 'letters' | 'all'
+    (запрос и ответ, без поиска MAC, DHCP и рукопожатий; вопрос справочной —
+    с урока 3), `request` — только запрос и ответ, без справочной даже после
+    урока 3, `handshake` — разговор и перед ним договорённость о шифре (TLS
+    hello, урок 11), `all` — все пакеты трассы с цветом протокола. По
+    умолчанию `all` открывает урок 7 (легенда цветов), до него — `letters`. */
+export type PlayShow = 'letters' | 'request' | 'handshake' | 'all'
 
 /** Проиграть трассу намерения на доске. Состояние сети не меняется: это
     показ, а не операция (её делает `send`). `after` — операции, после
@@ -154,6 +156,14 @@ export type Room = Readonly<{
     «Отправить» пишет в журнал `send(Raw)`. */
 export type Builder = Readonly<{ _tag: 'Builder'; from: DeviceId; url: string }>
 
+/** Паспорт сайта (урок 11): карточка certificate сервера и три проверки
+    браузера для имени `name` — имя, срок, кто выдал. */
+export type ShowCert = Readonly<{
+  _tag: 'ShowCert'
+  device: DeviceId
+  name: string
+}>
+
 export type PacketStage =
   | PacketHighlight
   | PacketAnnotate
@@ -170,6 +180,7 @@ export type PacketStage =
   | Walk
   | Room
   | Builder
+  | ShowCert
 
 export const highlight = (
   target: PacketTarget,
@@ -182,13 +193,18 @@ export const annotate = <const Key extends string>(
   tone: Tone,
 ): PacketAnnotate<Key> => ({ _tag: 'Annotate', target, key, tone })
 
+/** `after` в сцене урока — подготовка, которую доска не показывает: так урок 9
+    проигрывает разговор с сайтом без вопроса справочной (ноутбук уже знает
+    адрес), а таблицы на доске растут только от показанной трассы. */
 export const play = (
   intent: Intent,
-  options: Readonly<{ show?: PlayShow }> = {},
-): Play =>
-  options.show === undefined
-    ? { _tag: 'Play', intent }
-    : { _tag: 'Play', intent, show: options.show }
+  options: Readonly<{ show?: PlayShow; after?: ReadonlyArray<NetOp> }> = {},
+): Play => ({
+  _tag: 'Play',
+  intent,
+  ...(options.show === undefined ? {} : { show: options.show }),
+  ...(options.after === undefined ? {} : { after: options.after }),
+})
 
 export const pauseAt = (device: DeviceId): PauseAt => ({
   _tag: 'PauseAt',
@@ -255,4 +271,10 @@ export const builder = (from: DeviceId, url: string): Builder => ({
   _tag: 'Builder',
   from,
   url,
+})
+
+export const showCert = (device: DeviceId, name: string): ShowCert => ({
+  _tag: 'ShowCert',
+  device,
+  name,
 })

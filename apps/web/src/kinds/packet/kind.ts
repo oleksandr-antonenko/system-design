@@ -1,5 +1,6 @@
 import { Array, Option, Result } from 'effect'
 
+import { challengeIntents } from '../../net/acme'
 import { type Goal, checkGoal } from '../../net/goals'
 import { kindOf } from '../../net/model'
 import { Intent } from '../../net/packet'
@@ -84,7 +85,12 @@ const playsOf = (
   op: PacketOp,
 ): ReadonlyArray<PacketStage> =>
   op._tag === 'Send'
-    ? [{ _tag: 'Play', intent: op.intent }]
+    ? op.intent._tag === 'Raw'
+      ? [
+          { _tag: 'Builder', from: op.intent.from, url: op.intent.url },
+          { _tag: 'Play', intent: op.intent, show: 'request' },
+        ]
+      : [{ _tag: 'Play', intent: op.intent }]
     : op._tag === 'RunCommand'
       ? Array.map(
           Array.dedupeWith(
@@ -102,17 +108,35 @@ const playsOf = (
           after: [op],
         }))
 
+/** Выпуск certificate (урок 11): центр сертификации по каждому имени
+    забирает файл-пароль по http://. */
+const challengePlays = (
+  before: PacketDoc,
+  device: string,
+  names: ReadonlyArray<string>,
+): ReadonlyArray<PacketStage> =>
+  Array.map(
+    challengeIntents(before.doc, device, names),
+    (intent): PacketStage => ({ _tag: 'Play', intent, show: 'letters' }),
+  )
+
 /** Ход ученика со своей сценой: открытая страница или трассы команды
-    терминала (`ping`, `curl`) проигрываются на доске; кабель, по которому
+    терминала (`ping`, `curl`) проигрываются на доске, выпуск certificate —
+    проверка центра сертификации; кабель, по которому
     устройство получило адрес, показывает выдачу адреса. Одинаковые конверты
     команды (три эха ping) проигрываются один раз: доска показывает первое
     эхо, остальные строки печатает терминал. Если в облаке настоящие
-    транзитные роутеры, оно раскрыто: конверт идёт через них хоп за хопом. */
+    транзитные роутеры, оно раскрыто: конверт идёт через них хоп за хопом.
+    Собранный конверт (`Raw`, урок 7) летит сам, без справочной и
+    рукопожатий, а сборщик остаётся под доской для новой попытки. */
 const moveStage = (
   before: PacketDoc,
   op: PacketOp,
 ): ReadonlyArray<PacketStage> => {
-  const plays = playsOf(before, op)
+  const plays =
+    op._tag === 'IssueCertificate'
+      ? challengePlays(before, op.device, op.names)
+      : playsOf(before, op)
   return Array.isReadonlyArrayNonEmpty(plays) &&
     Array.some(before.doc.devices, device => device._tag === 'Transit')
     ? [{ _tag: 'Expand', target: 'internet' }, ...plays]
