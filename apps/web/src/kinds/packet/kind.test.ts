@@ -103,6 +103,23 @@ describe('packet board kind', () => {
     ).toEqual(['door'])
   })
 
+  test('a sent page plays as it is; a packed envelope keeps its builder and flies without DNS', () => {
+    const world = boardAt(phoneOnline, 0, {})
+    const page = Intent.Browse({ from: 'phone', url: 'http://shop.example/' })
+    expect(kind.moveStage(world, send(page))).toEqual([
+      { _tag: 'Play', intent: page },
+    ])
+    const packed = Intent.Raw({
+      from: 'phone',
+      url: 'http://shop.example/',
+      order: ['link', 'internet', 'transport', 'application'],
+    })
+    expect(kind.moveStage(world, send(packed))).toEqual([
+      { _tag: 'Builder', from: 'phone', url: 'http://shop.example/' },
+      { _tag: 'Play', intent: packed, show: 'request' },
+    ])
+  })
+
   test('a ping in the terminal plays its echo once, through the open cloud of transit routers', () => {
     const world = buildWorld(chainOps)
     expect(kind.moveStage(world, run('laptop', 'ping shop.example'))).toEqual([

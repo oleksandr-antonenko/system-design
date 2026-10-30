@@ -81,6 +81,23 @@ describe('playback', () => {
     )
   })
 
+  test('closing an envelope the scene opened keeps it closed until it is clicked again; a new step forgets it', () => {
+    story(
+      update(input('View')),
+      given(Board.initialModel),
+      message(Board.Message.ClickedCloseEnvelope()),
+      model(next => {
+        expect(next.isEnvelopeDismissed).toBe(true)
+        expect(Board.interrupt(next).isEnvelopeDismissed).toBe(false)
+      }),
+      message(Board.Message.ClickedEnvelope()),
+      model(next => {
+        expect(next.isEnvelopeOpen).toBe(true)
+        expect(next.isEnvelopeDismissed).toBe(false)
+      }),
+    )
+  })
+
   test('Back and To start stop the envelope at a hop', () => {
     story(
       update(input('View')),

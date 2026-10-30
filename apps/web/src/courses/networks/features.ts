@@ -57,6 +57,8 @@ export const UiFeature = Schema.Literals([
   'terminal.traceroute',
   'terminal.ipRoute',
   'wifi.addressing',
+  'envelope.ttl',
+  'envelope.tcpFlags',
   'board.natTable',
   'router.addresses',
   'router.ports',
