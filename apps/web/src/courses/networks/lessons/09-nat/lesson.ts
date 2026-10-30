@@ -41,8 +41,11 @@ import { sendIntent } from '../../../../net/world'
 const HOME_SSID = 'Router-7C21'
 const HOME_PASSWORD = '12345678'
 const LAPTOP_MAC = '3c:22:fb:4a:10:42'
+const FRIEND_SSID = 'Friend-Home'
+const FRIEND_PASSWORD = 'friend2024'
 
 const homeWifi = { ssid: HOME_SSID, password: HOME_PASSWORD }
+const friendWifi = { ssid: FRIEND_SSID, password: FRIEND_PASSWORD }
 
 /** Внешний адрес домашнего router: так дом виден из интернета. */
 const HOME_WAN = '203.0.113.7'
@@ -141,9 +144,10 @@ export default defineLesson(packet, {
             lan: '192.168.1.1/24',
             wan: '203.0.113.77',
             dns: '192.0.2.53',
+            wifi: wifi(FRIEND_SSID, FRIEND_PASSWORD),
           }),
         ),
-        add(host('friend', 'pc', 900, 460)),
+        add(host('friend', 'laptop', 900, 460, { wifi: friendWifi })),
         radio('phone', 'router'),
         radio('laptop', 'router'),
         cable('printer', 'router'),
@@ -152,7 +156,7 @@ export default defineLesson(packet, {
         cable('internet', 'dns'),
         cable('internet', 'shop'),
         cable('friend-router', 'internet'),
-        cable('friend', 'friend-router'),
+        radio('friend', 'friend-router'),
       ],
       stage: [
         play(friendToLaptop),

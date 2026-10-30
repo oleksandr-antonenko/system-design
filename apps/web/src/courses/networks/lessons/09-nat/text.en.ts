@@ -15,18 +15,18 @@ export default {
     dns: { name: 'DNS server', note: 'your provider’s directory' },
     shop: { name: 'Shop website', note: 'shop.example' },
     'friend-router': {
-      name: 'Friend’s router',
-      note: 'the post office of his home',
+      name: 'Router',
+      note: 'the post office of your friend’s home',
     },
-    friend: { name: 'Friend’s PC', note: 'your friend plays on it' },
+    friend: { name: 'Laptop', note: 'your friend’s' },
     'zone:friend-router': { name: 'Friend’s home' },
   },
   steps: {
     'home-only': {
       title: 'Home addresses are for home only',
-      body: `Your friend’s home is on the board now. Look at the IP address of his [[friend|computer]]: 192.168.1.100. Your [[phone|phone]] has exactly the same one. That is not a mistake: every home router hands out 192.168.… addresses, and they repeat in millions of homes. That is why they only work inside their own home.
+      body: `Your friend’s home is on the board now. Look at the IP address of their [[friend|laptop]]: 192.168.1.100. Your [[phone|phone]] has exactly the same one. That is not a mistake: every home router hands out 192.168.… addresses, and they repeat in millions of homes. That is why they only work inside their own home.
 
-Press “Run”: your friend sends an envelope to 192.168.1.42, your laptop’s address. The envelope does not even leave his home: to his computer this is the address of a neighbour in his own home, and there is no such neighbour there. From outside, your home is seen at one address — the outside address of your [[router|router]], 203.0.113.7.`,
+Press “Run”: your friend sends an envelope to 192.168.1.42, your laptop’s address. The envelope does not even leave their home: to their laptop this is the address of a neighbour in their own home, and there is no such neighbour there. From outside, your home is seen at one address — the outside address of your [[router|router]], 203.0.113.7.`,
     },
     nat: {
       title: 'The router puts on its own return address',
@@ -60,7 +60,7 @@ First reserve the address 192.168.1.50 for the computer. The router hands out ad
     },
     summary: {
       title: 'Summary',
-      body: `Your friend is in the game, and the database is not visible from outside. Press “Run”: your friend connects again, and the router follows the port forwarding rule and hands his envelope to the gaming computer.
+      body: `Your friend is in the game, and the database is not visible from outside. Press “Run”: your friend connects again, and the router follows the port forwarding rule and hands their envelope to the gaming computer.
 
 - 192.168.… addresses only work inside the home: every home has its own.
 - On the way out the router puts on its own return address — that is **NAT**. That is why websites see the router’s address, not the laptop’s.
@@ -145,7 +145,7 @@ Next, lesson 10: how to point your own domain at your server and why your friend
   },
   askAi: {
     lead: 'If port forwarding does not work, an AI helps faster when it sees the addresses and the whole rule:',
-    template: `I want a friend to connect to a game on my computer (port 25565/TCP), but he gets Connection timed out.
+    template: `I want a friend to connect to a game on my computer (port 25565/TCP), but they get Connection timed out.
 
 The router’s outside address (from the router panel, “Status” or “WAN”): <…>
 The address a “what is my IP” site shows: <…>

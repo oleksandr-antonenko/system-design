@@ -14,16 +14,16 @@ export default {
     internet: { name: 'Internet', note: 'daug tinklų' },
     dns: { name: 'DNS server', note: 'tiekėjo informacijos tarnyba' },
     shop: { name: 'Parduotuvės svetainė', note: 'shop.example' },
-    'friend-router': { name: 'Draugo router', note: 'jo namų paštas' },
-    friend: { name: 'Draugo PC', note: 'iš jo žaidžia draugas' },
+    'friend-router': { name: 'Router', note: 'draugo namų paštas' },
+    friend: { name: 'Laptop', note: 'draugo' },
     'zone:friend-router': { name: 'Draugo namai' },
   },
   steps: {
     'home-only': {
       title: 'Namų adresai – tik namams',
-      body: `Lentoje dabar yra ir jūsų draugo namai. Pažiūrėkite į jo [[friend|kompiuterio]] IP address: 192.168.1.100. Lygiai toks pat yra jūsų [[phone|telefono]]. Tai ne klaida: adresus 192.168.… dalija kiekvienas namų router, ir milijonuose namų jie kartojasi. Todėl jie veikia tik savo namuose.
+      body: `Lentoje dabar yra ir jūsų draugo namai. Pažiūrėkite į jo [[friend|nešiojamojo kompiuterio]] IP address: 192.168.1.100. Lygiai toks pat yra jūsų [[phone|telefono]]. Tai ne klaida: adresus 192.168.… dalija kiekvienas namų router, ir milijonuose namų jie kartojasi. Todėl jie veikia tik savo namuose.
 
-Paspauskite „Paleisti“: draugas siunčia voką adresu 192.168.1.42 – tai jūsų nešiojamojo kompiuterio adresas. Vokas net neišeina iš jo namų: draugo kompiuteriui tai kaimyno jo paties namuose adresas, o tokio kaimyno ten nėra. Iš išorės jūsų namai matomi vienu adresu – jūsų [[router|router]] išoriniu adresu 203.0.113.7.`,
+Paspauskite „Paleisti“: draugas siunčia voką adresu 192.168.1.42 – tai jūsų nešiojamojo kompiuterio adresas. Vokas net neišeina iš jo namų: draugo nešiojamajam kompiuteriui tai kaimyno jo paties namuose adresas, o tokio kaimyno ten nėra. Iš išorės jūsų namai matomi vienu adresu – jūsų [[router|router]] išoriniu adresu 203.0.113.7.`,
     },
     nat: {
       title: 'Router užrašo savo atgalinį adresą',
