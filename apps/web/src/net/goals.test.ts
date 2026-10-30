@@ -180,7 +180,7 @@ describe('reachability, ports and names', () => {
     const failed = check(
       homeNet(),
       Goal.CannotReach({
-        intent: Intent.Ping({ from: 'phone', ip: '198.51.100.10' }),
+        intent: Intent.Ping({ from: 'phone', host: '198.51.100.10' }),
       }),
     )
     expect(failed.maybeFailure).toEqual(
@@ -235,6 +235,7 @@ describe('reachability, ports and names', () => {
       check(
         doc,
         Goal.Resolves({
+          maybeAt: Option.none(),
           device: 'laptop',
           name: 'shop.example',
           maybeIp: Option.some('198.51.100.10'),
@@ -245,6 +246,7 @@ describe('reachability, ports and names', () => {
       failureOf(
         doc,
         Goal.Resolves({
+          maybeAt: Option.none(),
           device: 'laptop',
           name: 'shop.example',
           maybeIp: Option.some('203.0.113.50'),
@@ -260,6 +262,7 @@ describe('reachability, ports and names', () => {
     const unknown = check(
       doc,
       Goal.Resolves({
+        maybeAt: Option.none(),
         device: 'laptop',
         name: 'myapp.example',
         maybeIp: Option.none(),

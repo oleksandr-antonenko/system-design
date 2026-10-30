@@ -1,7 +1,13 @@
 import { Array, Option, pipe } from 'effect'
 
 import { BROADCAST_MAC, ZERO_MAC } from './address'
-import { findDevice, isWan, otherEnd } from './doc'
+import {
+  findDevice,
+  isPointToPoint,
+  isProviderDevice,
+  isWanOf,
+  otherEnd,
+} from './doc'
 import { NetMessage } from './message'
 import {
   Device,
@@ -69,12 +75,24 @@ type Handled = Readonly<{
 
 export type Walk = Readonly<{ run: Run; received: ReadonlyArray<Reception> }>
 
-const delayOf = (doc: NetDoc, link: Link): number =>
-  isWan(doc, link)
-    ? netRules.internetMs
-    : link.medium === 'radio'
-      ? netRules.radioMs
-      : netRules.cableMs
+/** Задержка связи: радио 3 мс, сотовая 15, виртуальная 0, кабель 1;
+    связь с облаком и между узлами провайдера — 20 мс. */
+export const delayOf = (doc: NetDoc, link: Link): number => {
+  const touchesCloud = Option.exists(
+    Option.all([findDevice(doc, link.a), findDevice(doc, link.b)]),
+    ([left, right]) => left._tag === 'Internet' || right._tag === 'Internet',
+  )
+  return link.medium === 'radio'
+    ? netRules.radioMs
+    : link.medium === 'cellular'
+      ? netRules.cellularMs
+      : link.medium === 'virtual'
+        ? netRules.virtualMs
+        : touchesCloud ||
+            (isProviderDevice(doc, link.a) && isProviderDevice(doc, link.b))
+          ? netRules.internetMs
+          : netRules.cableMs
+}
 
 const frameHeader = (link: Link, frame: Frame): Layer =>
   link.medium === 'radio'
@@ -114,6 +132,8 @@ const deliver = (doc: NetDoc, run: Run, delivery: Delivery): Handled => {
           envelope: [frameHeader(link, frame), ...frame.payload],
           note,
           changes,
+          maybeRoute: Option.none(),
+          maybeRule: Option.none(),
           sentAt,
           arrivedAt: at,
         },
@@ -223,9 +243,21 @@ const deliver = (doc: NetDoc, run: Run, delivery: Delivery): Handled => {
         AccessPoint: () =>
           bridge(device, activeLinksOf(doc, to), Option.none()),
         Router: router =>
-          isWan(doc, link)
-            ? accept(device)
+          isWanOf(doc, link, to)
+            ? isPointToPoint(doc, link) ||
+              isBroadcast ||
+              frame.dst === router.wan.mac
+              ? accept(device)
+              : emit(
+                  device,
+                  run.state,
+                  NetMessage.FrameNotForMe({ device: to }),
+                  [],
+                  [],
+                  false,
+                )
             : bridge(device, lanLinksOf(doc, to), Option.some(router.lan.mac)),
+        Transit: () => accept(device),
         Internet: () => accept(device),
       }),
   })
@@ -299,6 +331,7 @@ export const egressOf = (
     },
     Switch: () => [],
     AccessPoint: () => [],
+    Transit: () => [],
     Internet: () => [],
   })
 
@@ -320,6 +353,7 @@ export type ArpAnswer = Readonly<{
 
 type Owner = Readonly<{
   device: Device
+  link: Link
   mac: Mac
   at: number
   hop: number
@@ -337,11 +371,16 @@ const arpOwner = (
         iface.ip === ip ? Option.some(host.mac) : Option.none(),
       ),
     Router: router =>
-      !isWan(doc, reception.link) && router.lan.ip === ip
-        ? Option.some(router.lan.mac)
-        : Option.none(),
+      isWanOf(doc, reception.link, router.id)
+        ? router.wan.ip === ip
+          ? Option.some(router.wan.mac)
+          : Option.none()
+        : router.lan.ip === ip
+          ? Option.some(router.lan.mac)
+          : Option.none(),
     Switch: () => Option.none(),
     AccessPoint: () => Option.none(),
+    Transit: () => Option.none(),
     Internet: () => Option.none(),
   })
 
@@ -415,6 +454,7 @@ export const arpExchange = (
                 ...current.owners,
                 {
                   device: reception.device,
+                  link: reception.link,
                   mac,
                   at: reception.at,
                   hop: reception.hop,
@@ -440,7 +480,10 @@ export const arpExchange = (
         doc,
         replyRun,
         owner.device.id,
-        egressOf(doc, replyRun.state, owner.device, asker.mac),
+        owner.device._tag === 'Router' &&
+          isWanOf(doc, owner.link, owner.device.id)
+          ? [owner.link]
+          : egressOf(doc, replyRun.state, owner.device, asker.mac),
         {
           packet: replyPacket,
           src: owner.mac,
