@@ -161,10 +161,16 @@ export const flow: BoardKind<FlowTypes> = {
 
   checkGoal: (doc, _run, goal) => checkGoal(doc, goal),
   isHiddenGoal,
+  // Решённая цель по ошибкам называет числа своей нагрузки, а не нагрузки
+  // доски: в задаче с пиком на доске цель «обычный день» проверяется при
+  // другой нагрузке.
   solvedGoalText: (goal, doc, ui) =>
     goal._tag === 'MaxErrorRate'
       ? Option.some(
-          ui.task.metricGoalPassed(doc.load, simulate(doc, doc.load).errorRate),
+          ui.task.metricGoalPassed(
+            goal.load,
+            simulate(doc, goal.load).errorRate,
+          ),
         )
       : Option.none(),
   outcome: outcomeRows,
