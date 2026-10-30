@@ -54,7 +54,7 @@ const idList = (lead: string, ids: ReadonlyArray<string>) =>
 export const ru = {
   siteTitle: 'Интерактивные курсы',
   siteTagline: 'Теория на живой схеме и задачи своими руками',
-  courseSwitcherLabel: 'Курс',
+  courseSwitcherLabel: 'Курсы',
   languageSwitcherLabel: 'Язык',
   currentLanguage: 'текущий',
   inLanguage,

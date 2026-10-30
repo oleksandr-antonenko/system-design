@@ -155,14 +155,7 @@ describe('header', () => {
         'href',
         '/en/',
       ),
-      expect(role('link', { name: 'System Design' })).toHaveAttr(
-        'href',
-        '/en/system-design/',
-      ),
-      expect(role('link', { name: 'System Design' })).toHaveAttr(
-        'aria-current',
-        'page',
-      ),
+      expect(role('link', { name: 'Courses' })).toHaveAttr('href', '/en/'),
       expect(role('link', { name: '← Back to the course outline' })).toHaveAttr(
         'href',
         '/en/system-design/',
@@ -170,22 +163,14 @@ describe('header', () => {
     )
   })
 
-  test('the course switcher lists every course and marks the current one', () => {
+  test('the header has one link to the catalogue instead of a link per course', () => {
     scene(
       { update, view },
       given(at(AppRoute.Course({ locale: 'ru', course: 'networks' }), 'ru')),
       expect(
-        within(
-          role('navigation', { name: 'Курс' }),
-          role('link', { name: 'System Design' }),
-        ),
-      ).toHaveAttr('href', '/ru/system-design/'),
-      expect(
-        within(
-          role('navigation', { name: 'Курс' }),
-          role('link', { name: 'Сети для вайбкодеров' }),
-        ),
-      ).toHaveAttr('aria-current', 'page'),
+        within(role('banner'), role('link', { name: 'Курсы' })),
+      ).toHaveAttr('href', '/ru/'),
+      expect(role('navigation', { name: 'Курс' })).not.toExist(),
     )
   })
 })

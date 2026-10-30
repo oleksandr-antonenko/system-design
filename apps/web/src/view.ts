@@ -19,6 +19,7 @@ import {
 import { DomainMessage, renderDomainMessage } from './i18n/domainMessage'
 import { type Locale, localeEndonym, locales } from './i18n/locale'
 import { type UiStrings, uiFor } from './i18n/ui'
+import { checkIconView, globeIconView } from './languageIcons'
 import * as Player from './lesson/view'
 import {
   LanguageMenu,
@@ -28,16 +29,8 @@ import {
   currentSession,
 } from './main'
 import { pageTitle } from './pageTitle'
-import { checkIconView, globeIconView } from './languageIcons'
 import { lessonThumbnailView } from './previewView'
-import {
-  AppRoute,
-  courseOf,
-  courseUrl,
-  homeUrl,
-  lessonUrl,
-  localeOf,
-} from './route'
+import { AppRoute, courseUrl, homeUrl, lessonUrl, localeOf } from './route'
 
 // HEADER
 
@@ -99,39 +92,6 @@ const languageMenuView = (
     },
   })
 
-const courseLinkView = (
-  course: Course,
-  locale: Locale,
-  maybeCurrent: Option.Option<string>,
-  h: HtmlBuilder<Message>,
-): Html => {
-  const choice = courseTextFor(course, locale)
-  const isCurrent = Option.exists(
-    maybeCurrent,
-    current => current === course.definition.id,
-  )
-
-  return h.keyed('li')(
-    course.definition.id,
-    [],
-    [
-      h.a(
-        [
-          h.Href(courseUrl(locale, course.definition.id)),
-          h.Lang(choice.shownIn),
-          ...(isCurrent ? [h.AriaCurrent('page')] : []),
-          h.Class(
-            isCurrent
-              ? 'block rounded-md bg-accent-soft px-2 py-1 text-[12.5px] font-semibold text-ink no-underline'
-              : 'block rounded-md px-2 py-1 text-[12.5px] text-muted no-underline hover:text-ink',
-          ),
-        ],
-        [choice.text.title],
-      ),
-    ],
-  )
-}
-
 const headerView = (
   model: Model,
   locale: Locale,
@@ -152,19 +112,15 @@ const headerView = (
         ],
         [ui.siteTitle],
       ),
-      h.nav(
+      // One link to the catalogue: the courses are listed there.
+      h.a(
         [
-          h.AriaLabel(ui.courseSwitcherLabel),
-          h.Class('order-last basis-full sm:order-none sm:basis-auto'),
-        ],
-        [
-          h.ul(
-            [h.Class('m-0 flex list-none flex-wrap gap-1 p-0')],
-            Array.map(courses, course =>
-              courseLinkView(course, locale, courseOf(model.route), h),
-            ),
+          h.Href(homeUrl(locale)),
+          h.Class(
+            'rounded-md px-2 py-1 text-[12.5px] text-muted no-underline hover:text-ink',
           ),
         ],
+        [ui.courseSwitcherLabel],
       ),
       languageMenuView(model, locale, ui, h),
     ],

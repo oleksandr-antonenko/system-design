@@ -57,7 +57,7 @@ const idList = (lead: string, ids: ReadonlyArray<string>) =>
 export const lt = {
   siteTitle: 'Interaktyvūs kursai',
   siteTagline: 'Teorija gyvoje schemoje ir praktinės užduotys',
-  courseSwitcherLabel: 'Kursas',
+  courseSwitcherLabel: 'Kursai',
   languageSwitcherLabel: 'Kalba',
   currentLanguage: 'dabartinė',
   inLanguage,

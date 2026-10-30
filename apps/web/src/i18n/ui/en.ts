@@ -53,7 +53,7 @@ const idList = (lead: string, ids: ReadonlyArray<string>) =>
 export const en = {
   siteTitle: 'Interactive courses',
   siteTagline: 'Theory on a live board and hands-on tasks',
-  courseSwitcherLabel: 'Course',
+  courseSwitcherLabel: 'Courses',
   languageSwitcherLabel: 'Language',
   currentLanguage: 'current',
   inLanguage,
