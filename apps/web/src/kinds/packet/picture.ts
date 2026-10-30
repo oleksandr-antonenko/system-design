@@ -401,10 +401,11 @@ export const draftDevice = (op: NetOp): string =>
 /** Сколько места нужно под устройствами для строк черновика. */
 const draftRoom = (
   previews: ReadonlyArray<Preview>,
-): Readonly<Record<string, number>> =>
-  Array.reduce(
+): Readonly<Record<string, number>> => {
+  const none: Readonly<Record<string, number>> = {}
+  return Array.reduce(
     Array.flatMap(previews, preview => preview.ops),
-    {} as Readonly<Record<string, number>>,
+    none,
     (room, op) => {
       const device = draftDevice(op)
       return device === ''
@@ -412,6 +413,7 @@ const draftRoom = (
         : { ...room, [device]: (room[device] ?? 0) + DRAFT_ROW }
     },
   )
+}
 
 /** Доска шага с черновиком сцены поверх: новые устройства черновика тоже
     стоят на доске (пунктиром). */
