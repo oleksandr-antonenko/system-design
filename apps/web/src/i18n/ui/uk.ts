@@ -236,6 +236,10 @@ export const uk = {
       `«${componentName[from]}» не передає запити блоку «${componentName[to]}». Допустимі зв’язки: ${kindList(allowed)}.`,
     InvalidCapacity: ({ id }) =>
       `Блоку ${id} потрібна пропускна здатність більша за нуль.`,
+    ShareNotForUsers: ({ id }) =>
+      `Частку навантаження задають лише блоку «Users», а ${id} — інший блок.`,
+    InvalidShare: ({ id }) =>
+      `Частка навантаження ${id} має бути числом, більшим за нуль.`,
     RegionHasNoBlocks: ({ region }) =>
       `У регіоні «${regionName[region]}» немає блоків.`,
     GoalSlowResponse: ({ load, p95, max, hottest }) =>
@@ -256,5 +260,7 @@ export const uk = {
       overloaded,
     }) =>
       `Після відмови регіону «${regionName[region]}» при навантаженні ${n(load)} rps втрачається ${percent(errorRate)} запитів, допустимо не більше ${percent(max)}.${idList(' Втрачають запити: ', overloaded)}`,
+    GoalNotCarrying: ({ node, load, carried, min }) =>
+      `При ${n(load)} rps через ${node} проходить лише ${n(carried)} rps, а потрібно щонайменше ${n(min)} rps.`,
   },
 } satisfies UiStrings

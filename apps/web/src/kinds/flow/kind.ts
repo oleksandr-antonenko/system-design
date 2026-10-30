@@ -134,6 +134,8 @@ const opText = (op: BoardOp): string =>
     RecoverNode: ({ id }) => `RecoverNode ${id}`,
     FailRegion: ({ region }) => `FailRegion ${region}`,
     RecoverRegion: ({ region }) => `RecoverRegion ${region}`,
+    SetShare: ({ id, share }) => `SetShare ${id} · ${share}`,
+    Reset: () => 'Reset',
   })
 
 const targetText = (target: Target): string =>

@@ -28,6 +28,8 @@ export const DomainMessage = defineTaggedUnion({
   DuplicateNodeId: { id: Schema.String },
   InvalidCapacity: { id: Schema.String },
   RegionHasNoBlocks: { region: Region },
+  ShareNotForUsers: { id: Schema.String },
+  InvalidShare: { id: Schema.String },
   GoalMissingKind: { kind: ComponentKind },
   GoalTooFewTargets: {
     from: ComponentKind,
@@ -80,6 +82,12 @@ export const DomainMessage = defineTaggedUnion({
     max: Schema.Number,
     overloaded: Schema.Array(Schema.String),
   },
+  GoalNotCarrying: {
+    node: Schema.String,
+    load: Schema.Number,
+    carried: Schema.Number,
+    min: Schema.Number,
+  },
 })
 export type DomainMessage = typeof DomainMessage.Type
 
@@ -116,6 +124,8 @@ export const renderDomainMessage = (
     DuplicateNodeId: params => texts.DuplicateNodeId(params),
     InvalidCapacity: params => texts.InvalidCapacity(params),
     RegionHasNoBlocks: params => texts.RegionHasNoBlocks(params),
+    ShareNotForUsers: params => texts.ShareNotForUsers(params),
+    InvalidShare: params => texts.InvalidShare(params),
     GoalMissingKind: params => texts.GoalMissingKind(params),
     GoalTooFewTargets: params => texts.GoalTooFewTargets(params),
     GoalDirectPath: params => texts.GoalDirectPath(params),
@@ -128,4 +138,5 @@ export const renderDomainMessage = (
     GoalFailureNotSurvived: params => texts.GoalFailureNotSurvived(params),
     GoalRegionFailureNotSurvived: params =>
       texts.GoalRegionFailureNotSurvived(params),
+    GoalNotCarrying: params => texts.GoalNotCarrying(params),
   })

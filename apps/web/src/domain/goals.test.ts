@@ -298,3 +298,111 @@ describe('hidden goals', () => {
     })
   })
 })
+
+describe('block-specific goals', () => {
+  // Две очереди: у queue один worker, у queue-b два, у каждого по 200.
+  const twoQueues = build([
+    addNode('users', 'client', 100, 280),
+    addNode('app1', 'server', 400, 280),
+    addNode('db', 'db', 790, 280),
+    addNode('queue', 'queue', 600, 130),
+    addNode('queue-b', 'queue', 600, 430),
+    connect('users', 'app1'),
+    connect('app1', 'db'),
+    connect('app1', 'queue'),
+    connect('app1', 'queue-b'),
+    addNode('worker-1', 'worker', 790, 130),
+    connect('queue', 'worker-1'),
+    ...Array.flatMap(['worker-2', 'worker-3'], id => [
+      addNode(id, 'worker', 790, 430),
+      connect('queue-b', id),
+    ]),
+  ])
+
+  test('a backlog goal with nodes counts only the listed blocks', () => {
+    const all = checkGoal(twoQueues, Goal.MaxBacklog({ max: 0, load: 300 }))
+    const onlyB = checkGoal(
+      twoQueues,
+      Goal.MaxBacklog({ max: 0, load: 300, nodes: ['queue-b'] }),
+    )
+    const onlyA = checkGoal(
+      twoQueues,
+      Goal.MaxBacklog({ max: 0, load: 300, nodes: ['queue'] }),
+    )
+
+    expect(all.met).toBe(false)
+    expect(onlyB.met).toBe(true)
+    expect(onlyA.met).toBe(false)
+    expect(onlyA.focusNodes).toEqual(['queue'])
+    expect(failureOf(onlyA)).toMatchObject({ backlog: 100, nodes: ['queue'] })
+  })
+
+  test('a utilization goal with nodes checks only the listed blocks of the kind', () => {
+    const goal = (nodes: ReadonlyArray<string>) =>
+      Goal.MaxUtilization({ kind: 'worker', max: 0.9, load: 300, nodes })
+    const busy = checkGoal(twoQueues, goal(['worker-1']))
+
+    expect(checkGoal(twoQueues, goal(['worker-2', 'worker-3'])).met).toBe(true)
+    expect(busy.met).toBe(false)
+    expect(busy.focusNodes).toEqual(['worker-1'])
+    expect(failureOf(busy)).toMatchObject({
+      _tag: 'GoalOverUtilized',
+      kind: 'worker',
+      utilization: 1,
+      nodes: ['worker-1'],
+    })
+  })
+
+  test('a goal without nodes still checks every block, as before', () => {
+    expect(
+      checkGoal(
+        twoQueues,
+        Goal.MaxUtilization({ kind: 'worker', max: 0.9, load: 300 }),
+      ).focusNodes,
+    ).toEqual(['worker-1'])
+  })
+})
+
+describe('carries', () => {
+  test('a block must carry at least the minimum, so an idle block does not pass', () => {
+    const idle = build([
+      ...taskStartOps,
+      addNode('lb-1', 'lb', 300, 280, { locked: false }),
+    ])
+    const goal = Goal.Carries({ node: 'lb-1', min: 800, load: 900 })
+    const check = checkGoal(idle, goal)
+
+    expect(isHiddenGoal(goal)).toBe(true)
+    expect(check.met).toBe(false)
+    expect(check.focusNodes).toEqual(['lb-1'])
+    expect(failureOf(check)).toEqual({
+      _tag: 'GoalNotCarrying',
+      node: 'lb-1',
+      load: 900,
+      carried: 0,
+      min: 800,
+    })
+    expect(checkGoal(solved, goal).met).toBe(true)
+  })
+
+  test('a block that is not on the board carries nothing and is not highlighted', () => {
+    const check = checkGoal(
+      taskStart,
+      Goal.Carries({ node: 'cache-1', min: 1, load: 900 }),
+    )
+
+    expect(check.met).toBe(false)
+    expect(check.focusNodes).toEqual([])
+  })
+
+  test('the failure names the block and both numbers in every language', () => {
+    const failure = failureOf(
+      checkGoal(taskStart, Goal.Carries({ node: 'lb-1', min: 800, load: 900 })),
+    )
+    locales.forEach(locale => {
+      const text = renderDomainMessage(uiFor(locale).domain, failure)
+      expect(text, locale).toContain('lb-1')
+      expect(text, locale).toContain('800')
+    })
+  })
+})

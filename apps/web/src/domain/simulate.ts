@@ -7,6 +7,7 @@ import {
   edgeKey,
   nodesOfKind,
   rankOf,
+  shareOf,
   targetsOf,
 } from './board'
 import { type ComponentKind, catalog } from './catalog'
@@ -685,15 +686,21 @@ export const simulate = (doc: BoardDoc, load: number): SimResult => {
     hasDatabase: Array.isReadonlyArrayNonEmpty(nodesOfKind(doc, 'db')),
   }
   const clients = nodesOfKind(doc, 'client')
-  const perClient = load / Math.max(clients.length, 1)
+  // Группы пользователей делят нагрузку по весам `shares`; без `SetShare`
+  // веса равны 1, и деление поровну даёт те же числа, что и раньше.
+  const totalShare = Number.sumAll(
+    Array.map(clients, client => shareOf(doc, client.id)),
+  )
+  const perClient = (client: BoardNode): number =>
+    (load * shareOf(doc, client.id)) / totalShare
   const start: Flow = {
     arrivals: Object.fromEntries(
       Array.map(clients, client => [
         client.id,
         {
-          total: perClient,
-          user: perClient,
-          parcels: [{ delay: 0, amount: perClient }],
+          total: perClient(client),
+          user: perClient(client),
+          parcels: [{ delay: 0, amount: perClient(client) }],
         },
       ]),
     ),

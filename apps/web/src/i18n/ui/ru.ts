@@ -233,6 +233,10 @@ export const ru = {
     ConnectNotAllowed: ({ from, to, allowed }) =>
       `«${componentName[from]}» не передаёт запросы блоку «${componentName[to]}». Допустимые связи: ${kindList(allowed)}.`,
     InvalidCapacity: ({ id }) => `Блоку ${id} нужна ёмкость больше нуля.`,
+    ShareNotForUsers: ({ id }) =>
+      `Долю нагрузки задают только блоку «Users», а ${id} — другой блок.`,
+    InvalidShare: ({ id }) =>
+      `Доля нагрузки ${id} должна быть числом больше нуля.`,
     RegionHasNoBlocks: ({ region }) =>
       `В регионе «${regionName[region]}» нет блоков.`,
     GoalSlowResponse: ({ load, p95, max, hottest }) =>
@@ -253,5 +257,7 @@ export const ru = {
       overloaded,
     }) =>
       `При отказе региона «${regionName[region]}» и нагрузке ${n(load)} rps теряется ${percent(errorRate)} запросов, допустимо не больше ${percent(max)}.${idList(' Теряют запросы: ', overloaded)}`,
+    GoalNotCarrying: ({ node, load, carried, min }) =>
+      `При ${n(load)} rps через ${node} проходит только ${n(carried)} rps, а нужно не меньше ${n(min)} rps.`,
   },
 } satisfies UiStrings

@@ -10,7 +10,13 @@ import {
 } from 'foldkit/story'
 import { describe, expect, test } from 'vitest'
 
-import { type BoardDoc, BoardOp, edgeKey, foldOps } from '../domain/board'
+import {
+  type BoardDoc,
+  BoardOp,
+  edgeKey,
+  emptyBoard,
+  foldOps,
+} from '../domain/board'
 import {
   BOARD_HEIGHT,
   BOARD_WIDTH,
@@ -24,7 +30,7 @@ import { addNode, connect, setLoad } from '../kinds/flow/dsl'
 import * as Board from './board'
 import { type BoardViewInputs, particleColors, particleShapes } from './view'
 
-const doc = foldOps({ nodes: [], edges: [], load: 0, failed: [] }, [
+const doc = foldOps(emptyBoard, [
   addNode('users', 'client', 100, 280),
   addNode('app1', 'server', 520, 280),
   connect('users', 'app1'),

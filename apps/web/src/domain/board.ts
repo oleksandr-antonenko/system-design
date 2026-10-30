@@ -25,6 +25,9 @@ export const BoardDoc = Schema.Struct({
   edges: Schema.Array(Edge),
   load: Schema.Number,
   failed: Schema.Array(Schema.String),
+  /** Вес группы пользователей в общей нагрузке по id блока «Users». Нет
+      записи — вес 1, поэтому без `SetShare` группы делят нагрузку поровну. */
+  shares: Schema.Record(Schema.String, Schema.Number),
 })
 export type BoardDoc = typeof BoardDoc.Type
 
@@ -33,7 +36,14 @@ export const emptyBoard: BoardDoc = {
   edges: [],
   load: 0,
   failed: [],
+  shares: {},
 }
+
+const DEFAULT_SHARE = 1
+
+/** Вес группы пользователей: свой из `SetShare`, иначе 1. */
+export const shareOf = (doc: BoardDoc, id: string): number =>
+  doc.shares[id] ?? DEFAULT_SHARE
 
 export const edgeKey = (edge: Edge): string => `${edge.from}>${edge.to}`
 
@@ -58,6 +68,11 @@ export const BoardOp = defineTaggedUnion({
   RecoverNode: { id: Schema.String },
   FailRegion: { region: Region },
   RecoverRegion: { region: Region },
+  /** Вес группы пользователей в общей нагрузке
+      (D2 add-flow-reset-shares-and-block-goals). */
+  SetShare: { id: Schema.String, share: Schema.Number },
+  /** Начать с пустой доски: шаг строит общую эталонную схему заново. */
+  Reset: {},
 })
 export type BoardOp = typeof BoardOp.Type
 
@@ -145,6 +160,9 @@ const withRegion = (
     onNonEmpty: apply,
   })
 
+const isValidShare = (share: number): boolean =>
+  globalThis.Number.isFinite(share) && share > 0
+
 const isValidCapacity = (maybeCapacity: Option.Option<number>): boolean =>
   Option.match(maybeCapacity, {
     onNone: () => true,
@@ -185,6 +203,9 @@ export const applyOp = (doc: BoardDoc, op: BoardOp): BoardResult =>
                 edge => edge.from !== id && edge.to !== id,
               ),
               failed: Array.filter(doc.failed, failedId => failedId !== id),
+              shares: Object.fromEntries(
+                Object.entries(doc.shares).filter(([group]) => group !== id),
+              ),
             }),
       ),
     MoveNode: ({ id, x, y }) =>
@@ -243,6 +264,15 @@ export const applyOp = (doc: BoardDoc, op: BoardOp): BoardResult =>
           failed: Array.difference(doc.failed, ids),
         }),
       ),
+    SetShare: ({ id, share }) =>
+      withNode(doc, id, node =>
+        node.kind !== 'client'
+          ? Result.fail(DomainMessage.ShareNotForUsers({ id }))
+          : isValidShare(share)
+            ? Result.succeed({ ...doc, shares: { ...doc.shares, [id]: share } })
+            : Result.fail(DomainMessage.InvalidShare({ id })),
+      ),
+    Reset: () => Result.succeed(emptyBoard),
   })
 
 export const foldOps = (doc: BoardDoc, ops: ReadonlyArray<BoardOp>): BoardDoc =>
