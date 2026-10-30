@@ -51,6 +51,7 @@ export const Message = defineMessageUnion({
   ClickedCableTool: {},
   ClickedCableEnd: { id: Schema.String },
   ClickedUnplug: { a: Schema.String, b: Schema.String },
+  ClickedPlugIn: { a: Schema.String, b: Schema.String },
   PressedMoveKey: { id: Schema.String, x: Schema.Number, y: Schema.Number },
   GrabbedDevice: { id: Schema.String, x: Schema.Number, y: Schema.Number },
   MovedDevice: { x: Schema.Number, y: Schema.Number },

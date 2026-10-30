@@ -17,7 +17,8 @@ import { runInTerminal } from '../../net/world'
 import type { DeviceTable } from './dsl'
 import { changedFields, keyFieldOf, layerRows } from './envelope'
 import { Message } from './message'
-import { type Picture, deviceOf, pairsOf } from './picture'
+import { type Picture, deviceOf, isAddressOpen, pairsOf } from './picture'
+import { printoutFeatures } from './surfaces/unlocks'
 
 // HTML поверх доски сетей: карточка устройства, конверт по слоям, распечатка
 // команды, финальный прогон, легенда; под доской — лоток квиза (слои,
@@ -312,7 +313,7 @@ const cardView = <ParentMessage>(
         )
         const tables = tablesFor(picture, device)
         const facts: ReadonlyArray<readonly [string, string]> = [
-          ...(picture.isOpen('board.addresses') &&
+          ...(isAddressOpen(picture.context, device.id) &&
           (device._tag === 'Host' ||
             device._tag === 'Router' ||
             device._tag === 'Transit')
@@ -617,6 +618,7 @@ const printouts = <ParentMessage>(
                           picture.context.doc,
                           item.device,
                           item.command,
+                          printoutFeatures(picture.context.unlocked),
                         )[0].output,
                       ].join('\n'),
                     ],

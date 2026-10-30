@@ -79,12 +79,7 @@ const joinedBy = (before: PacketDoc, op: PacketOp): ReadonlyArray<string> =>
         },
       })
 
-/** Ход ученика со своей сценой: открытая страница или трассы команды
-    терминала (`ping`, `curl`) проигрываются на доске; кабель, по которому
-    устройство получило адрес, показывает выдачу адреса. Собранный конверт
-    (`Raw`, урок 7) летит сам, без справочной и рукопожатий, а сборщик
-    остаётся под доской для новой попытки. */
-const moveStage = (
+const playsOf = (
   before: PacketDoc,
   op: PacketOp,
 ): ReadonlyArray<PacketStage> =>
@@ -97,14 +92,39 @@ const moveStage = (
       : [{ _tag: 'Play', intent: op.intent }]
     : op._tag === 'RunCommand'
       ? Array.map(
-          runCommand(before.doc, before.state, op.device, op.line).traces,
-          (traced): PacketStage => ({ _tag: 'Play', intent: traced.intent }),
+          Array.dedupeWith(
+            Array.map(
+              runCommand(before.doc, before.state, op.device, op.line).traces,
+              traced => traced.intent,
+            ),
+            (left, right) => JSON.stringify(left) === JSON.stringify(right),
+          ),
+          (intent): PacketStage => ({ _tag: 'Play', intent }),
         )
       : Array.map(joinedBy(before, op), (device): PacketStage => ({
           _tag: 'Play',
           intent: Intent.DhcpJoin({ device }),
           after: [op],
         }))
+
+/** Ход ученика со своей сценой: открытая страница или трассы команды
+    терминала (`ping`, `curl`) проигрываются на доске; кабель, по которому
+    устройство получило адрес, показывает выдачу адреса. Одинаковые конверты
+    команды (три эха ping) проигрываются один раз: доска показывает первое
+    эхо, остальные строки печатает терминал. Если в облаке настоящие
+    транзитные роутеры, оно раскрыто: конверт идёт через них хоп за хопом.
+    Собранный конверт (`Raw`, урок 7) летит сам, без справочной и
+    рукопожатий, а сборщик остаётся под доской для новой попытки. */
+const moveStage = (
+  before: PacketDoc,
+  op: PacketOp,
+): ReadonlyArray<PacketStage> => {
+  const plays = playsOf(before, op)
+  return Array.isReadonlyArrayNonEmpty(plays) &&
+    Array.some(before.doc.devices, device => device._tag === 'Transit')
+    ? [{ _tag: 'Expand', target: 'internet' }, ...plays]
+    : plays
+}
 
 // KIND
 
