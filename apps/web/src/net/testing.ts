@@ -12,29 +12,34 @@ import {
   wifi,
 } from './build'
 import { type NetOp, applyAll } from './doc'
-import { type NetDoc, emptyNet } from './model'
+import { type NetDoc, emptyNet, emptyState } from './model'
 import { type Hop, type Layer, type Trace } from './packet'
+import { type World, applyAllWorld } from './world'
 
 // Сети и помощники для тестов модели пакетов. Адреса только
 // документационные (RFC 5737) и частные, домены — в зоне .example.
 
-export const HOME_SSID = 'Home'
-export const HOME_PASSWORD = 'correct-horse'
+export const HOME_SSID = 'Router-7C21'
+export const HOME_PASSWORD = '12345678'
 export const LAPTOP_MAC = '3c:22:fb:4a:10:42'
 
+/** Домашний роутер всех уроков: `Router-7C21`, DNS провайдера, ноутбук
+    закреплён на .42. */
+export const homeRouter: NetOp = add(
+  router('router', 340, 360, {
+    lan: '192.168.1.1/24',
+    wan: '203.0.113.7',
+    dns: '192.0.2.53',
+    wifi: wifi(HOME_SSID, HOME_PASSWORD),
+    reservations: [{ mac: LAPTOP_MAC, ip: '192.168.1.42' }],
+  }),
+)
+
 /** Дом из урока 1: телефон и ноутбук по Wi-Fi у роутера, роутер кабелем в
-    облако, в облаке магазин и резолвер. */
+    облако, в облаке магазин и справочная. */
 export const homeOps: ReadonlyArray<NetOp> = [
   add(internet('internet', 590, 360)),
-  add(
-    router('router', 340, 360, {
-      lan: '192.168.1.1/24',
-      wan: '203.0.113.7',
-      dns: '192.0.2.53',
-      wifi: wifi(HOME_SSID, HOME_PASSWORD),
-      reservations: [{ mac: LAPTOP_MAC, ip: '192.168.1.42' }],
-    }),
-  ),
+  homeRouter,
   add(
     host('phone', 'phone', 200, 300, {
       wifi: { ssid: HOME_SSID, password: HOME_PASSWORD },
@@ -50,6 +55,13 @@ export const homeOps: ReadonlyArray<NetOp> = [
     host('shop', 'server', 820, 360, {
       address: '198.51.100.10/24',
       listeners: [tcp(80), tcp(443)],
+      certs: [
+        {
+          names: ['shop.example'],
+          issuer: 'Example CA',
+          notAfter: '2027-03-14',
+        },
+      ],
     }),
   ),
   add(
@@ -77,6 +89,16 @@ export const buildNet = (
   )
 
 export const homeNet = (): NetDoc => buildNet(homeOps)
+
+/** Строгая сборка мира: документ и состояние после операций. */
+export const buildWorld = (
+  ops: ReadonlyArray<NetOp>,
+  doc: NetDoc = emptyNet,
+): World =>
+  Result.getOrThrowWith(
+    applyAllWorld({ doc, state: emptyState }, ops),
+    refusal => new Error(`refused: ${JSON.stringify(refusal)}`),
+  )
 
 export const tagsOf = (hop: Hop): ReadonlyArray<Layer['_tag']> =>
   Array.map(hop.envelope, layer => layer._tag)

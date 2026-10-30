@@ -32,7 +32,7 @@ describe('determinism', () => {
     const settled = settle(homeNet(), emptyState)
     const intents = [
       browse,
-      Intent.Ping({ from: 'laptop', ip: '192.168.1.100' }),
+      Intent.Ping({ from: 'laptop', host: '192.168.1.100' }),
       Intent.Resolve({ from: 'laptop', name: 'shop.example' }),
       Intent.Arp({ from: 'phone', ip: '192.168.1.1' }),
       Intent.DhcpJoin({ device: 'phone' }),
@@ -116,23 +116,23 @@ describe('determinism', () => {
 })
 
 describe('ping', () => {
-  test('the echo reply reports TTL and time from link delays', () => {
+  test('the echo reply reports TTL and time from link delays, without the ARP wait', () => {
     const doc = homeNet()
     const [first, after] = trace(
       doc,
       settle(doc, emptyState),
-      Intent.Ping({ from: 'phone', ip: '198.51.100.10' }),
+      Intent.Ping({ from: 'phone', host: '198.51.100.10' }),
     )
     expect(first.outcome).toEqual(
       Outcome.Delivered({
         at: 'shop',
-        answer: Answer.EchoReply({ ip: '198.51.100.10', ttl: 62, ms: 92 }),
+        answer: Answer.EchoReply({ ip: '198.51.100.10', ttl: 62, ms: 86 }),
       }),
     )
     const [second] = trace(
       doc,
       after,
-      Intent.Ping({ from: 'phone', ip: '198.51.100.10' }),
+      Intent.Ping({ from: 'phone', host: '198.51.100.10' }),
     )
     expect(second.outcome).toEqual(
       Outcome.Delivered({
@@ -146,7 +146,7 @@ describe('ping', () => {
     const [result] = trace(
       homeNet(),
       emptyState,
-      Intent.Ping({ from: 'shop', ip: '127.0.0.1' }),
+      Intent.Ping({ from: 'shop', host: '127.0.0.1' }),
     )
     expect(result.hops).toEqual([])
     expect(result.outcome._tag).toBe('Delivered')
@@ -162,20 +162,20 @@ describe('failures name the place and the reason', () => {
         NetMessage.InvalidUrl({ url: 'shop.example' }),
       ],
       [
-        Intent.Ping({ from: 'ghost', ip: '192.168.1.1' }),
+        Intent.Ping({ from: 'ghost', host: '192.168.1.1' }),
         NetMessage.UnknownDevice({ id: 'ghost' }),
       ],
       [
-        Intent.Ping({ from: 'router', ip: '192.168.1.1' }),
+        Intent.Ping({ from: 'router', host: '192.168.1.1' }),
         NetMessage.NotAHost({ id: 'router' }),
       ],
       [
-        Intent.Ping({ from: 'lonely', ip: '192.168.1.1' }),
+        Intent.Ping({ from: 'lonely', host: '192.168.1.1' }),
         NetMessage.NoLink({ device: 'lonely' }),
       ],
       [
-        Intent.Ping({ from: 'phone', ip: '999.1.1.1' }),
-        NetMessage.InvalidIp({ value: '999.1.1.1' }),
+        Intent.Ping({ from: 'phone', host: '999.1.1.1' }),
+        NetMessage.NameNotFound({ name: '999.1.1.1' }),
       ],
       [
         Intent.DhcpJoin({ device: 'shop' }),
@@ -237,7 +237,7 @@ describe('failures name the place and the reason', () => {
     const [result] = trace(
       homeNet(),
       settle(homeNet(), emptyState),
-      Intent.Ping({ from: 'phone', ip: '203.0.113.99' }),
+      Intent.Ping({ from: 'phone', host: '203.0.113.99' }),
     )
     expect(result.outcome).toEqual(
       Outcome.Dropped({

@@ -1,4 +1,12 @@
-import { type Medium, type WifiBand } from '../model'
+import { Option } from 'effect'
+
+import { type AcmeProblem } from '../message'
+import {
+  type FirewallScope,
+  type Medium,
+  type Security,
+  type WifiBand,
+} from '../model'
 import { type NetTexts, type TextContext } from './types'
 
 const band = (value: WifiBand): string =>
@@ -7,6 +15,8 @@ const band = (value: WifiBand): string =>
 const how: Readonly<Record<Medium, string>> = {
   cable: 'кабелем',
   radio: 'через Wi-Fi',
+  cellular: 'мобільним зв’язком',
+  virtual: 'мостом Docker',
 }
 
 const up = (value: string): string => value.toUpperCase()
@@ -24,6 +34,31 @@ const acc = (id: string, context: TextContext): string =>
 
 const all = (ids: ReadonlyArray<string>, context: TextContext): string =>
   ids.map(id => q(id, context)).join(', ')
+
+const scope: Readonly<Record<FirewallScope, string>> = {
+  os: 'Файрвол пристрою',
+  cloud: 'Файрвол хостингу',
+  router: 'Файрвол роутера',
+}
+
+const ruleName = (maybeRule: Option.Option<number>): string =>
+  Option.match(maybeRule, {
+    onNone: () => 'рядок «усі інші»',
+    onSome: rule => `рядок ${rule}`,
+  })
+
+const security: Readonly<Record<Security, string>> = {
+  open: 'без пароля',
+  wpa2: 'WPA2',
+  wpa3: 'WPA3',
+}
+
+const acme: Readonly<Record<AcmeProblem, string>> = {
+  'not-found': 'такої назви немає в DNS',
+  refused: 'порт 80 закритий',
+  timeout: 'до порту 80 не достукатися',
+  'wrong-server': 'за цією назвою відповідає інший сервер',
+}
 
 export const uk: NetTexts = {
   UnknownDevice: ({ id }, c) => `Пристрою ${q(id, c)} немає на дошці.`,
@@ -166,4 +201,135 @@ export const uk: NetTexts = {
     `Порт ${port} на ${on(device, c)} слухають на ${bind}, а треба на ${want}.`,
   GoalResolvesElsewhere: ({ name, have, want }) =>
     `Назва ${name} веде на ${have}, а треба на ${want}.`,
+
+  InvalidCidr: ({ value }) =>
+    `«${value}» — не мережа: потрібен вигляд 10.0.0.0/8.`,
+  CellularNeedsOperator: ({ a, b }, c) =>
+    `Мобільний зв’язок з’єднує телефон з оператором, а не ${q(a, c)} з ${q(b, c)}.`,
+  VirtualNeedsContainer: ({ a, b }, c) =>
+    `Міст Docker з’єднує контейнер лише з його хостом, а не ${q(a, c)} з ${q(b, c)}.`,
+  NotATransit: ({ id }, c) => `${q(id, c)} — не роутер провайдера.`,
+  NotAVpnGateway: ({ id }, c) => `${q(id, c)} — не VPN-шлюз.`,
+  NotADockerHost: ({ id }, c) => `На ${on(id, c)} не запущено Docker.`,
+  NoVpnClient: ({ device }, c) => `На ${on(device, c)} не налаштовано VPN.`,
+  RouteViaOutsideLan: ({ via }) =>
+    `Наступний роутер ${via} має бути в домашній мережі.`,
+  NotANeighbour: ({ device, via }, c) =>
+    `${q(via, c)} не з’єднаний з ${q(device, c)} напряму.`,
+  ForwardOutsideLan: ({ ip }) =>
+    `Переадресація веде на ${ip}, а потрібна адреса з вашого дому.`,
+  ForwardPortTaken: ({ proto, port }) =>
+    `Правило для ${up(proto)} ${port} уже є.`,
+  UnknownForward: ({ proto, port }) =>
+    `Правила для ${up(proto)} ${port} немає.`,
+  UnknownZone: ({ zone }) => `Домену ${zone} немає на цьому DNS-сервері.`,
+  UnknownRecord: ({ name, rtype }) => `Запису ${rtype} для ${name} немає.`,
+  RecordNeedsAddress: ({ rtype, value }) =>
+    `Запис ${rtype} вказує на адресу, а «${value}» — не адреса.`,
+  CnameNeedsName: ({ value }) =>
+    `CNAME вказує на назву, а не на адресу «${value}». Для адреси потрібен запис A.`,
+  CnameAtApex: ({ zone }) =>
+    `CNAME не можна ставити на сам домен ${zone} (@): для @ потрібен запис A.`,
+  CnameConflict: ({ name }) =>
+    `У ${name} уже є інші записи, тому CNAME поруч із ними поставити не можна.`,
+  SplitTunnelEmpty: () =>
+    'У режимі «Лише робочі мережі» список не може бути порожнім: тоді в тунель не піде нічого.',
+  InvalidPortMapping: ({ value }) =>
+    `«${value}» — не публікація порту: пишуть «ззовні:всередині», наприклад 8080:3000.`,
+  HostPortTaken: ({ port }) =>
+    `Порт ${port} хоста вже зайнятий іншими дверима.`,
+  NoRelay: () => 'Посередника для тунелю на дошці немає.',
+  NoCertificateAuthority: () => 'Центру сертифікації на дошці немає.',
+  NameIsAddress: ({ value }) => `Потрібна назва сайту, а не адреса ${value}.`,
+  AcmeChallengeFailed: ({ name, problem }) =>
+    `Центр сертифікації не підтвердив ${name}: ${acme[problem]}.`,
+
+  ForeignOpenNetwork: ({ ssid }) =>
+    `«${ssid}» — відкрита чужа мережа: підключитися може будь-який перехожий. Оберіть свою мережу з наліпки.`,
+  ForeignNetwork: ({ ssid }) =>
+    `«${ssid}» — не ваша мережа. Звірте назву з наліпкою на роутері.`,
+  NetworkNotFound: ({ ssid }) => `Мережі «${ssid}» поруч немає.`,
+
+  FirewallAllowed: ({ scope: where, maybeRule }) =>
+    `${scope[where]} пропускає конверт: ${ruleName(maybeRule)}.`,
+  TunnelUnwrapped: ({ device }, c) =>
+    `${q(device, c)} дістає конверт із тунелю.`,
+  RelayPassed: ({ device }, c) =>
+    `${q(device, c)} передає конверт далі лінією.`,
+  PortPublished: ({ device, port, container }, c) =>
+    `${q(device, c)} віддає конверт з порту ${port} у контейнер ${q(container, c)}.`,
+
+  GatewayUnreachable: ({ gateway }) =>
+    `Шлюз ${gateway} не відповідає: такого пристрою в мережі немає.`,
+  GatewayIsSelf: ({ device }, c) =>
+    `${q(device, c)} вказує шлюзом сам себе. Шлюз — це роутер.`,
+  GatewayNotARouter: ({ gateway }) =>
+    `${gateway} — не роутер: чужі конверти далі він не передає.`,
+  PublishedPortClosed: ({ device, port }, c) =>
+    `Двері відчинилися, але в ${q(device, c)} порт ${port} ніхто не слухає: відповідь порожня.`,
+  AppDown: ({ device, host, port }, c) =>
+    `${q(device, c)} падає: не може достукатися до ${host}:${port}.`,
+  FirewallDropped: ({ scope: where, maybeRule }) =>
+    `${scope[where]} мовчки викидає конверт (${ruleName(maybeRule)}).`,
+  FirewallRejected: ({ scope: where, maybeRule }) =>
+    `${scope[where]} одразу відмовляє (${ruleName(maybeRule)}).`,
+  TunnelNoRoute: ({ gateway, ip }, c) =>
+    `У ${of(gateway, c)} немає шляху до ${ip}: такої мережі в офісі немає.`,
+  NotConnected: ({ device }, c) => `У ${of(device, c)} тунель не підключено.`,
+  TunnelNotFound: ({ name }) => `Тунелю ${name} немає: сторінка 404.`,
+  UpstreamFailed: ({ device, port }, c) =>
+    `За ${q(device, c)} на порту ${port} ніхто не відповідає: 502 Bad Gateway.`,
+  CertNameMismatch: ({ name, names }) =>
+    `Сертифікат видано на ${names.join(', ')}, а не на ${name}.`,
+  CertExpired: ({ name, notAfter }) =>
+    `Сертифікат ${name} закінчився ${notAfter}.`,
+  CertUntrusted: ({ name, issuer }) =>
+    `Сертифікат ${name} видав «${issuer}», а йому браузер не довіряє.`,
+  TlsNotConfigured: ({ device, port }, c) =>
+    `На ${on(device, c)} порт ${port} не вміє HTTPS: сертифіката немає.`,
+  HttpError: ({ device, status }, c) =>
+    `${q(device, c)} відповідає помилкою ${status}.`,
+
+  SeveralAddresses: ({ name, ips }) =>
+    `У ${name} кілька адрес: ${ips.join(', ')}. Частина відвідувачів потрапить не туди.`,
+  GoalWifiTooWeak: ({ ap, security: have, want }, c) =>
+    `Wi-Fi ${of(ap, c)} — ${security[have]}, а треба не слабше за ${security[want]}.`,
+  GoalChannelBusy: ({ ap, others }, c) =>
+    `Канал ${of(ap, c)} перетинається із сусідами: ${all(others, c)}.`,
+  GoalNotPerformed: ({ from, at }, c) =>
+    `Конверт від ${of(from, c)} ще не дійшов до ${of(at, c)}.`,
+  GoalNoRecord: ({ zone, name, rtype }) =>
+    `У домені ${zone} немає запису ${rtype} для ${name}.`,
+  GoalRecordValue: ({ name, rtype, have, want }) =>
+    `Запис ${rtype} для ${name} — ${have.join(', ')}, а треба ${want}.`,
+  GoalCommandNotRun: ({ device, commands }, c) =>
+    `На ${on(device, c)} ще не запускали ${commands.join(' або ')}.`,
+  GoalCommandSawOther: ({ name, saw, want }) =>
+    `Команда показала ${saw.join(', ') || 'порожньо'} для ${name}, а чекаємо ${want}.`,
+  GoalExtraOpenPort: ({ target, port }) =>
+    `Ззовні відкритий зайвий порт ${port} на ${target}.`,
+  GoalPortNotOpen: ({ target, port }) =>
+    `Порт ${port} на ${target} закритий, а має бути відкритий.`,
+  GoalNotRedirected: ({ url, status }) =>
+    `${url} не перенаправляє на https:// (відповідь ${status}).`,
+  GoalNotThrough: ({ device }, c) => `Конверт іде повз ${acc(device, c)}.`,
+  GoalThrough: ({ device }, c) =>
+    `Конверт іде через ${acc(device, c)}, а має напряму.`,
+  GoalNoDevice: ({ id }, c) => `На дошці ще немає ${of(id, c)}.`,
+  SshLockedOut: ({ device }, c) =>
+    `Ви закрили вхід по ssh самі собі: ${q(device, c)} більше вас не пускає.`,
+
+  UnknownCommand: ({ command, available }) =>
+    `Команди ${command} тут немає. Спробуйте: ${available.join(', ')}.`,
+  CommandLocked: ({ command, available }) =>
+    `Команда ${command} відкриється пізніше в курсі. Зараз доступні: ${available.join(', ')}.`,
+  CommandUsage: ({ usage }) => `Так пишуть цю команду: ${usage}.`,
+  NoLinkLayer: ({ device }, c) =>
+    `${q(device, c)} не може прочитати конверт: ззовні має бути кадр з MAC.`,
+  NoAddressLayer: ({ device }, c) =>
+    `${q(device, c)} не знаходить адресу одержувача: IP має йти одразу за кадром.`,
+  NoPortLayer: ({ device }, c) =>
+    `${q(device, c)} не знаходить номер порту: TCP має йти одразу за IP.`,
+  EnvelopeMisordered: ({ position, expected, found }) =>
+    `На місці ${position} має бути шар ${expected}, а лежить ${found || 'порожньо'}.`,
 }

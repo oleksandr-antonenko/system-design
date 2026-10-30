@@ -1,4 +1,12 @@
-import { type Medium, type WifiBand } from '../model'
+import { Option } from 'effect'
+
+import { type AcmeProblem } from '../message'
+import {
+  type FirewallScope,
+  type Medium,
+  type Security,
+  type WifiBand,
+} from '../model'
 import { type NetTexts, type TextContext } from './types'
 
 const band = (value: WifiBand): string =>
@@ -7,6 +15,8 @@ const band = (value: WifiBand): string =>
 const how: Readonly<Record<Medium, string>> = {
   cable: 'kabeliu',
   radio: 'per Wi-Fi',
+  cellular: 'mobiliuoju ryšiu',
+  virtual: 'Docker tiltu',
 }
 
 const up = (value: string): string => value.toUpperCase()
@@ -36,6 +46,31 @@ const acc = (id: string, context: TextContext): string =>
 
 const all = (ids: ReadonlyArray<string>, context: TextContext): string =>
   ids.map(id => q(id, context)).join(', ')
+
+const scope: Readonly<Record<FirewallScope, string>> = {
+  os: 'Įrenginio užkarda',
+  cloud: 'Prieglobos užkarda',
+  router: 'Maršrutizatoriaus užkarda',
+}
+
+const ruleName = (maybeRule: Option.Option<number>): string =>
+  Option.match(maybeRule, {
+    onNone: () => 'eilutė „visi kiti“',
+    onSome: rule => `${rule} eilutė`,
+  })
+
+const security: Readonly<Record<Security, string>> = {
+  open: 'be slaptažodžio',
+  wpa2: 'WPA2',
+  wpa3: 'WPA3',
+}
+
+const acme: Readonly<Record<AcmeProblem, string>> = {
+  'not-found': 'tokio pavadinimo DNS nėra',
+  refused: '80 prievadas uždarytas',
+  timeout: '80 prievado nepasiekti',
+  'wrong-server': 'šiuo pavadinimu atsako kitas serveris',
+}
 
 export const lt: NetTexts = {
   UnknownDevice: ({ id }, c) => `Įrenginio ${q(id, c)} lentoje nėra.`,
@@ -177,4 +212,135 @@ export const lt: NetTexts = {
     `${Of(device, c)} prievado ${port} klausoma adresu ${bind}, o reikia ${want}.`,
   GoalResolvesElsewhere: ({ name, have, want }) =>
     `Pavadinimas ${name} veda į ${have}, o turi vesti į ${want}.`,
+
+  InvalidCidr: ({ value }) =>
+    `„${value}“ nėra tinklas: rašoma taip: 10.0.0.0/8.`,
+  CellularNeedsOperator: ({ a, b }, c) =>
+    `Mobilusis ryšys jungia telefoną su operatoriumi, o ne ${acc(a, c)} su ${q(b, c)}.`,
+  VirtualNeedsContainer: ({ a, b }, c) =>
+    `Docker tiltas jungia konteinerį tik su jo šeimininku, o ne ${acc(a, c)} su ${q(b, c)}.`,
+  NotATransit: ({ id }, c) => `${q(id, c)} nėra tiekėjo maršrutizatorius.`,
+  NotAVpnGateway: ({ id }, c) => `${q(id, c)} nėra VPN šliuzas.`,
+  NotADockerHost: ({ id }, c) => `${On(id, c)} Docker nepaleistas.`,
+  NoVpnClient: ({ device }, c) => `${On(device, c)} VPN nenustatytas.`,
+  RouteViaOutsideLan: ({ via }) =>
+    `Kitas maršrutizatorius ${via} turi būti namų tinkle.`,
+  NotANeighbour: ({ device, via }, c) =>
+    `${q(via, c)} nesujungtas su ${of(device, c)} tiesiogiai.`,
+  ForwardOutsideLan: ({ ip }) =>
+    `Peradresavimas veda į ${ip}, o reikia adreso iš jūsų namų.`,
+  ForwardPortTaken: ({ proto, port }) =>
+    `Taisyklė ${up(proto)} ${port} jau yra.`,
+  UnknownForward: ({ proto, port }) => `Taisyklės ${up(proto)} ${port} nėra.`,
+  UnknownZone: ({ zone }) => `Šiame DNS serveryje domeno ${zone} nėra.`,
+  UnknownRecord: ({ name, rtype }) => `${name} neturi ${rtype} įrašo.`,
+  RecordNeedsAddress: ({ rtype, value }) =>
+    `${rtype} įrašas rodo į adresą, o „${value}“ nėra adresas.`,
+  CnameNeedsName: ({ value }) =>
+    `CNAME rodo į pavadinimą, o ne į adresą „${value}“. Adresui reikia A įrašo.`,
+  CnameAtApex: ({ zone }) =>
+    `CNAME negalima dėti pačiam domenui ${zone} (@): @ reikia A įrašo.`,
+  CnameConflict: ({ name }) =>
+    `${name} jau turi kitų įrašų, todėl šalia jų CNAME dėti negalima.`,
+  SplitTunnelEmpty: () =>
+    'Režime „Tik darbo tinklai“ sąrašas negali būti tuščias: į tunelį nieko neitų.',
+  InvalidPortMapping: ({ value }) =>
+    `„${value}“ nėra prievado publikavimas: rašoma „išorėje:viduje“, pavyzdžiui, 8080:3000.`,
+  HostPortTaken: ({ port }) =>
+    `Šeimininko prievadą ${port} jau užima kitos durys.`,
+  NoRelay: () => 'Lentoje nėra tunelio tarpininko.',
+  NoCertificateAuthority: () => 'Lentoje nėra sertifikavimo centro.',
+  NameIsAddress: ({ value }) =>
+    `Reikia svetainės pavadinimo, o ne adreso ${value}.`,
+  AcmeChallengeFailed: ({ name, problem }) =>
+    `Sertifikavimo centras nepatvirtino ${name}: ${acme[problem]}.`,
+
+  ForeignOpenNetwork: ({ ssid }) =>
+    `„${ssid}“ yra svetimas atviras tinklas: prisijungti gali bet kuris praeivis. Pasirinkite savo tinklą nuo lipduko.`,
+  ForeignNetwork: ({ ssid }) =>
+    `„${ssid}“ nėra jūsų tinklas. Palyginkite pavadinimą su lipduku ant maršrutizatoriaus.`,
+  NetworkNotFound: ({ ssid }) => `Tinklo „${ssid}“ šalia nėra.`,
+
+  FirewallAllowed: ({ scope: where, maybeRule }) =>
+    `${scope[where]} praleidžia voką: ${ruleName(maybeRule)}.`,
+  TunnelUnwrapped: ({ device }, c) =>
+    `${q(device, c)} ištraukia voką iš tunelio.`,
+  RelayPassed: ({ device }, c) =>
+    `${q(device, c)} perduoda voką toliau linija.`,
+  PortPublished: ({ device, port, container }, c) =>
+    `${q(device, c)} perduoda voką iš prievado ${port} į konteinerį ${q(container, c)}.`,
+
+  GatewayUnreachable: ({ gateway }) =>
+    `Šliuzas ${gateway} neatsako: tokio įrenginio tinkle nėra.`,
+  GatewayIsSelf: ({ device }, c) =>
+    `${q(device, c)} nurodo šliuzu save patį. Šliuzas yra maršrutizatorius.`,
+  GatewayNotARouter: ({ gateway }) =>
+    `${gateway} nėra maršrutizatorius: svetimų vokų jis toliau neperduoda.`,
+  PublishedPortClosed: ({ device, port }, c) =>
+    `Durys atsidarė, bet ${on(device, c)} prievado ${port} niekas neklauso: atsakymas tuščias.`,
+  AppDown: ({ device, host, port }, c) =>
+    `${q(device, c)} vis lūžta: nepasiekia ${host}:${port}.`,
+  FirewallDropped: ({ scope: where, maybeRule }) =>
+    `${scope[where]} tyliai išmeta voką (${ruleName(maybeRule)}).`,
+  FirewallRejected: ({ scope: where, maybeRule }) =>
+    `${scope[where]} iškart atsisako (${ruleName(maybeRule)}).`,
+  TunnelNoRoute: ({ gateway, ip }, c) =>
+    `${Of(gateway, c)} kelio į ${ip} nėra: tokio tinklo biure nėra.`,
+  NotConnected: ({ device }, c) => `${q(device, c)} neprijungtas prie tunelio.`,
+  TunnelNotFound: ({ name }) => `Tunelio ${name} nėra: puslapis 404.`,
+  UpstreamFailed: ({ device, port }, c) =>
+    `Už ${of(device, c)} prievadu ${port} niekas neatsako: 502 Bad Gateway.`,
+  CertNameMismatch: ({ name, names }) =>
+    `Sertifikatas išduotas ${names.join(', ')}, o ne ${name}.`,
+  CertExpired: ({ name, notAfter }) =>
+    `${name} sertifikato galiojimas baigėsi ${notAfter}.`,
+  CertUntrusted: ({ name, issuer }) =>
+    `${name} sertifikatą išdavė „${issuer}“, o juo naršyklė nepasitiki.`,
+  TlsNotConfigured: ({ device, port }, c) =>
+    `${On(device, c)} prievadas ${port} nemoka HTTPS: sertifikato nėra.`,
+  HttpError: ({ device, status }, c) =>
+    `${q(device, c)} atsako klaida ${status}.`,
+
+  SeveralAddresses: ({ name, ips }) =>
+    `${name} turi kelis adresus: ${ips.join(', ')}. Dalis lankytojų pateks ne ten.`,
+  GoalWifiTooWeak: ({ ap, security: have, want }, c) =>
+    `${Of(ap, c)} Wi-Fi yra ${security[have]}, o reikia ne silpnesnio nei ${security[want]}.`,
+  GoalChannelBusy: ({ ap, others }, c) =>
+    `${Of(ap, c)} kanalas persidengia su kaimynais: ${all(others, c)}.`,
+  GoalNotPerformed: ({ from, at }, c) =>
+    `Vokas iš ${of(from, c)} dar nepasiekė ${acc(at, c)}.`,
+  GoalNoRecord: ({ zone, name, rtype }) =>
+    `Domene ${zone} nėra ${rtype} įrašo ${name}.`,
+  GoalRecordValue: ({ name, rtype, have, want }) =>
+    `${name} ${rtype} įrašas yra ${have.join(', ')}, o reikia ${want}.`,
+  GoalCommandNotRun: ({ device, commands }, c) =>
+    `${On(device, c)} dar nepaleista ${commands.join(' ar ')}.`,
+  GoalCommandSawOther: ({ name, saw, want }) =>
+    `Komanda parodė ${saw.join(', ') || 'nieko'} pavadinimui ${name}, o laukiame ${want}.`,
+  GoalExtraOpenPort: ({ target, port }) =>
+    `Iš išorės atviras perteklinis prievadas ${port} adresu ${target}.`,
+  GoalPortNotOpen: ({ target, port }) =>
+    `Prievadas ${port} adresu ${target} uždarytas, o turi būti atviras.`,
+  GoalNotRedirected: ({ url, status }) =>
+    `${url} nenukreipia į https:// (atsakymas ${status}).`,
+  GoalNotThrough: ({ device }, c) => `Vokas eina pro šalį ${of(device, c)}.`,
+  GoalThrough: ({ device }, c) =>
+    `Vokas eina per ${acc(device, c)}, o turi eiti tiesiogiai.`,
+  GoalNoDevice: ({ id }, c) => `Lentoje dar nėra ${of(id, c)}.`,
+  SshLockedOut: ({ device }, c) =>
+    `Uždarėte ssh patys sau: ${q(device, c)} jūsų daugiau neįleidžia.`,
+
+  UnknownCommand: ({ command, available }) =>
+    `Komandos ${command} čia nėra. Bandykite: ${available.join(', ')}.`,
+  CommandLocked: ({ command, available }) =>
+    `Komanda ${command} atsivers vėliau kurse. Dabar galima: ${available.join(', ')}.`,
+  CommandUsage: ({ usage }) => `Ši komanda rašoma taip: ${usage}.`,
+  NoLinkLayer: ({ device }, c) =>
+    `${q(device, c)} negali perskaityti voko: išorėje turi būti kadras su MAC.`,
+  NoAddressLayer: ({ device }, c) =>
+    `${q(device, c)} neranda gavėjo adreso: IP turi eiti iškart po kadro.`,
+  NoPortLayer: ({ device }, c) =>
+    `${q(device, c)} neranda prievado numerio: TCP turi eiti iškart po IP.`,
+  EnvelopeMisordered: ({ position, expected, found }) =>
+    `${position} vietoje turi būti sluoksnis ${expected}, o yra ${found || 'nieko'}.`,
 }

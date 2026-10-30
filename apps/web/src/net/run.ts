@@ -7,8 +7,15 @@ import {
   type LinkId,
   type Mac,
   type NetState,
+  type RecordType,
 } from './model'
-import { type Hop, Outcome, TableChange } from './packet'
+import {
+  type Hop,
+  Outcome,
+  type RouteMatch,
+  type RuleMatch,
+  TableChange,
+} from './packet'
 
 // Плумбинг трассы: накопленные хопы, состояние сети, отказы как итог и
 // таблицы устройств. Всё чистое, без мутаций.
@@ -17,10 +24,18 @@ import { type Hop, Outcome, TableChange } from './packet'
 export const netRules = {
   cableMs: 1,
   radioMs: 3,
+  cellularMs: 15,
+  virtualMs: 0,
   internetMs: 20,
   ttl: 64,
   pageStatus: 200,
   maxDeliveries: 2000,
+  tracerouteMaxHops: 12,
+  tracerouteStars: 3,
+  vpnPort: 51820,
+  relayPort: 443,
+  dnsTtl: 300,
+  maxRedirects: 3,
 }
 
 // RUN
@@ -82,6 +97,8 @@ export const editHop = (
   edit: Readonly<{
     note?: NetMessage
     changes?: ReadonlyArray<TableChange>
+    route?: RouteMatch
+    rule?: RuleMatch
   }>,
 ): Run =>
   Option.match(maybeIndex, {
@@ -94,6 +111,14 @@ export const editHop = (
               ...hop,
               note: edit.note ?? hop.note,
               changes: [...hop.changes, ...(edit.changes ?? [])],
+              maybeRoute:
+                edit.route === undefined
+                  ? hop.maybeRoute
+                  : Option.some(edit.route),
+              maybeRule:
+                edit.rule === undefined
+                  ? hop.maybeRule
+                  : Option.some(edit.rule),
             }
           : hop,
       ),
@@ -178,30 +203,34 @@ export const learnArp = (
       ]
 }
 
-export const cacheName = (
+/** Память DNS устройства: строки одного имени и типа заменяются целиком,
+    каждая живёт до `expiresAt`. */
+export const cacheRecords = (
   state: NetState,
   device: DeviceId,
   name: string,
-  ip: Ip,
-): readonly [NetState, Option.Option<TableChange>] =>
-  Array.some(
-    state.dnsCache,
-    entry => entry.device === device && entry.name === name && entry.ip === ip,
-  )
-    ? [state, Option.none()]
-    : [
-        {
-          ...state,
-          dnsCache: [
-            ...Array.filter(
-              state.dnsCache,
-              entry => !(entry.device === device && entry.name === name),
-            ),
-            { device, name, ip },
-          ],
-        },
-        Option.some(TableChange.DnsCached({ device, name, ip })),
-      ]
+  rtype: RecordType,
+  records: ReadonlyArray<Readonly<{ value: string; expiresAt: number }>>,
+): readonly [NetState, ReadonlyArray<TableChange>] => [
+  {
+    ...state,
+    dnsCache: [
+      ...Array.filter(
+        state.dnsCache,
+        entry =>
+          !(
+            entry.device === device &&
+            entry.name === name &&
+            entry.rtype === rtype
+          ),
+      ),
+      ...Array.map(records, record => ({ device, name, rtype, ...record })),
+    ],
+  },
+  Array.map(records, record =>
+    TableChange.DnsCached({ device, name, rtype, ...record }),
+  ),
+]
 
 export const macPort = (
   state: NetState,

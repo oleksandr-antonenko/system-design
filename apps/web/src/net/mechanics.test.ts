@@ -88,7 +88,7 @@ const failureOf = (doc: NetDoc, goal: Goal, state = emptyState) =>
     () => new Error('goal is met'),
   )
 
-describe('lesson 1: what happens when you open a site', () => {
+describe('mechanics for lessons 1 and 3: DHCP, DNS, then the page hop by hop', () => {
   const browse = Intent.Browse({ from: 'phone', url: 'http://shop.example/' })
 
   test('the phone gets an address, asks DNS, then fetches the page hop by hop', () => {
@@ -96,7 +96,15 @@ describe('lesson 1: what happens when you open a site', () => {
     expect(result.outcome).toEqual(
       Outcome.Delivered({
         at: 'shop',
-        answer: Answer.Page({ url: 'http://shop.example/', status: 200 }),
+        answer: Answer.Page({
+          url: 'http://shop.example/',
+          status: 200,
+          seenFrom: '203.0.113.7',
+          secure: false,
+          maybeCert: Option.none(),
+          redirects: [],
+          maybeProblem: Option.none(),
+        }),
       }),
     )
     const stages: ReadonlyArray<Layer['_tag']> = [
@@ -192,7 +200,7 @@ describe('lesson 1: what happens when you open a site', () => {
   })
 })
 
-describe('lesson 2: layers', () => {
+describe('mechanics for lesson 7: layers', () => {
   test('HTTP goes in TCP, IP and a frame; each hop swaps only the outer envelope', () => {
     const result = run(
       homeNet(),
@@ -263,13 +271,13 @@ describe('lesson 2: layers', () => {
       Array.map([pulled, foreign, closed], doc => reasonOf(run(doc, browse))),
     ).toEqual([
       NetMessage.LinkDown({ device: 'pc', link: 'pc-router' }),
-      NetMessage.ArpNoReply({ device: 'pc', ip: '10.0.0.1' }),
+      NetMessage.GatewayUnreachable({ device: 'pc', gateway: '10.0.0.1' }),
       NetMessage.PortClosed({ device: 'shop', proto: 'tcp', port: 80 }),
     ])
   })
 })
 
-describe('lesson 3: Ethernet, MAC and a switch', () => {
+describe('mechanics for lesson 7: Ethernet, MAC and a switch', () => {
   const pcs = ['pc1', 'pc2', 'pc3']
   const office = buildNet([
     add(networkSwitch('switch', 300, 300)),
@@ -293,7 +301,7 @@ describe('lesson 3: Ethernet, MAC and a switch', () => {
     Option.map(findHost(office, 'printer'), printer => printer.mac),
   )
   const ping = (from: string): Intent =>
-    Intent.Ping({ from, ip: '192.168.1.50' })
+    Intent.Ping({ from, host: '192.168.1.50' })
 
   test('an empty table floods the broadcast, then the switch answers from what it learned', () => {
     const result = run(office, ping('pc1'))
@@ -372,7 +380,7 @@ describe('lesson 3: Ethernet, MAC and a switch', () => {
   })
 })
 
-describe('lesson 4: Wi-Fi', () => {
+describe('mechanics for lessons 1 and 5: Wi-Fi', () => {
   const browse = Intent.Browse({ from: 'phone', url: 'http://shop.example/' })
 
   test('a wrong password keeps the phone out: nothing leaves it', () => {
@@ -504,7 +512,7 @@ describe('lesson 4: Wi-Fi', () => {
   })
 })
 
-describe('lesson 5: IP addresses, subnets and DHCP', () => {
+describe('mechanics for lessons 2, 7 and 9: subnets and the DHCP pool', () => {
   test('Discover, Offer, Request, Ack hand out the lowest free address', () => {
     const doc = buildNet(
       [add(host('desk', 'pc', 340, 520)), cable('desk', 'router')],
@@ -615,12 +623,12 @@ describe('lesson 5: IP addresses, subnets and DHCP', () => {
       homeNet(),
     )
     expect(
-      reasonOf(run(doc, Intent.Ping({ from: 'stray', ip: '192.168.1.1' }))),
+      reasonOf(run(doc, Intent.Ping({ from: 'stray', host: '192.168.1.1' }))),
     ).toEqual(NetMessage.NoGateway({ device: 'stray', ip: '192.168.1.1' }))
   })
 })
 
-describe('lesson 6: ARP', () => {
+describe('mechanics for lessons 7 and 9: ARP and reservations', () => {
   const lan: ReadonlyArray<NetOp> = [
     ...homeOps,
     add(networkSwitch('switch', 340, 560)),
@@ -642,7 +650,7 @@ describe('lesson 6: ARP', () => {
     const [first, afterFirst] = trace(
       doc,
       state,
-      Intent.Ping({ from: 'laptop', ip: '192.168.1.100' }),
+      Intent.Ping({ from: 'laptop', host: '192.168.1.100' }),
     )
     expect(first.outcome._tag).toBe('Delivered')
     const notes = pipe(
@@ -675,7 +683,7 @@ describe('lesson 6: ARP', () => {
     const [second] = trace(
       doc,
       afterFirst,
-      Intent.Ping({ from: 'laptop', ip: '192.168.1.100' }),
+      Intent.Ping({ from: 'laptop', host: '192.168.1.100' }),
     )
     expect([arpPackets(first), arpPackets(second)]).toEqual([2, 0])
   })
@@ -735,7 +743,7 @@ describe('lesson 6: ARP', () => {
   })
 })
 
-describe('lesson 7: ports, TCP and UDP — a dev server on the phone', () => {
+describe('mechanics for lesson 6: ports, TCP and UDP', () => {
   const browse = Intent.Browse({
     from: 'phone',
     url: 'http://192.168.1.42:5173/',

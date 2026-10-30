@@ -11,14 +11,23 @@ import {
 } from './model'
 
 /** Правила радио. Дальность — в единицах доски: 5 ГГц быстрее, но бьёт
-    ближе, чем 2.4 ГГц. */
+    ближе, чем 2.4 ГГц. Каждая стена на прямой добавляет к расстоянию
+    `wallPenalty`. Полоски сигнала: 3 — до 60 % дальности, 2 — до 85 %,
+    1 — до 100 %. */
 export const wifiRules = {
   range24: 450,
   range5: 280,
+  wallPenalty: 40,
   minPasswordLength: 8,
   dualBand5Channel: 36,
   overlapDistance24: 5,
+  signalSteps: [0.6, 0.85, 1],
 }
+
+/** Полоски сигнала 0–3 на расстоянии (уже со стенами) в диапазоне. */
+export const signalBars = (distance: number, band: Band): number =>
+  Array.filter(wifiRules.signalSteps, step => distance <= step * rangeOf(band))
+    .length
 
 const CHANNELS_24: ReadonlyArray<number> = Array.range(1, 13)
 

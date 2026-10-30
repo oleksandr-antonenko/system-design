@@ -123,6 +123,42 @@ export const macFromId = (id: string): string => {
   )
 }
 
+// NETWORKS
+
+export type Network = Readonly<{ ip: string; prefix: number }>
+
+/** `10.0.0.0/8` → сеть и маска; `/0` — «все адреса». */
+export const parseCidr = (value: string): Option.Option<Network> => {
+  const [ip = '', prefix = ''] = value.trim().split('/')
+  const bits = globalThis.Number(prefix)
+  return isIp(ip) && /^\d{1,2}$/.test(prefix) && bits >= 0 && bits <= 32
+    ? Option.some({ ip, prefix: bits })
+    : Option.none()
+}
+
+export const isCidr = (value: string): boolean =>
+  Option.isSome(parseCidr(value))
+
+export const inCidr = (ip: string, cidr: string): boolean =>
+  Option.exists(parseCidr(cidr), network =>
+    inSubnet(ip, network.ip, network.prefix),
+  )
+
+/** Общее пространство провайдеров `100.64.0.0/10` (CGNAT, mesh). */
+export const isShared = (ip: string): boolean => inSubnet(ip, '100.64.0.0', 10)
+
+/** Адрес, который интернет возит: не частный, не петля, не CGNAT. */
+export const isRoutable = (ip: string): boolean =>
+  !isPrivate(ip) && !isLoopback(ip) && !isShared(ip)
+
+/** Адресная строка браузера: без схемы — `http://`. */
+export const normalizeUrl = (input: string): string => {
+  const trimmed = input.trim()
+  return /^[a-z][a-z0-9+.-]*:\/\//i.test(trimmed)
+    ? trimmed
+    : `http://${trimmed}`
+}
+
 // URL
 
 export type Url = Readonly<{
@@ -151,3 +187,15 @@ export const parseUrl = (url: string): Option.Option<Url> =>
           })
     }),
   )
+
+export const urlText = (url: Url): string => {
+  const defaultPort = url.scheme === 'https' ? 443 : 80
+  return `${url.scheme}://${url.host}${url.port === defaultPort ? '' : `:${url.port}`}${url.path}`
+}
+
+/** Имя совпадает с образцом: точно или `*.зона` на один уровень. */
+export const nameMatches = (pattern: string, name: string): boolean =>
+  pattern === name ||
+  (pattern.startsWith('*.') &&
+    name.endsWith(pattern.slice(1)) &&
+    !name.slice(0, name.length - pattern.length + 1).includes('.'))

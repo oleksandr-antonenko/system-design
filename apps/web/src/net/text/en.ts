@@ -1,4 +1,12 @@
-import { type Medium, type WifiBand } from '../model'
+import { Option } from 'effect'
+
+import { type AcmeProblem } from '../message'
+import {
+  type FirewallScope,
+  type Medium,
+  type Security,
+  type WifiBand,
+} from '../model'
 import { type NetTexts, type TextContext } from './types'
 
 const band = (value: WifiBand): string =>
@@ -7,6 +15,8 @@ const band = (value: WifiBand): string =>
 const how: Readonly<Record<Medium, string>> = {
   cable: 'with a cable',
   radio: 'over Wi-Fi',
+  cellular: 'over the mobile network',
+  virtual: 'with the Docker bridge',
 }
 
 const up = (value: string): string => value.toUpperCase()
@@ -15,6 +25,31 @@ const q = (id: string, context: TextContext): string => context.name(id)
 
 const all = (ids: ReadonlyArray<string>, context: TextContext): string =>
   ids.map(id => q(id, context)).join(', ')
+
+const scope: Readonly<Record<FirewallScope, string>> = {
+  os: 'The device firewall',
+  cloud: 'The hosting firewall',
+  router: 'The router firewall',
+}
+
+const ruleName = (maybeRule: Option.Option<number>): string =>
+  Option.match(maybeRule, {
+    onNone: () => 'the “everyone else” line',
+    onSome: rule => `line ${rule}`,
+  })
+
+const security: Readonly<Record<Security, string>> = {
+  open: 'open, without a password',
+  wpa2: 'WPA2',
+  wpa3: 'WPA3',
+}
+
+const acme: Readonly<Record<AcmeProblem, string>> = {
+  'not-found': 'the name is not in DNS',
+  refused: 'port 80 is closed',
+  timeout: 'port 80 cannot be reached',
+  'wrong-server': 'another server answers for this name',
+}
 
 export const en: NetTexts = {
   UnknownDevice: ({ id }, c) => `There is no ${q(id, c)} on the board.`,
@@ -158,4 +193,138 @@ export const en: NetTexts = {
     `Port ${port} on ${q(device, c)} listens on ${bind}, but it should listen on ${want}.`,
   GoalResolvesElsewhere: ({ name, have, want }) =>
     `The name ${name} leads to ${have}, but it should lead to ${want}.`,
+
+  InvalidCidr: ({ value }) =>
+    `“${value}” is not a network: write it like 10.0.0.0/8.`,
+  CellularNeedsOperator: ({ a, b }, c) =>
+    `A mobile link connects a phone to its operator, not ${q(a, c)} to ${q(b, c)}.`,
+  VirtualNeedsContainer: ({ a, b }, c) =>
+    `The Docker bridge connects a container only to its host, not ${q(a, c)} to ${q(b, c)}.`,
+  NotATransit: ({ id }, c) => `${q(id, c)} is not a provider router.`,
+  NotAVpnGateway: ({ id }, c) => `${q(id, c)} is not a VPN gateway.`,
+  NotADockerHost: ({ id }, c) => `Docker is not running on ${q(id, c)}.`,
+  NoVpnClient: ({ device }, c) => `${q(device, c)} has no VPN set up.`,
+  RouteViaOutsideLan: ({ via }) =>
+    `The next router ${via} must be in the home network.`,
+  NotANeighbour: ({ device, via }, c) =>
+    `${q(via, c)} is not connected to ${q(device, c)} directly.`,
+  ForwardOutsideLan: ({ ip }) =>
+    `The forward leads to ${ip}, but it needs an address in your home.`,
+  ForwardPortTaken: ({ proto, port }) =>
+    `There is already a rule for ${up(proto)} ${port}.`,
+  UnknownForward: ({ proto, port }) =>
+    `There is no rule for ${up(proto)} ${port}.`,
+  UnknownZone: ({ zone }) => `This DNS server has no domain ${zone}.`,
+  UnknownRecord: ({ name, rtype }) => `${name} has no ${rtype} record.`,
+  RecordNeedsAddress: ({ rtype, value }) =>
+    `An ${rtype} record points to an address, and “${value}” is not one.`,
+  CnameNeedsName: ({ value }) =>
+    `A CNAME points to a name, not to the address “${value}”. Use an A record for an address.`,
+  CnameAtApex: ({ zone }) =>
+    `A CNAME cannot sit on the domain ${zone} itself (@): @ needs an A record.`,
+  CnameConflict: ({ name }) =>
+    `${name} already has other records, so a CNAME cannot sit next to them.`,
+  SplitTunnelEmpty: () =>
+    'In “Work networks only” mode the list cannot be empty: nothing would go into the tunnel.',
+  InvalidPortMapping: ({ value }) =>
+    `“${value}” is not a port mapping: write “outside:inside”, like 8080:3000.`,
+  HostPortTaken: ({ port }) =>
+    `Host port ${port} is already taken by another door.`,
+  NoRelay: () => 'There is no tunnel relay on the board.',
+  NoCertificateAuthority: () =>
+    'There is no certificate authority on the board.',
+  NameIsAddress: ({ value }) =>
+    `A site name is needed, not the address ${value}.`,
+  AcmeChallengeFailed: ({ name, problem }) =>
+    `The certificate authority could not verify ${name}: ${acme[problem]}.`,
+
+  ForeignOpenNetwork: ({ ssid }) =>
+    `“${ssid}” is someone else's open network: any passer-by can join. Pick your own network from the sticker.`,
+  ForeignNetwork: ({ ssid }) =>
+    `“${ssid}” is not your network. Check the name on the router sticker.`,
+  NetworkNotFound: ({ ssid }) => `There is no “${ssid}” network nearby.`,
+
+  FirewallAllowed: ({ scope: where, maybeRule }) =>
+    `${scope[where]} lets the envelope in: ${ruleName(maybeRule)}.`,
+  TunnelUnwrapped: ({ device }, c) =>
+    `${q(device, c)} takes the envelope out of the tunnel.`,
+  RelayPassed: ({ device }, c) =>
+    `${q(device, c)} passes the envelope on along the line.`,
+  PortPublished: ({ device, port, container }, c) =>
+    `${q(device, c)} hands the envelope from port ${port} to the container ${q(container, c)}.`,
+
+  GatewayUnreachable: ({ gateway }) =>
+    `Gateway ${gateway} does not answer: there is no such device in the network.`,
+  GatewayIsSelf: ({ device }, c) =>
+    `${q(device, c)} names itself as the gateway. The gateway is the router.`,
+  GatewayNotARouter: ({ gateway }) =>
+    `${gateway} is not a router: it does not pass other devices' envelopes on.`,
+  PublishedPortClosed: ({ device, port }, c) =>
+    `The door opened, but nothing listens on port ${port} in ${q(device, c)}: the reply is empty.`,
+  AppDown: ({ device, host, port }, c) =>
+    `${q(device, c)} keeps crashing: it cannot reach ${host}:${port}.`,
+  FirewallDropped: ({ scope: where, maybeRule }) =>
+    `${scope[where]} silently throws the envelope away (${ruleName(maybeRule)}).`,
+  FirewallRejected: ({ scope: where, maybeRule }) =>
+    `${scope[where]} refuses right away (${ruleName(maybeRule)}).`,
+  TunnelNoRoute: ({ gateway, ip }, c) =>
+    `${q(gateway, c)} has no way to ${ip}: the office has no such network.`,
+  NotConnected: ({ device }, c) =>
+    `${q(device, c)} is not connected to the tunnel.`,
+  TunnelNotFound: ({ name }) => `There is no tunnel ${name}: page 404.`,
+  UpstreamFailed: ({ device, port }, c) =>
+    `Nothing answers on port ${port} behind ${q(device, c)}: 502 Bad Gateway.`,
+  CertNameMismatch: ({ name, names }) =>
+    `The certificate is for ${names.join(', ')}, not for ${name}.`,
+  CertExpired: ({ name, notAfter }) =>
+    `The certificate for ${name} expired on ${notAfter}.`,
+  CertUntrusted: ({ name, issuer }) =>
+    `The certificate for ${name} comes from “${issuer}”, which the browser does not trust.`,
+  TlsNotConfigured: ({ device, port }, c) =>
+    `Port ${port} on ${q(device, c)} cannot do HTTPS: there is no certificate.`,
+  HttpError: ({ device, status }, c) =>
+    `${q(device, c)} answers with error ${status}.`,
+
+  SeveralAddresses: ({ name, ips }) =>
+    `${name} has several addresses: ${ips.join(', ')}. Some visitors will land in the wrong place.`,
+  GoalWifiTooWeak: ({ ap, security: have, want }, c) =>
+    `The Wi-Fi of ${q(ap, c)} is ${security[have]}, but it should be at least ${security[want]}.`,
+  GoalChannelBusy: ({ ap, others }, c) =>
+    `The channel of ${q(ap, c)} overlaps with neighbours: ${all(others, c)}.`,
+  GoalNotPerformed: ({ from, at }, c) =>
+    `No envelope from ${q(from, c)} has reached ${q(at, c)} yet.`,
+  GoalNoRecord: ({ zone, name, rtype }) =>
+    `The domain ${zone} has no ${rtype} record for ${name}.`,
+  GoalRecordValue: ({ name, rtype, have, want }) =>
+    `The ${rtype} record of ${name} is ${have.join(', ')}, but it should be ${want}.`,
+  GoalCommandNotRun: ({ device, commands }, c) =>
+    `Nobody has run ${commands.join(' or ')} on ${q(device, c)} yet.`,
+  GoalCommandSawOther: ({ name, saw, want }) =>
+    `The command showed ${saw.join(', ') || 'nothing'} for ${name}, and we expect ${want}.`,
+  GoalExtraOpenPort: ({ target, port }) =>
+    `An extra port ${port} is open on ${target} from outside.`,
+  GoalPortNotOpen: ({ target, port }) =>
+    `Port ${port} on ${target} is closed, but it should be open.`,
+  GoalNotRedirected: ({ url, status }) =>
+    `${url} does not redirect to https:// (answer ${status}).`,
+  GoalNotThrough: ({ device }, c) => `The envelope goes past ${q(device, c)}.`,
+  GoalThrough: ({ device }, c) =>
+    `The envelope goes through ${q(device, c)}, but it should go directly.`,
+  GoalNoDevice: ({ id }, c) => `There is no ${q(id, c)} on the board yet.`,
+  SshLockedOut: ({ device }, c) =>
+    `You closed ssh on yourself: ${q(device, c)} no longer lets you in.`,
+
+  UnknownCommand: ({ command, available }) =>
+    `There is no ${command} command here. Try: ${available.join(', ')}.`,
+  CommandLocked: ({ command, available }) =>
+    `The ${command} command opens later in the course. Available now: ${available.join(', ')}.`,
+  CommandUsage: ({ usage }) => `This is how the command is written: ${usage}.`,
+  NoLinkLayer: ({ device }, c) =>
+    `${q(device, c)} cannot read the envelope: the frame with MACs must be outside.`,
+  NoAddressLayer: ({ device }, c) =>
+    `${q(device, c)} cannot find the recipient's address: IP must come right after the frame.`,
+  NoPortLayer: ({ device }, c) =>
+    `${q(device, c)} cannot find the port number: TCP must come right after IP.`,
+  EnvelopeMisordered: ({ position, expected, found }) =>
+    `Place ${position} should hold the ${expected} layer, but it holds ${found || 'nothing'}.`,
 }

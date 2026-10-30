@@ -8,7 +8,7 @@ import {
   formatIp,
   parseIp,
 } from './address'
-import { findDevice, isWan } from './doc'
+import { findDevice, isWanOf } from './doc'
 import { egressOf, receptionAt, sendFrame } from './frames'
 import { NetMessage } from './message'
 import {
@@ -311,7 +311,10 @@ export const dhcpExchange = (
     { run: discover.run, servers: [] },
     (current: Found, reception): Found => {
       const device = reception.device
-      if (device._tag === 'Router' && !isWan(doc, reception.link)) {
+      if (
+        device._tag === 'Router' &&
+        !isWanOf(doc, reception.link, device.id)
+      ) {
         return device.dhcp.enabled
           ? {
               ...current,

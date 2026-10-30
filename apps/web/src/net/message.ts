@@ -3,6 +3,7 @@ import { defineTaggedUnion } from 'foldkit/schema'
 
 import {
   DeviceId,
+  FirewallScope,
   Ip,
   LinkId,
   Mac,
@@ -10,11 +11,22 @@ import {
   NatProto,
   Port,
   Proto,
+  RecordType,
+  Security,
   WifiBand,
 } from './model'
 
+/** Что пошло не так у центра сертификации при проверке HTTP-01. */
+export const AcmeProblem = Schema.Literals([
+  'not-found',
+  'refused',
+  'timeout',
+  'wrong-server',
+])
+export type AcmeProblem = typeof AcmeProblem.Type
+
 /** Коды сообщений модели пакетов с параметрами. Модель не пишет текстов:
-    тексты на четырёх языках собирает слой i18n (отдельное изменение). */
+    тексты на четырёх языках лежат в `net/text`. */
 export const NetMessage = defineTaggedUnion({
   // Отказы операций документа
   UnknownDevice: { id: DeviceId },
@@ -22,6 +34,7 @@ export const NetMessage = defineTaggedUnion({
   InvalidMac: { value: Schema.String },
   DuplicateMac: { mac: Mac, owner: DeviceId },
   InvalidIp: { value: Schema.String },
+  InvalidCidr: { value: Schema.String },
   InvalidPrefix: { value: Schema.Number },
   AddressNotUsable: { ip: Ip, prefix: Schema.Number },
   GatewayOutsideSubnet: { gateway: Ip, ip: Ip, prefix: Schema.Number },
@@ -31,13 +44,19 @@ export const NetMessage = defineTaggedUnion({
   UnknownLink: { a: DeviceId, b: DeviceId },
   PortBusy: { device: DeviceId },
   RadioNeedsAccessPoint: { a: DeviceId, b: DeviceId },
+  CellularNeedsOperator: { a: DeviceId, b: DeviceId },
+  VirtualNeedsContainer: { a: DeviceId, b: DeviceId },
   NoWifiOnDevice: { device: DeviceId },
   InternetNeedsRouter: { device: DeviceId },
   SecondWanLink: { router: DeviceId },
   LinkMakesLoop: { a: DeviceId, b: DeviceId },
   NotAHost: { id: DeviceId },
   NotARouter: { id: DeviceId },
+  NotATransit: { id: DeviceId },
   NotAnAccessPoint: { id: DeviceId },
+  NotAVpnGateway: { id: DeviceId },
+  NotADockerHost: { id: DeviceId },
+  NoVpnClient: { device: DeviceId },
   DhcpPoolOutsideSubnet: {
     start: Ip,
     end: Ip,
@@ -53,6 +72,28 @@ export const NetMessage = defineTaggedUnion({
   InvalidChannel: { band: WifiBand, channel: Schema.Number },
   InvalidPort: { value: Schema.Number },
   EmptyName: {},
+  RouteViaOutsideLan: { via: Ip },
+  NotANeighbour: { device: DeviceId, via: DeviceId },
+  ForwardOutsideLan: { ip: Ip },
+  ForwardPortTaken: { proto: Proto, port: Port },
+  UnknownForward: { proto: Proto, port: Port },
+  UnknownZone: { zone: Schema.String },
+  UnknownRecord: { name: Schema.String, rtype: RecordType },
+  RecordNeedsAddress: { rtype: RecordType, value: Schema.String },
+  CnameNeedsName: { value: Schema.String },
+  CnameAtApex: { zone: Schema.String },
+  CnameConflict: { name: Schema.String },
+  SplitTunnelEmpty: {},
+  InvalidPortMapping: { value: Schema.String },
+  HostPortTaken: { port: Port },
+  NoRelay: {},
+  NoCertificateAuthority: {},
+  NameIsAddress: { value: Schema.String },
+  AcmeChallengeFailed: {
+    name: Schema.String,
+    problem: AcmeProblem,
+    maybeIp: Schema.Option(Ip),
+  },
 
   // Почему устройство не в Wi-Fi
   WifiOff: { ap: DeviceId },
@@ -61,6 +102,9 @@ export const NetMessage = defineTaggedUnion({
   WrongPassword: { device: DeviceId, ssid: Schema.String },
   BandUnsupported: { device: DeviceId, band: WifiBand },
   OutOfRange: { device: DeviceId, ap: DeviceId },
+  ForeignOpenNetwork: { device: DeviceId, ssid: Schema.String },
+  ForeignNetwork: { device: DeviceId, ssid: Schema.String },
+  NetworkNotFound: { device: DeviceId, ssid: Schema.String },
 
   // Что устройство сделало с кадром на хопе
   FrameReceived: { device: DeviceId },
@@ -74,6 +118,14 @@ export const NetMessage = defineTaggedUnion({
   ArpIsMine: { device: DeviceId, ip: Ip },
   ArpNotMine: { device: DeviceId, ip: Ip },
   DhcpServerOff: { router: DeviceId },
+  FirewallAllowed: {
+    device: DeviceId,
+    scope: FirewallScope,
+    maybeRule: Schema.Option(Schema.Number),
+  },
+  TunnelUnwrapped: { device: DeviceId },
+  RelayPassed: { device: DeviceId },
+  PortPublished: { device: DeviceId, port: Port, container: DeviceId },
 
   // Почему пакет не дошёл
   NoLink: { device: DeviceId },
@@ -81,6 +133,9 @@ export const NetMessage = defineTaggedUnion({
   NoAddress: { device: DeviceId },
   UsesStaticAddress: { device: DeviceId },
   NoGateway: { device: DeviceId, ip: Ip },
+  GatewayUnreachable: { device: DeviceId, gateway: Ip },
+  GatewayIsSelf: { device: DeviceId },
+  GatewayNotARouter: { device: DeviceId, gateway: Ip },
   NoDnsServer: { device: DeviceId },
   ArpNoReply: { device: DeviceId, ip: Ip },
   NoDhcpServer: { device: DeviceId },
@@ -92,9 +147,42 @@ export const NetMessage = defineTaggedUnion({
   NatNoMapping: { router: DeviceId, proto: NatProto, port: Port },
   PortClosed: { device: DeviceId, proto: Proto, port: Port },
   ListensOnlyOnLoopback: { device: DeviceId, port: Port },
+  PublishedPortClosed: { device: DeviceId, port: Port },
+  AppDown: { device: DeviceId, host: Schema.String, port: Port },
   NameNotFound: { name: Schema.String },
   InvalidUrl: { url: Schema.String },
   FrameLost: { device: DeviceId },
+  FirewallDropped: {
+    device: DeviceId,
+    scope: FirewallScope,
+    maybeRule: Schema.Option(Schema.Number),
+  },
+  FirewallRejected: {
+    device: DeviceId,
+    scope: FirewallScope,
+    maybeRule: Schema.Option(Schema.Number),
+  },
+  TunnelNoRoute: { gateway: DeviceId, ip: Ip },
+  NotConnected: { device: DeviceId },
+  TunnelNotFound: { name: Schema.String },
+  UpstreamFailed: { device: DeviceId, port: Port },
+  CertNameMismatch: {
+    device: DeviceId,
+    name: Schema.String,
+    names: Schema.Array(Schema.String),
+  },
+  CertExpired: {
+    device: DeviceId,
+    name: Schema.String,
+    notAfter: Schema.String,
+  },
+  CertUntrusted: {
+    device: DeviceId,
+    name: Schema.String,
+    issuer: Schema.String,
+  },
+  TlsNotConfigured: { device: DeviceId, port: Port },
+  HttpError: { device: DeviceId, status: Schema.Number },
 
   // Невыполненные цели
   GoalNotLinked: { a: DeviceId, b: DeviceId },
@@ -112,5 +200,57 @@ export const NetMessage = defineTaggedUnion({
     want: Ip,
   },
   GoalResolvesElsewhere: { name: Schema.String, have: Ip, want: Ip },
+  SeveralAddresses: { name: Schema.String, ips: Schema.Array(Ip) },
+  GoalWifiTooWeak: { ap: DeviceId, security: Security, want: Security },
+  GoalChannelBusy: { ap: DeviceId, others: Schema.Array(DeviceId) },
+  GoalNotPerformed: { from: DeviceId, at: DeviceId },
+  GoalNoRecord: {
+    zone: Schema.String,
+    name: Schema.String,
+    rtype: RecordType,
+  },
+  GoalRecordValue: {
+    zone: Schema.String,
+    name: Schema.String,
+    rtype: RecordType,
+    have: Schema.Array(Schema.String),
+    want: Schema.String,
+  },
+  GoalCommandNotRun: {
+    device: DeviceId,
+    commands: Schema.Array(Schema.String),
+  },
+  GoalCommandSawOther: {
+    device: DeviceId,
+    name: Schema.String,
+    saw: Schema.Array(Schema.String),
+    want: Schema.String,
+  },
+  GoalExtraOpenPort: { target: Schema.String, port: Port, device: DeviceId },
+  GoalPortNotOpen: { target: Schema.String, port: Port },
+  GoalNotRedirected: { url: Schema.String, status: Schema.Number },
+  GoalNotThrough: { device: DeviceId },
+  GoalNoDevice: { id: DeviceId },
+  SshLockedOut: { device: DeviceId },
+  GoalThrough: { device: DeviceId },
+
+  // Терминал и прочие подсказки
+  UnknownCommand: {
+    command: Schema.String,
+    available: Schema.Array(Schema.String),
+  },
+  CommandLocked: {
+    command: Schema.String,
+    available: Schema.Array(Schema.String),
+  },
+  CommandUsage: { command: Schema.String, usage: Schema.String },
+  NoLinkLayer: { device: DeviceId },
+  NoAddressLayer: { device: DeviceId },
+  NoPortLayer: { device: DeviceId },
+  EnvelopeMisordered: {
+    position: Schema.Number,
+    expected: Schema.String,
+    found: Schema.String,
+  },
 })
 export type NetMessage = typeof NetMessage.Type
