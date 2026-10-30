@@ -9,9 +9,9 @@ export default {
     phone: { name: 'Phone', note: 'in your hand' },
     laptop: { name: 'Laptop', note: 'where you build your site' },
     printer: { name: 'Printer', note: 'on a cable to the router' },
-    router: { name: 'Wi-Fi router', note: 'the post office of your home' },
+    router: { name: 'Router', note: 'the post office of your home' },
     internet: { name: 'Internet', note: 'many networks' },
-    dns: { name: 'Directory', note: 'your provider’s DNS server' },
+    dns: { name: 'DNS server', note: 'your provider’s directory' },
     shop: { name: 'Shop website', note: 'somewhere far away' },
   },
   steps: {

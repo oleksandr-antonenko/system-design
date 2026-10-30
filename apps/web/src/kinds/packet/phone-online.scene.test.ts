@@ -54,7 +54,7 @@ describe('lesson 1 on the network board', () => {
       expect(role('img', { name: 'Laptop, on the desk' })).toExist(),
       expect(
         role('button', {
-          name: 'Sticker on the router: network name and password',
+          name: 'Sticker on the router: SSID and password',
         }),
       ).toExist(),
       expect(role('button', { name: /▶ Run/ })).toExist(),
@@ -72,7 +72,7 @@ describe('lesson 1 on the network board', () => {
     scene(
       sceneIn('ru'),
       given(atStep(1)),
-      expect(role('img', { name: 'Интернет: весь мир' })).toExist(),
+      expect(role('img', { name: 'Internet: весь мир' })).toExist(),
       expect(role('img', { name: 'Сайт магазина, где-то далеко' })).toExist(),
       expect(text('192.168.1.100')).not.toExist(),
     )
@@ -83,11 +83,11 @@ describe('lesson 1 on the network board', () => {
       sceneIn('en'),
       given(atStep(3)),
       expect(
-        role('button', { name: 'Wi-Fi router, your home post office' }),
+        role('button', { name: 'Router, your home post office' }),
       ).toExist(),
       expect(role('button', { name: 'Laptop, on the desk' })).toExist(),
       expect(role('button', { name: /▶ Run/ })).toBeDisabled(),
-      click(role('button', { name: 'Wi-Fi router, your home post office' })),
+      click(role('button', { name: 'Router, your home post office' })),
       expect(text('the way out to the internet')).toExist(),
       expect(role('heading', { name: /Correct/ })).not.toExist(),
       expect(text(/Correct/)).toExist(),
@@ -116,7 +116,7 @@ describe('lesson 1 on the network board', () => {
       expect(role('img', { name: 'Phone, no Wi-Fi' })).toExist(),
       click(
         role('button', {
-          name: 'Sticker on the router: network name and password',
+          name: 'Sticker on the router: SSID and password',
         }),
       ),
       expect(role('dialog', { name: 'Sticker on the router' })).toExist(),

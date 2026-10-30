@@ -59,13 +59,13 @@ describe('router settings panel in lesson 5', () => {
         'aria-selected',
         'true',
       ),
-      expect(text('Wi-Fi router · 192.168.1.1')).toExist(),
+      expect(text('Router · 192.168.1.1')).toExist(),
       expect(role('tab', { name: 'Wi-Fi new' })).toHaveAttr(
         'aria-selected',
         'true',
       ),
       expect(role('tab', { name: /Devices/ })).toBeAbsent(),
-      expect(label('Network name')).toHaveValue('Router-7C21'),
+      expect(label('SSID')).toHaveValue('Router-7C21'),
       expect(label('Password')).toHaveAttr('type', 'password'),
       expect(role('radio', { name: 'With password' })).toHaveAttr(
         'aria-checked',
@@ -125,10 +125,10 @@ describe('router settings panel in lesson 5', () => {
       given(atTask()),
       click(role('button', { name: 'Show' })),
       expect(label('Password')).toHaveAttr('type', 'text'),
-      type(label('Network name'), 'Kitchen'),
-      expect(label('Network name')).toHaveValue('Kitchen'),
+      type(label('SSID'), 'Kitchen'),
+      expect(label('SSID')).toHaveValue('Kitchen'),
       click(cancelButton),
-      expect(label('Network name')).toHaveValue('Router-7C21'),
+      expect(label('SSID')).toHaveValue('Router-7C21'),
       expect(saveButton).toBeDisabled(),
     )
   })
@@ -145,7 +145,7 @@ describe('router settings panel in lesson 5', () => {
       click(role('button', { name: 'Hint · 1 of 3' })),
       click(role('button', { name: 'Hint · 2 of 3' })),
       expect(label('Band')).toHaveAttr('aria-description', 'Hint: look here'),
-      expect(label('Network name')).not.toHaveAttr(
+      expect(label('SSID')).not.toHaveAttr(
         'aria-description',
         'Hint: look here',
       ),
