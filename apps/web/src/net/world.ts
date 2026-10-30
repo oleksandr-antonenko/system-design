@@ -70,9 +70,18 @@ export const sendIntent = (
 }
 
 /** Ближайший момент, когда истечёт строка памяти DNS. */
-export const nextExpiry = (state: NetState): Option.Option<number> =>
+export const nextExpiry = (
+  state: NetState,
+  maybeDevice: Option.Option<string> = Option.none(),
+): Option.Option<number> =>
   pipe(
     state.dnsCache,
+    Array.filter(entry =>
+      Option.match(maybeDevice, {
+        onNone: () => true,
+        onSome: device => entry.device === device,
+      }),
+    ),
     Array.map(entry => entry.expiresAt),
     Array.filter(at => at > state.clock),
     Array.reduce(Option.none<number>(), (least, at) =>
@@ -169,13 +178,13 @@ export const applyWorld = (world: World, op: NetOp): WorldResult =>
           clock: world.state.clock + Math.max(0, seconds),
         },
       }),
-    FastForward: () =>
+    FastForward: ({ maybeDevice }) =>
       Result.succeed({
         doc: world.doc,
         state: {
           ...world.state,
           clock: Option.getOrElse(
-            nextExpiry(world.state),
+            nextExpiry(world.state, maybeDevice),
             () => world.state.clock,
           ),
         },

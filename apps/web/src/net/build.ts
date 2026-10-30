@@ -775,7 +775,9 @@ export const send = (intent: Intent): NetOp => NetOp.Send({ intent })
 
 export const wait = (seconds: number): NetOp => NetOp.Wait({ seconds })
 
-export const fastForward = (): NetOp => NetOp.FastForward()
+/** Часы вперёд до ближайшего истечения памяти DNS (устройства или любой). */
+export const fastForward = (device?: DeviceId): NetOp =>
+  NetOp.FastForward({ maybeDevice: Option.fromNullishOr(device) })
 
 export const flushDns = (device: DeviceId): NetOp => NetOp.FlushDns({ device })
 
