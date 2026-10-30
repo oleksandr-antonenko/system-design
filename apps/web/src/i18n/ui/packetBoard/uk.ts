@@ -136,6 +136,7 @@ export const packetBoardUk: PacketBoardStrings = {
     address: 'IP address',
     noAddress: 'немає IP',
     mac: 'MAC address',
+    gateway: 'Gateway',
     ports: 'Ports',
     portOnlySelf: 'лише localhost',
     noPorts: 'ніхто не чекає гостей',

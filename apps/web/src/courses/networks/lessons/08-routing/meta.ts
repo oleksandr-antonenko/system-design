@@ -5,7 +5,7 @@ export default defineLessonMeta(course, {
   slug: 'routing',
   module: 'internet',
   order: 8,
-  available: false,
+  available: true,
   locales: ['uk', 'ru', 'en', 'lt'],
   unlocks: [
     'board.routes',

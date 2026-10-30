@@ -3,6 +3,7 @@ import { describe, expect, test } from 'vitest'
 
 import phoneOnline from '../../courses/networks/lessons/01-phone-online/lesson'
 import addresses from '../../courses/networks/lessons/02-addresses/lesson'
+import routing from '../../courses/networks/lessons/08-routing/lesson'
 import { boardAt, taskStartBoard } from '../../lesson/dsl'
 import {
   add,
@@ -23,10 +24,12 @@ import {
   LEAD_MS,
   SLOT_MS,
   arrivalOf,
+  letterOf,
   momentAt,
   nextHopStop,
   nextStop,
   timelineOf,
+  traceOfPlay,
   walkPositions,
 } from './timeline'
 
@@ -166,6 +169,50 @@ describe('drops', () => {
     ).toEqual(Option.some(['phone', 'Dropped']))
     expect(momentAt(timeline, LEAD_MS, true)._tag).toBe('Stuck')
     expect(momentAt(timeline, timeline.totalMs, true)._tag).toBe('Done')
+  })
+})
+
+describe('traceroute probes (lesson 8)', () => {
+  test('a probe is addressed to the site, not to the router where its counter ran out', () => {
+    const world = boardAt(routing, 2, {})
+    const trace = traceOfPlay(
+      world,
+      Intent.Traceroute({ from: 'laptop', host: 'shop.example' }),
+    )
+    const firstProbe = Option.getOrThrow(Array.head(trace.hops))
+    expect([firstProbe.to, firstProbe.note._tag]).toEqual([
+      'router',
+      'TtlExpired',
+    ])
+    expect(letterOf(trace, firstProbe)).toEqual({ from: 'laptop', to: 'shop' })
+    const answer = Option.getOrThrow(
+      Array.findFirst(
+        trace.hops,
+        hop =>
+          hop.from === 'router' &&
+          Array.some(
+            hop.envelope,
+            layer => layer._tag === 'Icmp' && layer.kind === 'time-exceeded',
+          ),
+      ),
+    )
+    expect(letterOf(trace, answer)).toEqual({ from: 'router', to: 'laptop' })
+  })
+
+  test('an envelope lost on a cut stretch is still addressed to the owner of its address', () => {
+    const world = boardAt(routing, 3, {})
+    const trace = traceOfPlay(
+      world,
+      Intent.Ping({ from: 'laptop', host: '198.51.100.10' }),
+    )
+    const last = Option.getOrThrow(Array.last(trace.hops))
+    expect(last.to).toBe('core')
+    expect(letterOf(trace, last).to).toBe('core')
+    expect(
+      letterOf(trace, last, ip =>
+        ip === '198.51.100.10' ? Option.some('shop') : Option.none(),
+      ).to,
+    ).toBe('shop')
   })
 })
 

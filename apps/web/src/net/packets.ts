@@ -15,6 +15,7 @@ import {
   isPointToPoint,
   isProvider,
   isWanOf,
+  linksOf,
   otherEnd,
 } from './doc'
 import { judge, openerOf } from './firewall'
@@ -2066,7 +2067,20 @@ const deliverFromProvider = (
                   Option.map(findDevice(doc, via), next => ({ link, next })),
                 ),
                 Option.match({
-                  onNone: () => dropAt(run, node.id, maybeHop, noRoute),
+                  // Сосед по таблице есть, но кабель к нему оборван:
+                  // конверт пропадает молча (у traceroute — звёздочки).
+                  onNone: () =>
+                    dropAt(
+                      run,
+                      node.id,
+                      maybeHop,
+                      Array.some(
+                        linksOf(doc, node.id),
+                        link => otherEnd(link, node.id) === via,
+                      )
+                        ? NetMessage.FrameLost({ device: node.id })
+                        : noRoute,
+                    ),
                   onSome: ({ link, next }) =>
                     toOwner({ link, mac: p2pMac(next) }, matched),
                 }),

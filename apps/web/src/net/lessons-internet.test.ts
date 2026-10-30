@@ -160,6 +160,14 @@ describe('lesson 8 (routing): gateway and traceroute', () => {
         ),
       ),
     ).toEqual(Option.some('core'))
+    expect(
+      traceOn(cut, Intent.Ping({ from: 'laptop', host: '198.51.100.10' }))
+        .outcome,
+    ).toMatchObject({
+      _tag: 'Dropped',
+      at: 'core',
+      reason: NetMessage.FrameLost({ device: 'core' }),
+    })
   })
 
   test('task fix-gateway: a foreign gateway keeps the printer but loses the internet', () => {
