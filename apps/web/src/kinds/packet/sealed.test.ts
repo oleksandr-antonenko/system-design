@@ -143,7 +143,7 @@ describe('the sealed envelope on the board', () => {
     )
     expect(isSealed(hop)).toBe(false)
     const http = Option.getOrThrow(
-      Array.findFirst(layerRows(hop, true), row => row.title === 'HTTP'),
+      Array.findFirst(layerRows(hop), row => row.title === 'HTTP'),
     )
     expect([http.isSealed, http.fields]).toEqual([
       false,
@@ -161,7 +161,7 @@ describe('the sealed envelope on the board', () => {
       sendIntent(world, login('https://shop.example/login'))[0],
     )
     expect(isSealed(hop)).toBe(true)
-    const rows = layerRows(hop, true)
+    const rows = layerRows(hop)
     expect(
       Array.map(rows, row => [row.title, row.isSealed, row.fields.length > 0]),
     ).toEqual([
@@ -171,7 +171,12 @@ describe('the sealed envelope on the board', () => {
       ['TLS', false, true],
       ['HTTP', true, false],
     ])
-    expect(Array.some(layerRows(hop), row => row.isSealed)).toBe(false)
+    const beforeLesson11 = layerRows(
+      hop,
+      feature => feature !== 'board.sealedEnvelope',
+    )
+    expect(Array.some(beforeLesson11, row => row.isSealed)).toBe(false)
+    expect(Array.map(beforeLesson11, row => row.title)).not.toContain('TLS')
   })
 
   test('the handshake show adds the cipher agreement before the request; letters do not', () => {

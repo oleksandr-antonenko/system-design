@@ -35,6 +35,7 @@ export const packetBoardLt: PacketBoardStrings = {
     speed: 'Greitis',
     legend: 'Legenda',
     hopOf: (what, hop, total) => `${what} · hop ${hop} iš ${total}`,
+    packetOf: (packet, total) => `packet ${packet} iš ${total}`,
     request: 'vokas',
     reply: 'atsakymas',
   },

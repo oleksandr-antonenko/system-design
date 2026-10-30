@@ -92,26 +92,58 @@ const titles: Readonly<Record<Layer['_tag'], string>> = {
   Payload: 'DATA',
 }
 
+/** Поля, которые конверт показывает только с урока своей темы (план,
+    раздел 3.4): TTL — с урока 8, флаги TCP — с модуля 2. */
+const fieldFeatures: Readonly<Record<string, string>> = {
+  'IP.ttl': 'envelope.ttl',
+  'TCP.flags': 'envelope.tcpFlags',
+}
+
+/** TLS отдельной строкой — с урока 11 (запечатанный конверт); до него
+    страница внутри TLS — одна строка HTTP. */
+const SEALED_FEATURE = 'board.sealedEnvelope'
+
+const isFieldShown =
+  (isOpen: (feature: string) => boolean, title: string) =>
+  (field: Field): boolean =>
+    Option.match(Option.fromNullishOr(fieldFeatures[`${title}.${field.key}`]), {
+      onNone: () => true,
+      onSome: isOpen,
+    })
+
 const isCipher = (layer: Layer): boolean =>
   layer._tag === 'Tls' && layer.kind === 'data'
 
-/** Слои конверта снаружи внутрь. В запечатанном конверте (`sealed`, с урока
-    11) слои под шифром TLS видны только по названию: полей не прочитать. */
+/** Слои конверта снаружи внутрь: то, что открыто к уроку (`isOpen`, по
+    умолчанию всё). С урока 11 конверт запечатан: слои под шифром TLS видны
+    только по названию, их полей не прочитать. */
 export const layerRows = (
   hop: Hop,
-  sealed = false,
+  isOpen: (feature: string) => boolean = () => true,
 ): ReadonlyArray<LayerRow> => {
+  const hasPage = Array.some(hop.envelope, layer => layer._tag === 'Http')
+  const isSealedShown = isOpen(SEALED_FEATURE)
   const cipher = Array.findFirstIndex(hop.envelope, isCipher)
-  return Array.map(hop.envelope, (layer, position) => {
-    const isSealed = sealed && Option.exists(cipher, index => position > index)
-    return {
-      position,
-      level: levelOf(layer),
-      title: titles[layer._tag],
-      fields: isSealed ? [] : fieldsOf(layer),
-      isSealed,
-    }
-  })
+  return Array.getSomes(
+    Array.map(hop.envelope, (layer, position) => {
+      const isSealed =
+        isSealedShown && Option.exists(cipher, index => position > index)
+      return layer._tag === 'Tls' && hasPage && !isSealedShown
+        ? Option.none()
+        : Option.some({
+            position,
+            level: levelOf(layer),
+            title: titles[layer._tag],
+            fields: isSealed
+              ? []
+              : Array.filter(
+                  fieldsOf(layer),
+                  isFieldShown(isOpen, titles[layer._tag]),
+                ),
+            isSealed,
+          })
+    }),
+  )
 }
 
 /** Поля, которые изменились с прошлого хопа того же пакета: на доске они
@@ -164,14 +196,15 @@ export const addressesOf = (
         : Option.none(),
   )
 
-/** Главное поле слоя: его подсвечивает квиз «какой это слой». */
+/** Главное поле слоя среди видимых: его подсвечивает квиз «какой это слой». */
 export const keyFieldOf = (
   hop: Hop,
   level: StackLevel,
+  isOpen: (feature: string) => boolean = () => true,
 ): Option.Option<string> =>
   pipe(
-    layerRows(hop),
-    Array.findLast(row => row.level === level),
+    layerRows(hop, isOpen),
+    Array.findLast(row => row.level === level && !row.isSealed),
     Option.flatMap(row =>
       Option.map(
         Array.findLast(row.fields, field => field.key !== 'op'),

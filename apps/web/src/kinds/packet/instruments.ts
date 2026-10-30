@@ -5,11 +5,12 @@ import type { BoardSlot } from '../contract'
 import type { PacketTypes } from '../types'
 import { Message } from './message'
 import { type Picture, pictureOf } from './picture'
-import { nextHopStop, nextStop, previousHopStop } from './timeline'
+import { defaultShow, nextHopStop, nextStop, previousHopStop } from './timeline'
 
 // Транспорт под доской (план 3.1, 3.4): в уроке 1 одна кнопка «Пуск / Ещё
 // раз» и строка, где сейчас конверт; с урока 4 «Шаг» и «хоп N из M»; с
-// урока 7 шаг назад, к началу, ×¼ и легенда. Неоткрытое не рисуется.
+// урока 7 шаг назад, к началу, ×¼, легенда и в полной трассе номер
+// конверта «packet N из M». Неоткрытое не рисуется.
 
 type Slot<ParentMessage> = BoardSlot<PacketTypes, ParentMessage>
 
@@ -185,21 +186,34 @@ export const instruments = <ParentMessage>(
   const caption = captionOf(picture)
   const counter = Option.match(picture.maybeLeg, {
     onNone: () => [],
-    onSome: ({ leg }) =>
-      picture.isOpen('transport.hopCounter')
+    onSome: ({ leg }) => {
+      const isFullTrace =
+        picture.isOpen('board.legend') &&
+        Option.exists(
+          Array.get(timeline.plays, leg.play),
+          found =>
+            (found.play.show ?? defaultShow(picture.context.unlocked)) ===
+            'all',
+        )
+      return picture.isOpen('transport.hopCounter')
         ? [
             h.span(
               [h.Class('pb-counter')],
               [
                 ui.transport.hopOf(
-                  leg.isReply ? ui.transport.reply : ui.transport.request,
+                  isFullTrace
+                    ? ui.transport.packetOf(leg.envelope, leg.envelopes)
+                    : leg.isReply
+                      ? ui.transport.reply
+                      : ui.transport.request,
                   leg.index,
                   leg.count,
                 ),
               ],
             ),
           ]
-        : [],
+        : []
+    },
   })
   const isCableTool = picture.model.tool._tag === 'Cable'
   return h.section(
