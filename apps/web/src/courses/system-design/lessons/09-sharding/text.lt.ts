@@ -20,7 +20,7 @@ const writesInto = (sim: SimResult, id: string) =>
 const missesInto = (sim: SimResult, id: string) => edge(sim, 'cache-1', id)
 
 export default {
-  title: 'Sharding',
+  title: 'Sharding. Duomenys dalimis',
   summary:
     'Kaip padalyti duomenis tarp nepriklausomų databases: shard key, hot shards, užklausos per visus shards ir resharding.',
   steps: {
@@ -106,7 +106,8 @@ Ir dar vienas dalykas: kiekvienas shard yra **vienintelė** savo naudotojų duom
       prompt: `Padalykite duomenis tarp shards taip, kad kiekvienai database liktų atsarga esant ${n(6400)} rps.`,
       goals: {
         'servers-use-shards': 'Servers grupės rašo į du „Database“ blokus',
-        'cache-uses-shards': 'Cache savo misses skaito iš dviejų „Database“ blokų',
+        'cache-uses-shards':
+          'Cache savo misses skaito iš dviejų „Database“ blokų',
         'shard-headroom': `Kiekvienas shard apkrautas ne daugiau kaip 80 % esant ${n(6400)} rps`,
         'holds-load': `Atlaiko ${n(6400)} rps, kai klaidų mažiau nei 1 %`,
       },

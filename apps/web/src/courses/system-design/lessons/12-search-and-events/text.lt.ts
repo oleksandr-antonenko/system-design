@@ -8,7 +8,7 @@ const indexIn = (sim: SimResult) => sim.nodes['search']?.incoming ?? 0
 const analyticsIn = (sim: SimResult) => sim.nodes['worker-1']?.incoming ?? 0
 
 export default {
-  title: 'Search index ir event bus',
+  title: 'Search index ir event bus. Paieška ir įvykiai',
   summary:
     'Event bus pristato kiekvieną pakeitimą į search index ir į analitiką: publish/subscribe, subscriber lag ir eventual consistency.',
   steps: {

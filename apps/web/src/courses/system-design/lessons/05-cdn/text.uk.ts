@@ -13,7 +13,7 @@ const incoming = (sim: SimResult, id: string) => sim.nodes[id]?.incoming ?? 0
 const { cdnStaticShare, cdnMs } = simulationRules
 
 export default {
-  title: 'CDN і статика',
+  title: 'CDN. Статика ближче до користувача',
   summary:
     'Статика й динаміка, edge locations і заголовки кешування: як віддавати зображення та скрипти ближче до користувача.',
   steps: {

@@ -13,7 +13,7 @@ const incoming = (sim: SimResult, id: string) => sim.nodes[id]?.incoming ?? 0
 const { cdnStaticShare, cdnMs } = simulationRules
 
 export default {
-  title: 'CDN ir statiniai failai',
+  title: 'CDN. Statiniai failai arčiau naudotojo',
   summary:
     'Statinis ir dinaminis turinys, edge location ir cache antraštės: kaip pateikti paveikslėlius ir skriptus arčiau naudotojo.',
   steps: {

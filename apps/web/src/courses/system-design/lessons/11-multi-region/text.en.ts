@@ -14,7 +14,7 @@ const usd = (value: number) => `$${value.toFixed(2)}`
 const crossing = simulationRules.regionCrossingMs
 
 export default {
-  title: 'Regions and CAP',
+  title: 'Multi-region and CAP. When a whole region goes down',
   summary:
     'A second region for distant users and for the loss of a data center, asynchronous replication and the choice between consistency and availability.',
   steps: {

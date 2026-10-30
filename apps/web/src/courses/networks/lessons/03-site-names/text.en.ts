@@ -2,7 +2,7 @@ import type { LessonTexts } from '../../../../lesson/dsl'
 import type lesson from './lesson'
 
 export default {
-  title: 'A site’s name and its address',
+  title: 'DNS. A site’s name and its address',
   summary:
     'DNS turns a site’s name into an address, like the contacts on your phone. Fix a site that “won’t open”.',
   labels: {
@@ -58,7 +58,7 @@ Find out whom the phone asks for addresses. Open the phone’s Wi-Fi settings an
 - If the address isn’t in the contacts (the DNS cache), the phone asks the directory — the DNS server — and remembers the answer.
 - The router tells the phone the directory’s address. If the phone has no one to ask, the browser says ERR_NAME_NOT_RESOLVED.
 
-Next, lesson 4: an envelope passes through several post offices. We will find out how many post offices (routers) stand between you and the site and how to find the place where the connection was lost.`,
+Next, lesson 4, “Ping and hops. An envelope’s way through several routers”. We will find out how many post offices (routers) stand between you and the site and how to find the place where the connection was lost.`,
     },
   },
   annotations: {

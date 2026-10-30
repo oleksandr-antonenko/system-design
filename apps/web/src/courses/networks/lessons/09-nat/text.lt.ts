@@ -2,7 +2,7 @@ import type { LessonTexts } from '../../../../lesson/dsl'
 import type lesson from './lesson'
 
 export default {
-  title: 'NAT ir port forwarding',
+  title: 'NAT ir port forwarding. Vienas adresas visiems namams',
   summary:
     'Visi namai išeina į internetą vienu router adresu – tai NAT. Įleiskite draugą į žaidimą savo kompiuteryje per port forwarding.',
   labels: {

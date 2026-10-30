@@ -14,7 +14,7 @@ const utilization = (sim: SimResult, id: string) =>
   sim.nodes[id]?.utilization ?? 0
 
 export default {
-  title: 'Rate limiter: apsauga nuo perkrovos',
+  title: 'Rate limiter. Apsauga nuo perkrovos',
   summary:
     'Rate limiter prieš load balancer: greitas atsakymas 429 vietoj perkrovos, limitai kiekvienam klientui, backpressure ir retries be griūties.',
   steps: {

@@ -2,7 +2,7 @@ import type { LessonTexts } from '../../../../lesson/dsl'
 import type lesson from './lesson'
 
 export default {
-  title: 'Ports: flats in one building',
+  title: 'Ports and localhost. Flats in one building',
   summary:
     'One computer runs many programs, and each has its own number — a port. Open your dev server from your phone.',
   labels: {
@@ -65,7 +65,7 @@ In the laptop’s terminal, restart the server so that it opens the door to the 
 - **localhost** always means “myself”. On the phone, localhost leads to the phone, not to the laptop.
 - By default a dev server lets in only the laptop itself. With --host it opens the door to the home network, and the phone comes in through the laptop’s address.
 
-Next, lesson 7: under the hood. The envelope that has flown across the board for six lessons is really several envelopes, one inside another. We will see what each one is for.`,
+Next, lesson 7, “TCP/IP. An envelope in an envelope”. The envelope that has flown across the board for six lessons is really several envelopes, one inside another. We will see what each one is for.`,
     },
   },
   annotations: {

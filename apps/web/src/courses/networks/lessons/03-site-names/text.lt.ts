@@ -2,7 +2,7 @@ import type { LessonTexts } from '../../../../lesson/dsl'
 import type lesson from './lesson'
 
 export default {
-  title: 'Svetainės vardas ir adresas',
+  title: 'DNS. Svetainės vardas ir adresas',
   summary:
     'DNS paverčia svetainės vardą adresu, kaip kontaktai telefone. Sutaisykite svetainę, kuri „neatsidaro“.',
   labels: {
@@ -58,7 +58,7 @@ Išsiaiškinkite, ko telefonas klausia adresų. Atidarykite telefono Wi-Fi nusta
 - Jei adreso kontaktuose (DNS cache) nėra, telefonas klausia informacijos tarnybos – tai DNS server – ir įsimena atsakymą.
 - Informacijos tarnybos adresą telefonui praneša router. Jei telefonui nėra ko paklausti, naršyklė rašo ERR_NAME_NOT_RESOLVED.
 
-Toliau, 4 pamoka: vokas keliauja per kelis pašto skyrius. Sužinosime, kiek skyrių (router) yra tarp jūsų ir svetainės ir kaip rasti vietą, kur dingo ryšys.`,
+Toliau, 4 pamoka „Ping ir hops. Voko kelias per routers grandinę“. Sužinosime, kiek skyrių (router) yra tarp jūsų ir svetainės ir kaip rasti vietą, kur dingo ryšys.`,
     },
   },
   annotations: {

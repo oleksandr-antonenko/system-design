@@ -28,7 +28,7 @@ import {
 import { Goal, goals } from '../../../../net/goals'
 import { Intent } from '../../../../net/packet'
 
-// Урок 11 «HTTP, HTTPS и сертификаты» по сценарию
+// Урок 11 «HTTPS и certificates. Замок в адресной строке» по сценарию
 // docs/plans/networks-lessons/11-https.md: http:// — открытка, которую
 // читает каждый по пути; https:// запечатывает конверт, а certificate —
 // паспорт сайта — подтверждает, что на том конце правда ваш сайт.

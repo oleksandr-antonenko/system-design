@@ -15,7 +15,7 @@ const app1Load = (sim: SimResult) => sim.nodes['app1']?.utilization ?? 0
 const queuePoint = `У цьому сенс queue: workers тримають під звичайне навантаження, а не під пікове, а пік queue згладжує. Але лише якщо між піками вона встигає спорожніти. Якщо навантаження довго вище за те, що встигають workers, queue росте без кінця, і допоможуть тільки нові workers.`
 
 export default {
-  title: 'Queue і фонова обробка',
+  title: 'Queue. Важка робота йде у фон',
   summary:
     'Як винести повільну роботу із запиту: queue, workers, зростання queue, піки й доставка at-least-once.',
   steps: {

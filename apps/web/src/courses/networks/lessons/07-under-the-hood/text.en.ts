@@ -2,7 +2,7 @@ import type { LessonTexts } from '../../../../lesson/dsl'
 import type lesson from './lesson'
 
 export default {
-  title: 'Under the hood: an envelope in an envelope',
+  title: 'TCP/IP. An envelope in an envelope',
   summary:
     'The envelope from lesson 1 is really several nested envelopes: layers and MAC addresses. Take the envelope’s journey apart layer by layer.',
   labels: {

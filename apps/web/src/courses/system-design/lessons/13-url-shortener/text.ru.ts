@@ -14,7 +14,7 @@ const incoming = (sim: SimResult, id: string) => sim.nodes[id]?.incoming ?? 0
 const usd = (value: number) => `${value.toFixed(2).replace('.', ',')} $`
 
 export default {
-  title: 'Итоговый проект: URL shortener',
+  title: 'URL shortener. Итоговый проект',
   summary:
     'Спроектируйте систему с нуля: требования, оценки, API, а затем схема, которая держит пик, переживает отказы и укладывается в бюджет.',
   steps: {

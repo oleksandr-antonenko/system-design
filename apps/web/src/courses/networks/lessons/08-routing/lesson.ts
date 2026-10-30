@@ -33,7 +33,7 @@ import { Goal } from '../../../../net/goals'
 import { Intent } from '../../../../net/packet'
 import { sendIntent } from '../../../../net/world'
 
-// Урок 8 «Маршрутизация и шлюз» по сценарию
+// Урок 8 «Routing и gateway. Как конверт находит дорогу» по сценарию
 // docs/plans/networks-lessons/08-routing.md: всё «не в наш дом» ноутбук
 // отдаёт gateway — домашнему router; дальше каждый router по своей routing
 // table знает только следующий шаг; traceroute показывает отделения по

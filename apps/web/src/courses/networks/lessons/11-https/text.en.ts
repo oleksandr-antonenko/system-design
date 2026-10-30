@@ -7,7 +7,7 @@ const missesWww = (name: string, names: ReadonlyArray<string>): boolean =>
   name.startsWith('www.') && names.includes(name.slice('www.'.length))
 
 export default {
-  title: 'HTTP, HTTPS and certificates',
+  title: 'HTTPS and certificates. The padlock in the address bar',
   summary:
     'What the padlock in the browser protects, and why a certificate can be invalid.',
   labels: {

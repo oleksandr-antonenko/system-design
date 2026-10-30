@@ -18,7 +18,8 @@ import { Goal, goals } from '../../../../net/goals'
 import { Intent } from '../../../../net/packet'
 import { dhcpServerFor } from '../../../../net/topology'
 
-// Урок 2 «У каждого свой адрес» (docs/plans/networks-lessons/02-addresses.md):
+// Урок 2 «IP address. У каждого устройства свой адрес»
+// (docs/plans/networks-lessons/02-addresses.md):
 // тот же дом, что в уроке 1, но под устройствами — адреса, а на конвертах —
 // номера. Адрес выдаёт роутер; новый принтер получает адрес по кабелю, и
 // ноутбук печатает на него по номеру. Новое слово — «IP-адрес».

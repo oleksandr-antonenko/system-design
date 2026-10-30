@@ -2,7 +2,7 @@ import type { LessonTexts } from '../../../../lesson/dsl'
 import type lesson from './lesson'
 
 export default {
-  title: 'Po gaubtu: vokas voke',
+  title: 'TCP/IP. Vokas voke',
   summary:
     'Pirmosios pamokos vokas iš tikrųjų yra keli vienas į kitą įdėti vokai: sluoksniai ir MAC addresses. Išnagrinėkite voko kelią sluoksnis po sluoksnio.',
   labels: {

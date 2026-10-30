@@ -2,7 +2,7 @@ import type { LessonTexts } from '../../../../lesson/dsl'
 import type lesson from './lesson'
 
 export default {
-  title: 'Kodėl Wi-Fi silpnai veikia',
+  title: 'Wi-Fi. Kodėl signalas silpnas',
   summary:
     'Nuotolis, sienos ir dvi dažnių juostos: 2.4 ir 5 GHz. Nustatykite Wi-Fi taip, kad jis pasiektų virtuvę.',
   labels: {
@@ -69,7 +69,7 @@ Po lenta atsivėrė „Router“ skydelis – jo nustatymai. Jame kol kas viena 
 - Router turi dvi dažnių juostas. **5 GHz** greitesnė, bet siekia arčiau. **2.4 GHz** lėtesnė, užtat siekia toliau ir praeina pro sienas.
 - Įjunkite abi: įrenginiai pasirinks patys. O kai kurie išmanieji įrenginiai supranta tik 2.4 GHz.
 
-Toliau, 6 pamoka „Ports: butai viename name“. Paleisime nešiojamame kompiuteryje savo svetainę ir atidarysime ją telefonu.`,
+Toliau, 6 pamoka „Port ir localhost. Butai viename name“. Paleisime nešiojamame kompiuteryje savo svetainę ir atidarysime ją telefonu.`,
     },
   },
   annotations: {

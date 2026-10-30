@@ -27,7 +27,7 @@ import { Goal, goals } from '../../../../net/goals'
 import { Intent } from '../../../../net/packet'
 import { sendIntent } from '../../../../net/world'
 
-// Урок 3 «Имя сайта и его адрес» по сценарию
+// Урок 3 «DNS. Имя сайта и его адрес» по сценарию
 // docs/plans/networks-lessons/03-site-names.md: людям удобны имена, сетям
 // нужны адреса; перед первым конвертом сайту телефон спрашивает адрес у
 // DNS server («справочной») и записывает ответ в DNS cache («контакты»).

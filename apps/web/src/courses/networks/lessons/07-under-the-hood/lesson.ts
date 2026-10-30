@@ -25,7 +25,7 @@ import { goals } from '../../../../net/goals'
 import { Intent, type StackLevel, levelOf } from '../../../../net/packet'
 import { sendIntent } from '../../../../net/world'
 
-// Урок 7 «Под капотом: конверт в конверте» по сценарию
+// Урок 7 «TCP/IP. Конверт в конверте» по сценарию
 // docs/plans/networks-lessons/07-under-the-hood.md: конверт из урока 1 — это
 // несколько вложенных конвертов (layers). Внешний (frame с MAC) меняется на
 // каждом хопе, IP-адрес получателя, port и просьба доезжают до сайта. Дом —

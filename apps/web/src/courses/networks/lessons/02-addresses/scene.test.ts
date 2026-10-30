@@ -54,7 +54,7 @@ const replayStep = Command.resolve(
   Player.Message.CompletedWaitBeforeReplayStep(),
 )
 
-describe('lesson 2: everyone has an address', () => {
+describe('lesson 2: IP address, every device has its own', () => {
   test('ru: addresses under the devices; the photo envelope carries numbers', () => {
     scene(
       sceneIn('ru'),

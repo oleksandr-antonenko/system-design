@@ -2,7 +2,7 @@ import type { LessonTexts } from '../../../../lesson/dsl'
 import type lesson from './lesson'
 
 export default {
-  title: 'How a phone gets online',
+  title: 'Router. How a phone gets online',
   summary:
     'Devices at home talk through the router, and the internet is many networks joined together. Connect a phone to the home Wi-Fi.',
   labels: {
@@ -34,7 +34,7 @@ The website does not live in your home, so the router does not deliver the envel
 
 The shop page does not fit into one packet: the website sends it in hundreds of packets, and the phone puts them back in order. Packets of the same page may even take different routes.
 
-A real packet carries numbers instead of names — addresses; they are the topic of lesson 2. And the fact that a packet hides several more envelopes inside is what lesson 7, “Under the hood”, takes apart.`,
+A real packet carries numbers instead of names — addresses; they are the topic of lesson 2. And the fact that a packet hides several more envelopes inside is what lesson 7, “TCP/IP. An envelope in an envelope”, takes apart.`,
       },
     },
     'many-networks': {
@@ -61,7 +61,7 @@ Connect it in the Wi-Fi settings on the phone screen. The name of your network (
 - The **internet** is many networks connected to each other. The router is the door from your home to the internet.
 - To get a phone online, you connect it to the router’s Wi-Fi: your own network and the password from the sticker.
 
-Next, lesson 2: everyone has an address. Today the envelopes carried names, but a router does not read names. We will see which addresses real envelopes carry and who hands them out.`,
+Next, lesson 2, “IP address. Every device has its own”. Today the envelopes carried names, but a router does not read names. We will see which addresses real envelopes carry and who hands them out.`,
     },
   },
   annotations: {},

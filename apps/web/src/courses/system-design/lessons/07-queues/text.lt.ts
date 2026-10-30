@@ -15,7 +15,7 @@ const app1Load = (sim: SimResult) => sim.nodes['app1']?.utilization ?? 0
 const queuePoint = `Tokia queue prasmė: workers skaičiuojami įprastai apkrovai, o ne šuoliui, o šuolį išlygina queue. Bet tik tada, jei tarp šuolių ji spėja ištuštėti. Jei apkrova ilgai viršija tai, ką spėja workers, queue auga be galo, ir padės tik nauji workers.`
 
 export default {
-  title: 'Queue ir foninis apdorojimas',
+  title: 'Queue. Sunkus darbas perkeliamas į foną',
   summary:
     'Kaip iškelti lėtą darbą iš užklausos: queue, workers, queue augimas, apkrovos šuoliai ir pristatymas at-least-once.',
   steps: {

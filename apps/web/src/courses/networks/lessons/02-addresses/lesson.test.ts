@@ -92,7 +92,7 @@ const prose = (index: number): ReadonlyArray<string> =>
     ]
   })
 
-describe('lesson 2: everyone has an address', () => {
+describe('lesson 2: IP address, every device has its own', () => {
   test('the engine gives the phone .100 and the laptop .42; the texts quote the same numbers', () => {
     const home = boardAt(lesson, 0, {})
     expect(address(home, 'phone')).toEqual(Option.some('192.168.1.100'))

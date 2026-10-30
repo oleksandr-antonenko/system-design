@@ -29,7 +29,7 @@ import { Goal, goals } from '../../../../net/goals'
 import { Intent } from '../../../../net/packet'
 import { sendIntent } from '../../../../net/world'
 
-// Урок 4 «Конверт идёт через несколько почтовых отделений» по сценарию
+// Урок 4 «Ping и hops. Путь конверта по цепочке routers» по сценарию
 // docs/plans/networks-lessons/04-hops-and-ping.md: облако раскрывается в
 // цепочку роутеров (те же id, подписи и задержки, что в уроке 8), конверт
 // идёт по хопам, ping проверяет связь, а задача — найти выпавший кабель

@@ -7,7 +7,7 @@ import {
 } from './lesson'
 
 export default {
-  title: 'Routing and the gateway',
+  title: 'Routing and gateway. How an envelope finds its way',
   summary:
     'Everything “not for our home” a device hands to the gateway, and traceroute shows which routers the envelope passes next. Bring the internet back to a laptop with a wrong gateway.',
   labels: {

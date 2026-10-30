@@ -2,7 +2,7 @@ import type { LessonTexts } from '../../../../lesson/dsl'
 import type lesson from './lesson'
 
 export default {
-  title: 'DNS records and your own domain',
+  title: 'DNS records. Your own domain for a site',
   summary:
     'A domain is pointed at a server with DNS records, and directories keep the old answer until its TTL runs out. Point your own domain at your own server.',
   labels: {

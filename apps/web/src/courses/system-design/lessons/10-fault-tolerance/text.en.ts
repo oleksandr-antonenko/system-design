@@ -7,7 +7,7 @@ const percent = (ratio: number) => `${n(ratio * 100)}%`
 const dollars = (value: number) => `$${value.toFixed(2)}`
 
 export default {
-  title: 'Fault tolerance',
+  title: 'Failover. Surviving a failure',
   summary:
     'Single points of failure: a second load balancer, a read replica that takes over the database, health checks, failover, and availability versus durability.',
   steps: {

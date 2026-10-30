@@ -14,7 +14,7 @@ const usd = (value: number) => `${value.toFixed(2).replace('.', ',')} $`
 const crossing = simulationRules.regionCrossingMs
 
 export default {
-  title: 'Multi-region ir CAP',
+  title: 'Multi-region ir CAP. Kai išsijungia visas regionas',
   summary:
     'Antrasis regionas tolimiems naudotojams ir duomenų centro praradimo atvejui, asinchroninė replikacija ir pasirinkimas tarp consistency ir availability.',
   steps: {
@@ -82,7 +82,8 @@ Kaina: sistema kainuoja ${usd(sim.costPerHour)} per valandą vietoj 1,90 $, įra
       `${n(incoming(sim, 'users-us'))} rps · +${crossing} ms už vandenyno`,
     noAnswer: sim => `atsakymo nėra · klaidos ${percent(sim.errorRate)}`,
     leader: sim => `primary · ${n(incoming(sim, 'db'))} rps`,
-    replicaIdle: sim => `database kopija · ${n(incoming(sim, 'replica-1'))} rps`,
+    replicaIdle: sim =>
+      `database kopija · ${n(incoming(sim, 'replica-1'))} rps`,
     promoted: sim => `paaukštinta · ${n(incoming(sim, 'replica-1'))} rps`,
     detour: sim =>
       `→ JAV · +${crossing} ms · klaidos ${percent(sim.errorRate)}`,

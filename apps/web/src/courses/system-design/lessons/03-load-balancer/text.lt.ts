@@ -6,7 +6,7 @@ const n = (value: number) => formatNumber('lt', Math.round(value))
 const percent = (ratio: number) => `${n(ratio * 100)} %`
 
 export default {
-  title: 'Load balancer',
+  title: 'Load balancer. Apkrova dalijama po lygiai',
   summary:
     'Horizontalus plėtimas: keli „Server“ blokai už vieno įėjimo taško, health check ir N+1 taisyklė.',
   steps: {

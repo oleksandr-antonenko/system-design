@@ -12,7 +12,7 @@ const p95 = (sim: SimResult) =>
 const utilization = (sim: SimResult) => sim.nodes['app1']?.utilization ?? 0
 
 export default {
-  title: 'Single server',
+  title: 'Single server. Viskas vienoje mašinoje',
   summary:
     'Užklausa ir atsakymas, RPS, delsa, pajėgumo riba, kai server tik vienas, ir single point of failure (SPOF).',
   steps: {

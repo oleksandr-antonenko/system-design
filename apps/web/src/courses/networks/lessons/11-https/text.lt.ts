@@ -6,7 +6,7 @@ const missesWww = (name: string, names: ReadonlyArray<string>): boolean =>
   name.startsWith('www.') && names.includes(name.slice('www.'.length))
 
 export default {
-  title: 'HTTP, HTTPS ir certificates',
+  title: 'HTTPS ir certificates. Spynelė adreso juostoje',
   summary:
     'Ką saugo spynelė naršyklėje ir kodėl certificate gali būti negaliojantis.',
   labels: {

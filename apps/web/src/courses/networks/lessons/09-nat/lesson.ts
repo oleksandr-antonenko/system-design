@@ -31,7 +31,7 @@ import { Goal, goals } from '../../../../net/goals'
 import { Intent } from '../../../../net/packet'
 import { sendIntent } from '../../../../net/world'
 
-// Урок 9 «NAT и port forwarding» по сценарию
+// Урок 9 «NAT и port forwarding. Один адрес на весь дом» по сценарию
 // docs/plans/networks-lessons/09-nat.md: домашние адреса работают только
 // дома (у друга тот же 192.168.1.100), на выходе router ставит на конверт свой
 // обратный адрес 203.0.113.7 и записывает это в NAT table, поэтому снаружи в

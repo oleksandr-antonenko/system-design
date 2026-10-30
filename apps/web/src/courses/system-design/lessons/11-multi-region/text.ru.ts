@@ -14,7 +14,7 @@ const usd = (value: number) => `${value.toFixed(2).replace('.', ',')} $`
 const crossing = simulationRules.regionCrossingMs
 
 export default {
-  title: 'Multi-region и CAP',
+  title: 'Multi-region и CAP. Когда отключается целый регион',
   summary:
     'Второй регион для далёких пользователей и на случай потери дата-центра, асинхронная репликация и выбор между consistency и availability.',
   steps: {

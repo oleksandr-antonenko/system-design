@@ -17,7 +17,7 @@ const writes = (sim: SimResult) => served(sim) * simulationRules.writeShare
 const reads = (sim: SimResult) => served(sim) - writes(sim)
 
 export default {
-  title: 'Read replicas',
+  title: 'Read replicas. Копии database для чтения',
   summary:
     'Read replicas, replication lag, failover и почему вся запись по-прежнему идёт в primary.',
   steps: {

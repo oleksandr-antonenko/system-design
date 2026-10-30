@@ -14,7 +14,7 @@ const utilization = (sim: SimResult, id: string) =>
   sim.nodes[id]?.utilization ?? 0
 
 export default {
-  title: 'Rate limiter: overload protection',
+  title: 'Rate limiter. Protection from overload',
   summary:
     'A rate limiter in front of the load balancer: a fast 429 instead of overload, per-client limits, backpressure and retries without a storm.',
   steps: {

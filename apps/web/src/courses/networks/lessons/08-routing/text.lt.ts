@@ -7,7 +7,7 @@ import {
 } from './lesson'
 
 export default {
-  title: 'Maršrutizavimas ir gateway',
+  title: 'Routing ir gateway. Kaip vokas randa kelią',
   summary:
     'Viską, kas „ne mūsų namams“, įrenginys atiduoda gateway, o traceroute parodo, per kuriuos routers vokas keliauja toliau. Grąžinkite internetą kompiuteriui su svetimu gateway.',
   labels: {
