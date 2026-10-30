@@ -724,6 +724,13 @@
   display: grid;
   gap: 8px;
 }
+/* Таблица в три колонки и шире (память справочной с таймером, записи DNS)
+   не ломает имя и адрес посреди слова. */
+@media (min-width: 881px) {
+  .pb-card:has(.pb-card-table td:nth-child(3)) {
+    width: min(344px, calc(100% - 24px));
+  }
+}
 .pb-card-head {
   display: flex;
   align-items: flex-start;
