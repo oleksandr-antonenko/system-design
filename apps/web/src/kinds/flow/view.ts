@@ -65,7 +65,7 @@ export const boardInputs = <ParentMessage>(
   )
   const ghost = Option.flatMap(context.maybeTask, task =>
     task.isGhostShown
-      ? Option.some(ghostPlan(doc, task.solution))
+      ? Option.some(ghostPlan(doc, task.solution, task.journal))
       : Option.none(),
   )
   const anim = slot.model.anim

@@ -112,6 +112,9 @@ export type BoardInput<T extends KindTypes> = Readonly<{
 export type BoardTask<T extends KindTypes> = Readonly<{
   palette: ReadonlyArray<T['Palette']>
   solution: ReadonlyArray<T['Op']>
+  /** Ходы ученика в задаче шага: по ним призрак отличает блоки, которые
+      ученик поставил сам, от тех, что стояли на доске к началу задачи. */
+  journal: ReadonlyArray<T['Op']>
   /** Третья подсказка открыта, задача не решена: доска рисует призрак. */
   isGhostShown: boolean
   focusNodes: ReadonlyArray<string>

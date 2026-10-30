@@ -1,18 +1,16 @@
 import { Array, Option, Record, String, pipe } from 'effect'
-import type { HtmlBuilder } from 'foldkit/html'
 import { Mount, all, expectAll, given, scene } from 'foldkit/scene'
 import { describe, expect, test } from 'vitest'
 
 import * as Board from '../board/board'
 import { BoardPointer } from '../board/pointer'
-import type { Lesson } from '../courses/assemble'
 import { Goal } from '../domain/goals'
 import { addNode, connect, flow } from '../kinds/flow/dsl'
 import type { FlowTypes } from '../kinds/types'
 import styles from '../styles.css?raw'
 import { type LessonDefinition, type LessonStep, defineLesson } from './dsl'
 import * as Player from './player'
-import { lessonView } from './view'
+import { fixtureEntry, playerScene } from './testing'
 
 // Лента шагов на телефоне. happy-dom не считает раскладку, поэтому сцена
 // не может измерить ширину ленты. Тест держит контракт из двух половин:
@@ -151,34 +149,13 @@ const longLesson: LessonDefinition<FlowTypes> = defineLesson(flow, {
   ],
 })
 
-const longLessonEntry: Lesson = {
-  course: 'system-design',
-  folder: '99-long-lesson',
-  meta: {
-    course: 'system-design',
-    slug: 'long-lesson',
-    module: 'distributed',
-    order: 99,
-    available: true,
-    locales: ['en'],
-    unlocks: [],
-  },
-  texts: [
-    {
-      locale: 'en',
-      text: {
-        title: 'Long lesson. Sixteen steps',
-        summary: 'A lesson as long as an advanced one.',
-        steps: Record.fromEntries(
-          Array.map(longLesson.steps, ({ id }) => [
-            id,
-            { title: id, body: id },
-          ]),
-        ),
-      },
-    },
-  ],
-}
+const longLessonEntry = fixtureEntry('system-design', 'long-lesson', {
+  title: 'Long lesson. Sixteen steps',
+  summary: 'A lesson as long as an advanced one.',
+  steps: Record.fromEntries(
+    Array.map(longLesson.steps, ({ id }) => [id, { title: id, body: id }]),
+  ),
+})
 
 const pointerReady = Mount.resolve(
   BoardPointer,
@@ -226,18 +203,7 @@ describe('step timeline on a phone', () => {
 
   test('a 16-step lesson marks every item of the timeline, tasks apart', () => {
     scene(
-      {
-        update: (playerModel: Player.Model, playerMessage: Player.Message) =>
-          Player.updateWith(longLesson)(playerModel, playerMessage),
-        view: (playerModel: Player.Model, h: HtmlBuilder<Player.Message>) =>
-          lessonView(
-            longLesson,
-            longLessonEntry,
-            playerModel,
-            { locale: 'en', prefersDark: false },
-            h,
-          ),
-      },
+      playerScene(longLesson, longLessonEntry),
       given(Player.init('system-design', longLesson, 0)),
       pointerReady,
       expectAll(all.selector('li.timeline-item')).toHaveCount(LONG_LESSON),

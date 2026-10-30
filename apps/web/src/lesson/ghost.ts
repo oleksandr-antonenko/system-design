@@ -30,13 +30,18 @@ const addedNodes = (solution: ReadonlyArray<BoardOp>) =>
 // Блоки эталона, которых нет на доске, сопоставляются блокам ученика того же
 // вида один к одному и по порядку: второй обработчик эталона — второму
 // обработчику ученика. Иначе после первого поставленного блока призрак
-// переставал бы рисовать остальные.
+// переставал бы рисовать остальные. Заменять блок эталона может только блок,
+// который ученик поставил в этой задаче (`journal`): блоки, стоявшие на доске
+// к её началу (свои из прошлых задач, общий эталон после `reset()`), сами по
+// себе ничего не решают, и призрак рисует всё, чего нет на доске.
 const studentStandIn = (
   doc: BoardDoc,
   solution: ReadonlyArray<BoardOp>,
+  journal: ReadonlyArray<BoardOp>,
   added: Readonly<{ id: string; kind: BoardDoc['nodes'][number]['kind'] }>,
 ): Option.Option<BoardDoc['nodes'][number]> => {
   const solutionIds = Array.map(addedNodes(solution), node => node.id)
+  const placedIds = Array.map(addedNodes(journal), node => node.id)
   const missing = Array.filter(
     addedNodes(solution),
     node => node.kind === added.kind && Option.isNone(findNode(doc, node.id)),
@@ -46,6 +51,7 @@ const studentStandIn = (
     node =>
       node.kind === added.kind &&
       !node.locked &&
+      Array.contains(placedIds, node.id) &&
       !Array.contains(solutionIds, node.id),
   )
   return pipe(
@@ -57,6 +63,7 @@ const studentStandIn = (
 const resolveNode = (
   doc: BoardDoc,
   solution: ReadonlyArray<BoardOp>,
+  journal: ReadonlyArray<BoardOp>,
   id: string,
 ): Option.Option<Resolved> =>
   Option.match(findNode(doc, id), {
@@ -71,7 +78,7 @@ const resolveNode = (
         Array.findFirst(added => added.id === id),
         Option.map(added =>
           pipe(
-            studentStandIn(doc, solution, added),
+            studentStandIn(doc, solution, journal, added),
             Option.match({
               onSome: node => ({
                 point: { x: node.x, y: node.y },
@@ -90,14 +97,17 @@ const resolveNode = (
 const hasEdge = (doc: BoardDoc, from: string, to: string): boolean =>
   Array.some(doc.edges, edge => edge.from === from && edge.to === to)
 
+/** Призрак третьей подсказки: блоки и связи эталона `solution`, которых нет
+    на доске `doc`; `journal` — ходы ученика в этой задаче. */
 export const ghostPlan = (
   doc: BoardDoc,
   solution: ReadonlyArray<BoardOp>,
+  journal: ReadonlyArray<BoardOp>,
 ): GhostPlan => {
   const nodes = pipe(
     addedNodes(solution),
     Array.filter(added =>
-      Option.exists(resolveNode(doc, solution, added.id), resolved =>
+      Option.exists(resolveNode(doc, solution, journal, added.id), resolved =>
         Option.isNone(resolved.maybeActualId),
       ),
     ),
@@ -109,8 +119,8 @@ export const ghostPlan = (
         ? Option.none()
         : pipe(
             Option.all([
-              resolveNode(doc, solution, op.from),
-              resolveNode(doc, solution, op.to),
+              resolveNode(doc, solution, journal, op.from),
+              resolveNode(doc, solution, journal, op.to),
             ]),
             Option.filter(
               ([from, to]) =>

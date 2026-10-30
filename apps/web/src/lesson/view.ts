@@ -1091,6 +1091,7 @@ const boardContext = <T extends KindTypes>(
     maybeTask: Option.map(task, ({ spec, state }) => ({
       palette: spec.palette,
       solution: spec.solution,
+      journal: opsOf(lesson.kind, state.log),
       isGhostShown: state.hintsShown >= 3 && state.check._tag !== 'Solved',
       focusNodes: state.check._tag === 'Failed' ? state.check.focusNodes : [],
       focusEdges: state.check._tag === 'Failed' ? state.check.focusEdges : [],
