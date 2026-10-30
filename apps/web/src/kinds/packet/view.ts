@@ -181,8 +181,9 @@ const DOOR_CHAR = 6.4
 const DOOR_PAD = 16
 const DOOR_GAP = 8
 
-/** Port mapping хоста Docker: «дверь» на верхней рамке его зоны,
-    `8080 → app:3000`, справа налево. */
+/** Port mapping хоста Docker: «дверь» на рамке его зоны, `8080 → app:3000`,
+    справа налево. На узкой доске — на нижней рамке: у верхней стоят подписи
+    containers. */
 const doorViews = <ParentMessage>(
   draw: Draw<ParentMessage>,
   zone: ZoneBox,
@@ -201,6 +202,7 @@ const doorViews = <ParentMessage>(
     return { text, width: text.length * DOOR_CHAR + DOOR_PAD }
   })
   const right = zone.x + zone.w - 12
+  const edge = picture.layout.isNarrow ? zone.y + zone.h : zone.y
   return Array.map(doors, (door, index) => {
     const end =
       right -
@@ -212,7 +214,7 @@ const doorViews = <ParentMessage>(
     return h.g(
       [
         h.Class('pb-door'),
-        h.Transform(`translate(${n(end - door.width)},${n(zone.y - 10)})`),
+        h.Transform(`translate(${n(end - door.width)},${n(edge - 10)})`),
         h.Role('img'),
         h.AriaLabel(picture.context.ui.packetBoard.zone.door(door.text)),
       ],
