@@ -1,7 +1,8 @@
 import { Array, Option, pipe } from 'effect'
+import { Mount } from 'foldkit'
 import type { Html, HtmlBuilder } from 'foldkit/html'
 
-import { type DeviceId, type DeviceKind } from '../../net/model'
+import { type DeviceId, type DeviceKind, kindOf } from '../../net/model'
 import { sourceOf } from '../../net/packet'
 import { scanPorts } from '../../net/answers'
 import { wifiOf } from '../../net/topology'
@@ -27,6 +28,7 @@ import {
   stageOverlays,
 } from './panels'
 import { type Picture, deviceOf, pictureOf, shapeIdOf } from './picture'
+import { DevicePointer } from './pointer'
 import { letterOf } from './timeline'
 
 // Доска сетей (план 3.1, макет docs/mockups/networks-lesson-1.html): дом с
@@ -831,7 +833,7 @@ const newFeatureOf = (picture: Picture, id: DeviceId): boolean =>
       ? picture.isNew('board.routerChain')
       : device._tag === 'Switch'
         ? picture.isNew('board.switch')
-        : device._tag === 'Host' && device.resolver
+        : kindOf(device) === 'resolver'
           ? picture.isNew('board.dnsServer')
           : false,
   )
@@ -1436,6 +1438,7 @@ const svgView = <ParentMessage>(draw: Draw<ParentMessage>): Html => {
     [
       h.Class('pb-svg'),
       h.DataAttribute('board', 'packet'),
+      h.DataAttribute('narrow', layout.isNarrow ? 'true' : 'false'),
       h.ViewBox(`${viewBox.x} ${viewBox.y} ${viewBox.w} ${viewBox.h}`),
       h.Attribute('preserveAspectRatio', 'xMidYMid meet'),
       h.AriaLabel(picture.context.ui.network.boardLabel),
@@ -1533,6 +1536,9 @@ export const view = <ParentMessage>(
         [
           h.Class('pb-stage board-surface'),
           h.Style({ '--pb-ratio': `${viewBox.w} / ${viewBox.h}` }),
+          ...(canMove(picture)
+            ? [h.OnMount(Mount.mapMessage(DevicePointer(), slot.toParentMessage))]
+            : []),
         ],
         [
           svgView(draw),

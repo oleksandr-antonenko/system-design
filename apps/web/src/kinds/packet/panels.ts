@@ -849,6 +849,12 @@ const chipsTray = <ParentMessage>(
                   [
                     h.Type('button'),
                     h.Class('pb-slot-target'),
+                    h.AriaLabel(
+                      `${name(slot)}: ${Option.match(chip, {
+                        onNone: () => ui.slotEmpty,
+                        onSome: name,
+                      })}`,
+                    ),
                     ...(isLive ? [h.OnClick(send(Message.ClickedSlot({ slot })))] : [h.Disabled(true)]),
                   ],
                   [
@@ -953,6 +959,16 @@ const builderPanel = <ParentMessage>(
                           [
                             h.Type('button'),
                             h.Class('pb-slot-target'),
+                            h.AriaLabel(
+                              `${ui.position(position + 1)}: ${Option.match(
+                                Array.get(headers, position),
+                                {
+                                  onNone: () =>
+                                    picture.context.ui.packetBoard.quiz.slotEmpty,
+                                  onSome: headerName,
+                                },
+                              )}`,
+                            ),
                             ...(isLive
                               ? [h.OnClick(send(Message.ClickedHeaderSlot({ position })))]
                               : [h.Disabled(true)]),

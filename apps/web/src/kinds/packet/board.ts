@@ -29,7 +29,12 @@ export const Grab = defineTaggedUnion({
   Envelope: {},
   Chip: { chip: Schema.String },
   Header: { level: StackLevel },
-  Device: { id: Schema.String, x: Schema.Number, y: Schema.Number },
+  Device: {
+    id: Schema.String,
+    x: Schema.Number,
+    y: Schema.Number,
+    hasMoved: Schema.Boolean,
+  },
 })
 export type Grab = typeof Grab.Type
 
@@ -355,7 +360,8 @@ export const update =
         input.mode === 'Edit'
           ? {
               model: modifyFields(model, {
-                maybeGrab: () => Option.some(Grab.Device({ id, x, y })),
+                maybeGrab: () =>
+                  Option.some(Grab.Device({ id, x, y, hasMoved: false })),
               }),
             }
           : { model },
@@ -363,14 +369,16 @@ export const update =
         model: modifyFields(model, {
           maybeGrab: grab =>
             Option.map(grab, held =>
-              held._tag === 'Device' ? Grab.Device({ id: held.id, x, y }) : held,
+              held._tag === 'Device'
+                ? Grab.Device({ id: held.id, x, y, hasMoved: true })
+                : held,
             ),
         }),
       }),
       DroppedDevice: () =>
         Option.match(model.maybeGrab, {
           onSome: grab =>
-            grab._tag === 'Device' && input.mode === 'Edit'
+            grab._tag === 'Device' && grab.hasMoved && input.mode === 'Edit'
               ? propose(
                   modifyFields(model, { maybeGrab: () => Option.none() }),
                   [move(grab.id, Math.round(grab.x), Math.round(grab.y))],
