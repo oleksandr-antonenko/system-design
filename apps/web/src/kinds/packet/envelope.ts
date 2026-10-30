@@ -86,15 +86,49 @@ const titles: Readonly<Record<Layer['_tag'], string>> = {
   Payload: 'DATA',
 }
 
-/** Слои конверта снаружи внутрь. В запечатанном конверте (TLS с урока 11)
-    прикладной слой виден, только если сцена его открыла. */
-export const layerRows = (hop: Hop): ReadonlyArray<LayerRow> =>
-  Array.map(hop.envelope, (layer, position) => ({
-    position,
-    level: levelOf(layer),
-    title: titles[layer._tag],
-    fields: fieldsOf(layer),
-  }))
+/** Поля, которые конверт показывает только с урока своей темы (план,
+    раздел 3.4): TTL — с урока 8, флаги TCP — с модуля 2. */
+const fieldFeatures: Readonly<Record<string, string>> = {
+  'IP.ttl': 'envelope.ttl',
+  'TCP.flags': 'envelope.tcpFlags',
+}
+
+/** TLS отдельной строкой — с урока 11 (запечатанный конверт); до него
+    страница внутри TLS — одна строка HTTP. */
+const SEALED_FEATURE = 'board.sealedEnvelope'
+
+const isFieldShown =
+  (isOpen: (feature: string) => boolean, title: string) =>
+  (field: Field): boolean =>
+    Option.match(Option.fromNullishOr(fieldFeatures[`${title}.${field.key}`]), {
+      onNone: () => true,
+      onSome: isOpen,
+    })
+
+/** Слои конверта снаружи внутрь: то, что открыто к уроку (`isOpen`, по
+    умолчанию всё). В запечатанном конверте (TLS с урока 11) прикладной слой
+    виден, только если сцена его открыла. */
+export const layerRows = (
+  hop: Hop,
+  isOpen: (feature: string) => boolean = () => true,
+): ReadonlyArray<LayerRow> => {
+  const hasPage = Array.some(hop.envelope, layer => layer._tag === 'Http')
+  return Array.getSomes(
+    Array.map(hop.envelope, (layer, position) =>
+      layer._tag === 'Tls' && hasPage && !isOpen(SEALED_FEATURE)
+        ? Option.none()
+        : Option.some({
+            position,
+            level: levelOf(layer),
+            title: titles[layer._tag],
+            fields: Array.filter(
+              fieldsOf(layer),
+              isFieldShown(isOpen, titles[layer._tag]),
+            ),
+          }),
+    ),
+  )
+}
 
 /** Поля, которые изменились с прошлого хопа того же пакета: на доске они
     подсвечены (MAC меняется на каждом хопе, адрес — на NAT, TTL — на роутере). */
@@ -146,13 +180,14 @@ export const addressesOf = (
         : Option.none(),
   )
 
-/** Главное поле слоя: его подсвечивает квиз «какой это слой». */
+/** Главное поле слоя среди видимых: его подсвечивает квиз «какой это слой». */
 export const keyFieldOf = (
   hop: Hop,
   level: StackLevel,
+  isOpen: (feature: string) => boolean = () => true,
 ): Option.Option<string> =>
   pipe(
-    layerRows(hop),
+    layerRows(hop, isOpen),
     Array.findLast(row => row.level === level),
     Option.flatMap(row =>
       Option.map(

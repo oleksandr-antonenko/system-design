@@ -9,7 +9,7 @@ import {
   deviceKindName,
   kindOf,
 } from '../../net/model'
-import { sourceOf } from '../../net/packet'
+import { levelOf, sourceOf } from '../../net/packet'
 import { wifiOf } from '../../net/topology'
 import type { BoardSlot, Tone } from '../contract'
 import type { PacketTypes } from '../types'
@@ -655,8 +655,22 @@ const tunnelViews = <ParentMessage>(
 
 // NODES
 
+/** Слой под указателем: строка панели конверта или ссылка текста
+    `[[env:<уровень>|…]]` (первый слой этого уровня в конверте хопа). */
+const hoveredLayer = (picture: Picture): Option.Option<number> =>
+  Option.orElse(picture.model.maybeLayer, () =>
+    Option.flatMap(picture.context.maybeHoveredRef, ref =>
+      Option.flatMap(picture.maybeLeg, ({ leg }) =>
+        Array.findFirstIndex(
+          leg.hop.envelope,
+          layer => `env:${levelOf(layer)}` === ref,
+        ),
+      ),
+    ),
+  )
+
 const isLayerLink = (picture: Picture, link: string): boolean =>
-  Option.exists(picture.model.maybeLayer, position =>
+  Option.exists(hoveredLayer(picture), position =>
     Option.exists(picture.maybeLeg, ({ leg }) =>
       Option.exists(
         Array.get(leg.hop.envelope, position),
@@ -670,7 +684,7 @@ const isLayerLink = (picture: Picture, link: string): boolean =>
   )
 
 const layerDevices = (picture: Picture): ReadonlyArray<string> =>
-  Option.match(picture.model.maybeLayer, {
+  Option.match(hoveredLayer(picture), {
     onNone: () => [],
     onSome: position =>
       Option.match(picture.maybeLeg, {

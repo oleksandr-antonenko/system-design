@@ -5,7 +5,7 @@ export default defineLessonMeta(course, {
   slug: 'under-the-hood',
   module: 'local',
   order: 7,
-  available: false,
+  available: true,
   locales: ['uk', 'ru', 'en', 'lt'],
   unlocks: [
     'board.envelopeLayers',
