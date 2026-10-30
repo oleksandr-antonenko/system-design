@@ -103,6 +103,7 @@ export const packetBoardLt: PacketBoardStrings = {
     office: 'Biuras',
     plan: 'Buto planas',
     docker: host => `Docker: ${host}`,
+    door: mapping => `Port mapping ${mapping}`,
     internet: 'Internet',
     internetSub: 'visas pasaulis',
     internetOpenSub: 'daug tinklų',

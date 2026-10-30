@@ -1235,7 +1235,10 @@ const receiveAtHost = (
         : originateFromHost(doc, run, host, back, at)
     }
     if (Array.contains(own, packet.dst)) {
-      return succeed(run, arrived(host, packet, at, maybeHop))
+      return Option.getOrElse(
+        publishInto(doc, run, host, packet, at, maybeHop, true),
+        () => succeed(run, arrived(host, packet, at, maybeHop)),
+      )
     }
     if (inBridge(host, packet.dst)) {
       return originateFromHost(doc, run, host, packet, at)

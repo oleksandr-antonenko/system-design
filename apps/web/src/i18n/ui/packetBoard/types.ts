@@ -97,6 +97,8 @@ export type PacketBoardStrings = Readonly<{
     office: string
     plan: string
     docker: (host: string) => string
+    /** Дверь на рамке хоста Docker (port mapping): «8080 → app:3000». */
+    door: (mapping: string) => string
     internet: string
     internetSub: string
     internetOpenSub: string

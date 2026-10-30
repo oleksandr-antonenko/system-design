@@ -731,6 +731,57 @@ describe('lesson 14 (dev-networks): localhost, Docker and a tunnel', () => {
       answer: { status: 404 },
     })
   })
+
+  test('a container reaches a published port through its host’s own address', () => {
+    const viaHost = Intent.Connect({
+      from: 'app',
+      host: '192.168.1.42',
+      port: 5432,
+    })
+    expect(traceOn(lesson, viaHost).outcome).toMatchObject({
+      _tag: 'Delivered',
+      at: 'db',
+    })
+    const hidden = buildNet(
+      [
+        compose(
+          'laptop',
+          composeFile([
+            service('app', { image: 'shop-app', port: 3000 }),
+            service('db', { image: 'postgres:16', port: 5432 }),
+          ]),
+        ),
+        composeUp('laptop'),
+      ],
+      lesson,
+    )
+    expect(traceOn(hidden, viaHost).outcome).toMatchObject({
+      _tag: 'Refused',
+      at: 'laptop',
+    })
+  })
+
+  test('Ctrl+C stops the running tunnel, not just the dev server', () => {
+    const tunnelled = foldWorld(buildWorld([], lesson), [
+      run('laptop', 'tunnel http 8080'),
+    ])
+    const stopped = foldWorld(tunnelled, [run('laptop', 'Ctrl+C')])
+    expect(
+      Option.isSome(
+        Option.flatMap(
+          Array.findFirst(
+            stopped.doc.devices,
+            device => device.id === 'laptop',
+          ),
+          device =>
+            device._tag === 'Host' ? device.maybeTunnel : Option.none(),
+        ),
+      ),
+    ).toBe(false)
+    expect(traceOn(stopped.doc, devForFriend, stopped).outcome).toMatchObject({
+      answer: { status: 404 },
+    })
+  })
 })
 
 describe('lesson 15 (troubleshooting): five broken networks, terminal only', () => {

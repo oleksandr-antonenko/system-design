@@ -104,6 +104,7 @@ export const packetBoardRu: PacketBoardStrings = {
     office: 'Офис',
     plan: 'План квартиры',
     docker: host => `Docker: ${host}`,
+    door: mapping => `Port mapping ${mapping}`,
     internet: 'Internet',
     internetSub: 'весь мир',
     internetOpenSub: 'много сетей',

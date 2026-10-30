@@ -1875,6 +1875,31 @@ export const trace = (
   ]
 }
 
+/** Container с зависимостью (`DATABASE_URL`) работает, только если
+    достаёт до неё; иначе он падает и перезапускается (`Restarting`). */
+export const isContainerUp = (
+  doc: NetDoc,
+  state: NetState,
+  container: Device,
+): boolean =>
+  container._tag !== 'Host' ||
+  Option.match(
+    Option.flatMap(container.maybeContainer, info => info.maybeNeeds),
+    {
+      onNone: () => true,
+      onSome: needs =>
+        trace(
+          doc,
+          state,
+          Intent.Connect({
+            from: container.id,
+            host: needs.host,
+            port: needs.port,
+          }),
+        )[0].outcome._tag === 'Delivered',
+    },
+  )
+
 /** Открытие без перехода по 301: для цели «перенаправляет на HTTPS». */
 export const traceNoFollow = (
   doc: NetDoc,

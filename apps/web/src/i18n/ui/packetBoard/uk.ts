@@ -102,6 +102,7 @@ export const packetBoardUk: PacketBoardStrings = {
     office: 'Офіс',
     plan: 'План квартири',
     docker: host => `Docker: ${host}`,
+    door: mapping => `Port mapping ${mapping}`,
     internet: 'Internet',
     internetSub: 'увесь світ',
     internetOpenSub: 'багато мереж',
