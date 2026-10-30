@@ -72,6 +72,8 @@ export const UiFeature = Schema.Literals([
   'server.firewall',
   'terminal.ss',
   'terminal.ufw',
+  'quiz.pickRule',
+  'board.portScan',
   'browser.errConnectionTimedOut',
   'board.tunnel',
   'router.routes',
@@ -82,7 +84,11 @@ export const UiFeature = Schema.Literals([
   'compose.file',
   'board.fog',
   'terminal.freeInput',
+  'quiz.match',
   'board.sandbox',
+  'board.draft',
+  'quiz.spotFault',
+  'board.finalRun',
   'mesh.members',
 ])
 export type UiFeature = typeof UiFeature.Type
