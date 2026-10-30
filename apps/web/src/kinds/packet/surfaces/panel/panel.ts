@@ -186,6 +186,18 @@ const differentKeys = <A>(
 
 const sameRows = Schema.toEquivalence(Schema.Array(Schema.Unknown))
 
+/** Таблицы только для чтения: эталон может их изменить (адрес устройства во
+    вкладке «Устройства»), но ученик в них ничего не вписывает. */
+const readOnlyIds = (
+  tab: PanelTab,
+  context: PanelContext,
+): ReadonlyArray<string> =>
+  Array.getSomes(
+    Array.map(tab.fields(context), field =>
+      field._tag === 'Table' ? Option.some(field.id) : Option.none(),
+    ),
+  )
+
 /** Призрак третьей подсказки: поля и списки вкладки, которые эталон задачи
     меняет. Панель обводит их, не подставляя значений. */
 export const ghostPaths = (
@@ -199,16 +211,20 @@ export const ghostPaths = (
       const world = foldWorld(context.world, solution)
       const before = tab.read(context)
       const after = tab.read({ ...context, world, run: runPacket(world) })
-      return [
-        ...differentKeys(
-          before.fields,
-          after.fields,
-          (left, right) => left === right,
-        ),
-        ...differentKeys(before.lists, after.lists, (left, right) =>
-          sameRows(left ?? [], right ?? []),
-        ),
-      ]
+      const readOnly = readOnlyIds(tab, context)
+      return Array.filter(
+        [
+          ...differentKeys(
+            before.fields,
+            after.fields,
+            (left, right) => left === right,
+          ),
+          ...differentKeys(before.lists, after.lists, (left, right) =>
+            sameRows(left ?? [], right ?? []),
+          ),
+        ],
+        id => !Array.contains(readOnly, id),
+      )
     },
   })
 

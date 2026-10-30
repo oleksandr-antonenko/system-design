@@ -1,4 +1,4 @@
-import { Option, Record } from 'effect'
+import { Array, Option, Record } from 'effect'
 import {
   expectNoOutMessage,
   expectOutMessage,
@@ -9,7 +9,8 @@ import {
 } from 'foldkit/story'
 import { describe, expect, test } from 'vitest'
 
-import { configureWifi, wifi } from '../../../../net/build'
+import { macFromId } from '../../../../net/address'
+import { configureWifi, reserve, wifi } from '../../../../net/build'
 import { NetMessage } from '../../../../net/message'
 import { SurfaceOutMessage } from '../../../contract'
 import * as Panel from './panel'
@@ -234,6 +235,22 @@ describe('settings panel: router Wi-Fi tab', () => {
       ['band'],
     )
     expect(Panel.ghostPaths(wifiTab, context, Option.none())).toEqual([])
+  })
+
+  test('the ghost skips read-only tables: a reservation frames the list, not the devices', () => {
+    const tabOf = (id: string) =>
+      Option.getOrThrow(
+        Array.findFirst(routerPanel.tabs, candidate => candidate.id === id),
+      )
+    const reservePrinter = Option.some([
+      reserve('router', macFromId('printer'), '192.168.1.50'),
+    ])
+    expect(
+      Panel.ghostPaths(tabOf('addresses'), context, reservePrinter),
+    ).toEqual(['reservations'])
+    expect(Panel.ghostPaths(tabOf('devices'), context, reservePrinter)).toEqual(
+      [],
+    )
   })
 
   test('tabs are hidden until the course unlocks them', () => {
