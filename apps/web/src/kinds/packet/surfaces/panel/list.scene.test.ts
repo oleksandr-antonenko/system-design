@@ -70,18 +70,18 @@ describe('settings panel view', () => {
       given(Panel.initialModel),
       click(role('tab', { name: 'Addresses new' })),
       expect(label('Hand out addresses from')).toHaveValue('192.168.1.100'),
-      expect(label('Address, row 1')).toHaveValue('192.168.1.42'),
+      expect(label('IP address, row 1')).toHaveValue('192.168.1.42'),
       click(role('button', { name: '+ Add' })),
       change(label('Device, row 2'), macFromId('printer')),
-      type(label('Address, row 2'), '192.168.1.5o'),
+      type(label('IP address, row 2'), '192.168.1.5o'),
       click(role('button', { name: 'Save' })),
-      expect(label('Address, row 2')).toHaveAttr('aria-invalid', 'true'),
+      expect(label('IP address, row 2')).toHaveAttr('aria-invalid', 'true'),
       expect(
         text(
           '“192.168.1.5o” is not an address: it needs four numbers from 0 to 255 separated by dots.',
         ),
       ).toExist(),
-      type(label('Address, row 2'), '192.168.1.50'),
+      type(label('IP address, row 2'), '192.168.1.50'),
       click(role('button', { name: 'Save' })),
       expectOutMessage(
         SurfaceOutMessage.ProducedOps([

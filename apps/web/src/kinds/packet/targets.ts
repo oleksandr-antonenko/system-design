@@ -2,7 +2,12 @@ import { Array, Option, Schema, pipe } from 'effect'
 
 import type { UiStrings } from '../../i18n/ui'
 import { findDevice, isProvider } from '../../net/doc'
-import { type Device, type NetDoc, kindOf } from '../../net/model'
+import {
+  type Device,
+  type NetDoc,
+  deviceKindName,
+  kindOf,
+} from '../../net/model'
 import { StackLevel, sourceOf } from '../../net/packet'
 import { wifiOf } from '../../net/topology'
 import type { PacketDoc } from './doc'
@@ -233,7 +238,7 @@ export const targetName = (
         onNone: () => target,
         onSome: ref =>
           ref._tag === 'Device'
-            ? ui.packetBoard.kindName[kindOf(ref.device)]
+            ? deviceKindName[kindOf(ref.device)]
             : ref._tag === 'Link'
               ? ref.link.replace('-', ' — ')
               : ref._tag === 'Envelope'

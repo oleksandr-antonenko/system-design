@@ -101,7 +101,11 @@ describe('connections of the new blocks', () => {
       expect(en).toContain('Users')
       expect(en).toContain('Cache')
       expect(en).toContain('Load balancer')
-      expect(renderDomainMessage(uiFor('ru').domain, message)).toContain('Кеш')
+      locales.forEach(locale => {
+        const text = renderDomainMessage(uiFor(locale).domain, message)
+        expect(text, locale).toContain('Cache')
+        expect(text, locale).not.toContain('Кеш')
+      })
     })
   })
 

@@ -36,9 +36,9 @@ describe('NetMessage texts', () => {
       device: 'laptop',
       port: 5173,
     })
-    const label = (id: string): string => (id === 'laptop' ? 'Ноутбук' : id)
+    const label = (id: string): string => (id === 'laptop' ? 'Laptop' : id)
     expect(renderNetMessage('ru', message, label)).toBe(
-      'Порт 5173 на устройстве «Ноутбук» открыт только для него самого (127.0.0.1).',
+      'Port 5173 на устройстве «Laptop» открыт только для него самого (127.0.0.1).',
     )
     expect(renderNetMessage('en', message, () => 'Laptop')).toBe(
       'Port 5173 on Laptop is open only to the device itself (127.0.0.1).',

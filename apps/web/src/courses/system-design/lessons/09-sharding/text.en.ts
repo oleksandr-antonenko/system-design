@@ -41,7 +41,7 @@ The note above the database shows both streams. At ${n(sim.load)} rps it receive
 Both streams have doubled along with the load. And if the sale goes well, next year’s will be even bigger.`,
     },
     'replicas-wont-help': {
-      title: 'Why replicas won’t help',
+      title: 'Why read replicas won’t help',
       body: ({ sim }) =>
         `In lesson 6, read replicas rescued the database. Here they could take over only the cache misses. Writes still go to the primary, and every replica has to repeat them as well. Even with any number of replicas, the [[db|primary]] would be left with ${n(writesInto(sim, 'db'))} writes per second, ${percent(writesInto(sim, 'db') / capacity)} of its capacity, and no headroom for the next sale.
 
@@ -80,7 +80,7 @@ So resharding is planned in advance. The data is split into many small **logical
       title: 'Summary',
       body: `Sharding is the way to **scale writes**: each shard takes its share, and capacity grows with the number of shards.
 
-The price is complexity: routing by key, hot shards, cross-shard queries without joins or transactions, painful resharding. So sharding comes last: first a cache, replicas and a bigger database, and shards only when writes or the volume of data no longer fit on one machine.
+The price is complexity: routing by key, hot shards, cross-shard queries without joins or transactions, painful resharding. So sharding comes last: first a cache, read replicas and a bigger database, and shards only when writes or the volume of data no longer fit on one machine.
 
 One more thing: each shard is the **only copy** of its users’ data. If [[db2|db2]] fails, half of the users lose access to their orders, while the other half carry on as if nothing happened. In practice every shard gets its own replicas, as in lesson 6. How to survive the failure of any block is the topic of lesson 10.`,
     },

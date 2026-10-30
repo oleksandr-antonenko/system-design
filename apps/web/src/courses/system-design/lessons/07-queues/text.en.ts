@@ -21,7 +21,7 @@ export default {
   steps: {
     'in-request': {
       title: 'Everything inside the request',
-      body: `The online shop has grown. [[users|Users]] send requests to two application servers, [[app1|app1]] and [[app2|app2]], and the data lives in the [[db|database]]. The load balancer from lesson 3 is left off the board to save room: the Users block spreads requests evenly across the servers itself, just as a balancer would.
+      body: `The online shop has grown. [[users|Users]] send requests to two application servers, [[app1|app1]] and [[app2|app2]], and the data lives in the [[db|database]]. The load balancer from lesson 3 is left off the board to save room: the Users block spreads requests evenly across the servers itself, just as a load balancer would.
 
 When a customer places an order, the server saves it, sends a confirmation email, renders a PDF invoice and only then answers. The mail service takes about a second to reply, the PDF eats CPU time, and the customer watches a spinner all along. Photo uploads, sign-ups and password resets hide the same kind of work. In this lesson's model every request the server handles leaves one such **job**.
 

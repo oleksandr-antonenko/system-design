@@ -168,7 +168,7 @@ describe('course map', () => {
       expect(text('13 уроків')).toExist(),
       expectAll(all.selector('main li')).toHaveCount(13),
       expectAll(all.selector('main a')).toHaveCount(available.length),
-      expect(role('link', { name: 'Балансувальник навантаження' })).toHaveAttr(
+      expect(role('link', { name: 'Load balancer' })).toHaveAttr(
         'href',
         '/uk/system-design/lessons/load-balancer',
       ),
@@ -201,7 +201,7 @@ describe('course map', () => {
       expectAll(all.selector('main li')).toHaveCount(16),
       expectAll(all.selector('main a')).toHaveCount(available.length),
       expectAll(all.text('Скоро')).toHaveCount(16 - available.length),
-      expect(role('link', { name: 'Порты: квартиры в одном доме' })).toHaveAttr(
+      expect(role('link', { name: 'Ports: квартиры в одном доме' })).toHaveAttr(
         'href',
         '/ru/networks/lessons/ports-and-localhost',
       ),
@@ -305,13 +305,31 @@ describe('lesson player', () => {
       given(openLesson('/ru/system-design/lessons/load-balancer?step=1')),
       pointerReady,
       expect(label('Теория')).toExist(),
-      expect(role('heading', { name: 'Балансировщик нагрузки' })).toExist(),
-      expect(role('img', { name: /^Сервер app1/ })).toExist(),
-      expect(role('img', { name: /^Пользователи users/ })).toExist(),
+      expect(role('heading', { name: 'Load balancer' })).toExist(),
+      expect(role('img', { name: /^Server app1/ })).toExist(),
+      expect(role('img', { name: /^Users users/ })).toExist(),
       expect(label('Приборы')).toExist(),
-      expect(role('button', { name: /Балансировщик/ })).toBeDisabled(),
+      expect(role('button', { name: /^Load balancer/ })).toBeDisabled(),
       expect(text('Доска следует за текстом')).toExist(),
       expect(role('button', { name: 'Далее →' })).toBeEnabled(),
+    )
+  })
+
+  test('the board names elements in English and explains them in the page language', () => {
+    scene(
+      { update, view },
+      given(openLesson('/ru/system-design/lessons/load-balancer?step=4')),
+      pointerReady,
+      expect(role('button', { name: /^Load balancer/ })).toHaveAttr(
+        'title',
+        'Балансировщик нагрузки: раздаёт запросы между серверами\nПеретащите на доску или нажмите, чтобы добавить',
+      ),
+      expect(role('img', { name: /^Server app1/ })).toHaveAttr(
+        'aria-description',
+        'Сервер приложения: выполняет код и отвечает на запросы',
+      ),
+      expect(role('img', { name: /^Users users/ })).toExist(),
+      expect(text('Users')).toExist(),
     )
   })
 
@@ -320,8 +338,8 @@ describe('lesson player', () => {
       { update, view },
       given(openLesson('/ru/system-design/lessons/load-balancer?step=4')),
       pointerReady,
-      expect(role('button', { name: /Балансировщик/ })).toBeEnabled(),
-      expect(text('На доске есть балансировщик')).toExist(),
+      expect(role('button', { name: /^Load balancer/ })).toBeEnabled(),
+      expect(text('На доске есть блок «Load balancer»')).toExist(),
       expect(text('Ещё один критерий проверяется прогоном нагрузки')).toExist(),
       expect(role('button', { name: 'Проверить' })).toBeEnabled(),
       expect(role('button', { name: 'Далее →' })).toBeDisabled(),
@@ -368,14 +386,14 @@ describe('lesson player', () => {
 
 const TASK_URL = '/ru/system-design/lessons/load-balancer?step=4'
 
-const paletteBalancer = role('button', { name: /Балансировщик/ })
+const paletteBalancer = role('button', { name: /^Load balancer/ })
 
 const goal = (name: string) =>
   first(filter(all.selector('ul.goals li'), { hasText: name }))
 
 const journal = (line: string) => within(label('Журнал операций'), text(line))
 
-const app1 = role('img', { name: /^Сервер app1/ })
+const app1 = role('img', { name: /^Server app1/ })
 
 const LOAD_BALANCER = 'system-design/load-balancer'
 
@@ -410,12 +428,12 @@ describe('task on the board', () => {
       { update, view },
       given(openLesson(TASK_URL)),
       pointerReady,
-      expect(goal('На доске есть балансировщик')).not.toHaveClass('met'),
+      expect(goal('На доске есть блок «Load balancer»')).not.toHaveClass('met'),
       click(paletteBalancer),
-      expect(goal('На доске есть балансировщик')).toHaveClass('met'),
-      expect(goal('Балансировщик ведёт к трём серверам')).not.toHaveClass(
-        'met',
-      ),
+      expect(goal('На доске есть блок «Load balancer»')).toHaveClass('met'),
+      expect(
+        goal('Load balancer ведёт к трём блокам «Server»'),
+      ).not.toHaveClass('met'),
     )
   })
 
@@ -494,14 +512,17 @@ describe('task on the board', () => {
       click(hint),
       click(hint),
       expect(role('button', { name: 'Показать решение' })).toBeAbsent(),
-      expect(text('сюда: Балансировщик')).toBeAbsent(),
+      expect(text('сюда: Load balancer')).toBeAbsent(),
       click(hint),
       expect(role('button', { name: 'Показать решение' })).toBeEnabled(),
-      expect(text('сюда: Балансировщик')).toExist(),
+      expect(text('сюда: Load balancer')).toExist(),
       expect(hint).toBeDisabled(),
     )
   })
 })
+
+const proseRef = (name: string) =>
+  first(filter(all.selector('span.prose-ref'), { hasText: name }))
 
 describe('theory and board together', () => {
   test('pointing at a term in the text highlights its block', () => {
@@ -510,11 +531,9 @@ describe('theory and board together', () => {
       given(openLesson('/ru/system-design/lessons/load-balancer?step=1')),
       pointerReady,
       expect(app1).not.toHaveClass('selected'),
-      hover(text('сервер приложения')),
+      hover(proseRef('server')),
       expect(app1).toHaveClass('selected'),
-      expect(role('img', { name: /^Пользователи users/ })).not.toHaveClass(
-        'selected',
-      ),
+      expect(role('img', { name: /^Users users/ })).not.toHaveClass('selected'),
     )
   })
 
@@ -523,9 +542,9 @@ describe('theory and board together', () => {
       { update, view },
       given(openLesson('/ru/system-design/lessons/load-balancer?step=1')),
       pointerReady,
-      focus(text('сервер приложения')),
+      focus(proseRef('server')),
       expect(app1).toHaveClass('selected'),
-      blur(text('сервер приложения')),
+      blur(proseRef('server')),
       expect(app1).not.toHaveClass('selected'),
     )
   })
@@ -535,7 +554,7 @@ describe('theory and board together', () => {
       { update, view },
       given(openLesson('/ru/system-design/lessons/load-balancer?step=3')),
       pointerReady,
-      expect(role('img', { name: /^Сервер app2/ })).toExist(),
+      expect(role('img', { name: /^Server app2/ })).toExist(),
       expectAll(all.selector('rect.halo.warn')).toHaveCount(2),
       expect(text(/^загрузка .* · ошибки /)).toBeAbsent(),
       click(role('button', { name: '← Назад' })),
@@ -544,7 +563,7 @@ describe('theory and board together', () => {
         Player.Message.CompletedScrollStepIntoView(),
       ),
       Command.resolve(ReplaceStepUrl, Message.CompletedReplaceStepUrl()),
-      expect(role('img', { name: /^Сервер app2/ })).toBeAbsent(),
+      expect(role('img', { name: /^Server app2/ })).toBeAbsent(),
       expectAll(all.selector('rect.halo.warn')).toHaveCount(0),
       expectAll(all.selector('rect.halo.bad')).toHaveCount(1),
       expect(text('загрузка 225% · ошибки 56%')).toExist(),
@@ -563,18 +582,18 @@ describe('quiz step', () => {
       { update, view },
       given(openLesson(QUIZ_URL)),
       pointerReady,
-      expect(text(/Сколько запросов в секунду дойдёт до базы/)).toExist(),
+      expect(text(/Сколько запросов в секунду дойдёт до database/)).toExist(),
       expect(text('Сначала ответьте на вопрос')).toExist(),
       expect(role('button', { name: 'Далее →' })).toBeDisabled(),
-      expect(role('button', { name: /^Далее: Задача: кеш/ })).toBeDisabled(),
+      expect(role('button', { name: /^Далее: Задача: cache/ })).toBeDisabled(),
       click(option(/^256 rps/)),
       expect(text('Не совсем')).toExist(),
-      expect(text(/это только промахи/)).toExist(),
+      expect(text(/это только cache miss/)).toExist(),
       expect(text('Правильный ответ: 576 rps')).toExist(),
       expect(option(/^576 rps/)).toHaveClass('right'),
       expect(option(/^256 rps/)).toBeDisabled(),
       expect(role('button', { name: 'Далее →' })).toBeEnabled(),
-      expect(role('button', { name: /^Далее: Задача: кеш/ })).toBeEnabled(),
+      expect(role('button', { name: /^Далее: Задача: cache/ })).toBeEnabled(),
     )
   })
 

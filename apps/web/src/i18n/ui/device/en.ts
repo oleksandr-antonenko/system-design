@@ -103,7 +103,7 @@ export const deviceEn: DeviceStrings = {
   dnsServers: 'DNS servers',
   dnsServersEmpty: 'The list is empty: there is no one to ask for addresses.',
   newServer: 'Server address',
-  addServer: 'Add server',
+  addServer: 'Add DNS server',
   removeServer: server => `Remove ${server}`,
   addressAutomatic: 'Automatic from the router',
   gateway: 'Router (gateway)',
