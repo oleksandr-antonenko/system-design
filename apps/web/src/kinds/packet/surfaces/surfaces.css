@@ -587,6 +587,21 @@
   color: var(--muted);
   white-space: nowrap;
 }
+/* На узком экране телефона «Не защищено» — только значок, как в мобильном
+   браузере: иначе адресу не остаётся места. Текст остаётся для экранных
+   чтецов и во всплывающей подсказке. */
+.browser-bar {
+  container-type: inline-size;
+}
+@container (max-width: 380px) {
+  .browser-unsafe-text {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+  }
+}
 .browser-content {
   flex: 1;
   overflow-y: auto;

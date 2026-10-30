@@ -141,7 +141,8 @@ export const stageTargets = (item: PacketStage): ReadonlyArray<string> =>
         : item._tag === 'PauseAt' ||
             item._tag === 'ShowTable' ||
             item._tag === 'Printout' ||
-            item._tag === 'Walk'
+            item._tag === 'Walk' ||
+            item._tag === 'ShowCert'
           ? [item.device]
           : item._tag === 'Scan'
             ? [item.from, item.target]
@@ -169,7 +170,7 @@ const tableFeature: Readonly<Record<DeviceTable, string>> = {
 }
 
 /** Что должно быть открыто, чтобы элемент сцены был виден (план 3.4). */
-export const stageFeatures = (item: PacketStage): ReadonlyArray<string> =>
+const elementFeatures = (item: PacketStage): ReadonlyArray<string> =>
   item._tag === 'Play' || item._tag === 'PauseAt'
     ? ['transport.run', 'board.envelope']
     : item._tag === 'OpenEnvelope'
@@ -191,6 +192,17 @@ export const stageFeatures = (item: PacketStage): ReadonlyArray<string> =>
                     : item._tag === 'Builder'
                       ? ['envelope.builder']
                       : ['board.devices']
+
+/** Элемент сцены и то, что он показывает: договорённость о шифре в показе
+    — часть запечатанного конверта, паспорт сайта на доске — тот же просмотр
+    certificate, что и в браузере (урок 11). */
+export const stageFeatures = (item: PacketStage): ReadonlyArray<string> => [
+  ...elementFeatures(item),
+  ...(item._tag === 'Play' && item.show === 'handshake'
+    ? ['board.sealedEnvelope']
+    : []),
+  ...(item._tag === 'ShowCert' ? ['browser.certificate'] : []),
+]
 
 /** Что должно быть открыто, чтобы цель ссылки была видна на доске. */
 export const targetFeatures = (

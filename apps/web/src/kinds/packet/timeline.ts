@@ -73,11 +73,16 @@ export const protocolOf = (envelope: ReadonlyArray<Layer>): Protocol => {
                   : 'tcp'
 }
 
-const isConversation = (protocol: Protocol, isDnsShown: boolean): boolean =>
+const isConversation = (
+  protocol: Protocol,
+  isDnsShown: boolean,
+  isTlsShown: boolean,
+): boolean =>
   protocol === 'http' ||
   protocol === 'data' ||
   protocol === 'icmp' ||
-  (protocol === 'dns' && isDnsShown)
+  (protocol === 'dns' && isDnsShown) ||
+  (protocol === 'tls' && isTlsShown)
 
 const isRefusal = (hop: Hop): boolean =>
   Array.some(
@@ -104,7 +109,8 @@ const dhcpLetters = (
 
 /** Какие пакеты трассы показывать. `letters`: только разговор — запрос и
     ответ (и вопрос справочной, если она уже открыта); у выдачи адреса —
-    вопрос и ответ DHCP; без них — всё, кроме поиска MAC и DHCP. */
+    вопрос и ответ DHCP; без них — всё, кроме поиска MAC и DHCP.
+    `handshake`: разговор и договорённость о шифре перед ним (TLS hello). */
 const shownPackets = (
   trace: Trace,
   show: PlayShow,
@@ -120,7 +126,7 @@ const shownPackets = (
     return packets
   }
   const talk = Array.filter(packets, packet =>
-    isConversation(protocolOfPacket(packet), isDnsShown),
+    isConversation(protocolOfPacket(packet), isDnsShown, show === 'handshake'),
   )
   const refusals = Array.filter(packets, packet =>
     Array.some(trace.hops, hop => hop.packet === packet && isRefusal(hop)),

@@ -14,6 +14,8 @@ export type LayerRow = Readonly<{
   level: StackLevel
   title: string
   fields: ReadonlyArray<Field>
+  /** Слой внутри шифра запечатанного конверта: полей не видно. */
+  isSealed: boolean
 }>
 
 const option = <A>(value: Option.Option<A>, show: (a: A) => string): string =>
@@ -62,6 +64,10 @@ const fieldsOf = (layer: Layer): ReadonlyArray<Field> =>
         onSome: status => ({ key: 'status', value: `${status}` }),
       }),
       { key: 'host', value: http.host },
+      ...Array.map(http.fields, field => ({
+        key: field.name,
+        value: field.value,
+      })),
     ],
     Tunnel: tunnel => [{ key: 'kind', value: tunnel.kind }],
     Payload: payload => [
@@ -86,15 +92,27 @@ const titles: Readonly<Record<Layer['_tag'], string>> = {
   Payload: 'DATA',
 }
 
-/** Слои конверта снаружи внутрь. В запечатанном конверте (TLS с урока 11)
-    прикладной слой виден, только если сцена его открыла. */
-export const layerRows = (hop: Hop): ReadonlyArray<LayerRow> =>
-  Array.map(hop.envelope, (layer, position) => ({
-    position,
-    level: levelOf(layer),
-    title: titles[layer._tag],
-    fields: fieldsOf(layer),
-  }))
+const isCipher = (layer: Layer): boolean =>
+  layer._tag === 'Tls' && layer.kind === 'data'
+
+/** Слои конверта снаружи внутрь. В запечатанном конверте (`sealed`, с урока
+    11) слои под шифром TLS видны только по названию: полей не прочитать. */
+export const layerRows = (
+  hop: Hop,
+  sealed = false,
+): ReadonlyArray<LayerRow> => {
+  const cipher = Array.findFirstIndex(hop.envelope, isCipher)
+  return Array.map(hop.envelope, (layer, position) => {
+    const isSealed = sealed && Option.exists(cipher, index => position > index)
+    return {
+      position,
+      level: levelOf(layer),
+      title: titles[layer._tag],
+      fields: isSealed ? [] : fieldsOf(layer),
+      isSealed,
+    }
+  })
+}
 
 /** Поля, которые изменились с прошлого хопа того же пакета: на доске они
     подсвечены (MAC меняется на каждом хопе, адрес — на NAT, TTL — на роутере). */
@@ -164,7 +182,4 @@ export const keyFieldOf = (
 
 /** Конверт запечатан: внутри TLS — прикладной слой не прочитать. */
 export const isSealed = (hop: Hop): boolean =>
-  Array.some(
-    hop.envelope,
-    layer => layer._tag === 'Tls' && layer.kind === 'data',
-  )
+  Array.some(hop.envelope, isCipher)
