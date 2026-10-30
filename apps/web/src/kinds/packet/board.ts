@@ -384,7 +384,9 @@ export const update =
                   [move(grab.id, Math.round(grab.x), Math.round(grab.y))],
                 )
               : {
-                  model: modifyFields(model, { maybeGrab: () => Option.none() }),
+                  model: modifyFields(model, {
+                    maybeGrab: () => Option.none(),
+                  }),
                 },
           onNone: () => ({ model }),
         }),
@@ -394,9 +396,7 @@ export const update =
       SubmittedSend: ({ from, what }) =>
         input.mode === 'Edit' && model.sendAddress.trim() !== ''
           ? propose(modifyFields(model, { sendAddress: () => '' }), [
-              send(
-                Intent.Send({ from, to: model.sendAddress.trim(), what }),
-              ),
+              send(Intent.Send({ from, to: model.sendAddress.trim(), what })),
             ])
           : { model },
       ClickedHeader: ({ level }) => ({
@@ -452,6 +452,23 @@ export const pressDelete =
     начало, всё открытое закрыть, жесты бросить. Скорость остаётся. */
 export const interrupt = (model: Model): Model =>
   modifyFields(initialModel, { isSlow: () => model.isSlow })
+
+/** Метка «играть всю трассу хода»: длину трассы знает только вид. */
+export const AUTO_PLAY = -1
+
+/** Сколько миллисекунд проигрывать ход сам; длинная трасса встанет на
+    паузу, «Дальше» доиграет её. */
+const AUTO_PLAY_MS = 30000
+
+/** Ход ученика со своей сценой (открытая страница, `ping`): доска сама
+    проигрывает его трассу с начала. */
+export const replay = (model: Model): Model =>
+  modifyFields(interrupt(model), {
+    playhead: () => 0,
+    stopAt: () => AUTO_PLAY_MS,
+    hasStarted: () => true,
+    playedTotal: () => AUTO_PLAY,
+  })
 
 const SLOW = 0.25
 

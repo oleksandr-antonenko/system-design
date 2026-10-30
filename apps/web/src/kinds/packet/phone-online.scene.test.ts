@@ -119,7 +119,7 @@ describe('lesson 1 on the network board', () => {
       expect(text('Router-7C21')).toExist(),
       expect(text('12345678')).toExist(),
       expect(text('Solve the task on the board and in the panels below it.')).toExist(),
-      click(role('button', { name: 'Router-7C21' })),
+      click(role('button', { name: /^Router-7C21,/ })),
       type(label('Password'), '12345678'),
       click(role('button', { name: 'Join' })),
       click(role('button', { name: 'Check' })),
@@ -136,7 +136,7 @@ describe('lesson 1 on the network board', () => {
     scene(
       sceneIn('ru'),
       given(answered('router')),
-      click(role('button', { name: 'Router-7C21' })),
+      click(role('button', { name: /^Router-7C21,/ })),
       type(label('Пароль'), '1234567'),
       click(role('button', { name: 'Подключиться' })),
       click(role('button', { name: 'Проверить' })),

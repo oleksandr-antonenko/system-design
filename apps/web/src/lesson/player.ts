@@ -38,6 +38,8 @@ import {
   type TaskLogs,
   type TaskSpec,
   boardAt,
+  foldDoc,
+  stepOps,
   taskOf,
   taskStartBoard,
   taskSurfaces,
@@ -412,7 +414,14 @@ export const surfaceOf = <T extends KindTypes>(
   )
 }
 
-/** Поверхности задачи текущего шага, кроме доски, которые открыл курс. */
+/** Экран поверхности: у поверхностей одного экрана устройства он общий. */
+const screenOf = <T extends KindTypes>(surface: TaskSurface<T>): string =>
+  surface.definition.screen === undefined
+    ? surface.id
+    : `${surface.definition.screen}:${surface.target}`
+
+/** Поверхности задачи текущего шага, кроме доски, которые открыл курс. Из
+    поверхностей одного экрана остаётся первая объявленная. */
 export const visibleSurfaces = <T extends KindTypes>(
   lesson: LessonDefinition<T>,
   model: Model,
@@ -421,11 +430,14 @@ export const visibleSurfaces = <T extends KindTypes>(
     onNone: () => [],
     onSome: ({ spec }) => {
       const { unlocked } = unlocksOf(model)
-      return Array.filter(
+      return pipe(
         Array.getSomes(
           Array.map(taskSurfaces(spec), id => surfaceOf(lesson.kind, id)),
         ),
-        surface => isSurfaceOpen(unlocked, surface.definition.feature),
+        Array.filter(surface =>
+          isSurfaceOpen(unlocked, surface.definition.feature),
+        ),
+        Array.dedupeWith((left, right) => screenOf(left) === screenOf(right)),
       )
     },
   })
@@ -453,21 +465,91 @@ export const surfaceContext = <T extends KindTypes>(
 ): SurfaceContext<T> => {
   const doc = currentDoc(lesson, model)
   const unlocks = unlocksOf(model)
+  const logs = logsOf(lesson, model)
+  const task = currentTask(lesson, model)
   return {
     doc,
     run: lesson.kind.run(doc),
     mode: boardMode(lesson, model),
     target,
     label,
-    maybeGhost: Option.flatMap(currentTask(lesson, model), ({ spec, state }) =>
+    maybeGhost: Option.flatMap(task, ({ spec, state }) =>
       state.hintsShown >= 3 && !isSolved(state)
         ? Option.some(spec.solution)
         : Option.none(),
     ),
     unlocked: unlocks.unlocked,
     newFeatures: unlocks.newFeatures,
+    history: Array.flatMap(Array.take(lesson.steps, model.step + 1), step =>
+      stepOps(step, logs),
+    ),
+    journal: Option.match(task, {
+      onNone: () => [],
+      onSome: ({ state }) => opsOf(lesson.kind, state.log),
+    }),
+    surfaces: Option.match(task, {
+      onNone: () => [],
+      onSome: ({ spec }) => taskSurfaces(spec),
+    }),
   }
 }
+
+/** Сцена на доске: ход ученика, если у последнего хода задачи есть своя
+    сцена (браузер открыл адрес — его трасса), иначе сцена шага. */
+export const boardStage = <T extends KindTypes>(
+  lesson: LessonDefinition<T>,
+  model: Model,
+): Readonly<{ stage: ReadonlyArray<T['Stage']>; doc: T['Doc'] }> =>
+  pipe(
+    currentTask(lesson, model),
+    Option.flatMap(({ state }) => {
+      const log = opsOf(lesson.kind, state.log)
+      return Option.flatMap(Array.last(log), last => {
+        const before = foldDoc(
+          lesson.kind,
+          taskStartDoc(lesson, model),
+          Array.dropRight(log, 1),
+        )
+        const stage = lesson.kind.moveStage(before, last)
+        return Array.isReadonlyArrayEmpty(stage)
+          ? Option.none()
+          : Option.some({ stage, doc: before })
+      })
+    }),
+    Option.getOrElse(() => ({
+      stage: Option.match(Array.get(lesson.steps, model.step), {
+        onNone: () => [],
+        onSome: found => found.stage,
+      }),
+      doc: currentDoc(lesson, model),
+    })),
+  )
+
+/** Ход со своей сценой (трасса открытой страницы) проигрывается сразу. */
+const replayMove = <T extends KindTypes>(
+  lesson: LessonDefinition<T>,
+  model: Model,
+  before: T['Doc'],
+  ops: ReadonlyArray<T['Op']>,
+): Model =>
+  Option.match(Array.last(ops), {
+    onNone: () => model,
+    onSome: last => {
+      const beforeLast = foldDoc(lesson.kind, before, Array.dropRight(ops, 1))
+      return Array.isReadonlyArrayEmpty(lesson.kind.moveStage(beforeLast, last))
+        ? model
+        : Option.match(lesson.kind.board.state.unwrap(model.board), {
+            onNone: () => model,
+            onSome: boardModel =>
+              modifyFields(model, {
+                board: () =>
+                  lesson.kind.board.state.wrap(
+                    lesson.kind.board.replay(boardModel),
+                  ),
+              }),
+          })
+    },
+  })
 
 const initialSurfaces = <T extends KindTypes>(
   lesson: LessonDefinition<T>,
@@ -645,15 +727,20 @@ const applyStudentOps = <T extends KindTypes>(
             onFailure: refusal =>
               showToast(model, lesson.kind.message.wrap(refusal)),
             onSuccess: () => ({
-              model: withTask(model, spec.id, task => ({
-                ...task,
-                log: [...task.log, ...Array.map(ops, lesson.kind.op.wrap)],
-                redo: [],
-                check:
-                  task.check._tag === 'Failed'
-                    ? CheckState.Unchecked()
-                    : task.check,
-              })),
+              model: replayMove(
+                lesson,
+                withTask(model, spec.id, task => ({
+                  ...task,
+                  log: [...task.log, ...Array.map(ops, lesson.kind.op.wrap)],
+                  redo: [],
+                  check:
+                    task.check._tag === 'Failed'
+                      ? CheckState.Unchecked()
+                      : task.check,
+                })),
+                currentDoc(lesson, model),
+                ops,
+              ),
             }),
           }),
   })
@@ -925,18 +1012,21 @@ const continueReplay = <T extends KindTypes>(
         onSome: index =>
           Option.match(Array.get(spec.solution, index), {
             onNone: () => ({ model: finishReplay(lesson, model, spec) }),
-            onSome: op => ({
-              model: withTask(model, spec.id, task => ({
+            onSome: op => {
+              const before = currentDoc(lesson, model)
+              const applies = Result.isSuccess(lesson.kind.apply(before, op))
+              const next = withTask(model, spec.id, task => ({
                 ...task,
-                log: Result.isSuccess(
-                  lesson.kind.apply(currentDoc(lesson, model), op),
-                )
+                log: applies
                   ? [...task.log, lesson.kind.op.wrap(op)]
                   : task.log,
                 maybeReplayIndex: Option.some(index + 1),
-              })),
-              commands: [WaitBeforeReplayStep()],
-            }),
+              }))
+              return {
+                model: applies ? replayMove(lesson, next, before, [op]) : next,
+                commands: [WaitBeforeReplayStep()],
+              }
+            },
           }),
       }),
   })

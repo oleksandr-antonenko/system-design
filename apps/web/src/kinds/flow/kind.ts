@@ -178,6 +178,7 @@ export const flow: BoardKind<FlowTypes> = {
       onSome: id => (id === 'users' ? ui.kindName.client : id),
     }),
   describeOp: opText,
+  moveStage: () => [],
   renderMessage: (_locale, ui, message) =>
     renderDomainMessage(ui.domain, message),
 
@@ -211,6 +212,7 @@ export const flow: BoardKind<FlowTypes> = {
     update: FlowBoard.update,
     pressDelete: FlowBoard.pressDelete,
     interrupt: FlowBoard.interrupt,
+    replay: model => model,
     frame: FlowBoard.frame,
     view,
     instruments,

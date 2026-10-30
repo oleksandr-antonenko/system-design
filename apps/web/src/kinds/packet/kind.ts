@@ -1,21 +1,13 @@
 import { Array, Option } from 'effect'
-import { Update } from 'foldkit'
 
 import { type Goal, checkGoal } from '../../net/goals'
 import { kindOf } from '../../net/model'
+import { runCommand } from '../../net/terminal'
 import { renderNetMessage } from '../../net/text'
-import type { BoardKind, SurfaceDefinition } from '../contract'
-import {
-  BoardMessage,
-  BoardState,
-  KindMessage,
-  KindOp,
-  SurfaceMessage,
-  SurfaceState,
-} from '../state'
+import type { BoardKind } from '../contract'
+import { BoardMessage, BoardState, KindMessage, KindOp } from '../state'
 import type { PacketTypes } from '../types'
 import * as PacketBoard from './board'
-import * as PacketInstruments from './instruments'
 import {
   type PacketDoc,
   type PacketOp,
@@ -24,10 +16,14 @@ import {
   emptyPacketDoc,
   runPacket,
 } from './doc'
+import type { PacketStage } from './dsl'
+import * as PacketInstruments from './instruments'
 import { panelSurfaces } from './surfaces/panel/surfaces'
+import { browserPicture } from './surfaces/screen/browser'
+import { browserSurface, wifiSurface } from './surfaces/screen/surface'
+import { terminalSurface } from './surfaces/terminal/surface'
 import { resolveTarget, stageTargets, targetName } from './targets'
 import * as PacketView from './view'
-import * as Wifi from './wifi'
 
 // Вид доски курса сетей (design D6). Модель пакетов — `src/net/`; здесь
 // только её подключение к контракту. Доска — `board.ts` (add-network-board),
@@ -54,49 +50,22 @@ const opText = (op: PacketOp): string =>
       ? `Send ${op.intent._tag} ${fieldsText(op.intent)}`
       : `${op._tag} ${fieldsText(op)}`
 
-// SURFACES
+// MOVES
 
-const readWifi = (state: SurfaceState): Option.Option<Wifi.Model> =>
-  state._tag === 'WifiSurface' ? Option.some(state.model) : Option.none()
-
-const toWifiMessage = (message: Wifi.Message): SurfaceMessage =>
-  SurfaceMessage.GotWifiSurfaceMessage({ message })
-
-const wifiSurface: SurfaceDefinition<PacketTypes> = {
-  type: 'wifi',
-  feature: 'wifi',
-  init: () => SurfaceState.WifiSurface({ model: Wifi.initialModel }),
-  update: context => (state, message) =>
-    message._tag === 'GotWifiSurfaceMessage'
-      ? Update.foldChild({
-          update: Wifi.update(context),
-          read: readWifi,
-          write: (_state: SurfaceState, model: Wifi.Model): SurfaceState =>
-            SurfaceState.WifiSurface({ model }),
-          toParentMessage: toWifiMessage,
-          toParentOutMessage: (outMessage: Wifi.OutMessage) => outMessage,
-        })(state, message.message)
-      : { model: state },
-  tabLabel: (context, ui) =>
-    ui.network.wifiTab(
-      Option.match(context.label(context.target), {
-        onNone: () => context.target,
-        onSome: label => label.name,
-      }),
-    ),
-  view: (slot, h) =>
-    Option.match(readWifi(slot.state), {
-      onNone: () => h.empty,
-      onSome: model =>
-        Wifi.view(
-          model,
-          slot.context,
-          slot.ui,
-          message => slot.toParentMessage(toWifiMessage(message)),
-          h,
-        ),
-    }),
-}
+/** Ход ученика со своей сценой: открытая страница или трассы команды
+    терминала (`ping`, `curl`) проигрываются на доске. */
+const moveStage = (
+  before: PacketDoc,
+  op: PacketOp,
+): ReadonlyArray<PacketStage> =>
+  op._tag === 'Send'
+    ? [{ _tag: 'Play', intent: op.intent }]
+    : op._tag === 'RunCommand'
+      ? Array.map(
+          runCommand(before.doc, before.state, op.device, op.line).traces,
+          (traced): PacketStage => ({ _tag: 'Play', intent: traced.intent }),
+        )
+      : []
 
 // KIND
 
@@ -132,6 +101,7 @@ export const packet: BoardKind<PacketTypes> = {
   },
   targetName,
   describeOp: opText,
+  moveStage,
   renderMessage: (locale, _ui, message, name) =>
     renderNetMessage(locale, message, name),
 
@@ -167,11 +137,12 @@ export const packet: BoardKind<PacketTypes> = {
     update: PacketBoard.update,
     pressDelete: PacketBoard.pressDelete,
     interrupt: PacketBoard.interrupt,
+    replay: PacketBoard.replay,
     frame: PacketBoard.frame,
     view: PacketView.view,
     instruments: PacketInstruments.instruments,
   },
-  surfaces: [wifiSurface, ...panelSurfaces],
+  surfaces: [wifiSurface, browserSurface, terminalSurface, ...panelSurfaces],
 
   quizzes: [
     'PickDevice',
@@ -183,5 +154,5 @@ export const packet: BoardKind<PacketTypes> = {
     'PlaceChips',
     'Match',
   ],
-  picture: () => Option.none(),
+  picture: browserPicture,
 }

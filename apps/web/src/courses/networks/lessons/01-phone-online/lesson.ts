@@ -132,7 +132,7 @@ export default defineLesson(packet, {
       task: {
         id: 'join-wifi',
         palette: [],
-        surfaces: ['board', 'wifi:phone'],
+        surfaces: ['board', 'wifi:phone', 'browser:phone'],
         goals: [
           {
             id: 'wifi',

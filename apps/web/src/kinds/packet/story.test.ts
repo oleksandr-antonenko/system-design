@@ -6,8 +6,8 @@ import * as Player from '../../lesson/player'
 import { joinWifi } from '../../net/build'
 import { SurfaceMessage } from '../state'
 import { packet } from './dsl'
+import * as Screen from './surfaces/screen/message'
 import { phoneOnline } from './testing'
-import * as Wifi from './wifi'
 
 // Поверхность задачи пишет ходы в тот же журнал, что и доска (design D5):
 // отмена, повтор, сброс, проверка и «Показать решение» работают без
@@ -26,11 +26,13 @@ const update = (
 
 const atTask = (): Player.Model => Player.init(COURSE, phoneOnline, TASK_STEP)
 
-const wifi = (wifiMessage: Wifi.Message) =>
+const wifi = (screenMessage: Screen.Message) =>
   message(
     Player.Message.GotSurfaceMessage({
       surfaceId: WIFI,
-      message: SurfaceMessage.GotWifiSurfaceMessage({ message: wifiMessage }),
+      message: SurfaceMessage.GotScreenSurfaceMessage({
+        message: screenMessage,
+      }),
     }),
   )
 
@@ -40,9 +42,9 @@ const logOf = (playerModel: Player.Model) =>
 const joinHome = joinWifi('phone', 'Home', 'correct-horse')
 
 const joinWith = (password: string) => [
-  wifi(Wifi.Message.SelectedNetwork({ ssid: 'Home' })),
-  wifi(Wifi.Message.UpdatedPassword({ value: password })),
-  wifi(Wifi.Message.ClickedJoin()),
+  wifi(Screen.Message.ClickedNetwork({ ssid: 'Home' })),
+  wifi(Screen.Message.UpdatedWifiPassword({ value: password })),
+  wifi(Screen.Message.SubmittedWifiPassword()),
 ]
 
 describe('surface host', () => {

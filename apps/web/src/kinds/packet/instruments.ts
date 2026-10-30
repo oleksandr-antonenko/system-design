@@ -146,7 +146,8 @@ export const instruments = <ParentMessage>(
   const isHidden = Array.contains(picture.hidden, 'play')
   const isPicking = picture.context.mode === 'Pick'
   const isAtEnd = picture.hasStarted && picture.playhead >= total
-  const isMoving = picture.hasStarted && picture.playhead < slot.model.stopAt
+  const isMoving =
+    picture.hasStarted && picture.playhead < Math.min(slot.model.stopAt, total)
   const isPaused = picture.hasStarted && !isMoving && !isAtEnd && picture.playhead > 0
   const runLabel = isAtEnd ? ui.transport.again : isPaused ? ui.transport.resume : ui.transport.run
   const startAt = isAtEnd || !picture.hasStarted ? 0 : picture.playhead

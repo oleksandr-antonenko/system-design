@@ -262,3 +262,23 @@ describe('board tools', () => {
     )
   })
 })
+
+describe('a move with its own trace', () => {
+  test('replay plays the move from the start by itself', () => {
+    const replayed = Board.replay({
+      ...Board.initialModel,
+      isSlow: true,
+      maybeCard: Option.some('phone'),
+    })
+    expect(replayed).toMatchObject({
+      playhead: 0,
+      hasStarted: true,
+      playedTotal: Board.AUTO_PLAY,
+      isSlow: true,
+      maybeCard: Option.none(),
+    })
+    expect(
+      Board.frame(replayed, 50, { isReducedMotion: false }).playhead,
+    ).toBe(12.5)
+  })
+})

@@ -33,6 +33,7 @@ import {
   activeSurface,
   boardMode,
   boardModelOf,
+  boardStage,
   correctAnswer,
   currentDoc,
   currentQuiz,
@@ -77,26 +78,32 @@ const labelOf =
   (id: string): Option.Option<EntityLabel> =>
     Option.fromNullishOr(texts.labels?.[id])
 
-/** Текст кода сообщения: свой текст урока (`feedback`), иначе текст вида. */
+/** Текст кода сообщения вида: свой текст урока (`feedback`), иначе текст
+    вида. */
+const kindMessageText = <T extends KindTypes>(
+  page: Page<T>,
+  message: T['Message'],
+): string => {
+  const override = page.texts.feedback?.[message._tag]
+  return override === undefined
+    ? page.lesson.kind.renderMessage(page.locale, page.ui, message, id =>
+        Option.match(labelOf(page.texts)(id), {
+          onNone: () => id,
+          onSome: label => label.name,
+        }),
+      )
+    : typeof override === 'string'
+      ? override
+      : override(message)
+}
+
 const messageText = <T extends KindTypes>(
   page: Page<T>,
   stored: KindMessage,
 ): string =>
   Option.match(page.lesson.kind.message.unwrap(stored), {
     onNone: () => '',
-    onSome: message => {
-      const override = page.texts.feedback?.[message._tag]
-      return override === undefined
-        ? page.lesson.kind.renderMessage(page.locale, page.ui, message, id =>
-            Option.match(labelOf(page.texts)(id), {
-              onNone: () => id,
-              onSome: label => label.name,
-            }),
-          )
-        : typeof override === 'string'
-          ? override
-          : override(message)
-    },
+    onSome: message => kindMessageText(page, message),
   })
 
 // PROSE
@@ -983,6 +990,7 @@ const boardContext = <T extends KindTypes>(
   })
   const course = courseLessons(model.course)
   const unlocks = unlocksOf(model)
+  const scene = boardStage(lesson, model)
 
   return {
     locale: inputs.locale,
@@ -993,10 +1001,8 @@ const boardContext = <T extends KindTypes>(
     doc,
     run,
     mode: boardMode(lesson, model),
-    stage: Option.match(Array.get(lesson.steps, model.step), {
-      onNone: () => [],
-      onSome: found => found.stage,
-    }),
+    stage: scene.stage,
+    stageDoc: scene.doc,
     annotationText: key =>
       texts.annotations?.[key]?.(lesson.kind.annotationInput(doc, run)) ?? key,
     label: labelOf(texts),
@@ -1148,6 +1154,8 @@ const surfaceHostView = <T extends KindTypes>(
                             ),
                             locale,
                             ui,
+                            renderMessage: message =>
+                              kindMessageText(page, message),
                             toParentMessage: message =>
                               Message.GotSurfaceMessage({
                                 surfaceId: surface.id,

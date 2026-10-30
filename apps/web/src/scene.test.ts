@@ -201,6 +201,10 @@ describe('course map', () => {
       expectAll(all.selector('main li')).toHaveCount(16),
       expectAll(all.selector('main a')).toHaveCount(available.length),
       expectAll(all.text('Скоро')).toHaveCount(16 - available.length),
+      expect(role('link', { name: 'Порты: квартиры в одном доме' })).toHaveAttr(
+        'href',
+        '/ru/networks/lessons/ports-and-localhost',
+      ),
       expect(
         role('heading', { name: 'Как телефон попадает в интернет' }),
       ).toExist(),

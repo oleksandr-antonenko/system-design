@@ -4,7 +4,12 @@ import type { Locale } from '../../i18n/locale'
 import type { UiStrings } from '../../i18n/ui'
 import { pairOf, pickParts } from '../../lesson/quiz'
 import { applyAll } from '../../net/doc'
-import { type Device, type DeviceId, type NetState, kindOf } from '../../net/model'
+import {
+  type Device,
+  type DeviceId,
+  type NetState,
+  kindOf,
+} from '../../net/model'
 import {
   type Hop,
   type StackLevel,
@@ -17,7 +22,7 @@ import { settle } from '../../net/trace'
 import { type World, sendIntent } from '../../net/world'
 import type { BoardContext, BoardQuiz, Tone } from '../contract'
 import type { PacketTypes } from '../types'
-import type { Model } from './board'
+import { AUTO_PLAY, type Model } from './board'
 import type { DeviceTable, PacketStage, Preview, Room } from './dsl'
 import {
   type Layout,
@@ -148,19 +153,19 @@ const nodeText =
     const sub = isOffline
       ? context.ui.packetBoard.link.noWifi
       : isAddressShown
-      ? Option.getOrElse(addressOf(context.doc.doc, state, id), () =>
-          Array.some(
-            context.doc.doc.devices,
-            device =>
-              device.id === id &&
-              (device._tag === 'Host' || device._tag === 'Router'),
+        ? Option.getOrElse(addressOf(context.doc.doc, state, id), () =>
+            Array.some(
+              context.doc.doc.devices,
+              device =>
+                device.id === id &&
+                (device._tag === 'Host' || device._tag === 'Router'),
+            )
+              ? context.ui.packetBoard.card.noAddress
+              : note,
           )
-            ? context.ui.packetBoard.card.noAddress
-            : note,
-        )
-      : Array.contains(hidden, id)
-        ? context.ui.packetBoard.quiz.hiddenUntilAnswer
-        : note
+        : Array.contains(hidden, id)
+          ? context.ui.packetBoard.quiz.hiddenUntilAnswer
+          : note
     return { title, sub }
   }
 
@@ -330,27 +335,26 @@ const fogVisible = (
   world: World,
   stage: ReadonlyArray<PacketStage>,
 ): Option.Option<ReadonlyArray<DeviceId>> =>
-  Option.map(
-    Array.head(stageItems(stage, 'Fog')),
-    fog => {
-      const seen = Array.flatMap(world.state.commandLog, record => [
-        record.device,
-        ...record.saw,
-        ...Option.toArray(record.maybeTarget),
-      ])
-      const settled = settle(world.doc, world.state)
-      const touched = Array.filter(world.doc.devices, device =>
+  Option.map(Array.head(stageItems(stage, 'Fog')), fog => {
+    const seen = Array.flatMap(world.state.commandLog, record => [
+      record.device,
+      ...record.saw,
+      ...Option.toArray(record.maybeTarget),
+    ])
+    const settled = settle(world.doc, world.state)
+    const touched = Array.filter(
+      world.doc.devices,
+      device =>
         Array.contains(seen, device.id) ||
         Option.exists(addressOf(world.doc, settled, device.id), ip =>
           Array.contains(seen, ip),
         ),
-      )
-      return Array.dedupe([
-        ...fog.visible,
-        ...Array.map(touched, device => device.id),
-      ])
-    },
-  )
+    )
+    return Array.dedupe([
+      ...fog.visible,
+      ...Array.map(touched, device => device.id),
+    ])
+  })
 
 /** Доска шага с черновиком сцены поверх: новые устройства черновика тоже
     стоят на доске (пунктиром). */
@@ -380,7 +384,10 @@ const playheadOf = (
     !model.hasStarted &&
     Option.exists(
       context.maybeQuiz,
-      quiz => quiz.kind === 'NextHop' || quiz.kind === 'PickLayer' || quiz.kind === 'PickRule',
+      quiz =>
+        quiz.kind === 'NextHop' ||
+        quiz.kind === 'PickLayer' ||
+        quiz.kind === 'PickRule',
     )
   return isWaitingForPick
     ? {
@@ -393,18 +400,22 @@ const playheadOf = (
       }
     : {
         playhead: model.playhead,
-        hasStarted: model.hasStarted && model.playedTotal === timeline.totalMs,
+        hasStarted:
+          model.hasStarted &&
+          (model.playedTotal === timeline.totalMs ||
+            model.playedTotal === AUTO_PLAY),
       }
 }
 
 export const pictureOf = (context: Context, model: Model): Picture => {
   const stage = context.stage
-  const hidden = context.mode === 'Pick'
-    ? Option.match(context.maybeQuiz, {
-        onNone: () => [],
-        onSome: quiz => quiz.hidden,
-      })
-    : []
+  const hidden =
+    context.mode === 'Pick'
+      ? Option.match(context.maybeQuiz, {
+          onNone: () => [],
+          onSome: quiz => quiz.hidden,
+        })
+      : []
   const previews = isUnlocked(context, 'board.draft')
     ? stageItems(stage, 'Preview')
     : []
@@ -442,19 +453,30 @@ export const pictureOf = (context: Context, model: Model): Picture => {
     maybeFog: isUnlocked(context, 'board.fog')
       ? fogVisible(world, stage)
       : Option.none(),
-    rooms: Array.filter(stageItems(stage, 'Room'), (room: Room) => room.width > 0),
+    rooms: Array.filter(
+      stageItems(stage, 'Room'),
+      (room: Room) => room.width > 0,
+    ),
     moved,
     text: nodeText(context, settled, hidden),
   })
   const isPlayHidden = Array.contains(hidden, 'play')
+  // NOTE: трассы сцены считаются на `stageDoc` — мире до хода ученика, если
+  // сцена — его ход (открытая страница), иначе это тот же документ.
+  const stageWorld = withPreview(context.stageDoc, previews)
   const timeline = timelineOf({
-    world,
+    world: stageWorld,
     stage: isPlayHidden ? [] : stage,
     layout,
     unlocked: context.unlocked,
   })
   const revealed = isPlayHidden
-    ? timelineOf({ world, stage, layout, unlocked: context.unlocked })
+    ? timelineOf({
+        world: stageWorld,
+        stage,
+        layout,
+        unlocked: context.unlocked,
+      })
     : timeline
   const position = playheadOf(model, timeline, context)
   const moment = momentAt(timeline, position.playhead, position.hasStarted)
@@ -468,9 +490,17 @@ export const pictureOf = (context: Context, model: Model): Picture => {
   )
   const done = position.hasStarted ? legsDone(timeline, position.playhead) : 0
   const litLinks = Array.dedupe(
-    Array.map(Array.take(timeline.legs, isDone ? timeline.legs.length : done), leg => leg.link),
+    Array.map(
+      Array.take(timeline.legs, isDone ? timeline.legs.length : done),
+      leg => leg.link,
+    ),
   )
-  const state = stateOnTheWay(settled, timeline, maybeLeg, isDone && position.hasStarted)
+  const state = stateOnTheWay(
+    settled,
+    timeline,
+    maybeLeg,
+    isDone && position.hasStarted,
+  )
   const changes = Option.match(maybeLeg, {
     onNone: () => [],
     onSome: ({ leg }) => (moment._tag === 'Resting' ? leg.hop.changes : []),
@@ -510,11 +540,17 @@ export const pictureOf = (context: Context, model: Model): Picture => {
   const focusHalos = Option.match(context.maybeTask, {
     onNone: () => [],
     onSome: task =>
-      Array.map([...task.focusNodes, ...Array.map(task.focusEdges, edge => `link:${edge}`)], target => ({
-        target,
-        tone: 'bad' as const,
-        isPulsing: false,
-      })),
+      Array.map(
+        [
+          ...task.focusNodes,
+          ...Array.map(task.focusEdges, edge => `link:${edge}`),
+        ],
+        target => ({
+          target,
+          tone: 'bad' as const,
+          isPulsing: false,
+        }),
+      ),
   })
   const selectionHalos = Array.map(model.selection, target => ({
     target,
@@ -532,16 +568,13 @@ export const pictureOf = (context: Context, model: Model): Picture => {
       marks.isAnswered
         ? Array.getSomes(
             Array.map(Array.dedupe([...marks.picked, ...marks.answer]), id =>
-              Option.map(
-                Option.fromNullishOr(marks.quiz.tags[id]),
-                text => ({
-                  target: id,
-                  text,
-                  tone: Array.contains(marks.answer, id)
-                    ? ('ok' as const)
-                    : ('bad' as const),
-                }),
-              ),
+              Option.map(Option.fromNullishOr(marks.quiz.tags[id]), text => ({
+                target: id,
+                text,
+                tone: Array.contains(marks.answer, id)
+                  ? ('ok' as const)
+                  : ('bad' as const),
+              })),
             ),
           )
         : [],
@@ -576,7 +609,11 @@ export const pictureOf = (context: Context, model: Model): Picture => {
             return [
               {
                 target: leg.to,
-                text: leg.isReply ? (isPage ? ui.page : ui.reply) : ui.delivered,
+                text: leg.isReply
+                  ? isPage
+                    ? ui.page
+                    : ui.reply
+                  : ui.delivered,
                 tone: 'ok',
               },
             ]
@@ -634,14 +671,22 @@ export const deviceOf = (
   Array.findFirst(picture.context.doc.doc.devices, device => device.id === id)
 
 /** Фигура на доске, которой соответствует цель: устройство или облако. */
-export const shapeIdOf = (picture: Picture, target: string): Option.Option<string> =>
+export const shapeIdOf = (
+  picture: Picture,
+  target: string,
+): Option.Option<string> =>
   target === 'internet' || target === 'zone:internet'
     ? Option.map(picture.layout.maybeCloud, cloud => cloud.id)
     : visibleIdOf(picture.layout, target)
 
 /** Трасса, которую видно на доске после проигрывания (для «было → стало»). */
-export const traceAfter = (world: World, play: PacketStage): Option.Option<Trace> =>
-  play._tag === 'Play' ? Option.some(sendIntent(world, play.intent)[0]) : Option.none()
+export const traceAfter = (
+  world: World,
+  play: PacketStage,
+): Option.Option<Trace> =>
+  play._tag === 'Play'
+    ? Option.some(sendIntent(world, play.intent)[0])
+    : Option.none()
 
 export const locale = (picture: Picture): Locale => picture.context.locale
 

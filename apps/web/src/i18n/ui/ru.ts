@@ -3,6 +3,7 @@ import { Array } from 'effect'
 import type { ComponentKind } from '../../domain/catalog'
 import { formatNumber } from '../format'
 import { plural } from '../plural'
+import { deviceRu } from './device/ru'
 import { panelRu } from './panel/ru'
 import { packetBoardRu } from './packetBoard/ru'
 import type { UiStrings } from './types'
@@ -182,13 +183,8 @@ export const ru = {
     boardLabel: 'Схема сети',
     placeholder: 'Доска сети в разработке: пока здесь только список устройств.',
     run: 'Пуск',
-    wifiTab: device => `Wi-Fi: ${device}`,
-    wifiNetworks: 'Сети рядом',
-    wifiNone: 'Рядом нет сетей Wi-Fi.',
-    wifiPassword: 'Пароль',
-    wifiJoin: 'Подключиться',
-    wifiJoined: ssid => `Подключено к сети «${ssid}»`,
   },
+  device: deviceRu,
   panel: panelRu,
   packetBoard: packetBoardRu,
   notFound: {

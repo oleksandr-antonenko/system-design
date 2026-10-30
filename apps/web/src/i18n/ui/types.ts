@@ -1,6 +1,7 @@
 import type { ComponentKind, Region } from '../../domain/catalog'
 import type { DomainMessageTexts } from '../domainMessage'
 import type { Locale } from '../locale'
+import type { DeviceStrings } from './device/types'
 import type { PacketBoardStrings } from './packetBoard/types'
 import type { PanelStrings } from './panel/types'
 
@@ -133,13 +134,9 @@ export type UiStrings = Readonly<{
     boardLabel: string
     placeholder: string
     run: string
-    wifiTab: (device: string) => string
-    wifiNetworks: string
-    wifiNone: string
-    wifiPassword: string
-    wifiJoin: string
-    wifiJoined: (ssid: string) => string
   }>
+  /** Экран устройства и терминал курса сетей. */
+  device: DeviceStrings
   panel: PanelStrings
   packetBoard: PacketBoardStrings
   notFound: Readonly<{

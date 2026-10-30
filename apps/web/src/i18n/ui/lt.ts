@@ -3,6 +3,7 @@ import { Array } from 'effect'
 import type { ComponentKind } from '../../domain/catalog'
 import { formatNumber } from '../format'
 import { plural } from '../plural'
+import { deviceLt } from './device/lt'
 import { panelLt } from './panel/lt'
 import { packetBoardLt } from './packetBoard/lt'
 import type { UiStrings } from './types'
@@ -183,13 +184,8 @@ export const lt = {
     boardLabel: 'Tinklo schema',
     placeholder: 'Tinklo lenta dar kuriama: kol kas čia tik įrenginių sąrašas.',
     run: 'Paleisti',
-    wifiTab: device => `Wi-Fi: ${device}`,
-    wifiNetworks: 'Netoliese esantys tinklai',
-    wifiNone: 'Netoliese nėra Wi-Fi tinklų.',
-    wifiPassword: 'Slaptažodis',
-    wifiJoin: 'Prisijungti',
-    wifiJoined: ssid => `Prisijungta prie „${ssid}“`,
   },
+  device: deviceLt,
   panel: panelLt,
   packetBoard: packetBoardLt,
   notFound: {

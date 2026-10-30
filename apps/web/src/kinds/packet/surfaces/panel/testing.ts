@@ -78,5 +78,8 @@ export const surfaceFor = (
   maybeGhost: Option.none(),
   unlocked: ['router.wifi'],
   newFeatures: ['router.wifi'],
+  history: [],
+  journal: [],
+  surfaces: [],
   ...overrides,
 })

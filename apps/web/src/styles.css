@@ -2,6 +2,7 @@
 @import '@fontsource-variable/unbounded';
 @import '@fontsource-variable/literata';
 @import '@fontsource-variable/jetbrains-mono';
+@import './kinds/packet/surfaces/surfaces.css';
 @import './kinds/packet/board.css';
 @import './kinds/packet/surfaces/panel/panel.css';
 
@@ -1349,67 +1350,6 @@ h3 {
   overflow: auto;
   padding: 12px max(16px, env(safe-area-inset-right, 0px)) 14px 16px;
 }
-.wifi-surface {
-  display: grid;
-  gap: 10px;
-  max-width: 420px;
-}
-.wifi-surface p {
-  margin: 0;
-}
-.wifi-title {
-  font-size: 10px;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: var(--muted);
-}
-.wifi-joined {
-  color: var(--ok);
-  font-weight: 600;
-}
-.wifi-networks {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: grid;
-  gap: 6px;
-}
-.wifi-network {
-  width: 100%;
-  text-align: left;
-  appearance: none;
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  background: var(--node);
-  color: var(--ink);
-  padding: 9px 12px;
-  font: inherit;
-  cursor: pointer;
-}
-.wifi-network.picked {
-  border-color: var(--accent);
-  background: var(--accent-soft);
-}
-.wifi-network.ghost {
-  outline: 1.5px dashed var(--accent);
-  outline-offset: 2px;
-}
-.wifi-password {
-  display: grid;
-  gap: 4px;
-  font-size: 12px;
-  color: var(--muted);
-}
-.wifi-password input {
-  font: inherit;
-  font-size: 14px;
-  color: var(--ink);
-  background: var(--node);
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  padding: 8px 10px;
-}
-
 /* ---------- доска сетей (заготовка до add-network-board) ---------- */
 .packet-board {
   flex: 1;

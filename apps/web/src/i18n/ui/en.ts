@@ -3,6 +3,7 @@ import { Array } from 'effect'
 import type { ComponentKind } from '../../domain/catalog'
 import { formatNumber } from '../format'
 import { plural } from '../plural'
+import { deviceEn } from './device/en'
 import { panelEn } from './panel/en'
 import { packetBoardEn } from './packetBoard/en'
 import type { UiStrings } from './types'
@@ -183,13 +184,8 @@ export const en = {
     placeholder:
       'The network board is in progress: for now it is just a list of devices.',
     run: 'Run',
-    wifiTab: device => `Wi-Fi: ${device}`,
-    wifiNetworks: 'Networks nearby',
-    wifiNone: 'No Wi-Fi networks nearby.',
-    wifiPassword: 'Password',
-    wifiJoin: 'Join',
-    wifiJoined: ssid => `Connected to “${ssid}”`,
   },
+  device: deviceEn,
   panel: panelEn,
   packetBoard: packetBoardEn,
   notFound: {

@@ -88,7 +88,14 @@ describe('course registry', () => {
         .every(lesson =>
           Option.isSome(findDefinition('networks', lesson.meta.slug)),
         ),
+      'an available lesson has a script',
     ).toBe(true)
+    expect(
+      Option.map(
+        findLesson('networks', 'ports-and-localhost'),
+        lesson => lesson.meta.available,
+      ),
+    ).toEqual(Option.some(true))
     lessons.forEach(lesson => {
       expect(sorted(lesson.texts.map(entry => entry.locale))).toEqual(
         sorted(locales),
