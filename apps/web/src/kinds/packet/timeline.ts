@@ -12,6 +12,7 @@ import {
 } from '../../net/packet'
 import { type World, foldWorld, sendIntent } from '../../net/world'
 import type { PacketStage, Play, PlayShow, Walk } from './dsl'
+import { isTunneled } from './envelope'
 import {
   type InnerNet,
   type Layout,
@@ -275,9 +276,6 @@ export const letterOf = (
 ): Readonly<{ from: string; to: string }> =>
   endpointsOf(trace, hop.packet, ownerOf)
 
-const isTunnelHop = (hop: Hop): boolean =>
-  Array.some(hop.envelope, layer => layer._tag === 'Tunnel')
-
 /** Концы туннеля, по которому идёт хоп: первый и последний хоп его пакета
     на непрерывном отрезке в туннеле (клиент VPN и шлюз). */
 const tunnelEndsOf = (
@@ -285,17 +283,17 @@ const tunnelEndsOf = (
   hop: Hop,
 ): Option.Option<Readonly<{ from: string; to: string }>> => {
   const hops = Array.filter(trace.hops, other => other.packet === hop.packet)
-  return isTunnelHop(hop)
+  return isTunneled(hop)
     ? Option.map(
         Array.findFirstIndex(hops, other => other === hop),
         position => {
           const before = Array.takeWhile(
             Array.reverse(Array.take(hops, position)),
-            isTunnelHop,
+            isTunneled,
           )
           const after = Array.takeWhile(
             Array.drop(hops, position + 1),
-            isTunnelHop,
+            isTunneled,
           )
           return {
             from: Option.getOrElse(Array.last(before), () => hop).from,
