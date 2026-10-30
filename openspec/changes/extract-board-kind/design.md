@@ -1,6 +1,6 @@
 ## Context
 
-Мотивация — в proposal.md. Сейчас (после `add-course-registry`) курс объявляет `board: 'flow' | 'packet'`, но плеер знает только доску System Design: Model хранит `Board.Model` и `Anim`, журнал задачи — массив `BoardOp`, проверка зовёт `domain/goals`, вид рисует приборы потоков. Модель пакетов (`src/net/`) готова как чистые функции, её параллельно расширяет `extend-packet-model` (там появятся `NetOp.Send`, мир `{ doc, state }`, `runCommand`, `browse`, тексты `NetMessage`); это изменение `src/net/` не трогает. Сценарии уроков сетей лежат в `docs/plans/networks-lessons/` и задают, что ещё нужно от платформы (подписи сущностей, свои тексты ошибок, ссылки не на устройства).
+Мотивация — в proposal.md. Сейчас (после `add-course-registry`) курс объявляет `board: 'flow' | 'packet'`, но плеер знает только доску System Design: Model хранит `Board.Model` и `Anim`, журнал задачи — массив `BoardOp`, проверка зовёт `domain/goals`, вид рисует приборы потоков. Модель пакетов (`src/net/`) — чистые функции; её расширило `extend-packet-model` (мир `{ doc, state }`, `NetOp.Send`, `runCommand`, `browse`, тексты `NetMessage`, помощники ответов квизов). Это изменение `src/net/` не трогает. Сценарии уроков сетей лежат в `docs/plans/networks-lessons/` и задают, что ещё нужно от платформы (подписи сущностей, свои тексты ошибок, ссылки не на устройства).
 
 Ограничения Foldkit: Model — только Schema; Message — union с `Got*Message` для подмодулей; без `as`, `any`, `switch`, `for`.
 
@@ -18,7 +18,6 @@
 - Доска сетей (устройства, связи, конверт, транспорт, жесты) — `add-network-board`.
 - Терминал, браузер, полноценный экран Wi-Fi — `add-terminal-and-browser`; панель роутера — `add-settings-panel`.
 - Квизы — `add-quiz-steps` (следующее изменение строится на этом контракте).
-- Тексты `NetMessage` — `extend-packet-model`; до него вид `packet` показывает код.
 
 ## Decisions
 
@@ -86,11 +85,12 @@ Model — Schema, поэтому значения, тип которых зав�
 
 ### D6. Вид `packet` до доски сетей
 
-- `PacketOp = Edit { op: NetOp } | Send { intent }`; документ `{ net, state, traces }`: `Edit` правит сеть, `Send` считает трассу и оставляет состояние сети и трассу (её проиграет доска). `run` — `settle`: хосты на DHCP получили адреса; цели модели пакетов проверяются на нём.
+- Документ — мир модели пакетов `{ doc, state }` (`net/world.ts`), операция — `NetOp`: правки сети, `Send(intent)` (трасса оставляет след в состоянии), `RunCommand`, `Wait` и другие. Свёртка — `applyWorld`. `run` — `settle`: хосты на DHCP получили адреса; цели модели пакетов проверяются на нём.
+- Тексты кодов — `renderNetMessage(locale, message, name)` из `net/text`; `name` — подпись устройства из `labels` урока.
 - Сцена: `highlight`, `annotate`, `play(intent)` (трасса показывается, состояние не меняется), `pauseAt(device)`, `openEnvelope(level)`, `showTable(device, table)`.
 - Цели: устройство, `link:<id>`, `env:<уровень>`; `zone:<id>` появится с планом квартиры.
 - Доска — заготовка: список устройств с подписями из `labels`, выбор устройства в режиме `Pick`, трасса сцены по кадрам, кнопка «Пуск», если курс открыл `transport.run`.
-- Когда влито `extend-packet-model`: `PacketOp` сводится к `NetOp` (там есть `Send`, `RunCommand`, `Wait`), `applyPacketOp` — к `applyWorld`, `renderMessage` — к `renderNetMessage`.
+- Поверхность Wi-Fi берёт сети из `nearbyNetworks`.
 
 ### D7. Тесты
 

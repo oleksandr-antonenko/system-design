@@ -18,7 +18,7 @@
 
 ## 4. Вид `packet` и поверхность
 
-- [x] 4.1 `kinds/packet/doc.ts`, `dsl.ts`, `board.ts` (заготовка), `kind.ts`: свёртка `Edit`/`Send`, цели модели пакетов, цели ссылок, сцена `play`/`pauseAt`/`openEnvelope`/`showTable`. Проверка: `kinds/packet/kind.test.ts`.
+- [x] 4.1 `kinds/packet/doc.ts`, `dsl.ts`, `board.ts` (заготовка), `kind.ts`: мир сети и `applyWorld` (с `Send`), цели модели пакетов, тексты `renderNetMessage`, цели ссылок, сцена `play`/`pauseAt`/`openEnvelope`/`showTable`. Проверка: `kinds/packet/kind.test.ts`.
 - [x] 4.2 Поверхность `wifi:<устройство>` (`kinds/packet/wifi.ts`), строки вкладок, доски сетей и Wi-Fi на uk, ru, en, lt, стили. Проверка: `kinds/packet/story.test.ts`, `kinds/packet/scene.test.ts`, тест словарей.
 
 ## 5. Тесты контента, документы, проверка
