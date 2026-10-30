@@ -4,6 +4,7 @@ import type { ComponentKind } from '../../domain/catalog'
 import { formatNumber } from '../format'
 import { plural } from '../plural'
 import { panelUk } from './panel/uk'
+import { packetBoardUk } from './packetBoard/uk'
 import type { UiStrings } from './types'
 
 const inLanguage: UiStrings['inLanguage'] = {
@@ -191,6 +192,7 @@ export const uk = {
     wifiJoined: ssid => `Підключено до мережі «${ssid}»`,
   },
   panel: panelUk,
+  packetBoard: packetBoardUk,
   notFound: {
     title: 'Сторінку не знайдено',
     body: path => `За адресою «${path}» нічого немає.`,

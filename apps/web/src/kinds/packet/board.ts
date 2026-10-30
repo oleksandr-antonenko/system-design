@@ -1,37 +1,94 @@
-import { Array, Option, Schema } from 'effect'
+import { Array, Option, Record, Schema } from 'effect'
 import type { Update } from 'foldkit'
-import type { Html, HtmlBuilder } from 'foldkit/html'
-import { defineMessageUnion } from 'foldkit/message'
+import { defineTaggedUnion } from 'foldkit/schema'
 import { modifyFields } from 'foldkit/struct'
 
-import { kindOf } from '../../net/model'
-import { sendIntent } from '../../net/world'
-import { type BoardInput, BoardOutMessage, type BoardSlot } from '../contract'
+import { cable, move, send, unplug } from '../../net/build'
+import { Intent, StackLevel } from '../../net/packet'
+import { type BoardInput, BoardOutMessage } from '../contract'
 import type { PacketTypes } from '../types'
 import type { PacketOp } from './doc'
+import { Message } from './message'
 
-// Подмодуль доски сетей — заготовка (design D6). Настоящую доску с
-// устройствами, связями, конвертом и транспортом делает add-network-board;
-// здесь только то, что доказывает контракт: проигрывание трассы по кадрам,
-// выбор устройства в квизе и кнопки плеера под доской.
+// Подмодуль доски сетей (design D1 add-network-board). Model хранит только
+// то, что сделал ученик: где проигрыватель, что открыто, что выделено. Всё
+// остальное — устройства, зоны, трасса, конверт — считается из документа и
+// сцены шага при показе. Где остановиться, считает вид (у него есть трасса)
+// и передаёт в сообщении: так `frame` не пересчитывает трассы.
 
 // MODEL
+
+export const Tool = defineTaggedUnion({
+  Pointer: {},
+  Cable: { maybeFrom: Schema.Option(Schema.String) },
+})
+export type Tool = typeof Tool.Type
+
+/** Что ученик несёт по доске. */
+export const Grab = defineTaggedUnion({
+  Envelope: {},
+  Chip: { chip: Schema.String },
+  Header: { level: StackLevel },
+  Device: { id: Schema.String, x: Schema.Number, y: Schema.Number },
+})
+export type Grab = typeof Grab.Type
 
 export const Model = Schema.Struct({
   /** Сколько миллисекунд трассы сцены уже проиграно. */
   playhead: Schema.Number,
+  /** До какого момента идёт проигрыватель: пауза, хоп или конец. */
+  stopAt: Schema.Number,
+  hasStarted: Schema.Boolean,
+  /** Длина трассы, которую запустили: другая трасса (ученик поменял сеть)
+      начинается заново. */
+  playedTotal: Schema.Number,
+  isSlow: Schema.Boolean,
+  isLegendOpen: Schema.Boolean,
+  isEnvelopeOpen: Schema.Boolean,
+  maybeLayer: Schema.Option(Schema.Number),
+  maybeCard: Schema.Option(Schema.String),
+  isStickerOpen: Schema.Boolean,
+  /** Облако раскрыто или свёрнуто нажатием; без нажатия решает сцена. */
+  maybeCloudOpen: Schema.Option(Schema.Boolean),
+  tool: Tool,
+  maybeGrab: Schema.Option(Grab),
+  /** Выделенные варианты квиза с несколькими ответами. */
+  selection: Schema.Array(Schema.String),
+  /** Чипы на местах (`Match`, `PlaceChips`): место → чип. */
+  placements: Schema.Record(Schema.String, Schema.String),
+  maybeChip: Schema.Option(Schema.String),
+  /** Сборка конверта: заголовки по местам снаружи внутрь. */
+  headers: Schema.Array(StackLevel),
+  maybeHeader: Schema.Option(StackLevel),
+  sendAddress: Schema.String,
 })
 export type Model = typeof Model.Type
 
-export const initialModel: Model = { playhead: 0 }
+export const initialModel: Model = {
+  playhead: 0,
+  stopAt: 0,
+  hasStarted: false,
+  playedTotal: 0,
+  isSlow: false,
+  isLegendOpen: false,
+  isEnvelopeOpen: false,
+  maybeLayer: Option.none(),
+  maybeCard: Option.none(),
+  isStickerOpen: false,
+  maybeCloudOpen: Option.none(),
+  tool: Tool.Pointer(),
+  maybeGrab: Option.none(),
+  selection: [],
+  placements: {},
+  maybeChip: Option.none(),
+  headers: [],
+  maybeHeader: Option.none(),
+  sendAddress: '',
+}
 
 // MESSAGE
 
-export const Message = defineMessageUnion({
-  ClickedDevice: { id: Schema.String },
-  ClickedRun: {},
-})
-export type Message = typeof Message.Type
+export { Message } from './message'
 
 export type OutMessage = BoardOutMessage<PacketOp>
 
@@ -45,153 +102,362 @@ export type UpdateReturn = Update.ReturnWithOutMessage<
   OutMessage
 >
 
+/** Начать проигрывание с `startAt` до `stopAt`. */
+const playFrom = (
+  model: Model,
+  startAt: number,
+  stopAt: number,
+  total: number,
+): Model =>
+  modifyFields(model, {
+    playhead: () => startAt,
+    stopAt: () => stopAt,
+    hasStarted: () => true,
+    playedTotal: () => total,
+  })
+
+const propose = (model: Model, ops: ReadonlyArray<PacketOp>): UpdateReturn => ({
+  model,
+  outMessage: BoardOutMessage.ProposedOps(ops),
+})
+
+const toggle = (
+  values: ReadonlyArray<string>,
+  value: string,
+): ReadonlyArray<string> =>
+  Array.contains(values, value)
+    ? Array.filter(values, other => other !== value)
+    : [...values, value]
+
+const pick = (
+  model: Model,
+  input: Input,
+  id: string,
+  playTo: number,
+  total: number,
+): UpdateReturn =>
+  input.mode === 'Pick'
+    ? {
+        model: modifyFields(playFrom(model, 0, playTo, total), {
+          maybeGrab: () => Option.none(),
+        }),
+        outMessage: BoardOutMessage.PickedTarget(id),
+      }
+    : { model }
+
+/** Чип на место: место занято — чип меняется; тот же чип с другого места
+    переезжает. */
+const placeChip = (model: Model, slot: string, chip: string): Model =>
+  modifyFields(model, {
+    placements: placements =>
+      Record.set(
+        Record.filter(placements, placed => placed !== chip),
+        slot,
+        chip,
+      ),
+    maybeChip: () => Option.none(),
+    maybeGrab: () => Option.none(),
+  })
+
+const placeHeader = (model: Model, position: number, level: StackLevel) =>
+  modifyFields(model, {
+    headers: headers => {
+      const without = Array.filter(headers, header => header !== level)
+      return Array.isReadonlyArrayEmpty(without) && position === 0
+        ? [level]
+        : [
+            ...Array.take(without, position),
+            level,
+            ...Array.drop(without, position),
+          ]
+    },
+    maybeHeader: () => Option.none(),
+    maybeGrab: () => Option.none(),
+  })
+
 export const update =
   (input: Input) =>
   (model: Model, message: Message): UpdateReturn =>
     Message.match<UpdateReturn>(message, {
-      ClickedDevice: ({ id }) =>
-        input.mode === 'Pick'
-          ? { model, outMessage: BoardOutMessage.PickedTarget(id) }
-          : { model },
-      ClickedRun: () => ({
-        model: modifyFields(model, { playhead: () => 0 }),
+      ClickedRun: ({ startAt, stopAt, total }) => ({
+        model: playFrom(model, startAt, stopAt, total),
       }),
+      ClickedStep: ({ startAt, stopAt, total }) => ({
+        model: playFrom(model, startAt, stopAt, total),
+      }),
+      ClickedBack: ({ at, total }) => ({
+        model: playFrom(model, at, at, total),
+      }),
+      ClickedRestart: () => ({
+        model: playFrom(model, 0, 0, model.playedTotal),
+      }),
+      ClickedSpeed: () => ({
+        model: modifyFields(model, { isSlow: isSlow => !isSlow }),
+      }),
+      ClickedLegend: () => ({
+        model: modifyFields(model, { isLegendOpen: isOpen => !isOpen }),
+      }),
+      ClickedEnvelope: () => ({
+        model: modifyFields(model, { isEnvelopeOpen: isOpen => !isOpen }),
+      }),
+      ClickedCloseEnvelope: () => ({
+        model: modifyFields(model, {
+          isEnvelopeOpen: () => false,
+          maybeLayer: () => Option.none(),
+        }),
+      }),
+      HoveredLayer: ({ position }) => ({
+        model: modifyFields(model, { maybeLayer: () => Option.some(position) }),
+      }),
+      LeftLayer: () => ({
+        model: modifyFields(model, { maybeLayer: () => Option.none() }),
+      }),
+      ClickedDevice: ({ id }) => ({
+        model: modifyFields(model, {
+          maybeCard: current =>
+            Option.exists(current, open => open === id)
+              ? Option.none()
+              : Option.some(id),
+          sendAddress: () => '',
+        }),
+      }),
+      ClickedCloseCard: () => ({
+        model: modifyFields(model, { maybeCard: () => Option.none() }),
+      }),
+      ClickedSticker: () => ({
+        model: modifyFields(model, { isStickerOpen: isOpen => !isOpen }),
+      }),
+      ClickedCloseSticker: () => ({
+        model: modifyFields(model, { isStickerOpen: () => false }),
+      }),
+      ClickedCloud: ({ isOpen }) => ({
+        model: modifyFields(model, {
+          maybeCloudOpen: () => Option.some(isOpen),
+          playhead: () => 0,
+          stopAt: () => 0,
+          hasStarted: () => false,
+        }),
+      }),
+      ClickedCandidate: ({ id, playTo, total }) =>
+        Array.contains(input.pickable, id)
+          ? pick(model, input, id, playTo, total)
+          : { model },
+      ToggledCandidate: ({ id }) =>
+        input.mode === 'Pick' && Array.contains(input.pickable, id)
+          ? {
+              model: modifyFields(model, {
+                selection: selection => toggle(selection, id),
+              }),
+            }
+          : { model },
+      ClickedDone: ({ playTo, total }) =>
+        Array.match(model.selection, {
+          onEmpty: () =>
+            Record.isEmptyRecord(model.placements)
+              ? { model }
+              : pick(
+                  model,
+                  input,
+                  Array.map(
+                    Object.entries(model.placements),
+                    ([slot, chip]) => `${slot}=${chip}`,
+                  ).join('+'),
+                  playTo,
+                  total,
+                ),
+          onNonEmpty: selection =>
+            pick(model, input, selection.join('+'), playTo, total),
+        }),
+      PressedEnvelope: () => ({
+        model: modifyFields(model, {
+          maybeGrab: () => Option.some(Grab.Envelope()),
+        }),
+      }),
+      ReleasedOnCandidate: ({ id, playTo, total }) =>
+        Option.exists(model.maybeGrab, grab => grab._tag === 'Envelope')
+          ? pick(model, input, id, playTo, total)
+          : { model },
+      ReleasedPointer: () => ({
+        model: modifyFields(model, {
+          maybeGrab: grab =>
+            Option.exists(grab, held => held._tag === 'Device')
+              ? grab
+              : Option.none(),
+        }),
+      }),
+      ClickedChip: ({ chip }) => ({
+        model: modifyFields(model, {
+          maybeChip: current =>
+            Option.exists(current, picked => picked === chip)
+              ? Option.none()
+              : Option.some(chip),
+        }),
+      }),
+      DraggedChip: ({ chip }) => ({
+        model: modifyFields(model, {
+          maybeGrab: () => Option.some(Grab.Chip({ chip })),
+        }),
+      }),
+      ClickedSlot: ({ slot }) =>
+        Option.match(model.maybeChip, {
+          onSome: chip => ({ model: placeChip(model, slot, chip) }),
+          onNone: () => ({
+            model: modifyFields(model, {
+              placements: placements => Record.remove(placements, slot),
+            }),
+          }),
+        }),
+      DroppedOnSlot: ({ slot }) =>
+        Option.match(model.maybeGrab, {
+          onSome: grab =>
+            grab._tag === 'Chip'
+              ? { model: placeChip(model, slot, grab.chip) }
+              : { model },
+          onNone: () => ({ model }),
+        }),
+      ClickedCableTool: () => ({
+        model: modifyFields(model, {
+          tool: tool =>
+            tool._tag === 'Cable'
+              ? Tool.Pointer()
+              : Tool.Cable({ maybeFrom: Option.none() }),
+          maybeCard: () => Option.none(),
+        }),
+      }),
+      ClickedCableEnd: ({ id }) =>
+        model.tool._tag !== 'Cable' || input.mode !== 'Edit'
+          ? { model }
+          : Option.match(model.tool.maybeFrom, {
+              onNone: () => ({
+                model: modifyFields(model, {
+                  tool: () => Tool.Cable({ maybeFrom: Option.some(id) }),
+                }),
+              }),
+              onSome: from =>
+                from === id
+                  ? {
+                      model: modifyFields(model, {
+                        tool: () => Tool.Cable({ maybeFrom: Option.none() }),
+                      }),
+                    }
+                  : propose(
+                      modifyFields(model, {
+                        tool: () => Tool.Cable({ maybeFrom: Option.none() }),
+                      }),
+                      [cable(from, id)],
+                    ),
+            }),
+      ClickedUnplug: ({ a, b }) =>
+        input.mode === 'Edit' ? propose(model, [unplug(a, b)]) : { model },
+      PressedMoveKey: ({ id, x, y }) =>
+        input.mode === 'Edit' ? propose(model, [move(id, x, y)]) : { model },
+      GrabbedDevice: ({ id, x, y }) =>
+        input.mode === 'Edit'
+          ? {
+              model: modifyFields(model, {
+                maybeGrab: () => Option.some(Grab.Device({ id, x, y })),
+              }),
+            }
+          : { model },
+      MovedDevice: ({ x, y }) => ({
+        model: modifyFields(model, {
+          maybeGrab: grab =>
+            Option.map(grab, held =>
+              held._tag === 'Device' ? Grab.Device({ id: held.id, x, y }) : held,
+            ),
+        }),
+      }),
+      DroppedDevice: () =>
+        Option.match(model.maybeGrab, {
+          onSome: grab =>
+            grab._tag === 'Device' && input.mode === 'Edit'
+              ? propose(
+                  modifyFields(model, { maybeGrab: () => Option.none() }),
+                  [move(grab.id, Math.round(grab.x), Math.round(grab.y))],
+                )
+              : {
+                  model: modifyFields(model, { maybeGrab: () => Option.none() }),
+                },
+          onNone: () => ({ model }),
+        }),
+      UpdatedSendAddress: ({ value }) => ({
+        model: modifyFields(model, { sendAddress: () => value }),
+      }),
+      SubmittedSend: ({ from, what }) =>
+        input.mode === 'Edit' && model.sendAddress.trim() !== ''
+          ? propose(modifyFields(model, { sendAddress: () => '' }), [
+              send(
+                Intent.Send({ from, to: model.sendAddress.trim(), what }),
+              ),
+            ])
+          : { model },
+      ClickedHeader: ({ level }) => ({
+        model: modifyFields(model, {
+          maybeHeader: current =>
+            Option.exists(current, picked => picked === level)
+              ? Option.none()
+              : Option.some(level),
+        }),
+      }),
+      DraggedHeader: ({ level }) => ({
+        model: modifyFields(model, {
+          maybeGrab: () => Option.some(Grab.Header({ level })),
+        }),
+      }),
+      ClickedHeaderSlot: ({ position }) =>
+        Option.match(model.maybeHeader, {
+          onSome: level => ({ model: placeHeader(model, position, level) }),
+          onNone: () => ({
+            model: modifyFields(model, {
+              headers: headers =>
+                Array.filter(headers, (_header, index) => index !== position),
+            }),
+          }),
+        }),
+      DroppedOnHeaderSlot: ({ position }) =>
+        Option.match(model.maybeGrab, {
+          onSome: grab =>
+            grab._tag === 'Header'
+              ? { model: placeHeader(model, position, grab.level) }
+              : { model },
+          onNone: () => ({ model }),
+        }),
+      ClickedBuilderReset: () => ({
+        model: modifyFields(model, {
+          headers: () => [],
+          maybeHeader: () => Option.none(),
+        }),
+      }),
+      ClickedBuilderSend: ({ from, url }) =>
+        input.mode === 'Edit' && Array.isReadonlyArrayNonEmpty(model.headers)
+          ? propose(model, [
+              send(Intent.Raw({ from, url, order: model.headers })),
+            ])
+          : { model },
     })
 
 export const pressDelete =
   (_input: Input) =>
   (model: Model): UpdateReturn => ({ model })
 
-export const interrupt = (model: Model): Model => model
+/** Шаг сменился, ход отменён или показывается решение: проигрыватель в
+    начало, всё открытое закрыть, жесты бросить. Скорость остаётся. */
+export const interrupt = (model: Model): Model =>
+  modifyFields(initialModel, { isSlow: () => model.isSlow })
+
+const SLOW = 0.25
 
 export const frame = (
   model: Model,
   deltaMs: number,
-  input: Readonly<{ isReducedMotion: boolean }>,
+  _input: Readonly<{ isReducedMotion: boolean }>,
 ): Model =>
-  modifyFields(model, {
-    playhead: playhead =>
-      input.isReducedMotion
-        ? globalThis.Number.MAX_SAFE_INTEGER
-        : Math.min(playhead + deltaMs, globalThis.Number.MAX_SAFE_INTEGER),
-  })
-
-// VIEW
-
-type Slot<ParentMessage> = BoardSlot<PacketTypes, ParentMessage>
-
-const deviceName = <ParentMessage>(
-  slot: Slot<ParentMessage>,
-  id: string,
-): string =>
-  Option.match(slot.context.label(id), {
-    onNone: () => id,
-    onSome: label => label.name,
-  })
-
-/** Трассы сцены шага: `play(intent)` считается от документа, состояние
-    сети при этом не запоминается. */
-const sceneHops = <ParentMessage>(
-  slot: Slot<ParentMessage>,
-): ReadonlyArray<string> =>
-  Array.flatMap(slot.context.stage, item =>
-    item._tag === 'Play'
-      ? Array.map(
-          sendIntent(slot.context.doc, item.intent)[0].hops,
-          hop => `${hop.from} → ${hop.to}`,
-        )
-      : [],
-  )
-
-export const view = <ParentMessage>(
-  slot: Slot<ParentMessage>,
-  h: HtmlBuilder<ParentMessage>,
-): Html => {
-  const { context } = slot
-  const candidates = Option.match(context.maybeQuiz, {
-    onNone: () => [],
-    onSome: quiz => quiz.candidates,
-  })
-  return h.div(
-    [
-      h.Class('packet-board board-surface'),
-      h.AriaLabel(context.ui.network.boardLabel),
-    ],
-    [
-      h.p([h.Class('packet-note')], [context.ui.network.placeholder]),
-      h.ul(
-        [h.Class('packet-devices')],
-        Array.map(context.doc.doc.devices, device =>
-          h.keyed('li')(
-            device.id,
-            [
-              h.DataAttribute('device', device.id),
-              h.Class(
-                Option.exists(context.maybeHoveredRef, ref => ref === device.id)
-                  ? 'selected'
-                  : '',
-              ),
-            ],
-            [
-              context.mode === 'Pick' && Array.contains(candidates, device.id)
-                ? h.button(
-                    [
-                      h.Type('button'),
-                      h.Class('btn'),
-                      h.OnClick(
-                        slot.toParentMessage(
-                          Message.ClickedDevice({ id: device.id }),
-                        ),
-                      ),
-                    ],
-                    [deviceName(slot, device.id)],
-                  )
-                : h.span([], [deviceName(slot, device.id)]),
-              h.code([], [kindOf(device)]),
-            ],
+  model.playhead >= model.stopAt
+    ? model
+    : modifyFields(model, {
+        playhead: playhead =>
+          Math.min(
+            model.stopAt,
+            playhead + Math.min(deltaMs, 100) * (model.isSlow ? SLOW : 1),
           ),
-        ),
-      ),
-      h.pre(
-        [h.Class('packet-hops')],
-        [
-          Array.take(
-            sceneHops(slot),
-            Math.floor(slot.model.playhead / 400) + 1,
-          ).join('\n'),
-        ],
-      ),
-    ],
-  )
-}
-
-export const instruments = <ParentMessage>(
-  slot: Slot<ParentMessage>,
-  h: HtmlBuilder<ParentMessage>,
-): Html => {
-  const { context } = slot
-  return h.section(
-    [h.AriaLabel(context.ui.lesson.instrumentsRegion), h.Class('hud')],
-    [
-      h.div(
-        [h.Class('controls')],
-        [
-          ...(Array.contains(context.unlocked, 'transport.run')
-            ? [
-                h.button(
-                  [
-                    h.Type('button'),
-                    h.Class('btn'),
-                    h.OnClick(slot.toParentMessage(Message.ClickedRun())),
-                  ],
-                  [`▶ ${context.ui.network.run}`],
-                ),
-                h.span([h.Class('separator'), h.AriaHidden(true)]),
-              ]
-            : []),
-          ...slot.controls(),
-        ],
-      ),
-    ],
-  )
-}
+      })

@@ -4,6 +4,7 @@ import type { ComponentKind } from '../../domain/catalog'
 import { formatNumber } from '../format'
 import { plural } from '../plural'
 import { panelLt } from './panel/lt'
+import { packetBoardLt } from './packetBoard/lt'
 import type { UiStrings } from './types'
 
 const inLanguage: UiStrings['inLanguage'] = {
@@ -190,6 +191,7 @@ export const lt = {
     wifiJoined: ssid => `Prisijungta prie „${ssid}“`,
   },
   panel: panelLt,
+  packetBoard: packetBoardLt,
   notFound: {
     title: 'Puslapis nerastas',
     body: path => `Adresu „${path}“ nieko nėra.`,

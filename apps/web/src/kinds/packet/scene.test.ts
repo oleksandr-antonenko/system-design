@@ -90,7 +90,7 @@ describe('task surfaces', () => {
       sceneFor,
       given(Player.init('networks', phoneOnline, 0)),
       expect(label('Where to solve the task')).not.toExist(),
-      expect(role('button', { name: '▶ Run' })).toExist(),
+      expect(role('button', { name: /▶ Run/ })).toExist(),
     )
   })
 

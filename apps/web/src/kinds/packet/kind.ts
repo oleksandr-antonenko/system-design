@@ -1,10 +1,8 @@
-import { Array, Option, Schema } from 'effect'
+import { Array, Option } from 'effect'
 import { Update } from 'foldkit'
 
-import { findDevice } from '../../net/doc'
 import { type Goal, checkGoal } from '../../net/goals'
 import { kindOf } from '../../net/model'
-import { StackLevel, sourceOf } from '../../net/packet'
 import { renderNetMessage } from '../../net/text'
 import type { BoardKind, SurfaceDefinition } from '../contract'
 import {
@@ -17,6 +15,7 @@ import {
 } from '../state'
 import type { PacketTypes } from '../types'
 import * as PacketBoard from './board'
+import * as PacketInstruments from './instruments'
 import {
   type PacketDoc,
   type PacketOp,
@@ -25,44 +24,14 @@ import {
   emptyPacketDoc,
   runPacket,
 } from './doc'
-import type { PacketStage } from './dsl'
 import { panelSurfaces } from './surfaces/panel/surfaces'
+import { resolveTarget, stageTargets, targetName } from './targets'
+import * as PacketView from './view'
 import * as Wifi from './wifi'
 
 // Вид доски курса сетей (design D6). Модель пакетов — `src/net/`; здесь
-// только её подключение к контракту. Доска — заготовка, поверхность одна.
-
-// TARGETS
-
-const LINK_PREFIX = 'link:'
-const ENVELOPE_PREFIX = 'env:'
-
-const isStackLevel = Schema.is(StackLevel)
-
-/** Устройство по id, связь `link:<id>`, слой конверта `env:<уровень>`.
-    Зоны (`zone:…`) появятся вместе с планом квартиры. */
-const resolveTarget = (
-  world: PacketDoc,
-  target: string,
-): Option.Option<string> =>
-  target.startsWith(LINK_PREFIX)
-    ? Array.some(world.doc.links, link => `${LINK_PREFIX}${link.id}` === target)
-      ? Option.some(target)
-      : Option.none()
-    : target.startsWith(ENVELOPE_PREFIX)
-      ? isStackLevel(target.slice(ENVELOPE_PREFIX.length))
-        ? Option.some(target)
-        : Option.none()
-      : Option.map(findDevice(world.doc, target), device => device.id)
-
-const stageTargets = (item: PacketStage): ReadonlyArray<string> =>
-  item._tag === 'Highlight' || item._tag === 'Annotate'
-    ? [item.target]
-    : item._tag === 'Play'
-      ? [sourceOf(item.intent)]
-      : item._tag === 'OpenEnvelope'
-        ? [`${ENVELOPE_PREFIX}${item.level}`]
-        : [item.device]
+// только её подключение к контракту. Доска — `board.ts` (add-network-board),
+// цели — `targets.ts`.
 
 // JOURNAL
 
@@ -150,6 +119,7 @@ export const packet: BoardKind<PacketTypes> = {
   isHiddenGoal: () => false,
   solvedGoalText: () => Option.none(),
   outcome: () => [],
+  taskHowTo: ui => ui.packetBoard.taskHowTo,
 
   proseContext: (doc, run) => ({ doc, run }),
   annotationInput: (doc, run) => ({ doc, run }),
@@ -160,7 +130,7 @@ export const packet: BoardKind<PacketTypes> = {
       item._tag === 'Annotate' ? Option.some(item.key) : Option.none(),
     describe: item => `${item._tag} ${fieldsText(item)}`,
   },
-  targetName: (_doc, target) => target,
+  targetName,
   describeOp: opText,
   renderMessage: (locale, _ui, message, name) =>
     renderNetMessage(locale, message, name),
@@ -198,13 +168,20 @@ export const packet: BoardKind<PacketTypes> = {
     pressDelete: PacketBoard.pressDelete,
     interrupt: PacketBoard.interrupt,
     frame: PacketBoard.frame,
-    view: PacketBoard.view,
-    instruments: PacketBoard.instruments,
+    view: PacketView.view,
+    instruments: PacketInstruments.instruments,
   },
   surfaces: [wifiSurface, ...panelSurfaces],
 
-  // NOTE: `NextHop`, `PickLinks`, `PickLayer`, `PlaceChips`, `SpotFault` и
-  // картинки вариантов (экраны браузера) добавляет add-network-board.
-  quizzes: ['PickDevice'],
+  quizzes: [
+    'PickDevice',
+    'NextHop',
+    'PickLinks',
+    'PickLayer',
+    'SpotFault',
+    'PickRule',
+    'PlaceChips',
+    'Match',
+  ],
   picture: () => Option.none(),
 }
