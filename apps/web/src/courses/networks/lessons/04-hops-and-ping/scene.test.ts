@@ -68,7 +68,7 @@ describe('lesson 4: hops and ping', () => {
       given(atQuiz()),
       click(role('button', { name: /^Hosting router/ })),
       expect(text(/нет прямого кабеля/)).toExist(),
-      expect(text(/Каждый router знает только следующий шаг/)).toExist(),
+      expect(text(/Router знает только следующий шаг/)).toExist(),
     )
   })
 

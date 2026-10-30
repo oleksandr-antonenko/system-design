@@ -11,7 +11,7 @@ export default {
   labels: {
     phone: { name: 'Phone', note: 'in your hand' },
     laptop: { name: 'Laptop', note: 'on the desk' },
-    printer: { name: 'Printer', note: 'connected by cable' },
+    printer: { name: 'Printer', note: 'on a cable to the router' },
     router: { name: 'Router', note: 'the post office of your home' },
     isp: {
       name: 'ISP router',
@@ -26,7 +26,7 @@ export default {
       note: 'site’s network',
     },
     dns: { name: 'DNS server', note: 'your provider’s directory' },
-    shop: { name: 'shop.example', note: 'the shop’s site, somewhere far away' },
+    shop: { name: 'Shop website', note: 'somewhere far away' },
   },
   steps: {
     chain: {

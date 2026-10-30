@@ -11,7 +11,7 @@ export default {
   labels: {
     phone: { name: 'Phone', note: 'jūsų rankoje' },
     laptop: { name: 'Laptop', note: 'ant stalo' },
-    printer: { name: 'Printer', note: 'prijungtas kabeliu' },
+    printer: { name: 'Printer', note: 'prijungtas kabeliu prie „Router“' },
     router: { name: 'Router', note: 'jūsų namų paštas' },
     isp: {
       name: 'ISP router',
@@ -26,27 +26,27 @@ export default {
       note: 'svetainės tinklas',
     },
     dns: { name: 'DNS server', note: 'tiekėjo informacijos tarnyba' },
-    shop: { name: 'shop.example', note: 'parduotuvės svetainė, kažkur toli' },
+    shop: { name: 'Parduotuvės svetainė', note: 'kažkur toli' },
   },
   steps: {
     chain: {
       title: 'Paštas po pašto',
       body: `1 pamokoje internetas buvo debesis. Atverkime jį. Viduje – routers: tokie pat paštai kaip jūsų, tik didesni. Pirmasis – [[isp|ISP router]] (tiekėjo, įmonės, kuriai mokate už internetą, router). Toliau [[core|core router]] (tiekėjo mazgas) ir [[hosting|hosting router]] (tinklo, kuriame gyvena parduotuvės svetainė, router).
 
-Viso kelio iki svetainės nežino nė vienas router. Kiekvienas žino tik, kuriam kaimynui perduoti voką, kad šis atsidurtų arčiau adresato. Vienas toks perdavimas, nuo įrenginio iki kaimyno, vadinamas **hop** (lietuviškai – šuolis: voko perėjimas nuo vieno įrenginio prie kito). Spauskite „Žingsnis“ po lenta: vienu paspaudimu vokas padaro vieną hop.`,
+Viso kelio iki svetainės nežino nė vienas iš jų. Kiekvienas žino tik, kuriam kaimynui perduoti voką, kad šis atsidurtų arčiau adresato. Vienas toks perdavimas, nuo įrenginio iki kaimyno, vadinamas **hop** (lietuviškai – šuolis: voko perėjimas nuo vieno įrenginio prie kito). Spauskite „Žingsnis“ po lenta: kiekvienas paspaudimas – kitas voko hop.`,
     },
     ping: {
       title: 'Ping: „Alio, girdite?“',
       body: `Kaip patikrinti, ar vokas pasiekia adresatą? Tam yra **ping** (lietuviškai – ryšio patikrinimas). Jis siunčia trumpą voką „Ar tu čia?“ ir laukia atsakymo „Čia!“. Kaip prasto ryšio metu telefonu: „Alio, girdite mane?“ – „Girdžiu!“
 
-Ping paleidžiamas terminale (terminal) – lange, kuriame komandos renkamos tekstu. Išvesties pavyzdys – šalia lentos. Kiekviena eilutė reiškia „atsakymas grįžo“, o time – kiek vokas keliavo ten ir atgal, ms (milisekundėmis). Jei atsakymo nėra, ping parašo Request timeout: vokas kažkur pasimetė.
+Ping paleidžiamas terminale – lange, kuriame komandos renkamos tekstu. Išvesties pavyzdys – šalia lentos. Kiekviena eilutė reiškia „atsakymas grįžo“, o time – kiek vokas keliavo ten ir atgal, ms (milisekundėmis). Jei atsakymo nėra, ping parašo Request timeout: vokas kažkur pasimetė.
 
 Paspauskite „Paleisti“: nešiojamasis kompiuteris paklaus svetainės „Ar tu čia?“.`,
       more: {
         title: 'Išsamiau: ką reiškia time ir kodėl svetainė gali tylėti',
-        body: `time – kiek ms vokas keliavo ten ir atgal. Jūsų router namie atsako per kelias ms, svetainė kitame mieste – per dešimtis, už vandenyno – per šimtus. Jei time auga ir šokinėja, ryšys perkrautas.
+        body: `time – kiek vokas keliavo ten ir atgal. Iki jūsų router namie – kelios milisekundės, iki svetainės kitame mieste – dešimtys, už vandenyno – šimtai. Jei time auga ir šokinėja, ryšys perkrautas.
 
-Būna, kad svetainė atsidaro, bet į ping neatsako. Tai ne gedimas: kai kurie servers tyčia tyli į ping. Todėl tyla atsakant į ping – dar ne nuosprendis: patikrinkite ir pačią svetainę naršyklėje.
+Būna, kad svetainė atsidaro, bet į ping neatsako. Tai ne gedimas: kai kurios svetainės tyčia tyli į ping. Todėl tyla atsakant į ping – dar ne nuosprendis: patikrinkite ir pačią svetainę naršyklėje.
 
 Tikras ping macOS ir Linux pats nesustoja: jis siunčia vokus, kol nepaspausite Ctrl+C. Čia jis išsiunčia tris ir sustoja, kaip ping Windows (ten – keturis).
 
@@ -55,7 +55,7 @@ Visus paštus pakeliui iš karto parodo komanda traceroute. Ją aptarsime 8 pamo
     },
     'next-hop': {
       title: 'Klausimas: kur toliau',
-      body: 'Vokas iš nešiojamojo kompiuterio į parduotuvės svetainę pasiekė [[isp|ISP router]] ir sustojo. Kam ISP router perduos jį toliau? Nutempkite voką ant kito įrenginio arba paspauskite jį.',
+      body: 'Vokas iš nešiojamojo kompiuterio į parduotuvės svetainę pasiekė [[isp|„ISP router“]] ir sustojo. Kam ISP router perduos jį toliau? Nutempkite voką ant kito įrenginio arba paspauskite jį.',
     },
     'find-break': {
       title: 'Užduotis: kur dingo ryšys',
@@ -65,7 +65,7 @@ Po lenta atsidarė nešiojamojo kompiuterio terminalas. Jame kol kas viena koman
     },
     summary: {
       title: 'Santrauka',
-      body: `Paspauskite „Paleisti“ arba „Žingsnis“: ping iki svetainės ir atgal, po vieną hop per paspaudimą.
+      body: `Paspauskite „Paleisti“ arba „Žingsnis“: ping iki svetainės ir atgal, „Žingsnis“ sustabdo voką prie kito įrenginio.
 
 - Kelias iki svetainės – routers grandinė. Kiekvienas perduoda voką kaimynui, kuris arčiau adresato. Vienas toks perdavimas – **hop**.
 - **Ping** siunčia voką „Ar tu čia?“ ir laukia atsakymo. Atsakymas atėjo – ryšys iki adresato yra.
@@ -80,12 +80,12 @@ Toliau, 5 pamoka: kodėl Wi-Fi prastai gaudo. Virtuvėje telefonas praranda tink
   quizzes: {
     'next-hop': {
       question:
-        'Vokas stovi prie ISP router. Kam ISP router perduos jį toliau?',
+        'Vokas stovi prie „ISP router“. Kam ISP router perduos jį toliau?',
       wrong: {
         router:
-          'Vokas ką tik atėjo iš ten. Atgal jis neina: kiekvienas hop priartina jį prie adresato.',
+          'Vokas ką tik atėjo iš ten. Atgal jis neina: hop visada priartina jį prie adresato.',
         hosting:
-          'Hosting router arčiau svetainės, bet nuo ISP router iki jo nėra tiesioginio kabelio. Vokas keliauja tik pas kaimyną, po vieną hop.',
+          'Hosting router arčiau svetainės, bet nuo „ISP router“ iki jo nėra tiesioginio kabelio. Vokas keliauja tik pas kaimyną: kitas hop – visada kaimynas.',
         dns: 'Informacijos tarnyba atsako į klausimus apie vardus. Šis vokas adresuotas parduotuvės svetainei, į informacijos tarnybą jo neveš.',
       },
       tags: {
@@ -95,7 +95,7 @@ Toliau, 5 pamoka: kodėl Wi-Fi prastai gaudo. Virtuvėje telefonas praranda tink
         dns: 'ne pakeliui',
       },
       explain:
-        'ISP router perduoda voką savo kaimynui – core router, per kurį eina kelias iki svetainės. Kiekvienas router žino tik kitą žingsnį, o visas kelias susideda iš tokių žingsnių.',
+        'ISP router perduoda voką savo kaimynui – core router, per kurį eina kelias iki svetainės. Router žino tik kitą žingsnį, o visas kelias susideda iš tokių žingsnių.',
     },
   },
   tasks: {
@@ -129,6 +129,6 @@ Toliau, 5 pamoka: kodėl Wi-Fi prastai gaudo. Virtuvėje telefonas praranda tink
     lead: 'Prieš klausdami DI, patikrinkite ryšį komanda ping ir pridėkite išvestį:',
     template:
       'Svetainė shop.example neatsidaro, Wi-Fi yra. ping 192.168.1.1 (router) atsako, time=6 ms. ping shop.example: Request timeout, 100% packet loss. Kur ieškoti trūkio?',
-    note: 'Dvi ping išvestys iš karto parodo DI: namie viskas gerai, ryšys dingsta už router.',
+    note: 'Dvi komandos ping išvestys iš karto parodo DI: namie viskas gerai, ryšys dingsta už router.',
   },
 } satisfies LessonTexts<typeof lesson>
