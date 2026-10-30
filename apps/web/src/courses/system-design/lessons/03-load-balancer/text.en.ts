@@ -51,7 +51,7 @@ Hence the **N+1** rule: you need enough servers to handle peak load even with on
     },
     summary: {
       title: 'Summary',
-      body: `Stateless servers plus a load balancer give you horizontal scaling. To handle more load, add another server behind the balancer.
+      body: `Stateless servers plus a load balancer give you horizontal scaling. To handle more load, add another server behind the load balancer.
 
 But every server talks to the same [[db|database]], and it becomes the next bottleneck. In lesson 4 we put a **cache** in front of it.`,
     },

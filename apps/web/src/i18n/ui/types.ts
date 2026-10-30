@@ -11,7 +11,8 @@ export type UiStrings = Readonly<{
   courseSwitcherLabel: string
   languageSwitcherLabel: string
   inLanguage: Readonly<Record<Locale, string>>
-  kindName: Readonly<Record<ComponentKind, string>>
+  /** Родное название элемента и короткое объяснение; подпись — `componentName`. */
+  kindHint: Readonly<Record<ComponentKind, string>>
   regionName: Readonly<Record<Region, string>>
   home: Readonly<{
     heading: string
