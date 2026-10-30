@@ -5,7 +5,12 @@ import type { ProtocolName } from '../../i18n/ui/packetBoard/types'
 import { runAll } from '../../net/answers'
 import { macsOf } from '../../net/doc'
 import type { Device, DeviceId, NetState } from '../../net/model'
-import { type Hop, type StackLevel, TableChange } from '../../net/packet'
+import {
+  type Hop,
+  type StackLevel,
+  TableChange,
+  sourceOf,
+} from '../../net/packet'
 import { addressOf, routeTable } from '../../net/topology'
 import { runInTerminal } from '../../net/world'
 import type { DeviceTable } from './dsl'
@@ -226,6 +231,17 @@ const sendForm = <ParentMessage>(
   }
   const what = device.kind === 'phone' ? 'photo' : 'document'
   const title = what === 'photo' ? ui.sendPhoto : ui.printDocument
+  // Третья подсказка обводит поле, если эталон отправляет с этого
+  // устройства; адрес не подставляется.
+  const isGhost = Option.exists(
+    picture.context.maybeTask,
+    task =>
+      task.isGhostShown &&
+      Array.some(
+        task.solution,
+        op => op._tag === 'Send' && sourceOf(op.intent) === device.id,
+      ),
+  )
   return [
     h.form(
       [
@@ -240,6 +256,7 @@ const sendForm = <ParentMessage>(
           [
             h.span([], [ui.sendAddress]),
             h.input([
+              h.Class(isGhost ? 'ghost' : ''),
               h.Type('text'),
               h.Attribute('inputmode', 'decimal'),
               h.Attribute('autocomplete', 'off'),

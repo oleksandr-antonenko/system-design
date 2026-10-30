@@ -2,6 +2,7 @@ import { Array, Option } from 'effect'
 import { describe, expect, test } from 'vitest'
 
 import phoneOnline from '../../courses/networks/lessons/01-phone-online/lesson'
+import addresses from '../../courses/networks/lessons/02-addresses/lesson'
 import { boardAt, taskStartBoard } from '../../lesson/dsl'
 import {
   add,
@@ -105,6 +106,44 @@ describe('envelopes of a conversation (letters)', () => {
         play(Intent.Send({ from: 'laptop', to: 'phone', what: 'photo' })),
       ]),
     ).toEqual(['laptop>router', 'router>phone'])
+  })
+
+  test('getting an address (lesson 2): the question to everyone and the answer, not all four DHCP packets', () => {
+    const world = boardAt(addresses, 0, {})
+    const join = [play(Intent.DhcpJoin({ device: 'phone' }))]
+    expect(route(world, {}, join)).toEqual([
+      'phone>router',
+      'router>laptop',
+      'router>phone*',
+    ])
+    expect(
+      route(world, { unlocked: [...LESSON_1, 'board.legend'] }, join),
+    ).toHaveLength(6)
+  })
+
+  test('a play after ops: the printer asks for an address on its new cable', () => {
+    const start = taskStartBoard(addresses, 3, {})
+    const join = Intent.DhcpJoin({ device: 'printer' })
+    const plugged = cable('printer', 'router')
+    expect(route(start, {}, [play(join)])).toEqual([])
+    expect(
+      route(foldWorld(start, [plugged]), {}, [
+        { ...play(join), after: [plugged] },
+      ]),
+    ).toEqual(route(foldWorld(start, [plugged]), {}, [play(join)]))
+    const timeline = timelineOf({
+      world: start,
+      stage: [{ ...play(join), after: [plugged] }],
+      layout: layoutOf(foldWorld(start, [plugged])),
+      unlocked: LESSON_1,
+    })
+    expect(Array.map(timeline.legs, leg => `${leg.from}>${leg.to}`)).toEqual([
+      'printer>router',
+      'router>phone',
+      'router>laptop',
+      'router>printer',
+    ])
+    expect(timeline.plays[0]?.trace.outcome._tag).toBe('Delivered')
   })
 })
 

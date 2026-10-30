@@ -62,6 +62,7 @@ export const packetBoardUk: PacketBoardStrings = {
   envelope: {
     from: 'від:',
     to: 'кому:',
+    everyone: 'усім у мережі',
     open: 'Відкрити конверт',
     title: (hop, total) => `Конверт · хоп ${hop} з ${total}`,
     close: 'Закрити конверт',

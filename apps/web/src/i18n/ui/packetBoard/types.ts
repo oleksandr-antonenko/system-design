@@ -69,6 +69,8 @@ export type PacketBoardStrings = Readonly<{
   envelope: Readonly<{
     from: string
     to: string
+    /** «Кому» у вопроса для всех в сети (кто выдаст мне адрес?). */
+    everyone: string
     open: string
     title: (hop: number, total: number) => string
     close: string

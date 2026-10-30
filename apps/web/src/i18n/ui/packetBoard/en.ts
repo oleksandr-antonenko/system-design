@@ -63,6 +63,7 @@ export const packetBoardEn: PacketBoardStrings = {
   envelope: {
     from: 'from:',
     to: 'to:',
+    everyone: 'everyone on the network',
     open: 'Open the envelope',
     title: (hop, total) => `Envelope · hop ${hop} of ${total}`,
     close: 'Close the envelope',

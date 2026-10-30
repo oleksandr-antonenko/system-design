@@ -1,9 +1,10 @@
 import { Array, Option, Result } from 'effect'
 import { describe, expect, test } from 'vitest'
 
+import addresses from '../../courses/networks/lessons/02-addresses/lesson'
 import { boardAt, foldDoc, taskOf, taskStartBoard } from '../../lesson/dsl'
 import { referencedIds } from '../../lesson/markup'
-import { joinWifi, send } from '../../net/build'
+import { cable, joinWifi, send, unplug } from '../../net/build'
 import { Goal } from '../../net/goals'
 import { Intent } from '../../net/packet'
 import type { PacketTypes } from '../types'
@@ -110,5 +111,25 @@ describe('packet board kind', () => {
         send(Intent.Ping({ from: 'phone', host: '198.51.100.10' })),
       ),
     ).toBe('Send Ping phone · 198.51.100.10')
+  })
+
+  test('a cable that gives a host its address plays how the host asks for it', () => {
+    const start = taskStartBoard(addresses, 3, {})
+    const plugged = cable('printer', 'router')
+
+    expect(kind.moveStage(start, plugged)).toEqual([
+      {
+        _tag: 'Play',
+        intent: Intent.DhcpJoin({ device: 'printer' }),
+        after: [plugged],
+      },
+    ])
+    expect(kind.moveStage(start, cable('printer', 'internet'))).toEqual([])
+    expect(
+      kind.moveStage(
+        foldDoc(kind, start, [plugged]),
+        unplug('printer', 'router'),
+      ),
+    ).toEqual([])
   })
 })

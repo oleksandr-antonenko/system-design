@@ -62,6 +62,7 @@ export const packetBoardLt: PacketBoardStrings = {
   envelope: {
     from: 'nuo:',
     to: 'kam:',
+    everyone: 'visiems tinkle',
     open: 'Atidaryti voką',
     title: (hop, total) => `Vokas · šuolis ${hop} iš ${total}`,
     close: 'Uždaryti voką',
