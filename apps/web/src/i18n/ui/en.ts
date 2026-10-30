@@ -1,11 +1,11 @@
 import { Array } from 'effect'
 
-import type { ComponentKind } from '../../domain/catalog'
+import { type ComponentKind, componentName } from '../../domain/catalog'
 import { formatNumber } from '../format'
 import { plural } from '../plural'
 import { deviceEn } from './device/en'
-import { panelEn } from './panel/en'
 import { packetBoardEn } from './packetBoard/en'
+import { panelEn } from './panel/en'
 import type { UiStrings } from './types'
 
 const inLanguage: UiStrings['inLanguage'] = {
@@ -15,19 +15,19 @@ const inLanguage: UiStrings['inLanguage'] = {
   lt: 'in Lithuanian',
 }
 
-const kindName: UiStrings['kindName'] = {
-  client: 'Users',
-  cdn: 'CDN',
-  limiter: 'Rate limiter',
-  lb: 'Load balancer',
-  server: 'Server',
-  cache: 'Cache',
-  queue: 'Queue',
-  events: 'Event bus',
-  worker: 'Worker',
-  db: 'Database',
-  replica: 'Read replica',
-  search: 'Search index',
+const kindHint: UiStrings['kindHint'] = {
+  client: 'People and apps that send requests',
+  cdn: 'Content delivery network: serves static files from servers near the user',
+  limiter: 'Rejects requests above the allowed rate',
+  lb: 'Spreads requests across servers',
+  server: 'Runs the application code and answers requests',
+  cache: 'Keeps frequent answers in memory and takes load off the database',
+  queue: 'Holds jobs until workers pick them up',
+  events: 'Delivers each event to every subscriber',
+  worker: 'Runs jobs from a queue in the background',
+  db: 'Stores the system’s data',
+  replica: 'A copy of the database that serves reads',
+  search: 'Finds records by text quickly',
 }
 
 const regionName: UiStrings['regionName'] = {
@@ -40,7 +40,7 @@ const n = (value: number) => formatNumber('en', Math.round(value))
 const percent = (ratio: number) => `${n(ratio * 100)}%`
 const perHour = (dollars: number) => `$${dollars.toFixed(2)}/h`
 const kindList = (kinds: ReadonlyArray<ComponentKind>) =>
-  kinds.map(kind => kindName[kind]).join(', ')
+  kinds.map(kind => componentName[kind]).join(', ')
 const idList = (lead: string, ids: ReadonlyArray<string>) =>
   Array.isReadonlyArrayNonEmpty(ids) ? `${lead}${ids.join(', ')}.` : ''
 
@@ -50,7 +50,7 @@ export const en = {
   courseSwitcherLabel: 'Course',
   languageSwitcherLabel: 'Language',
   inLanguage,
-  kindName,
+  kindHint,
   regionName,
   home: {
     heading: 'Course outline',
@@ -94,7 +94,7 @@ export const en = {
     rejecting: rps => `rejected ${n(rps)}/s`,
     zoneDown: region => `${regionName[region]} · region down`,
     edgeFlow: rps => `${n(rps)} rps`,
-    ghost: kind => `${kindName[kind]} here`,
+    ghost: kind => `${componentName[kind]} here`,
     modePick: 'Question · pick on the board',
     loadHidden: 'load hidden until you answer',
   },
@@ -215,32 +215,32 @@ export const en = {
     UnknownNode: ({ id }) => `There is no block ${id} on the board.`,
     DuplicateNodeId: ({ id }) => `A block named ${id} already exists.`,
     GoalMissingKind: ({ kind }) =>
-      `There is no “${kindName[kind]}” block on the board yet. It is in the palette on the left.`,
+      `There is no “${componentName[kind]}” block on the board yet. It is in the palette on the left.`,
     GoalTooFewTargets: ({ from, to, have, need }) =>
-      `Connections from “${kindName[from]}” to “${kindName[to]}” blocks: ${n(have)} of ${n(need)}. Draw the missing ones.`,
+      `Connections from “${componentName[from]}” to “${componentName[to]}” blocks: ${n(have)} of ${n(need)}. Draw the missing ones.`,
     GoalDirectPath: ({ from, via, targets }) =>
-      `“${kindName[from]}” reach ${targets.join(', ')} directly, bypassing the “${kindName[via]}” block. Click the highlighted connection and delete it.`,
+      `“${componentName[from]}” reach ${targets.join(', ')} directly, bypassing the “${componentName[via]}” block. Click the highlighted connection and delete it.`,
     GoalNotConnected: ({ from, via }) =>
-      `There is no connection from “${kindName[from]}” to the “${kindName[via]}” block, so requests have nowhere to go.`,
+      `There is no connection from “${componentName[from]}” to the “${componentName[via]}” block, so requests have nowhere to go.`,
     GoalTooManyErrors: ({ load, errorRate, overloaded }) =>
       `At ${n(load)} rps, ${percent(errorRate)} of requests are lost. Losing requests: ${overloaded.join(', ')}.`,
     ConnectFromSink: ({ from }) =>
-      `Requests end at the “${kindName[from]}” block: it does not pass them any further.`,
+      `Requests end at the “${componentName[from]}” block: it does not pass them any further.`,
     ConnectNotAllowed: ({ from, to, allowed }) =>
-      `“${kindName[from]}” does not pass requests to “${kindName[to]}”. Allowed connections: ${kindList(allowed)}.`,
+      `“${componentName[from]}” does not pass requests to “${componentName[to]}”. Allowed connections: ${kindList(allowed)}.`,
     InvalidCapacity: ({ id }) => `Block ${id} needs a capacity above zero.`,
     RegionHasNoBlocks: ({ region }) =>
       `There are no blocks in region “${regionName[region]}”.`,
     GoalSlowResponse: ({ load, p95, max, hottest }) =>
       `At ${n(load)} rps, p95 is ${n(p95)} ms, above the ${n(max)} ms limit.${idList(' The busiest block: ', hottest)}`,
     GoalOverUtilized: ({ kind, load, utilization, max, nodes }) =>
-      `At ${n(load)} rps, “${kindName[kind]}” blocks are loaded up to ${percent(utilization)}, above the ${percent(max)} limit: ${nodes.join(', ')}.`,
+      `At ${n(load)} rps, “${componentName[kind]}” blocks are loaded up to ${percent(utilization)}, above the ${percent(max)} limit: ${nodes.join(', ')}.`,
     GoalBacklogGrowing: ({ load, backlog, max, nodes }) =>
       `At ${n(load)} rps, queues grow by ${n(backlog)} rps, the limit is ${n(max)} rps.${idList(' Falling behind: ', nodes)}`,
     GoalTooExpensive: ({ cost, max }) =>
       `The system costs ${perHour(cost)}, above the ${perHour(max)} budget.`,
     GoalFailureNotSurvived: ({ id, kind, load, errorRate, max }) =>
-      `When ${id} (“${kindName[kind]}”) fails, ${percent(errorRate)} of requests are lost at ${n(load)} rps; at most ${percent(max)} is allowed.`,
+      `When ${id} (“${componentName[kind]}”) fails, ${percent(errorRate)} of requests are lost at ${n(load)} rps; at most ${percent(max)} is allowed.`,
     GoalRegionFailureNotSurvived: ({
       region,
       load,

@@ -1,11 +1,11 @@
 import { Array } from 'effect'
 
-import type { ComponentKind } from '../../domain/catalog'
+import { type ComponentKind, componentName } from '../../domain/catalog'
 import { formatNumber } from '../format'
 import { plural } from '../plural'
 import { deviceUk } from './device/uk'
-import { panelUk } from './panel/uk'
 import { packetBoardUk } from './packetBoard/uk'
+import { panelUk } from './panel/uk'
 import type { UiStrings } from './types'
 
 const inLanguage: UiStrings['inLanguage'] = {
@@ -15,19 +15,19 @@ const inLanguage: UiStrings['inLanguage'] = {
   lt: 'литовською',
 }
 
-const kindName: UiStrings['kindName'] = {
-  client: 'Користувачі',
-  cdn: 'CDN',
-  limiter: 'Обмежувач',
-  lb: 'Балансувальник',
-  server: 'Сервер',
-  cache: 'Кеш',
-  queue: 'Черга',
-  events: 'Шина подій',
-  worker: 'Обробник',
-  db: 'База даних',
-  replica: 'Репліка бази',
-  search: 'Пошуковий індекс',
+const kindHint: UiStrings['kindHint'] = {
+  client: 'Користувачі: люди й програми, які надсилають запити',
+  cdn: 'Мережа доставки контенту: віддає статичні файли із серверів поруч із користувачем',
+  limiter: 'Обмежувач частоти запитів: відхиляє запити понад ліміт',
+  lb: 'Балансувальник навантаження: розподіляє запити між серверами',
+  server: 'Сервер застосунку: виконує код і відповідає на запити',
+  cache: 'Кеш: зберігає часті відповіді в пам’яті й розвантажує базу даних',
+  queue: 'Черга повідомлень: накопичує завдання, доки їх не заберуть обробники',
+  events: 'Шина подій: доставляє кожну подію всім підписникам',
+  worker: 'Фоновий обробник: виконує завдання з черги',
+  db: 'База даних: зберігає дані системи',
+  replica: 'Репліка для читання: копія бази даних, яка відповідає на читання',
+  search: 'Пошуковий індекс: швидко знаходить записи за текстом',
 }
 
 const regionName: UiStrings['regionName'] = {
@@ -41,7 +41,7 @@ const percent = (ratio: number) => `${n(ratio * 100)}%`
 const perHour = (dollars: number) =>
   `${dollars.toFixed(2).replace('.', ',')} $/год`
 const kindList = (kinds: ReadonlyArray<ComponentKind>) =>
-  kinds.map(kind => kindName[kind]).join(', ')
+  kinds.map(kind => componentName[kind]).join(', ')
 const idList = (lead: string, ids: ReadonlyArray<string>) =>
   Array.isReadonlyArrayNonEmpty(ids) ? `${lead}${ids.join(', ')}.` : ''
 
@@ -51,7 +51,7 @@ export const uk = {
   courseSwitcherLabel: 'Курс',
   languageSwitcherLabel: 'Мова',
   inLanguage,
-  kindName,
+  kindHint,
   regionName,
   home: {
     heading: 'Програма курсу',
@@ -97,7 +97,7 @@ export const uk = {
     rejecting: rps => `відхилено ${n(rps)}/с`,
     zoneDown: region => `${regionName[region]} · регіон недоступний`,
     edgeFlow: rps => `${n(rps)} rps`,
-    ghost: kind => `сюди: ${kindName[kind]}`,
+    ghost: kind => `сюди: ${componentName[kind]}`,
     modePick: 'Питання · оберіть на дошці',
     loadHidden: 'навантаження приховане до відповіді',
   },
@@ -105,9 +105,9 @@ export const uk = {
     load: 'Навантаження',
     errors: 'Помилки',
     p95: 'p95 відповіді',
-    database: 'Запити до бази',
+    database: 'Запити до database',
     rejected: 'Відхилено',
-    backlog: 'Черга росте',
+    backlog: 'Queue росте',
     cost: 'Ціна',
     rps: value => `${n(value)} rps`,
     growth: value => `+${n(value)} rps`,
@@ -166,7 +166,7 @@ export const uk = {
     showSolution: 'Показати розв’язок',
     resultErrors: 'Помилки',
     resultP95: 'p95 відповіді',
-    resultServers: 'Завантаження серверів',
+    resultServers: 'Завантаження servers',
     resultCost: 'Ціна',
     continueLesson: 'Далі →',
     surfaces: 'Де розв’язувати задачу',
@@ -202,33 +202,33 @@ export const uk = {
     ConnectSelf: () => 'Блок не можна з’єднати із самим собою.',
     ConnectDuplicate: () => 'Такий зв’язок уже є.',
     ConnectIntoClients: () =>
-      'У користувачів запити не входять: вони джерело трафіку.',
+      'У блок «Users» запити не входять: це джерело трафіку.',
     ConnectClientsToDatabase: () =>
-      'Користувачі не ходять у базу напряму. Між ними має стояти сервер.',
+      '«Users» не ходять у «Database» напряму. Між ними має стояти «Server».',
     ConnectServerToServer: () =>
-      'Сервери не передають запити один одному. Розподіляти навантаження має балансувальник.',
+      'Блоки «Server» не передають запити один одному. Розподіляти навантаження має «Load balancer».',
     ConnectBalancerToDatabase: () =>
-      'Балансувальник роздає запити серверам, а не базі.',
+      '«Load balancer» роздає запити блокам «Server», а не «Database».',
     ConnectWrongDirection: () =>
-      'Запити йдуть зліва направо: користувачі, балансувальник, сервери, база.',
+      'Запити йдуть зліва направо: Users, Load balancer, Server, Database.',
     NodeIsPartOfTask: ({ id }) =>
       `Блок ${id} входить в умову задачі, його не можна видалити.`,
     UnknownNode: ({ id }) => `Блока ${id} немає на дошці.`,
     DuplicateNodeId: ({ id }) => `Блок з іменем ${id} уже є.`,
     GoalMissingKind: ({ kind }) =>
-      `На дошці поки немає блока «${kindName[kind]}». Він у палітрі зліва.`,
+      `На дошці поки немає блока «${componentName[kind]}». Він у палітрі зліва.`,
     GoalTooFewTargets: ({ from, to, have, need }) =>
-      `Зв’язків від «${kindName[from]}» до блоків «${kindName[to]}»: ${n(have)} з ${n(need)}. Протягніть відсутні.`,
+      `Зв’язків від «${componentName[from]}» до блоків «${componentName[to]}»: ${n(have)} з ${n(need)}. Протягніть відсутні.`,
     GoalDirectPath: ({ from, via, targets }) =>
-      `«${kindName[from]}» ходять на ${targets.join(', ')} напряму, повз блок «${kindName[via]}». Натисніть на підсвічений зв’язок і видаліть його.`,
+      `«${componentName[from]}» ходять на ${targets.join(', ')} напряму, повз блок «${componentName[via]}». Натисніть на підсвічений зв’язок і видаліть його.`,
     GoalNotConnected: ({ from, via }) =>
-      `Немає зв’язку від «${kindName[from]}» до блока «${kindName[via]}»: запитам нікуди йти.`,
+      `Немає зв’язку від «${componentName[from]}» до блока «${componentName[via]}»: запитам нікуди йти.`,
     GoalTooManyErrors: ({ load, errorRate, overloaded }) =>
       `При ${n(load)} rps втрачається ${percent(errorRate)} запитів. Втрачають запити: ${overloaded.join(', ')}.`,
     ConnectFromSink: ({ from }) =>
-      `На блоці «${kindName[from]}» шлях запиту закінчується: далі він нічого не передає.`,
+      `На блоці «${componentName[from]}» шлях запиту закінчується: далі він нічого не передає.`,
     ConnectNotAllowed: ({ from, to, allowed }) =>
-      `«${kindName[from]}» не передає запити блоку «${kindName[to]}». Допустимі зв’язки: ${kindList(allowed)}.`,
+      `«${componentName[from]}» не передає запити блоку «${componentName[to]}». Допустимі зв’язки: ${kindList(allowed)}.`,
     InvalidCapacity: ({ id }) =>
       `Блоку ${id} потрібна пропускна здатність більша за нуль.`,
     RegionHasNoBlocks: ({ region }) =>
@@ -236,13 +236,13 @@ export const uk = {
     GoalSlowResponse: ({ load, p95, max, hottest }) =>
       `При ${n(load)} rps p95 — ${n(p95)} мс, вище порогу ${n(max)} мс.${idList(' Найбільш завантажений блок: ', hottest)}`,
     GoalOverUtilized: ({ kind, load, utilization, max, nodes }) =>
-      `При ${n(load)} rps блоки «${kindName[kind]}» завантажені до ${percent(utilization)}, вище порогу ${percent(max)}: ${nodes.join(', ')}.`,
+      `При ${n(load)} rps блоки «${componentName[kind]}» завантажені до ${percent(utilization)}, вище порогу ${percent(max)}: ${nodes.join(', ')}.`,
     GoalBacklogGrowing: ({ load, backlog, max, nodes }) =>
-      `При ${n(load)} rps черги ростуть на ${n(backlog)} rps, допустимо ${n(max)} rps.${idList(' Не встигають: ', nodes)}`,
+      `При ${n(load)} rps queues ростуть на ${n(backlog)} rps, допустимо ${n(max)} rps.${idList(' Не встигають: ', nodes)}`,
     GoalTooExpensive: ({ cost, max }) =>
       `Система коштує ${perHour(cost)}, це дорожче за бюджет ${perHour(max)}.`,
     GoalFailureNotSurvived: ({ id, kind, load, errorRate, max }) =>
-      `Після відмови ${id} («${kindName[kind]}») при навантаженні ${n(load)} rps втрачається ${percent(errorRate)} запитів, допустимо не більше ${percent(max)}.`,
+      `Після відмови ${id} («${componentName[kind]}») при навантаженні ${n(load)} rps втрачається ${percent(errorRate)} запитів, допустимо не більше ${percent(max)}.`,
     GoalRegionFailureNotSurvived: ({
       region,
       load,
