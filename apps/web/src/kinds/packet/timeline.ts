@@ -86,13 +86,14 @@ const isRefusal = (hop: Hop): boolean =>
   )
 
 /** Какие пакеты трассы показывать. `letters`: только разговор — запрос и
-    ответ (и вопрос справочной, если она уже открыта); без него — всё, кроме
-    поиска MAC и DHCP. */
+    ответ (и вопрос справочной, если она уже открыта); `request` — то же без
+    справочной; без разговора — всё, кроме поиска MAC и DHCP. */
 const shownPackets = (
   trace: Trace,
   show: PlayShow,
-  isDnsShown: boolean,
+  isDirectoryOpen: boolean,
 ): ReadonlyArray<number> => {
+  const isDnsShown = isDirectoryOpen && show !== 'request'
   const packets = Array.dedupe(Array.map(trace.hops, hop => hop.packet))
   const protocolOfPacket = (packet: number): Protocol =>
     Option.match(
@@ -142,6 +143,10 @@ export type Leg = Readonly<{
   /** Номер хопа в своём конверте и сколько их всего (счётчик урока 4). */
   index: number
   count: number
+  /** Номер конверта в своём проигрывании и сколько их там всего (счётчик
+      полной трассы урока 7). */
+  envelope: number
+  envelopes: number
 }>
 
 export type PlayResult = Readonly<{
@@ -225,7 +230,7 @@ const innerPath = (
     },
   })
 
-type RawLeg = Omit<Leg, 'index' | 'count'>
+type RawLeg = Omit<Leg, 'index' | 'count' | 'envelope' | 'envelopes'>
 
 /** Перелёты одного пакета: хопы на видимых фигурах, без хопов внутри
     свёрнутого облака; в облаке-картинке — через сети. */
@@ -356,7 +361,23 @@ const withCounts = (legs: ReadonlyArray<RawLeg>): ReadonlyArray<Leg> =>
       Array.take(legs, position),
       other => other.play === leg.play && other.packet === leg.packet,
     )
-    return { ...leg, index: before.length + 1, count: same.length }
+    const envelopes = Array.dedupe(
+      Array.map(
+        Array.filter(legs, other => other.play === leg.play),
+        other => other.packet,
+      ),
+    )
+    return {
+      ...leg,
+      index: before.length + 1,
+      count: same.length,
+      envelope:
+        Option.getOrElse(
+          Array.findFirstIndex(envelopes, packet => packet === leg.packet),
+          () => 0,
+        ) + 1,
+      envelopes: envelopes.length,
+    }
   })
 
 export type TimelineInput = Readonly<{

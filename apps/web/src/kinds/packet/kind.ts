@@ -53,13 +53,20 @@ const opText = (op: PacketOp): string =>
 // MOVES
 
 /** Ход ученика со своей сценой: открытая страница или трассы команды
-    терминала (`ping`, `curl`) проигрываются на доске. */
+    терминала (`ping`, `curl`) проигрываются на доске. Собранный конверт
+    (`Raw`, урок 7) летит сам, без справочной и рукопожатий, а сборщик
+    остаётся под доской для новой попытки. */
 const moveStage = (
   before: PacketDoc,
   op: PacketOp,
 ): ReadonlyArray<PacketStage> =>
   op._tag === 'Send'
-    ? [{ _tag: 'Play', intent: op.intent }]
+    ? op.intent._tag === 'Raw'
+      ? [
+          { _tag: 'Builder', from: op.intent.from, url: op.intent.url },
+          { _tag: 'Play', intent: op.intent, show: 'request' },
+        ]
+      : [{ _tag: 'Play', intent: op.intent }]
     : op._tag === 'RunCommand'
       ? Array.map(
           runCommand(before.doc, before.state, op.device, op.line).traces,

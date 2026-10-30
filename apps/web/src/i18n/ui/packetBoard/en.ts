@@ -32,6 +32,7 @@ export const packetBoardEn: PacketBoardStrings = {
     speed: 'Speed',
     legend: 'Legend',
     hopOf: (what, hop, total) => `${what} · hop ${hop} of ${total}`,
+    packetOf: (packet, total) => `packet ${packet} of ${total}`,
     request: 'envelope',
     reply: 'reply',
   },

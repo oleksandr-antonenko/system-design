@@ -12,5 +12,7 @@ export default defineLessonMeta(course, {
     'terminal.traceroute',
     'terminal.ipRoute',
     'wifi.addressing',
+    'envelope.ttl',
+    'envelope.tcpFlags',
   ],
 })

@@ -88,6 +88,37 @@ describe('envelopes of a conversation (letters)', () => {
     ])
   })
 
+  test('request: only the page request and reply, even once the DNS server is open', () => {
+    const legs = route(
+      toTheSite,
+      { unlocked: [...LESSON_1, 'board.dnsServer'] },
+      [play(browse, { show: 'request' })],
+    )
+    expect(legs).toEqual([
+      'phone>router',
+      'router>internet',
+      'internet>shop',
+      'shop>internet*',
+      'internet>router*',
+      'router>phone*',
+    ])
+  })
+
+  test('every leg knows its envelope number in the play: the full trace counts all packets', () => {
+    const timeline = timelineOf({
+      world: toTheSite,
+      stage: [play(browse, { show: 'all' })],
+      layout: layoutOf(toTheSite),
+      unlocked: LESSON_1,
+    })
+    const envelopes = Array.dedupe(
+      Array.map(timeline.legs, leg => `${leg.envelope}/${leg.envelopes}`),
+    )
+    expect(envelopes).toEqual(
+      Array.map(Array.range(1, 11), envelope => `${envelope}/11`),
+    )
+  })
+
   test('an open cloud of lesson 1 sends the envelope through its networks', () => {
     const legs = route(toTheSite, { isCloudOpen: true })
     expect(legs[0]).toBe('phone>router')

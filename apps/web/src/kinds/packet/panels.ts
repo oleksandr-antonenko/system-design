@@ -427,7 +427,7 @@ const envelopePanel = <ParentMessage>(
       const changed = changedFields(previous, leg.hop)
       const keyField = isPickLayer
         ? Option.flatMap(picture.maybeOpenLevel, level =>
-            keyFieldOf(leg.hop, level),
+            keyFieldOf(leg.hop, level, picture.isOpen),
           )
         : Option.none()
       const isNamesHidden =
@@ -469,11 +469,16 @@ const envelopePanel = <ParentMessage>(
             ),
             h.ol(
               [h.Class('pb-layers')],
-              Array.map(layerRows(leg.hop), row => {
-                const isOpen = Option.exists(
-                  picture.maybeOpenLevel,
-                  level => level === row.level,
-                )
+              Array.map(layerRows(leg.hop, picture.isOpen), row => {
+                const isOpen =
+                  Option.exists(
+                    picture.maybeOpenLevel,
+                    level => level === row.level,
+                  ) ||
+                  Option.exists(
+                    picture.context.maybeHoveredRef,
+                    ref => ref === `env:${row.level}`,
+                  )
                 const isPicked = Array.contains(
                   pickedLevels,
                   `env:${row.level}`,
@@ -816,7 +821,10 @@ const layerButtons = <ParentMessage>(
                             ),
                           ]),
                     ],
-                    [picture.context.ui.packetBoard.envelope.levels[level]],
+                    [
+                      marks.quiz.names[id] ??
+                        picture.context.ui.packetBoard.envelope.levels[level],
+                    ],
                   )
                 },
               ),

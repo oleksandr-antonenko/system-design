@@ -40,6 +40,8 @@ export type PacketBoardStrings = Readonly<{
     speed: string
     legend: string
     hopOf: (what: string, hop: number, total: number) => string
+    /** Номер конверта в полной трассе (урок 7): «packet 3 из 11». */
+    packetOf: (packet: number, total: number) => string
     request: string
     reply: string
   }>
