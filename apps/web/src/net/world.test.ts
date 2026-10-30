@@ -2,6 +2,7 @@ import { Option, Result } from 'effect'
 import { describe, expect, test } from 'vitest'
 
 import { macFromId } from './address'
+import { dhcpPool } from './answers'
 import {
   add,
   cable,
@@ -14,6 +15,7 @@ import {
   wait,
 } from './build'
 import { NetMessage } from './message'
+import { emptyState } from './model'
 import { Intent } from './packet'
 import { buildNet, buildWorld, homeNet } from './testing'
 import { addressOf } from './topology'
@@ -71,6 +73,12 @@ describe('world fold', () => {
     ])
     expect(addressOf(reserved.doc, reserved.state, 'pc')).toEqual(
       Option.some('192.168.1.50'),
+    )
+  })
+
+  test('the pool summary counts leases, reservations and devices that want an address', () => {
+    expect(dhcpPool(homeNet(), emptyState, 'router')).toEqual(
+      Option.some({ size: 100, leased: 1, reserved: 1, wanting: 2 }),
     )
   })
 

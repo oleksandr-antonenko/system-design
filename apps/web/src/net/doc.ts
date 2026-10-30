@@ -52,6 +52,7 @@ import {
   type Transit,
   TransitRoute,
   TunnelAgent,
+  Upstream,
   VpnClient,
   VpnMode,
   Wall,
@@ -233,6 +234,12 @@ export const NetOp = defineTaggedUnion({
   },
   SetTunnel: { device: DeviceId, maybeTunnel: Schema.Option(TunnelAgent) },
   SetMesh: { device: DeviceId, maybeMesh: Schema.Option(MeshMember) },
+  JoinMesh: {
+    device: DeviceId,
+    relay: DeviceId,
+    maybeName: Schema.Option(Schema.String),
+  },
+  SetProxy: { device: DeviceId, maybeUpstream: Schema.Option(Upstream) },
   SetDocker: { device: DeviceId, maybeBridge: Schema.Option(DockerBridge) },
   Publish: {
     device: DeviceId,
@@ -1115,6 +1122,27 @@ const movedLan = (router: Router, ip: string, prefix: number): Router => {
   }
 }
 
+/** Следующий адрес mesh у координатора: `100.100.0.2`, `.3`… по порядку. */
+const nextMeshIp = (doc: NetDoc, relay: DeviceId): Ip => {
+  const taken = Array.flatMap(doc.devices, device =>
+    device._tag === 'Host'
+      ? Option.toArray(
+          pipe(
+            device.maybeMesh,
+            Option.filter(mesh => mesh.relay === relay),
+            Option.map(mesh => mesh.ip),
+          ),
+        )
+      : [],
+  )
+  return pipe(
+    Array.range(2, 254),
+    Array.map(offset => `100.100.0.${offset}`),
+    Array.findFirst(ip => !Array.contains(taken, ip)),
+    Option.getOrElse(() => '100.100.0.254'),
+  )
+}
+
 const sameWall = (left: Wall, right: Wall): boolean =>
   left.x1 === right.x1 &&
   left.y1 === right.y1 &&
@@ -1556,6 +1584,24 @@ export const apply = (doc: NetDoc, op: NetOp): NetResult =>
       ),
     SetMesh: ({ device, maybeMesh }) =>
       withHost(doc, device, host => replaceDevice(doc, { ...host, maybeMesh })),
+    JoinMesh: ({ device, relay, maybeName }) =>
+      withHost(doc, device, host =>
+        replaceDevice(doc, {
+          ...host,
+          maybeMesh: Option.some({
+            relay,
+            ip: Option.match(host.maybeMesh, {
+              onSome: mesh => mesh.ip,
+              onNone: () => nextMeshIp(doc, relay),
+            }),
+            name: Option.getOrElse(maybeName, () => host.id),
+          }),
+        }),
+      ),
+    SetProxy: ({ device, maybeUpstream }) =>
+      withHost(doc, device, host =>
+        replaceDevice(doc, { ...host, maybeProxy: maybeUpstream }),
+      ),
     SetDocker: ({ device, maybeBridge }) =>
       withHost(doc, device, host =>
         replaceDevice(doc, { ...host, maybeDocker: maybeBridge }),

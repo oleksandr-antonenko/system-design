@@ -3,7 +3,7 @@ import { Array, Option, Result, pipe } from 'effect'
 import { issueCertificate } from './acme'
 import { normalizeUrl, parseUrl } from './address'
 import { NetOp, apply, findHost } from './doc'
-import { type NetMessage } from './message'
+import { NetMessage } from './message'
 import { type NetDoc, type NetState, emptyNet, emptyState } from './model'
 import { type Intent, type Trace, pathOf, sourceOf } from './packet'
 import {
@@ -226,6 +226,12 @@ export const applyWorld = (world: World, op: NetOp): WorldResult =>
           ? { doc, state: settle(doc, closed) }
           : { doc, state: closed }
       }),
+    JoinMesh: ({ device }) =>
+      Result.map(apply(world.doc, op), doc => ({
+        doc,
+        state: settle(doc, dropSession(world.state, device, 'mesh')),
+      })),
+    SetProxy: () => docOnly(world, op),
     SetMesh: ({ device, maybeMesh }) =>
       Result.map(apply(world.doc, op), doc => {
         const closed = dropSession(world.state, device, 'mesh')
@@ -355,3 +361,19 @@ export const runInTerminal = (
 /** Есть ли такой хост: для терминала на удалённом сервере. */
 export const hasHost = (world: World, device: string): boolean =>
   Option.isSome(findHost(world.doc, device))
+
+/** Ученик закрыл себе ssh: до операции сессия проходила, после — нет.
+    Терминал показывает обрыв и переключается в консоль хостинга. */
+export const sshLockedOut = (
+  before: World,
+  after: World,
+  ssh: Intent,
+  server: string,
+): Option.Option<NetMessage> => {
+  const passes = (world: World): boolean =>
+    trace(world.doc, settle(world.doc, world.state), ssh)[0].outcome._tag ===
+    'Delivered'
+  return passes(before) && !passes(after)
+    ? Option.some(NetMessage.SshLockedOut({ device: server }))
+    : Option.none()
+}

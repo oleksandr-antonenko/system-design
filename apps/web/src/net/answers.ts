@@ -1,7 +1,8 @@
 import { Array, Option, pipe } from 'effect'
 
+import { compareIp, parseIp } from './address'
 import { authorityFor, normalizeName, zoneAnswer, zonesOf } from './dns'
-import { findDevice, isWanOf, linkBetween } from './doc'
+import { findDevice, findRouter, isWanOf, linkBetween } from './doc'
 import { type Opener, judge } from './firewall'
 import {
   type DeviceId,
@@ -19,7 +20,7 @@ import {
   durationOf,
   pathOf,
 } from './packet'
-import { associationOf, dhcpServerFor, hostIface } from './topology'
+import { associationOf, dhcpServerFor, hostIface, segmentOf } from './topology'
 import { settle, trace } from './trace'
 
 // Ответы квизов и помощники доски: всё считается из документа, состояния
@@ -327,3 +328,45 @@ export const observerView = (hop: Hop): ObserverView => {
           ),
   }
 }
+
+/** Сводка пула DHCP для панели роутера: размер, выданные и закреплённые
+    адреса и сколько устройств сегмента ждут адрес по DHCP. */
+export type PoolUsage = Readonly<{
+  size: number
+  leased: number
+  reserved: number
+  wanting: number
+}>
+
+export const dhcpPool = (
+  doc: NetDoc,
+  state: NetState,
+  router: DeviceId,
+): Option.Option<PoolUsage> =>
+  Option.map(findRouter(doc, router), current => {
+    const { start, end } = current.dhcp
+    const size = Option.getOrElse(
+      Option.map(Option.all([parseIp(start), parseIp(end)]), ([low, high]) =>
+        Math.max(0, high - low + 1),
+      ),
+      () => 0,
+    )
+    const inPool = (ip: string): boolean =>
+      compareIp(start, ip) <= 0 && compareIp(ip, end) <= 0
+    const segment = segmentOf(doc, router)
+    return {
+      size,
+      leased: Array.filter(
+        settle(doc, state).leases,
+        lease => lease.router === router && inPool(lease.ip),
+      ).length,
+      reserved: current.dhcp.reservations.length,
+      wanting: Array.filter(
+        doc.devices,
+        device =>
+          device._tag === 'Host' &&
+          device.addressing._tag === 'Dhcp' &&
+          Array.contains(segment, device.id),
+      ).length,
+    }
+  })

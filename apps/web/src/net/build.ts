@@ -398,11 +398,16 @@ export const relay = (
     address: string
     domain: string
     certNames?: ReadonlyArray<string>
+    /** Координатор mesh: слушает UDP 41641 вместо HTTPS. */
+    mesh?: boolean
   }>,
 ): Device => {
   const base = host(id, 'server', x, y, {
     address: options.address,
-    listeners: [tcp(netRules.relayPort)],
+    listeners:
+      options.mesh === true
+        ? [udp(netRules.meshPort)]
+        : [tcp(netRules.relayPort)],
     certs: [
       {
         names: options.certNames ?? [`*.${options.domain}`],
@@ -722,21 +727,51 @@ export const tunnelUp = (
 export const tunnelDown = (device: DeviceId): NetOp =>
   NetOp.SetTunnel({ device, maybeTunnel: Option.none() })
 
+/** Включить устройство в свою сеть: адрес `100.100.0.x` по порядку и имя
+    (по умолчанию id устройства). */
 export const meshJoin = (
   device: DeviceId,
-  options: Readonly<{ ip: Ip; name: string; relay?: DeviceId }>,
+  options: Readonly<{ name?: string; relay?: DeviceId }> = {},
 ): NetOp =>
-  NetOp.SetMesh({
+  NetOp.JoinMesh({
     device,
-    maybeMesh: Option.some({
-      relay: options.relay ?? 'meshhub',
-      ip: options.ip,
-      name: options.name,
-    }),
+    relay: options.relay ?? 'meshhub',
+    maybeName: Option.fromNullishOr(options.name),
   })
 
 export const meshLeave = (device: DeviceId): NetOp =>
   NetOp.SetMesh({ device, maybeMesh: Option.none() })
+
+/** Веб-сервер: слушает порты, передаёт запросы приложению (`127.0.0.1:3000`)
+    и, если нужно, перенаправляет http на https. */
+export const webServer = (
+  device: DeviceId,
+  options: Readonly<{
+    listen: ReadonlyArray<number>
+    upstream?: string
+    redirect?: boolean
+  }>,
+): ReadonlyArray<NetOp> => {
+  const [upstreamHost = '', upstreamPort = ''] = (options.upstream ?? '').split(
+    ':',
+  )
+  return [
+    ...Array.map(options.listen, port =>
+      NetOp.Listen({ device, proto: 'tcp', bind: '0.0.0.0', port }),
+    ),
+    NetOp.SetProxy({
+      device,
+      maybeUpstream:
+        options.upstream === undefined
+          ? Option.none()
+          : Option.some({
+              host: upstreamHost,
+              port: globalThis.Number(upstreamPort),
+            }),
+    }),
+    NetOp.SetRedirect({ device, enabled: options.redirect ?? false }),
+  ]
+}
 
 export const dockerHost = (
   device: DeviceId,
