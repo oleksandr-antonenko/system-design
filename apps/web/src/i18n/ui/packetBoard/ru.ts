@@ -66,6 +66,7 @@ export const packetBoardRu: PacketBoardStrings = {
   envelope: {
     from: 'от:',
     to: 'кому:',
+    everyone: 'всем в сети',
     open: 'Открыть конверт',
     title: (hop, total) => `Конверт · hop ${hop} из ${total}`,
     close: 'Закрыть конверт',

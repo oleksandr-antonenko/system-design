@@ -201,6 +201,8 @@ export const lt = {
     UnknownLesson: ({ slug }) => `Kurse nėra pamokos „${slug}“.`,
     LessonNotTranslated: ({ shownIn }) =>
       `Ši pamoka dar neišversta į lietuvių kalbą, todėl rodoma ${inLanguage[shownIn]}.`,
+    SendNeedsIp: () =>
+      'Įrašykite IP address: keturi skaičiai, atskirti taškais, pavyzdžiui, 192.168.1.10.',
     ConnectSelf: () => 'Bloko negalima sujungti su pačiu savimi.',
     ConnectDuplicate: () => 'Toks ryšys jau yra.',
     ConnectIntoClients: () =>

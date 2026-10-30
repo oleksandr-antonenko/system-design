@@ -197,6 +197,8 @@ export const ru = {
     UnknownLesson: ({ slug }) => `Урока «${slug}» нет в курсе.`,
     LessonNotTranslated: ({ shownIn }) =>
       `Этот урок ещё не переведён на русский, поэтому показываем его ${inLanguage[shownIn]}.`,
+    SendNeedsIp: () =>
+      'Впишите IP address: четыре числа через точку, например 192.168.1.10.',
     ConnectSelf: () => 'Блок нельзя соединить с самим собой.',
     ConnectDuplicate: () => 'Такая связь уже есть.',
     ConnectIntoClients: () =>

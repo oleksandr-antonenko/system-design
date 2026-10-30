@@ -199,6 +199,8 @@ export const uk = {
     UnknownLesson: ({ slug }) => `Уроку «${slug}» немає в курсі.`,
     LessonNotTranslated: ({ shownIn }) =>
       `Цей урок ще не перекладено українською, тому показуємо його ${inLanguage[shownIn]}.`,
+    SendNeedsIp: () =>
+      'Впишіть IP address: чотири числа через крапку, наприклад 192.168.1.10.',
     ConnectSelf: () => 'Блок не можна з’єднати із самим собою.',
     ConnectDuplicate: () => 'Такий зв’язок уже є.',
     ConnectIntoClients: () =>

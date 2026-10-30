@@ -236,6 +236,13 @@
   stroke-dasharray: 4 4;
   opacity: 0.6;
 }
+.pb-link.ghost {
+  stroke: var(--accent);
+  stroke-width: 2.4;
+  stroke-dasharray: 7 5;
+  opacity: 0.85;
+  pointer-events: none;
+}
 .pb-link.lit {
   stroke: var(--accent);
   stroke-width: 2.6;
@@ -784,6 +791,18 @@
 .pb-send input:focus {
   border-color: var(--accent);
   outline: none;
+}
+.pb-send input.ghost {
+  border-style: dashed;
+  border-color: var(--accent);
+}
+.pb-send input.refused {
+  border-color: var(--bad);
+}
+.pb-send-refusal {
+  margin: 0;
+  color: var(--bad);
+  font-size: 0.92em;
 }
 .pb-envelope {
   left: 12px;

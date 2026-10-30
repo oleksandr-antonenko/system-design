@@ -5,7 +5,7 @@ export default defineLessonMeta(course, {
   slug: 'addresses',
   module: 'local',
   order: 2,
-  available: false,
+  available: true,
   locales: ['uk', 'ru', 'en', 'lt'],
   unlocks: [
     'board.addresses',

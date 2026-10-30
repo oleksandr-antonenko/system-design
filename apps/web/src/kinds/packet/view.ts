@@ -49,6 +49,10 @@ type Draw<ParentMessage> = Readonly<{
 
 const n = (value: number): string => value.toFixed(1)
 
+/** Адрес «для всех» и адрес того, у кого номера ещё нет (вопрос DHCP). */
+const BROADCAST = '255.255.255.255'
+const UNSET = '0.0.0.0'
+
 // KEYS
 
 const activateKeys =
@@ -531,6 +535,54 @@ const linkView = <ParentMessage>(
   )
 }
 
+/** Призрак третьей подсказки: кабели эталона, которых ещё нет на доске, —
+    пунктиром между устройствами. */
+const ghostLinkViews = <ParentMessage>(
+  draw: Draw<ParentMessage>,
+): ReadonlyArray<Html> => {
+  const { h, picture } = draw
+  const links = picture.context.doc.doc.links
+  const centre = (id: string) =>
+    Option.map(
+      Option.flatMap(shapeIdOf(picture, id), shapeId =>
+        shapeOf(picture.layout, shapeId),
+      ),
+      centreOf,
+    )
+  return Option.match(
+    Option.filter(picture.context.maybeTask, task => task.isGhostShown),
+    {
+      onNone: () => [],
+      onSome: task =>
+        Array.getSomes(
+          Array.map(task.solution, op =>
+            op._tag !== 'Connect' ||
+            op.medium !== 'cable' ||
+            Array.some(
+              links,
+              link =>
+                (link.a === op.a && link.b === op.b) ||
+                (link.a === op.b && link.b === op.a),
+            )
+              ? Option.none()
+              : Option.map(
+                  Option.all([centre(op.a), centre(op.b)]),
+                  ([from, to]) =>
+                    h.keyed('path')(`ghost-${op.a}-${op.b}`, [
+                      h.Class('pb-link ghost'),
+                      h.DataAttribute('ghost', `${op.a}-${op.b}`),
+                      h.Attribute(
+                        'd',
+                        `M${n(from.x)},${n(from.y)} L${n(to.x)},${n(to.y)}`,
+                      ),
+                    ]),
+                ),
+          ),
+        ),
+    },
+  )
+}
+
 /** Туннели, VPN и mesh — двойной линией между клиентом и шлюзом. */
 const tunnelViews = <ParentMessage>(
   draw: Draw<ParentMessage>,
@@ -953,9 +1005,16 @@ const stickerView = <ParentMessage>(
       const isOn =
         picture.model.isStickerOpen ||
         Option.exists(picture.context.maybeHoveredRef, ref => ref === 'sticker')
+      // Наклейка мигает с третьей подсказкой, только если эталон что-то
+      // делает с Wi-Fi: в задаче про кабель и адреса она ни при чём.
       const isGhost = Option.exists(
         picture.context.maybeTask,
-        task => task.isGhostShown,
+        task =>
+          task.isGhostShown &&
+          Array.some(
+            task.solution,
+            op => op._tag === 'JoinWifi' || op._tag === 'ConfigureWifi',
+          ),
       )
       return [
         ...(isGhost
@@ -1448,8 +1507,21 @@ const letterView = <ParentMessage>(
       const isAddressShown =
         picture.isOpen('board.addresses') &&
         !Array.contains(picture.hidden, 'addresses')
-      const fromText = `${picture.name(letter.from)}${isAddressShown ? Option.match(addresses, { onNone: () => '', onSome: found => ` ${found.from}` }) : ''}`
-      const toText = `${picture.name(letter.to)}${isAddressShown ? Option.match(addresses, { onNone: () => '', onSome: found => ` ${found.to}` }) : ''}`
+      // Выдача адреса (урок 2): у спрашивающего ещё нет номера, вопрос
+      // идёт всем; ответ «для всех» несёт только имя получателя.
+      const isBroadcast = Option.exists(
+        addresses,
+        found => found.to === BROADCAST,
+      )
+      const isAskingAll =
+        isBroadcast && !Option.exists(legHop, leg => leg.isReply)
+      const fromAddress = Option.map(addresses, found =>
+        found.from === UNSET ? `(${ui.card.noAddress})` : found.from,
+      )
+      const fromText = `${picture.name(letter.from)}${isAddressShown ? Option.match(fromAddress, { onNone: () => '', onSome: found => ` ${found}` }) : ''}`
+      const toText = isAskingAll
+        ? ui.envelope.everyone
+        : `${picture.name(letter.to)}${isAddressShown && !isBroadcast ? Option.match(addresses, { onNone: () => '', onSome: found => ` ${found.to}` }) : ''}`
       const protocol = Option.match(legHop, {
         onNone: () => 'data',
         onSome: leg => leg.protocol,
@@ -1592,11 +1664,15 @@ const letterView = <ParentMessage>(
   })
 }
 
+/** Кому адресован конверт, который не ушёл: у отправки на адрес (урок 2)
+    — то, что ввёл ученик, а не последний, кто слышал поиск MAC. */
 const lastAddressee = (play: Picture['timeline']['plays'][number]): DeviceId =>
-  Option.match(Array.last(play.trace.hops), {
-    onNone: () => play.trace.outcome.at,
-    onSome: hop => hop.to,
-  })
+  play.trace.intent._tag === 'Send' && play.trace.intent.to.trim() !== ''
+    ? play.trace.intent.to.trim()
+    : Option.match(Array.last(play.trace.hops), {
+        onNone: () => play.trace.outcome.at,
+        onSome: hop => hop.to,
+      })
 
 // BOARD
 
@@ -1660,6 +1736,7 @@ const svgView = <ParentMessage>(draw: Draw<ParentMessage>): Html => {
         [h.Class('pb-layer-links')],
         [
           ...Array.map(layout.links, link => linkView(draw, link)),
+          ...ghostLinkViews(draw),
           ...tunnelViews(draw),
           ...Option.match(cloud, {
             onNone: () => [],

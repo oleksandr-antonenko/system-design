@@ -10,7 +10,7 @@ import {
   sameMessage,
   sourceOf,
 } from '../../net/packet'
-import { type World, sendIntent } from '../../net/world'
+import { type World, foldWorld, sendIntent } from '../../net/world'
 import type { PacketStage, Play, PlayShow, Walk } from './dsl'
 import {
   type InnerNet,
@@ -85,9 +85,26 @@ const isRefusal = (hop: Hop): boolean =>
     layer => layer._tag === 'Tcp' && layer.flags === 'RST',
   )
 
+/** Выдача адреса в показе `letters` (урок 2): из четырёх пакетов DHCP —
+    вопрос «какой у меня номер?» всем в доме и ответ с номером. */
+const dhcpLetters = (
+  trace: Trace,
+  packets: ReadonlyArray<number>,
+  protocolOfPacket: (packet: number) => Protocol,
+): ReadonlyArray<number> => {
+  if (trace.intent._tag !== 'DhcpJoin') {
+    return []
+  }
+  const dhcp = Array.filter(
+    packets,
+    packet => protocolOfPacket(packet) === 'dhcp',
+  )
+  return Array.dedupe([...Array.take(dhcp, 1), ...Array.takeRight(dhcp, 1)])
+}
+
 /** Какие пакеты трассы показывать. `letters`: только разговор — запрос и
-    ответ (и вопрос справочной, если она уже открыта); без него — всё, кроме
-    поиска MAC и DHCP. */
+    ответ (и вопрос справочной, если она уже открыта); у выдачи адреса —
+    вопрос и ответ DHCP; без них — всё, кроме поиска MAC и DHCP. */
 const shownPackets = (
   trace: Trace,
   show: PlayShow,
@@ -108,6 +125,10 @@ const shownPackets = (
   const refusals = Array.filter(packets, packet =>
     Array.some(trace.hops, hop => hop.packet === packet && isRefusal(hop)),
   )
+  const dhcp = dhcpLetters(trace, packets, protocolOfPacket)
+  if (Array.isReadonlyArrayEmpty(talk) && Array.isReadonlyArrayNonEmpty(dhcp)) {
+    return dhcp
+  }
   return Array.isReadonlyArrayNonEmpty(talk)
     ? Array.filter(
         packets,
@@ -373,12 +394,16 @@ export const defaultShow = (unlocked: ReadonlyArray<string>): PlayShow =>
 export const traceOfPlay = (world: World, intent: Intent): Trace =>
   sendIntent(world, intent)[0]
 
+/** Мир, на котором считается трасса `play`: после его операций `after`. */
+const worldOfPlay = (world: World, play: Play): World =>
+  play.after === undefined ? world : foldWorld(world, play.after)
+
 export const timelineOf = (input: TimelineInput): Timeline => {
   const isDnsShown = Array.contains(input.unlocked, 'board.dnsServer')
   const plays = Array.map(
     Array.filter(input.stage, isPlay),
     (play): PlayResult => {
-      const trace = traceOfPlay(input.world, play.intent)
+      const trace = traceOfPlay(worldOfPlay(input.world, play), play.intent)
       return { play, trace, maybeDrop: dropOf(input.layout, trace) }
     },
   )
@@ -394,7 +419,7 @@ export const timelineOf = (input: TimelineInput): Timeline => {
         packet =>
           packetLegs(
             input.layout,
-            input.world,
+            worldOfPlay(input.world, play),
             trace,
             playIndex,
             packet,
