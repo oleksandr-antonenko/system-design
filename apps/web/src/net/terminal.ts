@@ -9,6 +9,7 @@ import {
   normalizeUrl,
   parseUrl,
 } from './address'
+import { addressesIn, cachedAnswer } from './dns'
 import {
   NetOp,
   emptyHostFields,
@@ -179,6 +180,21 @@ const outcomeReason = (outcome: Outcome): Option.Option<NetMessage> =>
 const isNameFailure = (reason: NetMessage): boolean =>
   reason._tag === 'NameNotFound' || reason._tag === 'NoDnsServer'
 
+/** Имя не превратилось в адрес: код «имя не найдено» или вопрос DNS погиб
+    раньше, чем ушёл первый конверт к цели. */
+const nameFailed = (result: Trace): boolean =>
+  Option.exists(outcomeReason(result.outcome), isNameFailure) ||
+  (result.outcome._tag !== 'Delivered' &&
+    Array.some(result.hops, hop =>
+      Array.some(hop.envelope, layer => layer._tag === 'Dns'),
+    ) &&
+    !Array.some(result.hops, hop =>
+      Array.some(
+        hop.envelope,
+        layer => layer._tag === 'Icmp' || layer._tag === 'Tcp',
+      ),
+    ))
+
 const traced = (
   doc: NetDoc,
   state: NetState,
@@ -198,6 +214,7 @@ const serviceName: Readonly<Record<number, string>> = {
   25565: 'minecraft',
 }
 
+/** Адрес имени для вывода: как есть, из памяти устройства или вопросом. */
 const resolvedIp = (
   doc: NetDoc,
   state: NetState,
@@ -206,6 +223,13 @@ const resolvedIp = (
 ): Option.Option<string> => {
   if (isIp(host)) {
     return Option.some(host)
+  }
+  const remembered = Option.flatMap(
+    cachedAnswer(state, from, host, 'A'),
+    records => Array.head(addressesIn(records)),
+  )
+  if (Option.isSome(remembered)) {
+    return remembered
   }
   const [named] = traced(doc, state, Intent.Resolve({ from, name: host }))
   return named.outcome._tag === 'Delivered' &&
@@ -354,11 +378,9 @@ const ping = (
     },
   )
   const first = Array.head(echoes.traces)
-  const nameFailed = Option.exists(first, echo =>
-    Option.exists(outcomeReason(echo.outcome), isNameFailure),
-  )
+  const unresolved = Option.exists(first, nameFailed)
   const ops = Array.map(echoes.traces, () => NetOp.Send({ intent }))
-  if (nameFailed && !isIp(name)) {
+  if (unresolved && !isIp(name)) {
     return result(
       'ping',
       [line(`ping: cannot resolve ${name}: Unknown host`, 'dnsFailed')],
@@ -518,7 +540,7 @@ const traceroute = (
       'traceroute',
       [
         line(
-          Option.exists(outcomeReason(route.outcome), isNameFailure)
+          nameFailed(route)
             ? `traceroute: unknown host ${target.value}`
             : 'traceroute: sendto: Network is unreachable',
           'dnsFailed',

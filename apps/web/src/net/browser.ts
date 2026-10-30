@@ -1,7 +1,7 @@
 import { Array, Option, Schema, pipe } from 'effect'
 import { defineTaggedUnion } from 'foldkit/schema'
 
-import { normalizeUrl, parseUrl } from './address'
+import { isIp, normalizeUrl, parseUrl } from './address'
 import { NetMessage } from './message'
 import { Cert, type DeviceId, Ip, type NetDoc, type NetState } from './model'
 import { Intent, type Trace, failingHop } from './packet'
@@ -78,14 +78,21 @@ const unreachable: ReadonlyArray<NetMessage['_tag']> = [
 export const browserErrorOf = (
   trace: Trace,
   reason: NetMessage,
+  byName = false,
 ): BrowserError => {
-  const dnsDied = pipe(
-    failingHop(trace),
-    Option.flatMap(index => Array.get(trace.hops, index)),
-    Option.exists(hop =>
-      Array.some(hop.envelope, layer => layer._tag === 'Dns'),
-    ),
-  )
+  const dnsDied =
+    pipe(
+      failingHop(trace),
+      Option.flatMap(index => Array.get(trace.hops, index)),
+      Option.exists(hop =>
+        Array.some(hop.envelope, layer => layer._tag === 'Dns'),
+      ),
+    ) ||
+    (byName &&
+      !Array.contains(refusedTags, reason._tag) &&
+      !Array.some(trace.hops, hop =>
+        Array.some(hop.envelope, layer => layer._tag === 'Tcp'),
+      ))
   return reason._tag === 'InvalidUrl'
     ? 'ERR_INVALID_URL'
     : Array.contains(disconnected, reason._tag)
@@ -147,7 +154,14 @@ export const browse = (
         : outcome.reason
     return BrowserView.Error({
       url,
-      code: browserErrorOf(result, reason),
+      code: browserErrorOf(
+        result,
+        reason,
+        Option.exists(
+          parseUrl(url),
+          parsed => !isIp(parsed.host) && parsed.host !== 'localhost',
+        ),
+      ),
       reason,
     })
   })()

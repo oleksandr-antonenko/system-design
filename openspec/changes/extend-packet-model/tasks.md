@@ -10,9 +10,9 @@
 
 ## 3. Мир, терминал и браузер
 
-- [ ] 3.1 Операции мира `Send`, `Wait`, `RunCommand`, свёртки `applyWorld`/`foldWorld`/`applyAllWorld`, журнал команд, `commandTranscript`. Проверка: `world.test.ts`.
-- [ ] 3.2 `runCommand` с командами MVP (`ip a`, `ipconfig`, `ping`, `arp -a`, `npm run dev`) и подсказками для незнакомых и закрытых команд. Проверка: `terminal.test.ts`.
-- [ ] 3.3 `browse` с нормализацией адреса, страницей и ошибками браузера. Проверка: `browser.test.ts`.
+- [x] 3.1 Операции мира `Send`, `Wait`, `RunCommand`, свёртки `applyWorld`/`foldWorld`/`applyAllWorld`, журнал команд, `commandTranscript`. Проверка: `world.test.ts`.
+- [x] 3.2 `runCommand` с командами MVP (`ip a`, `ipconfig`, `ping`, `arp -a`, `npm run dev`) и подсказками для незнакомых и закрытых команд. Проверка: `terminal.test.ts`.
+- [x] 3.3 `browse` с нормализацией адреса, страницей и ошибками браузера. Проверка: `browser.test.ts`.
 
 ## 4. Механика В2 (уроки 8–11)
 

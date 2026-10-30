@@ -8,6 +8,7 @@ import {
   radio,
   router,
   tcp,
+  transit,
   udp,
   wifi,
 } from './build'
@@ -147,3 +148,58 @@ export const firstPacketWith = (
 /** Маршрут пакета как «откуда>куда» по хопам. */
 export const routeOf = (trace: Trace, packet: number): ReadonlyArray<string> =>
   Array.map(hopsOfPacket(trace, packet), hop => `${hop.from}>${hop.to}`)
+
+/** Дом уроков 4 и 8: облако раскрыто в цепочку роутеров провайдера. */
+export const chainOps = [
+  add(
+    host('phone', 'phone', 110, 170, {
+      wifi: { ssid: HOME_SSID, password: HOME_PASSWORD },
+    }),
+  ),
+  add(
+    host('laptop', 'laptop', 110, 300, {
+      mac: '3c:22:fb:4a:10:42',
+      wifi: { ssid: HOME_SSID, password: HOME_PASSWORD },
+    }),
+  ),
+  add(host('printer', 'printer', 110, 430)),
+  homeRouter,
+  add(transit('isp', 490, 300, { ip: '203.0.113.1', name: 'gw.isp.example' })),
+  add(transit('core', 640, 300, { ip: '192.0.2.1', name: 'core.isp.example' })),
+  add(
+    transit('hosting', 780, 300, {
+      ip: '198.51.100.1',
+      name: 'gw.hosting.example',
+    }),
+  ),
+  add(
+    host('dns', 'server', 640, 140, {
+      address: '192.0.2.53/24',
+      listeners: [udp(53)],
+      records: [{ name: 'shop.example', ip: '198.51.100.10' }],
+    }),
+  ),
+  add(
+    host('shop', 'server', 890, 300, {
+      address: '198.51.100.10/24',
+      listeners: [tcp(80), tcp(443)],
+      certs: [
+        {
+          names: ['shop.example'],
+          issuer: 'Example CA',
+          notAfter: '2027-03-14',
+        },
+      ],
+    }),
+  ),
+  radio('phone', 'router'),
+  radio('laptop', 'router'),
+  cable('printer', 'router'),
+  cable('router', 'isp'),
+  cable('isp', 'core'),
+  cable('core', 'dns'),
+  cable('core', 'hosting'),
+  cable('hosting', 'shop'),
+]
+
+export const chainNet = (): NetDoc => buildNet(chainOps)
