@@ -539,7 +539,7 @@ describe('VPN client settings', () => {
     const tab = Option.getOrThrow(Panel.activeTab(vpnPanel, start, ALL_TABS))
     expect(tab.read(context).fields).toEqual({
       connected: 'on',
-      gateway: 'office',
+      gateway: '192.0.2.200',
       address: '10.99.0.23',
       mode: 'full',
     })

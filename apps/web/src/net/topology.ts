@@ -1,6 +1,6 @@
 import { Array, Option, Order, pipe } from 'effect'
 
-import { inSubnet, networkAddress } from './address'
+import { inCidr, inSubnet, networkAddress } from './address'
 import {
   findDevice,
   findRouter,
@@ -475,18 +475,40 @@ const hostRoutes = (
         Option.map(client =>
           client.mode === 'full'
             ? [row('vpn', '0.0.0.0', 0, Option.some(client.gateway), 'wg0')]
-            : Array.flatMap(client.networks, cidr => {
-                const [network = '', prefix = '0'] = cidr.split('/')
-                return [
-                  row(
-                    'vpn',
-                    network,
-                    globalThis.Number(prefix),
-                    Option.some(client.gateway),
-                    'wg0',
+            : [
+                ...Array.flatMap(client.networks, cidr => {
+                  const [network = '', prefix = '0'] = cidr.split('/')
+                  return [
+                    row(
+                      'vpn',
+                      network,
+                      globalThis.Number(prefix),
+                      Option.some(client.gateway),
+                      'wg0',
+                    ),
+                  ]
+                }),
+                ...Option.toArray(
+                  pipe(
+                    client.maybeDns,
+                    Option.filter(
+                      dns =>
+                        !Array.some(client.networks, cidr =>
+                          inCidr(dns.server, cidr),
+                        ),
+                    ),
+                    Option.map(dns =>
+                      row(
+                        'vpn',
+                        dns.server,
+                        32,
+                        Option.some(client.gateway),
+                        'wg0',
+                      ),
+                    ),
                   ),
-                ]
-              }),
+                ),
+              ],
         ),
         Option.getOrElse((): ReadonlyArray<RouteRow> => []),
       )
