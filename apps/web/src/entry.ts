@@ -1,7 +1,9 @@
 import { Effect, Option } from 'effect'
 import { Runtime } from 'foldkit'
 
+import { STACKED_QUERY } from './lesson/player'
 import {
+  DESKTOP_NOTICE_STORAGE_KEY,
   Flags,
   LOCALE_STORAGE_KEY,
   Message,
@@ -19,6 +21,10 @@ const readSavedLocale = Effect.try(() =>
   Effect.orElseSucceed(() => Option.none<string>()),
 )
 
+const readDesktopNoticeDismissed = Effect.try(
+  () => localStorage.getItem(DESKTOP_NOTICE_STORAGE_KEY) !== null,
+).pipe(Effect.orElseSucceed(() => false))
+
 const readFlags = Effect.gen(function* () {
   const maybeSavedLocale = yield* readSavedLocale
   const browserLanguages = yield* Effect.sync(() =>
@@ -29,7 +35,18 @@ const readFlags = Effect.gen(function* () {
     () => window.matchMedia('(prefers-color-scheme: dark)').matches,
   )
 
-  return Flags.make({ maybeSavedLocale, browserLanguages, prefersDark })
+  const isStackedScreen = yield* Effect.sync(
+    () => window.matchMedia(STACKED_QUERY).matches,
+  )
+  const isDesktopNoticeDismissed = yield* readDesktopNoticeDismissed
+
+  return Flags.make({
+    maybeSavedLocale,
+    browserLanguages,
+    prefersDark,
+    isStackedScreen,
+    isDesktopNoticeDismissed,
+  })
 })
 
 const application = Runtime.makeApplication({

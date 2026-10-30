@@ -125,6 +125,12 @@ export type UiStrings = Readonly<{
     copy: string
     copied: string
   }>
+  /** Shown once on a phone in a course that recommends a computer. */
+  desktopNotice: Readonly<{
+    title: string
+    body: string
+    ok: string
+  }>
   quiz: Readonly<{
     heading: string
     correct: string

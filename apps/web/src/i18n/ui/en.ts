@@ -174,6 +174,11 @@ export const en = {
     copy: 'Copy',
     copied: 'Copied',
   },
+  desktopNotice: {
+    title: 'Better on a computer',
+    body: 'These lessons work best on a computer, where the board and the tasks fit on the screen in full. A phone works too: a button switches between the text and the board.',
+    ok: 'Got it',
+  },
   task: {
     heading: 'Task on the board',
     solved: 'Solved',

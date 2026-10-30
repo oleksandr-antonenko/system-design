@@ -7,4 +7,5 @@ export default defineCourse({
   modules: ['foundations', 'scaling', 'distributed', 'hard'],
   features: [],
   locales: ['uk', 'ru', 'en', 'lt'],
+  recommendsDesktop: true,
 })

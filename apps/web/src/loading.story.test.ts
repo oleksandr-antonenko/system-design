@@ -27,6 +27,8 @@ const openAt = (path: string) =>
       maybeSavedLocale: Option.some('en'),
       browserLanguages: ['en'],
       prefersDark: false,
+      isStackedScreen: false,
+      isDesktopNoticeDismissed: false,
     }),
     Option.getOrThrow(fromString(`http://localhost${path}`)),
   )

@@ -1485,6 +1485,43 @@ h3 {
   overflow: auto;
   padding: 12px max(16px, env(safe-area-inset-right, 0px)) 14px 16px;
 }
+/* Совет проходить уроки на компьютере: показывается один раз на телефоне. */
+.desktop-notice-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgb(15 23 42 / 0.45);
+}
+.desktop-notice-panel {
+  position: fixed;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: min(360px, calc(100vw - 32px));
+  display: grid;
+  gap: 12px;
+  padding: 20px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--page);
+  color: var(--ink);
+  box-shadow: 0 18px 50px rgb(0 0 0 / 0.25);
+}
+.desktop-notice-title {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+}
+.desktop-notice-body {
+  margin: 0;
+  font-family: var(--font-prose);
+  font-size: 15.5px;
+  line-height: 1.5;
+}
+.desktop-notice-panel .btn {
+  justify-self: stretch;
+  justify-content: center;
+  min-height: 44px;
+}
 /* ---------- узкий экран ---------- */
 @media (max-width: 880px) {
   .app-lesson {

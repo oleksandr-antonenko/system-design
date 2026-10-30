@@ -6,9 +6,11 @@ import { defineTaggedUnion } from 'foldkit/schema'
 import { modifyFields } from 'foldkit/struct'
 import { Url, toString as urlToString } from 'foldkit/url'
 
+import { Dialog } from '@foldkit/ui'
 import * as Menu from '@foldkit/ui/menu'
 
 import {
+  courseRecommendsDesktop,
   findDefinition,
   findLesson,
   isLessonLoaded,
@@ -38,6 +40,30 @@ export const LessonLoad = defineTaggedUnion({
 })
 export type LessonLoad = typeof LessonLoad.Type
 
+/** «These lessons are better on a computer», said once on a phone in a
+    course that recommends a computer (`defineCourse({ recommendsDesktop })`).
+    `isDismissed` comes from the browser's storage at start, so a closed notice
+    never shows again in that browser, in either course. */
+export const DesktopNotice = Schema.Struct({
+  isDismissed: Schema.Boolean,
+  isStackedScreen: Schema.Boolean,
+  dialog: Dialog.Model,
+})
+export type DesktopNotice = typeof DesktopNotice.Type
+
+export const DESKTOP_NOTICE_ID = 'desktop-notice'
+
+export const initialDesktopNotice = (
+  config: Readonly<{ isDismissed: boolean; isStackedScreen: boolean }> = {
+    isDismissed: false,
+    isStackedScreen: false,
+  },
+): DesktopNotice => ({
+  isDismissed: config.isDismissed,
+  isStackedScreen: config.isStackedScreen,
+  dialog: Dialog.init({ id: DESKTOP_NOTICE_ID }),
+})
+
 export const Model = Schema.Struct({
   route: AppRoute,
   preferredLocale: Locale,
@@ -46,6 +72,7 @@ export const Model = Schema.Struct({
   lessonSessions: Schema.Record(Schema.String, Player.Model),
   /** Lessons being loaded, by `lessonKey`; a loaded lesson is not listed. */
   lessonLoads: Schema.Record(Schema.String, LessonLoad),
+  desktopNotice: DesktopNotice,
 })
 export type Model = typeof Model.Type
 
@@ -62,6 +89,8 @@ export const Flags = Schema.Struct({
   maybeSavedLocale: Schema.Option(Schema.String),
   browserLanguages: Schema.Array(Schema.String),
   prefersDark: Schema.Boolean,
+  isStackedScreen: Schema.Boolean,
+  isDesktopNoticeDismissed: Schema.Boolean,
 })
 export type Flags = typeof Flags.Type
 
@@ -84,12 +113,31 @@ export const Message = defineMessageUnion({
   SucceededLoadLesson: { course: Schema.String, slug: Schema.String },
   FailedLoadLesson: { course: Schema.String, slug: Schema.String },
   ClickedRetryLessonLoad: {},
+  ChangedStackedScreen: { isStacked: Schema.Boolean },
+  GotDesktopNoticeMessage: { message: Dialog.Message },
+  CompletedSaveDesktopNoticeDismissed: {},
 })
 export type Message = typeof Message.Type
 
 // COMMAND
 
 export const LOCALE_STORAGE_KEY = 'sd.locale'
+export const DESKTOP_NOTICE_STORAGE_KEY = 'sd.desktop-notice-dismissed'
+
+export const SaveDesktopNoticeDismissed = Command.define(
+  'SaveDesktopNoticeDismissed',
+  {
+    messages: [Message.CompletedSaveDesktopNoticeDismissed],
+    execute: Effect.try(() =>
+      localStorage.setItem(DESKTOP_NOTICE_STORAGE_KEY, '1'),
+    ).pipe(
+      Effect.as(Message.CompletedSaveDesktopNoticeDismissed()),
+      Effect.catch(() =>
+        Effect.succeed(Message.CompletedSaveDesktopNoticeDismissed()),
+      ),
+    ),
+  },
+)
 
 export const NavigateInternal = Command.define('NavigateInternal', {
   args: { url: Schema.String },
@@ -323,7 +371,10 @@ const arriveAt = (model: Model, url: Url): UpdateReturn => {
       })
       return AppRoute.match<UpdateReturn>(route, {
         Lesson: ({ course, slug, step }) =>
-          enterLesson(routed, { locale, course, slug }, step),
+          Update.combine(routed, [
+            stepModel => enterLesson(stepModel, { locale, course, slug }, step),
+            offerDesktopNotice,
+          ]),
         LegacyLesson: () => ({
           model: routed,
           commands: [RedirectToCourse({ url: urlForRoute(route) })],
@@ -370,6 +421,52 @@ const foldLanguageMenu = Update.foldChild({
   foldOutMessage: (outMessage: Menu.OutMessage<Locale>) => (model: Model) =>
     chooseLocale(model, outMessage.value),
 })
+
+const writeDesktopNoticeDialog = (model: Model, nextDialog: Dialog.Model) =>
+  modifyFields(model, {
+    desktopNotice: notice => modifyFields(notice, { dialog: () => nextDialog }),
+  })
+
+const foldDesktopNotice = Update.foldChild({
+  update: Dialog.update,
+  read: (model: Model) => Option.some(model.desktopNotice.dialog),
+  write: writeDesktopNoticeDialog,
+  toParentMessage: (message: Dialog.Message) =>
+    Message.GotDesktopNoticeMessage({ message }),
+  foldOutMessage: (outMessage: Dialog.OutMessage) => (model: Model) =>
+    Dialog.OutMessage.match(outMessage, {
+      Opened: () => ({ model }),
+      Closed: () => ({
+        model: modifyFields(model, {
+          desktopNotice: notice =>
+            modifyFields(notice, { isDismissed: () => true }),
+        }),
+        commands: [SaveDesktopNoticeDismissed()],
+      }),
+    }),
+})
+
+const openDesktopNotice = Update.foldChildStep({
+  update: Dialog.open,
+  read: (model: Model) => Option.some(model.desktopNotice.dialog),
+  write: writeDesktopNoticeDialog,
+  toParentMessage: (message: Dialog.Message) =>
+    Message.GotDesktopNoticeMessage({ message }),
+  foldOutMessage: () => (model: Model) => ({ model }),
+})
+
+/** On a phone, in a lesson of a course that recommends a computer, the
+    notice opens unless it was closed before. */
+export const isDesktopNoticeDue = (model: Model): boolean =>
+  model.desktopNotice.isStackedScreen &&
+  !model.desktopNotice.isDismissed &&
+  !model.desktopNotice.dialog.isOpen &&
+  Option.exists(lessonRouteOf(model.route), place =>
+    courseRecommendsDesktop(place.course),
+  )
+
+const offerDesktopNotice = (model: Model): UpdateReturn =>
+  isDesktopNoticeDue(model) ? openDesktopNotice(model) : { model }
 
 const lessonPlaceOf = (model: Model): Option.Option<LessonPlace> =>
   AppRoute.match(model.route, {
@@ -471,6 +568,16 @@ export const update = (model: Model, message: Message) =>
           Record.set(loads, lessonKey(course, slug), LessonLoad.Failed()),
       }),
     }),
+    ChangedStackedScreen: ({ isStacked }) =>
+      offerDesktopNotice(
+        modifyFields(model, {
+          desktopNotice: notice =>
+            modifyFields(notice, { isStackedScreen: () => isStacked }),
+        }),
+      ),
+    GotDesktopNoticeMessage: ({ message: dialogMessage }) =>
+      foldDesktopNotice(model, dialogMessage),
+    CompletedSaveDesktopNoticeDismissed: () => ({ model }),
     ClickedRetryLessonLoad: () =>
       Option.match(lessonRouteOf(model.route), {
         onNone: () => ({ model }),
@@ -504,6 +611,10 @@ export const init: Runtime.RoutingApplicationInit<Model, Message, Flags> = (
       prefersDark: flags.prefersDark,
       lessonSessions: {},
       lessonLoads: {},
+      desktopNotice: initialDesktopNotice({
+        isDismissed: flags.isDesktopNoticeDismissed,
+        isStackedScreen: flags.isStackedScreen,
+      }),
     }),
     url,
   )
@@ -517,6 +628,13 @@ const rootSubscriptions = Subscription.make<Model, Message>()(() => ({
       query: '(prefers-color-scheme: dark)',
       mapMatches: isMatching =>
         Message.ChangedColorScheme({ prefersDark: isMatching }),
+    }),
+  ),
+  desktopNoticeScreen: Subscription.persistentEntry(
+    Dom.streamFromMediaQuery({
+      query: Player.STACKED_QUERY,
+      mapMatches: isMatching =>
+        Message.ChangedStackedScreen({ isStacked: isMatching }),
     }),
   ),
   frames: Subscription.animationFrameEntry<Model, Message>({

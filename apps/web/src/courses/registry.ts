@@ -20,6 +20,7 @@ import {
   type LessonText,
   type PaletteMode,
   paletteModeOf,
+  recommendsDesktopOf,
 } from './model'
 import { unlockedIn, unlockedThrough } from './unlocks'
 
@@ -257,6 +258,14 @@ export const coursePaletteMode = (course: string): PaletteMode =>
   Option.match(findCourse(course), {
     onNone: () => 'progressive',
     onSome: found => paletteModeOf(found.definition),
+  })
+
+/** Советует ли курс проходить уроки на компьютере
+    (`defineCourse({ recommendsDesktop })`). */
+export const courseRecommendsDesktop = (course: string): boolean =>
+  Option.match(findCourse(course), {
+    onNone: () => false,
+    onSome: found => recommendsDesktopOf(found.definition),
   })
 
 // UNLOCKS

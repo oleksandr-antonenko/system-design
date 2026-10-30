@@ -179,6 +179,11 @@ export const lt = {
     copy: 'Kopijuoti',
     copied: 'Nukopijuota',
   },
+  desktopNotice: {
+    title: 'Patogiau kompiuteriu',
+    body: 'Šias pamokas patogiau eiti kompiuteriu: ten lenta ir užduotys matomos visos. Telefonu irgi galima: tekstą ir lentą perjungia mygtukas.',
+    ok: 'Supratau',
+  },
   task: {
     heading: 'Užduotis lentoje',
     solved: 'Išspręsta',
