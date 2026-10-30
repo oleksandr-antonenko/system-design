@@ -5,7 +5,7 @@ export default defineLessonMeta(course, {
   slug: 'phone-online',
   module: 'local',
   order: 1,
-  available: false,
+  available: true,
   locales: ['uk', 'ru', 'en', 'lt'],
   unlocks: [
     'transport.run',
