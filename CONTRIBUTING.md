@@ -49,6 +49,7 @@ export default defineCourse({
   modules: ['foundations', 'scaling', 'distributed'],
   features: [], // UI features its lessons may unlock, see below
   locales: ['uk', 'ru', 'en', 'lt'],
+  // palette: 'all-known', // optional: students already know every block, see below
 })
 ```
 
@@ -82,6 +83,16 @@ export default defineLessonMeta(course, {
 ```
 
 **The interface grows with the student.** A lesson shows only what it and earlier lessons of the course have opened. List what your lesson opens in `unlocks`, using the course's feature set (for the networking course: `apps/web/src/courses/networks/features.ts`, e.g. `'terminal.ping'`, `'router.wifi'`, `'browser.addressBar'`). Each feature is opened by exactly one lesson. System Design lessons open nothing.
+
+**The palette follows the course.** By default (`palette: 'progressive'`) a block in the palette gets a “new” badge in the first lesson whose task offers it, and blocks that first appear in later lessons are listed under “Later in the course (lesson N)”. That suits a course that starts from scratch. A course whose students already know every block, such as an advanced course that follows an introductory one, sets `palette: 'all-known'` in `defineCourse`: then no block is “new” and nothing is listed as later. A lesson that brings a block the students have not met names it in `introduces`, and in an `all-known` course only such blocks get the badge in that lesson and are listed as later before it; in a `progressive` course `introduces` marks a block new even before a task offers it:
+
+```ts
+export default defineLesson(flow, {
+  slug: 'full-text-search',
+  introduces: ['search'], // optional: blocks this lesson brings
+  steps: [ … ],
+})
+```
 
 `lesson.ts` is a script for the board kind of its course: `flow` for System Design, `packet` for the networking course (`defineCourse({ board })`). Each step lists the operations that change the board, then what to highlight. The board at step N is all operations of steps 0..N applied in order, so the text and the board never drift apart. The kind comes first in `defineLesson`, and the operations come from that kind's DSL (`apps/web/src/kinds/flow/dsl.ts`, `apps/web/src/kinds/packet/dsl.ts`):
 
@@ -136,7 +147,7 @@ Blocks: `client`, `cdn`, `limiter`, `lb`, `server`, `cache`, `queue`, `events`, 
 Operations: `addNode(id, kind, x, y, { locked?, capacity?, region? })`, `connect`, `disconnect`, `setLoad`, `failNode`, `recoverNode`, `failRegion`, `recoverRegion`, `setShare(id, share)`, `setTraffic({ … })` and `reset()`. Stage: `highlight(target, tone)` and `annotate(target, key, tone)`, where the target is a block id or `{ kind: 'lb' }` and the tone is `ink`, `info`, `ok`, `warn` or `bad` (or a function of the simulation). Goals: `HasKind`, `FansOut`, `OnlyThrough`, and the ones checked by running the simulation — `MaxErrorRate`, `MaxP95`, `MaxUtilization`, `MaxBacklog`, `Carries`, `SurvivesFailure`, `SurvivesRegionFailure` — plus `MaxCost`. A student cannot move past a task until it is solved. Lessons 1–13 in `apps/web/src/courses/system-design/lessons/` are working examples of every block and goal.
 
 - **Unequal user groups.** Several `client` blocks split the load equally. `setShare('users-us', 3)` gives a group a weight (1 by default): next to `users-eu` with weight 1, the US group sends three quarters of the load. Goals with a `load` scale every group in proportion.
-- **Phased lessons.** `reset()` starts a step from an empty board, so a later phase can begin from a shared reference design instead of the student's: `ops: [reset(), ...reference, setLoad(2000), ...twist]`. The reference sets its own load and shares, and the step text says that from here on the board shows the shared design. Going back to the earlier step shows the student's own design again, and the journal lists `Reset` as the first line of the step.
+- **Phased lessons.** `reset()` starts a step from an empty board, so a later phase can begin from a shared reference design instead of the student's: `ops: [reset(), ...reference, setLoad(2000), ...twist]`. The reference sets its own load and shares, and the step text says that from here on the board shows the shared design. Going back to the earlier step shows the student's own design again, and the journal lists `Reset` as the first line of the step. The reference's blocks may be unlocked for rework: the third hint still outlines every block of the task's `solution` that the board lacks, because only a block the student places during the task can stand in for a missing one.
 - **A realistic traffic mix.** `setTraffic({ … })` changes only the knobs it names; the defaults are the old constants, so a lesson without it behaves as before. `writeShare` (0.2): synchronous writes to databases through the server. `deferredShare` (0): writes the server hands to its queue or event bus and answers 2 ms after its own work; without one it writes them synchronously. Reads are what is left, `1 − writeShare − deferredShare`. `cacheHitShare` (0.8) and `cdnStaticShare` (0.6): what a cache and a CDN answer themselves. `jobsPerRequest` (1): messages per served request into each queue and event bus. `writesPerJob` (1): database rows per worker job, above 1 for fan-out, below 1 for batching. A read-heavy service is `setTraffic({ writeShare: 0.01, cacheHitShare: 0.95 })`; the instruments then show “writes 1% · hit 95%”. Annotations read the profile from `sim.traffic`.
 - **Goals about one block.** `MaxUtilization({ kind, max, load, nodes })` and `MaxBacklog({ max, load, nodes })` take an optional list of block ids and then check only those blocks (for `MaxUtilization`, the listed blocks of that kind). `Carries({ node, min, load })` requires at least `min` rps to flow through the block, so a goal on a block cannot be met by placing it and leaving it idle; pair it with the limits on that block.
 

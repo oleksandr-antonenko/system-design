@@ -1,19 +1,33 @@
 import { Array, Order, pipe } from 'effect'
 
-/** Урок курса глазами палитры: номер и всё, что ставят в его задачах. */
+import type { PaletteMode } from '../courses/model'
+
+/** Урок курса глазами палитры: номер, всё, что ставят в его задачах, и
+    блоки, которые он вводит явно (`introduces`). */
 export type CourseLesson = Readonly<{
   order: number
   palette: ReadonlyArray<string>
+  introduces: ReadonlyArray<string>
 }>
 
-/** Урок, в палитре задачи которого вид блока или устройства появляется
-    впервые. */
+/** Урок, в котором вид блока или устройства появляется впервые. */
 export type KindDebut = Readonly<{ kind: string; lesson: number }>
 
 const LATER_LIMIT = 4
 
+/** Что урок приносит в палитру: в курсе `progressive` — палитры его задач и
+    `introduces`, в курсе `all-known` весь каталог известен заранее, и урок
+    приносит только то, что вводит явно. */
+const broughtBy =
+  (mode: PaletteMode) =>
+  (entry: CourseLesson): ReadonlyArray<string> =>
+    mode === 'all-known'
+      ? entry.introduces
+      : Array.dedupe([...entry.palette, ...entry.introduces])
+
 export const kindDebuts = (
   course: ReadonlyArray<CourseLesson>,
+  mode: PaletteMode = 'progressive',
 ): ReadonlyArray<KindDebut> =>
   pipe(
     course,
@@ -21,19 +35,23 @@ export const kindDebuts = (
       Order.mapInput(Order.Number, (entry: CourseLesson) => entry.order),
     ),
     Array.flatMap(entry =>
-      Array.map(entry.palette, kind => ({ kind, lesson: entry.order })),
+      Array.map(broughtBy(mode)(entry), kind => ({
+        kind,
+        lesson: entry.order,
+      })),
     ),
     Array.dedupeWith((first, second) => first.kind === second.kind),
   )
 
-/** «Позже в курсе» (D8): виды, которые впервые появятся в задачах следующих
-    уроков, по порядку уроков, не больше четырёх. */
+/** «Позже в курсе» (D8): виды, которые впервые появятся в следующих уроках,
+    по порядку уроков, не больше четырёх. */
 export const laterInCourse = (
   course: ReadonlyArray<CourseLesson>,
   order: number,
+  mode: PaletteMode = 'progressive',
 ): ReadonlyArray<KindDebut> =>
   pipe(
-    kindDebuts(course),
+    kindDebuts(course, mode),
     Array.filter(debut => debut.lesson > order),
     Array.take(LATER_LIMIT),
   )
@@ -42,9 +60,10 @@ export const laterInCourse = (
 export const newInLesson = (
   course: ReadonlyArray<CourseLesson>,
   order: number,
+  mode: PaletteMode = 'progressive',
 ): ReadonlyArray<string> =>
   pipe(
-    kindDebuts(course),
+    kindDebuts(course, mode),
     Array.filter(debut => debut.lesson === order),
     Array.map(debut => debut.kind),
   )

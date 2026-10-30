@@ -5,6 +5,7 @@ import type { Html, HtmlBuilder } from 'foldkit/html'
 import { type Lesson, lessonTextFor } from '../courses/assemble'
 import {
   courseLessons,
+  coursePaletteMode,
   findDefinition,
   findLesson,
   lessonsOf,
@@ -200,7 +201,13 @@ const timelineView = <T extends KindTypes>(
         Array.map(lesson.steps, (lessonStep, index) =>
           h.keyed('li')(
             lessonStep.id,
-            [],
+            [
+              h.Class(
+                lessonStep.task === undefined
+                  ? 'timeline-item'
+                  : 'timeline-item task',
+              ),
+            ],
             [
               h.button(
                 [
@@ -1065,6 +1072,7 @@ const boardContext = <T extends KindTypes>(
     onSome: found => found.meta.order,
   })
   const course = courseLessons(model.course)
+  const paletteMode = coursePaletteMode(model.course)
   const unlocks = unlocksOf(model)
   const scene = boardStage(lesson, model)
 
@@ -1085,6 +1093,7 @@ const boardContext = <T extends KindTypes>(
     maybeTask: Option.map(task, ({ spec, state }) => ({
       palette: spec.palette,
       solution: spec.solution,
+      journal: opsOf(lesson.kind, state.log),
       isGhostShown: state.hintsShown >= 3 && state.check._tag !== 'Solved',
       focusNodes: state.check._tag === 'Failed' ? state.check.focusNodes : [],
       focusEdges: state.check._tag === 'Failed' ? state.check.focusEdges : [],
@@ -1124,8 +1133,8 @@ const boardContext = <T extends KindTypes>(
       onNone: () => lessonPalette(lesson),
       onSome: ({ spec }) => spec.palette,
     }),
-    newPalette: newInLesson(course, order),
-    laterPalette: laterInCourse(course, order),
+    newPalette: newInLesson(course, order, paletteMode),
+    laterPalette: laterInCourse(course, order, paletteMode),
     maybeHoveredRef: model.maybeHoveredRef,
     unlocked: unlocks.unlocked,
     newFeatures: unlocks.newFeatures,

@@ -47,6 +47,9 @@ export type LessonDefinition<T extends KindTypes> = Readonly<{
   steps: Array.NonEmptyReadonlyArray<LessonStep<T>>
   /** Сущности доски, которым тексты урока дают подписи (`labels`). */
   labels: ReadonlyArray<string>
+  /** Блоки, которые урок вводит явно: в палитре у них метка «новое», а в
+      уроках до него — «Позже в курсе» (`PaletteMode`). */
+  introduces: ReadonlyArray<T['Palette']>
 }>
 
 /** Урок любого вида доски. */
@@ -66,6 +69,7 @@ export type DefinedLesson<
   slug: string
   steps: Steps
   labels: ReadonlyArray<Label>
+  introduces: ReadonlyArray<T['Palette']>
 }>
 
 /** `defineLesson(flow, { slug, steps })`: вид доски — первым аргументом. */
@@ -75,13 +79,19 @@ export const defineLesson = <
   const Labels extends ReadonlyArray<string> = readonly [],
 >(
   kind: BoardKind<T>,
-  lesson: Readonly<{ slug: string; steps: Steps; labels?: Labels }>,
+  lesson: Readonly<{
+    slug: string
+    steps: Steps
+    labels?: Labels
+    introduces?: ReadonlyArray<T['Palette']>
+  }>,
 ): DefinedLesson<T, Steps, Labels[number]> => ({
   board: kind.id,
   kind,
   slug: lesson.slug,
   steps: lesson.steps,
   labels: lesson.labels ?? [],
+  introduces: lesson.introduces ?? [],
 })
 
 export type LessonRunner<R> = <T extends KindTypes>(
