@@ -20,7 +20,13 @@ import { DomainMessage, renderDomainMessage } from './i18n/domainMessage'
 import { type Locale, localeEndonym, locales } from './i18n/locale'
 import { type UiStrings, uiFor } from './i18n/ui'
 import * as Player from './lesson/view'
-import { LessonLoad, Message, type Model, currentSession } from './main'
+import {
+  LanguageMenu,
+  LessonLoad,
+  Message,
+  type Model,
+  currentSession,
+} from './main'
 import { pageTitle } from './pageTitle'
 import { lessonHeroView, lessonThumbnailView } from './previewView'
 import {
@@ -30,32 +36,108 @@ import {
   homeUrl,
   lessonUrl,
   localeOf,
-  routeInLocale,
-  urlForRoute,
 } from './route'
 
 // HEADER
 
-const languageLinkView = (
-  route: AppRoute,
-  locale: Locale,
+const globeIconView = (h: HtmlBuilder<Message>): Html =>
+  h.svg(
+    [
+      h.ViewBox('0 0 24 24'),
+      h.AriaHidden(true),
+      h.Class('size-4 shrink-0'),
+      h.Attribute('fill', 'none'),
+      h.Attribute('stroke', 'currentColor'),
+      h.Attribute('stroke-width', '1.8'),
+      h.Attribute('stroke-linecap', 'round'),
+    ],
+    [
+      h.circle([
+        h.Attribute('cx', '12'),
+        h.Attribute('cy', '12'),
+        h.Attribute('r', '9'),
+      ]),
+      h.path([
+        h.Attribute(
+          'd',
+          'M3 12h18M12 3c2.5 2.7 3.8 5.7 3.8 9s-1.3 6.3-3.8 9c-2.5-2.7-3.8-5.7-3.8-9S9.5 5.7 12 3z',
+        ),
+      ]),
+    ],
+  )
+
+const checkIconView = (h: HtmlBuilder<Message>): Html =>
+  h.svg(
+    [
+      h.ViewBox('0 0 24 24'),
+      h.AriaHidden(true),
+      h.Class('size-4 shrink-0 text-accent'),
+      h.Attribute('fill', 'none'),
+      h.Attribute('stroke', 'currentColor'),
+      h.Attribute('stroke-width', '2.2'),
+      h.Attribute('stroke-linecap', 'round'),
+      h.Attribute('stroke-linejoin', 'round'),
+    ],
+    [h.path([h.Attribute('d', 'M5 12.5l4.5 4.5L19 7.5')])],
+  )
+
+const languageItemView = (
+  candidate: Locale,
   currentLocale: Locale,
+  ui: UiStrings,
+  isActive: boolean,
+  h: HtmlBuilder<Message>,
+) => ({
+  className: isActive
+    ? 'flex cursor-pointer items-center justify-between gap-4 rounded-md bg-accent-soft px-3 py-2 text-[13px] text-ink'
+    : 'flex cursor-pointer items-center justify-between gap-4 rounded-md px-3 py-2 text-[13px] text-ink',
+  content: h.span(
+    [h.Class('contents')],
+    [
+      h.span([h.Lang(candidate)], [localeEndonym[candidate]]),
+      ...(candidate === currentLocale
+        ? [
+            checkIconView(h),
+            h.span([h.Class('sr-only')], [`, ${ui.currentLanguage}`]),
+          ]
+        : []),
+    ],
+  ),
+})
+
+const languageMenuView = (
+  model: Model,
+  locale: Locale,
+  ui: UiStrings,
   h: HtmlBuilder<Message>,
 ): Html =>
-  h.a(
-    [
-      h.Href(urlForRoute(routeInLocale(route, locale))),
-      h.Hreflang(locale),
-      h.Lang(locale),
-      ...(locale === currentLocale ? [h.AriaCurrent('true')] : []),
-      h.Class(
-        locale === currentLocale
-          ? 'rounded-md bg-accent px-2 py-1 text-[12px] font-semibold text-page no-underline'
-          : 'rounded-md px-2 py-1 text-[12px] text-muted no-underline hover:text-ink',
+  h.submodel({
+    slotId: 'language-menu',
+    model: model.languageMenu,
+    view: LanguageMenu.view,
+    toParentMessage: message => Message.GotLanguageMenuMessage({ message }),
+    viewInputs: {
+      items: locales,
+      itemToConfig: (candidate, { isActive }) =>
+        languageItemView(candidate, locale, ui, isActive, h),
+      itemToSearchText: candidate => localeEndonym[candidate],
+      buttonContent: h.span(
+        [h.Class('flex items-center gap-1.5')],
+        [
+          globeIconView(h),
+          h.span([h.Class('sr-only')], [`${ui.languageSwitcherLabel}: `]),
+          h.span([h.Lang(locale)], [locale.toUpperCase()]),
+        ],
       ),
-    ],
-    [localeEndonym[locale]],
-  )
+      buttonClassName:
+        'flex items-center rounded-md border border-line px-2 py-1 text-[12px] font-semibold text-muted hover:text-ink focus-visible:outline-2 focus-visible:outline-accent data-[open]:text-ink',
+      itemsClassName:
+        'z-50 min-w-44 rounded-lg border border-line bg-page p-1 shadow-lg outline-none',
+      backdropClassName: 'fixed inset-0 z-40',
+      anchor: { placement: 'bottom-end', gap: 6, padding: 8 },
+      className: 'ml-auto',
+    },
+  })
 
 const courseLinkView = (
   course: Course,
@@ -91,7 +173,7 @@ const courseLinkView = (
 }
 
 const headerView = (
-  route: AppRoute,
+  model: Model,
   locale: Locale,
   ui: UiStrings,
   h: HtmlBuilder<Message>,
@@ -111,27 +193,20 @@ const headerView = (
         [ui.siteTitle],
       ),
       h.nav(
-        [h.AriaLabel(ui.courseSwitcherLabel)],
+        [
+          h.AriaLabel(ui.courseSwitcherLabel),
+          h.Class('order-last basis-full sm:order-none sm:basis-auto'),
+        ],
         [
           h.ul(
             [h.Class('m-0 flex list-none flex-wrap gap-1 p-0')],
             Array.map(courses, course =>
-              courseLinkView(course, locale, courseOf(route), h),
+              courseLinkView(course, locale, courseOf(model.route), h),
             ),
           ),
         ],
       ),
-      h.nav(
-        [h.AriaLabel(ui.languageSwitcherLabel), h.Class('ml-auto')],
-        [
-          h.ul(
-            [h.Class('m-0 flex list-none flex-wrap gap-1 p-0')],
-            Array.map(locales, candidate =>
-              h.li([], [languageLinkView(route, candidate, locale, h)]),
-            ),
-          ),
-        ],
-      ),
+      languageMenuView(model, locale, ui, h),
     ],
   )
 
@@ -660,7 +735,7 @@ export const view = (model: Model, h: HtmlBuilder<Message>): Document => {
             : 'flex min-h-screen flex-col bg-bg text-ink',
         ),
       ],
-      [headerView(model.route, locale, ui, h), content],
+      [headerView(model, locale, ui, h), content],
     ),
   }
 }

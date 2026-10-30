@@ -3,18 +3,22 @@ import { Command, given, message, model, story } from 'foldkit/story'
 import { fromString } from 'foldkit/url'
 import { describe, expect, test } from 'vitest'
 
+import * as Menu from '@foldkit/ui/menu'
+
 import * as Player from './lesson/player'
 import {
   AppRoute,
   Flags,
   Message,
   Model,
+  NavigateInternal,
   RedirectToCourse,
   RedirectToLocale,
   ReplaceStepUrl,
   RevealLessonStep,
   SaveLocale,
   init,
+  initialLanguageMenu,
   update,
 } from './main'
 
@@ -48,6 +52,30 @@ describe('init', () => {
     )
   })
 
+  test('/ lands on English when no browser language is supported', () => {
+    const result = init(flags(null, ['de-DE', 'fr-FR']), urlOf('/'))
+
+    expect(describeCommands(result.commands)).toEqual(
+      describeCommands([RedirectToLocale({ url: '/en/' })]),
+    )
+  })
+
+  test('/ picks the first supported browser language, in order', () => {
+    const result = init(flags(null, ['de-DE', 'lt-LT', 'ru-RU']), urlOf('/'))
+
+    expect(describeCommands(result.commands)).toEqual(
+      describeCommands([RedirectToLocale({ url: '/lt/' })]),
+    )
+  })
+
+  test('a saved choice wins over the browser languages', () => {
+    const result = init(flags('uk', ['lt-LT']), urlOf('/'))
+
+    expect(describeCommands(result.commands)).toEqual(
+      describeCommands([RedirectToLocale({ url: '/uk/' })]),
+    )
+  })
+
   test('a link without a prefix keeps its path and query', () => {
     const result = init(
       flags('ru', ['uk-UA']),
@@ -64,13 +92,12 @@ describe('init', () => {
   test('a corrupted saved value is ignored', () => {
     const result = init(flags('xx', ['lt-LT']), urlOf('/'))
 
-    expect(result.model.maybeSavedLocale).toEqual(Option.none())
     expect(describeCommands(result.commands)).toEqual(
       describeCommands([RedirectToLocale({ url: '/lt/' })]),
     )
   })
 
-  test('opening a prefixed page saves its language', () => {
+  test('opening a prefixed page does not save its language', () => {
     const result = init(
       flags('ru', ['ru-RU']),
       urlOf('/en/system-design/lessons/load-balancer'),
@@ -86,7 +113,6 @@ describe('init', () => {
     )
     expect(describeCommands(result.commands)).toEqual(
       describeCommands([
-        SaveLocale({ locale: 'en' }),
         ReplaceStepUrl({
           url: '/en/system-design/lessons/load-balancer?step=1',
         }),
@@ -189,14 +215,47 @@ const onLesson = (locale: 'ru' | 'en') =>
       step: Option.none(),
     }),
     preferredLocale: locale,
-    maybeSavedLocale: Option.some(locale),
+    languageMenu: initialLanguageMenu(),
     prefersDark: false,
     lessonSessions: {},
     lessonLoads: {},
   })
 
 describe('update', () => {
-  test('switching language moves to the same lesson and saves the choice', () => {
+  test('picking a language saves the choice and opens the same lesson in it', () => {
+    story(
+      update,
+      given(onLesson('ru')),
+      message(
+        Message.GotLanguageMenuMessage({
+          message: Menu.Message.SelectedItem({ index: 2, item: 'en' }),
+        }),
+      ),
+      Command.expectHas(
+        SaveLocale({ locale: 'en' }),
+        NavigateInternal({ url: '/en/system-design/lessons/load-balancer' }),
+      ),
+      Command.resolve(SaveLocale, Message.CompletedSaveLocale()),
+      Command.resolve(NavigateInternal, Message.CompletedNavigateInternal()),
+    )
+  })
+
+  test('picking the current language saves it and stays on the page', () => {
+    story(
+      update,
+      given(onLesson('ru')),
+      message(
+        Message.GotLanguageMenuMessage({
+          message: Menu.Message.SelectedItem({ index: 1, item: 'ru' }),
+        }),
+      ),
+      Command.expectHas(SaveLocale({ locale: 'ru' })),
+      Command.expectExact(SaveLocale),
+      Command.resolve(SaveLocale, Message.CompletedSaveLocale()),
+    )
+  })
+
+  test('following a link to another language does not save it', () => {
     story(
       update,
       given(onLesson('ru')),
@@ -214,10 +273,9 @@ describe('update', () => {
             step: Option.some(1),
           }),
         )
-        expect(next.maybeSavedLocale).toEqual(Option.some('en'))
+        expect(next.preferredLocale).toBe('en')
       }),
-      Command.expectHas(SaveLocale({ locale: 'en' })),
-      Command.resolve(SaveLocale, Message.CompletedSaveLocale()),
+      Command.expectExact(ReplaceStepUrl),
       Command.resolve(ReplaceStepUrl, Message.CompletedReplaceStepUrl()),
     )
   })

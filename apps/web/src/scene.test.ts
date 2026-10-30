@@ -12,6 +12,7 @@ import {
   focus,
   given,
   hover,
+  keydown,
   label,
   role,
   scene,
@@ -20,6 +21,8 @@ import {
 } from 'foldkit/scene'
 import { fromString } from 'foldkit/url'
 import { describe, test } from 'vitest'
+
+import * as Menu from '@foldkit/ui/menu'
 
 import * as Board from './board/board'
 import { BoardPointer } from './board/pointer'
@@ -36,8 +39,11 @@ import {
   Flags,
   Message,
   Model,
+  NavigateInternal,
   ReplaceStepUrl,
+  SaveLocale,
   init,
+  initialLanguageMenu,
   update,
 } from './main'
 import { view } from './view'
@@ -46,14 +52,14 @@ const at = (route: AppRoute, locale: Locale) =>
   Model.make({
     route,
     preferredLocale: locale,
-    maybeSavedLocale: Option.some(locale),
+    languageMenu: initialLanguageMenu(),
     prefersDark: false,
     lessonSessions: {},
     lessonLoads: {},
   })
 
 describe('header', () => {
-  test('the language switcher keeps the current lesson', () => {
+  test('the language button shows the current language and opens the menu', () => {
     scene(
       { update, view },
       given(
@@ -67,14 +73,63 @@ describe('header', () => {
           'ru',
         ),
       ),
-      expect(role('link', { name: 'English' })).toHaveAttr(
-        'href',
-        '/en/system-design/lessons/load-balancer',
+      expect(role('link', { name: 'English' })).toBeAbsent(),
+      expect(role('button', { name: 'Язык: RU' })).toHaveAttr(
+        'aria-haspopup',
+        'menu',
       ),
-      expect(role('link', { name: 'Lietuvių' })).toHaveAttr('hreflang', 'lt'),
-      expect(role('link', { name: 'Русский' })).toHaveAttr(
-        'aria-current',
+      expect(role('button', { name: 'Язык: RU' })).toHaveAttr(
+        'aria-expanded',
+        'false',
+      ),
+      click(role('button', { name: 'Язык: RU' })),
+      Mount.resolve(Menu.AnchorMenu, Menu.Message.CompletedAnchorMenu()),
+      Mount.resolve(
+        Menu.PortalMenuBackdrop,
+        Menu.Message.CompletedPortalMenuBackdrop(),
+      ),
+      Command.resolve(Menu.FocusItems, Menu.Message.CompletedFocusItems()),
+      expect(role('button', { name: 'Язык: RU' })).toHaveAttr(
+        'aria-expanded',
         'true',
+      ),
+      expectAll(all.role('menuitem')).toHaveCount(4),
+      expect(role('menuitem', { name: 'Русский, текущий' })).toExist(),
+      expect(role('menuitem', { name: 'Українська' })).toExist(),
+      expect(role('menuitem', { name: 'English' })).toExist(),
+      expect(role('menuitem', { name: 'Lietuvių' })).toExist(),
+      click(role('menuitem', { name: 'English' })),
+      Command.resolve(SaveLocale, Message.CompletedSaveLocale()),
+      Command.resolve(
+        NavigateInternal({ url: '/en/system-design/lessons/load-balancer' }),
+        Message.CompletedNavigateInternal(),
+      ),
+      Command.resolve(Menu.FocusButton, Menu.Message.CompletedFocusButton()),
+      Mount.expectEnded(Menu.AnchorMenu),
+      Mount.expectEnded(Menu.PortalMenuBackdrop),
+      expect(role('menuitem', { name: 'English' })).toBeAbsent(),
+    )
+  })
+
+  test('Escape closes the language menu', () => {
+    scene(
+      { update, view },
+      given(at(AppRoute.Home({ locale: 'en' }), 'en')),
+      click(role('button', { name: 'Language: EN' })),
+      Mount.resolve(Menu.AnchorMenu, Menu.Message.CompletedAnchorMenu()),
+      Mount.resolve(
+        Menu.PortalMenuBackdrop,
+        Menu.Message.CompletedPortalMenuBackdrop(),
+      ),
+      Command.resolve(Menu.FocusItems, Menu.Message.CompletedFocusItems()),
+      keydown(role('menu'), 'Escape'),
+      Command.resolve(Menu.FocusButton, Menu.Message.CompletedFocusButton()),
+      Mount.expectEnded(Menu.AnchorMenu),
+      Mount.expectEnded(Menu.PortalMenuBackdrop),
+      expect(role('menu')).toBeAbsent(),
+      expect(role('button', { name: 'Language: EN' })).toHaveAttr(
+        'aria-expanded',
+        'false',
       ),
     )
   })

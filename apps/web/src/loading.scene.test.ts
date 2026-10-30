@@ -10,6 +10,7 @@ import {
   LoadLesson,
   Message,
   Model,
+  initialLanguageMenu,
   update,
 } from './main'
 import { view } from './view'
@@ -26,7 +27,7 @@ const lessonPage = (load: Option.Option<LessonLoad>) =>
       step: Option.none(),
     }),
     preferredLocale: 'en',
-    maybeSavedLocale: Option.some('en'),
+    languageMenu: initialLanguageMenu(),
     prefersDark: false,
     lessonSessions: {},
     lessonLoads: Option.match(load, {

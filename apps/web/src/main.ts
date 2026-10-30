@@ -6,6 +6,8 @@ import { defineTaggedUnion } from 'foldkit/schema'
 import { modifyFields } from 'foldkit/struct'
 import { Url, toString as urlToString } from 'foldkit/url'
 
+import * as Menu from '@foldkit/ui/menu'
+
 import {
   findDefinition,
   findLesson,
@@ -13,13 +15,14 @@ import {
   lessonKey,
   loadLesson,
 } from './courses/registry'
-import { Locale, isLocale, resolveLocale } from './i18n/locale'
+import { Locale, resolveLocale } from './i18n/locale'
 import * as Player from './lesson/player'
 import {
   AppRoute,
   lessonUrl,
   localeOf,
   localizedPath,
+  routeInLocale,
   urlForRoute,
   urlToAppRoute,
 } from './route'
@@ -38,13 +41,20 @@ export type LessonLoad = typeof LessonLoad.Type
 export const Model = Schema.Struct({
   route: AppRoute,
   preferredLocale: Locale,
-  maybeSavedLocale: Schema.Option(Locale),
+  languageMenu: Menu.Model,
   prefersDark: Schema.Boolean,
   lessonSessions: Schema.Record(Schema.String, Player.Model),
   /** Lessons being loaded, by `lessonKey`; a loaded lesson is not listed. */
   lessonLoads: Schema.Record(Schema.String, LessonLoad),
 })
 export type Model = typeof Model.Type
+
+/** The header's language menu: a button with the current language that opens
+    the list of all four. */
+export const LanguageMenu = Menu.create<Locale>()
+
+export const initialLanguageMenu = (): Menu.Model =>
+  Menu.init({ id: 'language-menu' })
 
 // FLAGS
 
@@ -68,6 +78,7 @@ export const Message = defineMessageUnion({
   CompletedReplaceStepUrl: {},
   CompletedRevealLessonStep: {},
   GotPlayerMessage: { message: Player.Message },
+  GotLanguageMenuMessage: { message: Menu.Message },
   TickedAnimationFrame: { deltaMs: Schema.Number },
   ChangedColorScheme: { prefersDark: Schema.Boolean },
   SucceededLoadLesson: { course: Schema.String, slug: Schema.String },
@@ -309,13 +320,8 @@ const arriveAt = (model: Model, url: Url): UpdateReturn => {
       const routed = modifyFields(model, {
         route: () => route,
         preferredLocale: () => locale,
-        maybeSavedLocale: () => Option.some(locale),
       })
-      const isAlreadySaved = Option.exists(
-        model.maybeSavedLocale,
-        saved => saved === locale,
-      )
-      const lessonStep: UpdateReturn = AppRoute.match(route, {
+      return AppRoute.match<UpdateReturn>(route, {
         Lesson: ({ course, slug, step }) =>
           enterLesson(routed, { locale, course, slug }, step),
         LegacyLesson: () => ({
@@ -327,15 +333,43 @@ const arriveAt = (model: Model, url: Url): UpdateReturn => {
         NotFound: () => ({ model: routed }),
         Unlocalized: () => ({ model: routed }),
       })
-      return isAlreadySaved
-        ? lessonStep
-        : {
-            model: lessonStep.model,
-            commands: [SaveLocale({ locale }), ...(lessonStep.commands ?? [])],
-          }
     },
   })
 }
+
+/** The student picked a language in the header menu: the choice is saved, so
+    it wins over the browser's languages next time, and the same page opens
+    in that language. */
+const chooseLocale = (model: Model, locale: Locale): UpdateReturn => {
+  const isCurrent = Option.exists(
+    localeOf(model.route),
+    current => current === locale,
+  )
+  return {
+    model,
+    commands: [
+      SaveLocale({ locale }),
+      ...(isCurrent
+        ? []
+        : [
+            NavigateInternal({
+              url: urlForRoute(routeInLocale(model.route, locale)),
+            }),
+          ]),
+    ],
+  }
+}
+
+const foldLanguageMenu = Update.foldChild({
+  update: LanguageMenu.update,
+  read: (model: Model) => Option.some(model.languageMenu),
+  write: (model: Model, nextLanguageMenu: Menu.Model) =>
+    modifyFields(model, { languageMenu: () => nextLanguageMenu }),
+  toParentMessage: (message: Menu.Message) =>
+    Message.GotLanguageMenuMessage({ message }),
+  foldOutMessage: (outMessage: Menu.OutMessage<Locale>) => (model: Model) =>
+    chooseLocale(model, outMessage.value),
+})
 
 const lessonPlaceOf = (model: Model): Option.Option<LessonPlace> =>
   AppRoute.match(model.route, {
@@ -416,6 +450,8 @@ export const update = (model: Model, message: Message) =>
     CompletedRevealLessonStep: () => ({ model }),
     GotPlayerMessage: ({ message: playerMessage }) =>
       foldPlayer(model, playerMessage),
+    GotLanguageMenuMessage: ({ message: menuMessage }) =>
+      foldLanguageMenu(model, menuMessage),
     TickedAnimationFrame: ({ deltaMs }) => advancePlayerFrame(deltaMs)(model),
     ChangedColorScheme: ({ prefersDark }) => ({
       model: modifyFields(model, { prefersDark: () => prefersDark }),
@@ -455,7 +491,6 @@ export const init: Runtime.RoutingApplicationInit<Model, Message, Flags> = (
   flags,
   url,
 ) => {
-  const maybeSavedLocale = Option.filter(flags.maybeSavedLocale, isLocale)
   const preferredLocale = resolveLocale({
     maybeSavedLocale: flags.maybeSavedLocale,
     browserLanguages: flags.browserLanguages,
@@ -465,7 +500,7 @@ export const init: Runtime.RoutingApplicationInit<Model, Message, Flags> = (
     Model.make({
       route: AppRoute.Unlocalized({ path: url.pathname }),
       preferredLocale,
-      maybeSavedLocale,
+      languageMenu: initialLanguageMenu(),
       prefersDark: flags.prefersDark,
       lessonSessions: {},
       lessonLoads: {},
