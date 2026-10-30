@@ -495,6 +495,44 @@ describe('lesson 13 (vpn): full tunnel eats the printer, split tunnel brings it 
       ).met,
     ).toBe(false)
   })
+
+  test('split DNS: the office directory is asked through the tunnel even when its network is not on the list', () => {
+    const one = buildWorld(
+      [
+        vpnSettings('laptop', {
+          connected: true,
+          mode: 'split',
+          networks: ['10.20.0.5/32'],
+        }),
+      ],
+      lesson,
+    )
+    expect(metAll(one, taskGoals)).toEqual([true, true, true, true])
+    expect(runCommand(one.doc, one.state, 'laptop', 'ip route').output).toEqual(
+      expect.arrayContaining(['10.20.0.5/32 dev wg0', '10.20.0.1/32 dev wg0']),
+    )
+    const wide = buildWorld(
+      [
+        vpnSettings('laptop', {
+          connected: true,
+          mode: 'split',
+          networks: ['10.0.0.0/8'],
+        }),
+      ],
+      lesson,
+    )
+    expect(
+      runCommand(wide.doc, wide.state, 'laptop', 'ip route').output,
+    ).not.toContain('10.20.0.1/32 dev wg0')
+    expect(
+      runCommand(wide.doc, wide.state, 'laptop', 'nslookup wiki.corp.example')
+        .output[0],
+    ).toBe('Server:\t\t10.20.0.1')
+    expect(
+      runCommand(wide.doc, wide.state, 'laptop', 'nslookup shop.example')
+        .output[0],
+    ).toBe('Server:\t\t192.0.2.53')
+  })
 })
 
 describe('lesson 14 (dev-networks): localhost, Docker and a tunnel', () => {

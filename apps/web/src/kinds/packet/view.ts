@@ -14,7 +14,12 @@ import { addressOf, wifiOf } from '../../net/topology'
 import { isContainerUp } from '../../net/trace'
 import type { BoardSlot, Tone } from '../contract'
 import type { PacketTypes } from '../types'
-import { addressesOf, isAddressQuestion, isSealed } from './envelope'
+import {
+  addressesOf,
+  isAddressQuestion,
+  isSealed,
+  isTunneled,
+} from './envelope'
 import { deviceIcons } from './icons'
 import {
   type CloudShape,
@@ -31,7 +36,7 @@ import { Message } from './message'
 import { boardPanels, quizTray, stageOverlays } from './panels'
 import { type Picture, deviceOf, pictureOf, shapeIdOf } from './picture'
 import { DevicePointer } from './pointer'
-import { type OwnerOf, letterOf } from './timeline'
+import { type OwnerOf, letterOf, outerLetterOf } from './timeline'
 
 // Доска сетей (план 3.1, макет docs/mockups/networks-lesson-1.html): дом с
 // крышей, облако «Интернет», устройства со значками и подписями, связи
@@ -786,7 +791,14 @@ const layerDevices = (picture: Picture): ReadonlyArray<string> =>
                 : Option.match(Array.get(picture.timeline.plays, leg.play), {
                     onNone: () => [],
                     onSome: play => {
-                      const letter = letterOf(
+                      const isOuter = Option.exists(
+                        Array.findFirstIndex(
+                          leg.hop.envelope,
+                          inner => inner._tag === 'Tunnel',
+                        ),
+                        tunnel => position < tunnel,
+                      )
+                      const letter = (isOuter ? outerLetterOf : letterOf)(
                         play.trace,
                         leg.hop,
                         ownerOfIp(picture),
@@ -1643,7 +1655,8 @@ const letterView = <ParentMessage>(
         onSome: leg =>
           Option.match(play, {
             onNone: () => ({ from: '', to: '' }),
-            onSome: found => letterOf(found.trace, leg.hop, ownerOfIp(picture)),
+            onSome: found =>
+              outerLetterOf(found.trace, leg.hop, ownerOfIp(picture)),
           }),
       })
       const addresses = Option.flatMap(legHop, leg => addressesOf(leg.hop))
@@ -1675,6 +1688,9 @@ const letterView = <ParentMessage>(
       const sealed =
         picture.isOpen('board.sealedEnvelope') &&
         Option.exists(legHop, leg => isSealed(leg.hop))
+      const tunneled =
+        picture.isOpen('board.sealedEnvelope') &&
+        Option.exists(legHop, leg => isTunneled(leg.hop))
       const width = Math.ceil(
         Math.max(
           ui.envelope.from.length + fromText.length,
@@ -1792,7 +1808,13 @@ const letterView = <ParentMessage>(
                               h.Attribute('y', '11'),
                               h.TextAnchor('middle'),
                             ],
-                            [sealed ? '🔒 TLS' : protocol.toUpperCase()],
+                            [
+                              tunneled
+                                ? '🔒 VPN'
+                                : sealed
+                                  ? '🔒 TLS'
+                                  : protocol.toUpperCase(),
+                            ],
                           ),
                         ],
                       ),

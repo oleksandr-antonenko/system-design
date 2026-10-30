@@ -402,6 +402,16 @@ const askServer = (
   )
 }
 
+/** DNS офиса для имени его зоны, пока VPN подключён (раздельный DNS). */
+export const vpnDnsFor = (host: Host, name: string): Option.Option<Ip> =>
+  pipe(
+    host.maybeVpn,
+    Option.filter(vpn => vpn.connected),
+    Option.flatMap(vpn => vpn.maybeDns),
+    Option.filter(dns => name === dns.zone || name.endsWith(`.${dns.zone}`)),
+    Option.map(dns => dns.server),
+  )
+
 /** Какой сервер спрашивать: имена зоны офиса — у DNS VPN, остальные — у
     DNS хоста (контейнер — у DNS своего хоста). */
 const dnsServerFor = (
@@ -409,22 +419,14 @@ const dnsServerFor = (
   state: NetState,
   host: Host,
   name: string,
-): Option.Option<Ip> => {
-  const vpnDns = pipe(
-    host.maybeVpn,
-    Option.filter(vpn => vpn.connected),
-    Option.flatMap(vpn => vpn.maybeDns),
-    Option.filter(dns => name === dns.zone || name.endsWith(`.${dns.zone}`)),
-    Option.map(dns => dns.server),
-  )
-  return Option.orElse(vpnDns, () =>
+): Option.Option<Ip> =>
+  Option.orElse(vpnDnsFor(host, name), () =>
     Option.flatMap(
       Option.orElse(dockerHostOf(doc, host), () => Option.some(host)),
       owner =>
         Option.flatMap(hostIface(doc, state, owner), iface => iface.maybeDns),
     ),
   )
-}
 
 /** Имена без сети: свой сервис compose, `host.docker.internal`, член mesh. */
 const localName = (

@@ -892,7 +892,8 @@ const vpnGatewayOf = (
   )
 
 /** Идёт ли пакет в туннель VPN: маршруты VPN раньше подключённой сети,
-    кроме адреса самого шлюза. */
+    кроме адреса самого шлюза. DNS офиса — всегда в туннель, даже если его
+    сети нет в списке (так клиенты VPN и делают раздельный DNS). */
 export const viaVpn = (doc: NetDoc, host: Host, dst: Ip): boolean =>
   Option.exists(
     host.maybeVpn,
@@ -903,6 +904,7 @@ export const viaVpn = (doc: NetDoc, host: Host, dst: Ip): boolean =>
         router => router.wan.ip !== dst,
       ) &&
       (vpn.mode === 'full' ||
+        Option.exists(vpn.maybeDns, dns => dns.server === dst) ||
         Array.some(vpn.networks, cidr => inCidr(dst, cidr))),
   )
 
