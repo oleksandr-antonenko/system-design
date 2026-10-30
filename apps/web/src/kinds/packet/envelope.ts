@@ -114,16 +114,22 @@ const isFieldShown =
 const isCipher = (layer: Layer): boolean =>
   layer._tag === 'Tls' && layer.kind === 'data'
 
+const isTunnel = (layer: Layer): boolean => layer._tag === 'Tunnel'
+
 /** Слои конверта снаружи внутрь: то, что открыто к уроку (`isOpen`, по
     умолчанию всё). С урока 11 конверт запечатан: слои под шифром TLS видны
-    только по названию, их полей не прочитать. */
+    только по названию, их полей не прочитать. Конверт в туннеле (урок 13)
+    запечатан так же: снаружи — внешний конверт до шлюза, внутренний закрыт. */
 export const layerRows = (
   hop: Hop,
   isOpen: (feature: string) => boolean = () => true,
 ): ReadonlyArray<LayerRow> => {
   const hasPage = Array.some(hop.envelope, layer => layer._tag === 'Http')
   const isSealedShown = isOpen(SEALED_FEATURE)
-  const cipher = Array.findFirstIndex(hop.envelope, isCipher)
+  const cipher = Array.findFirstIndex(
+    hop.envelope,
+    layer => isCipher(layer) || isTunnel(layer),
+  )
   return Array.getSomes(
     Array.map(hop.envelope, (layer, position) => {
       const isSealed =
@@ -224,3 +230,7 @@ export const keyFieldOf = (
 /** Конверт запечатан: внутри TLS — прикладной слой не прочитать. */
 export const isSealed = (hop: Hop): boolean =>
   Array.some(hop.envelope, isCipher)
+
+/** Конверт в туннеле: внешний конверт до шлюза, внутренний запечатан. */
+export const isTunneled = (hop: Hop): boolean =>
+  Array.some(hop.envelope, isTunnel)

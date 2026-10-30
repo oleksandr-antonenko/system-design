@@ -4,6 +4,10 @@ import { describe, expect, test } from 'vitest'
 import phoneOnline from '../../courses/networks/lessons/01-phone-online/lesson'
 import addresses from '../../courses/networks/lessons/02-addresses/lesson'
 import routing from '../../courses/networks/lessons/08-routing/lesson'
+import vpn, {
+  shopPage as officeShop,
+  wikiPage,
+} from '../../courses/networks/lessons/13-vpn/lesson'
 import { boardAt, taskStartBoard } from '../../lesson/dsl'
 import {
   add,
@@ -28,6 +32,7 @@ import {
   momentAt,
   nextHopStop,
   nextStop,
+  outerLetterOf,
   timelineOf,
   traceOfPlay,
   walkPositions,
@@ -244,6 +249,39 @@ describe('traceroute probes (lesson 8)', () => {
         ip === '198.51.100.10' ? Option.some('shop') : Option.none(),
       ).to,
     ).toBe('shop')
+  })
+})
+
+describe('an envelope in a tunnel (lesson 13)', () => {
+  test('outside it is addressed to the ends of the tunnel; past the gateway — to the real addressee', () => {
+    const trace = traceOfPlay(boardAt(vpn, 2, {}), officeShop)
+    const lettersOn = (from: string, to: string) =>
+      Array.map(
+        Array.filter(
+          trace.hops,
+          hop =>
+            hop.from === from &&
+            hop.to === to &&
+            Array.some(hop.envelope, layer => layer._tag === 'Http'),
+        ),
+        hop => outerLetterOf(trace, hop),
+      )
+    expect(lettersOn('router', 'internet')).toEqual([
+      { from: 'laptop', to: 'vpn-gw' },
+    ])
+    expect(lettersOn('internet', 'router')).toEqual([
+      { from: 'vpn-gw', to: 'laptop' },
+    ])
+    expect(lettersOn('internet', 'shop')).toEqual([
+      { from: 'laptop', to: 'shop' },
+    ])
+  })
+
+  test('without a tunnel the outer letter is the usual one', () => {
+    const trace = traceOfPlay(boardAt(vpn, 0, {}), wikiPage)
+    Array.forEach(trace.hops, hop =>
+      expect(outerLetterOf(trace, hop)).toEqual(letterOf(trace, hop)),
+    )
   })
 })
 

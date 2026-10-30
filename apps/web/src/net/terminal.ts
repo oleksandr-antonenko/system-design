@@ -34,7 +34,7 @@ import {
 import { Intent, type Outcome, type RouteLine, type Trace } from './packet'
 import { certFor } from './tls'
 import { IFACE, hostIface, ownAddresses, routeTable } from './topology'
-import { settle, trace } from './trace'
+import { settle, trace, vpnDnsFor } from './trace'
 
 // Терминал: чистый интерпретатор строки на устройстве. Вывод упрощён в
 // стиле Unix и не переводится; действие команды — операции свёртки.
@@ -638,10 +638,13 @@ const query = (
   }
 }
 
+/** Сервер в выводе: названный в команде, DNS офиса для имён его зоны
+    (VPN) или DNS хоста. */
 const serverShown = (
   doc: NetDoc,
   state: NetState,
   host: Host,
+  name: string,
   maybeServer: Option.Option<string>,
 ): string =>
   Option.getOrElse(
@@ -650,7 +653,9 @@ const serverShown = (
         resolvedIp(doc, state, host.id, server),
       ),
       () =>
-        Option.flatMap(hostIface(doc, state, host), iface => iface.maybeDns),
+        Option.orElse(vpnDnsFor(host, name), () =>
+          Option.flatMap(hostIface(doc, state, host), iface => iface.maybeDns),
+        ),
     ),
     () => '0.0.0.0',
   )
@@ -669,7 +674,7 @@ const nslookup = (
   const name = maybeName.value
   const maybeServer = Array.get(positional, 1)
   const asked = query(doc, state, host, name, 'A', maybeServer)
-  const server = serverShown(doc, state, host, maybeServer)
+  const server = serverShown(doc, state, host, name, maybeServer)
   const ops = [
     NetOp.Send({
       intent: Intent.Query({ from: host.id, name, rtype: 'A', maybeServer }),
@@ -766,7 +771,7 @@ const dig = (
       intent: Intent.Query({ from: host.id, name, rtype, maybeServer }),
     }),
   ]
-  const server = serverShown(doc, state, host, maybeServer)
+  const server = serverShown(doc, state, host, name, maybeServer)
   return Option.match(asked.maybeRecords, {
     onNone: () => {
       const nx = Option.exists(
