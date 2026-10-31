@@ -6,7 +6,7 @@ export default {
   summary:
     'Atidarytas kompiuteris ir rastas USB atmintukas – atviros durys. Išeidami užrakinkite ekraną, susitvarkykite slaptažodžius bei spaudinius, o rastus atmintukus atiduokite IT.',
   preview: {
-    alt: 'Schema: screen lock užrakina kompiuterį ant tuščio sutvarkyto stalo, o rastas USB atmintukas guli nepaliestas ir pažymėtas kaip rizika.',
+    alt: 'Iliustracija: tuščia kėdė prie stalo, kompiuteryje įjungtas screen lock su žaliu užraktu, o svetimas atmintukas guli nepaliestas ant krašto.',
   },
   labels: {
     marina: { name: 'Marina' },

@@ -6,7 +6,7 @@ export default {
   summary:
     'Baisu ne suklysti, o nutylėti. Pirmosios 15 minučių: pranešti IT, pakeisti slaptažodį, atsijungti visuose įrenginiuose ir išsaugoti laišką IT.',
   preview: {
-    alt: 'Schema: incident – po nesėkmingo paspaudimo signalas keliauja į IT, slaptažodis keičiamas, sesijos uždaromos, o laiškas išsaugomas tyrimui.',
+    alt: 'Iliustracija: incident – ekrane įtartinas laiškas, o žmogus, matomas iš nugaros, ramiai spaudžia didelį žalią mygtuką „pranešti“.',
   },
   labels: {
     oleg: { name: 'Olegas' },

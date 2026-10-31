@@ -6,7 +6,7 @@ export default {
   summary:
     'Vardas laiške – kostiumas, tiesą sako adresas. Raskite masalus pašte nieko juose nespausdami.',
   preview: {
-    alt: 'Schema: phishing – laiškų krūvoje vienas masalas atrodo įprastai, bet tikrasis jo atgalinis kelias veda į padirbtą svetainę, ir tai matyti neatidarius.',
+    alt: 'Iliustracija: phishing – meškerės kabliukas užkabina voką ant stalo, o kompiuterio pašto dėžutėje vienas įtartinas laiškas pažymėtas raudonai.',
   },
   labels: {
     marina: { name: 'Marina' },

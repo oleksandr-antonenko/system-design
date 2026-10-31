@@ -6,7 +6,7 @@ export default {
   summary:
     'Slaptažodžių seifas, kurį laikote patys vienu failu. Atkurti jo nėra kam, todėl reikia patikimos pagrindinės frazės ir naujos kopijos kitoje vietoje.',
   preview: {
-    alt: 'Schema: KeePass seifas – vienas failas jūsų įrenginyje, jį atidaro viena pagrindinė frazė, o nauja atsarginė kopija laikoma atskirame diske.',
+    alt: 'Iliustracija: nešiojamojo kompiuterio ekrane vienas KeePass seifo failas, o šalia ant stalo guli atsarginės kopijos diskas ir vienintelis raktas.',
   },
   labels: {
     marina: { name: 'Marina' },

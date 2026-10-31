@@ -1,5 +1,5 @@
-# Preview: Extensions
+# Preview: Browser extensions
 
-<!-- Subject of the preview image. The shared prompt and the style: docs/plans/lesson-previews.md -->
+<!-- Subject of the preview image. The style and the course prompt: docs/plans/lesson-previews.md, section "Security course: its own style" -->
 
-A browser window frame with a row of small extension modules plugged into its top edge like cartridges. One extension has wide access lines reaching into every open tab and page, drawn in muted red; others have only narrow lines into a single page. An accent removal path lifts the over-reaching extension out of its slot.
+A close view of a laptop screen on a light desk: a generic browser window whose page is made of soft grey blocks. A large jigsaw-puzzle-piece extension icon, clearly visible in the browser toolbar, has opened a big permission card in the middle of the page: three blank bars, each with a small icon (an eye, a page, a camera), and below them two plain buttons, one muted coral and one emerald, both blank. The puzzle piece and its request for wide access are the focus.

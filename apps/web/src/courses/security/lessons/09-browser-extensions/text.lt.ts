@@ -6,7 +6,7 @@ export default {
   summary:
     'Plėtinys su prieiga prie visų svetainių mato viską, ką ir jūs. Prieš diegdami skaitykite leidimus, o kas ketvirtį pašalinkite nereikalingus plėtinius.',
   preview: {
-    alt: 'Schema: browser extensions naršyklės rėme – vienas siekia visų atvertų puslapių ir yra išimamas, o kiti pasiekia tik vieną svetainę.',
+    alt: 'Iliustracija: vienas iš browser extensions, dėlionės detalė, naršyklėje prašo prieigos prie puslapių, failų ir kameros, o žemiau – mygtukai leisti ir atšaukti.',
   },
   labels: {
     marina: { name: 'Marina' },

@@ -6,7 +6,7 @@ export default {
   summary:
     'Skirtingus slaptažodžius prisimena seifas, jūs – vieną. Perkelkite slaptažodžius nuo lipdukų į slaptažodžių tvarkyklę, pakeiskite pasikartojantį ir pasidalykite prieiga per bendrą seifą.',
   preview: {
-    alt: 'Schema: password manager – vienas seifas, atrakinamas vienu pagrindiniu slaptažodžiu, o jame kiekvienoms durims savas raktas vietoj lapelių.',
+    alt: 'Iliustracija: ranka nuplėšia nuo monitoriaus lapelį su slaptažodžiu, o ekrane atvertas password manager – seifas, kur kiekviena paskyra turi savo raktą.',
   },
   labels: {
     marina: { name: 'Marina' },

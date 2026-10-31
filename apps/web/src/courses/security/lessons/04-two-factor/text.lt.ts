@@ -6,7 +6,7 @@ export default {
   summary:
     'Pavogto slaptažodžio neužtenka, jei antrasis raktas jūsų kišenėje. Įjunkite 2FA nuskaitę QR kodą, išsaugokite atsarginius kodus ir atmeskite svetimą prisijungimo užklausą.',
   preview: {
-    alt: 'Schema: 2FA – slaptažodis atrakina pirmą spyną, antrą tik kodas iš jūsų telefono, todėl svetimas prisijungimas su teisingu slaptažodžiu sustabdomas.',
+    alt: 'Iliustracija: 2FA – ranka laiko telefoną su prisijungimo kodu ir žaliu patvirtinimo mygtuku, o nešiojamasis kompiuteris laukia šio antro žingsnio.',
   },
   labels: {
     marina: { name: 'Marina' },

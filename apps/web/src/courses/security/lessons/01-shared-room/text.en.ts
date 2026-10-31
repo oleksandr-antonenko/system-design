@@ -7,7 +7,7 @@ export default {
   summary:
     'Whoever is on your network is in your room. Guests get the guest network; on someone else’s network, VPN comes first.',
   preview: {
-    alt: 'Diagram: a shared Wi-Fi network is one room where strangers’ devices see the traffic, guests get their own network, and a VPN tunnel leaves the room.',
+    alt: 'Illustration: an office Wi-Fi router on a shelf with a separate guest network card beside it, and a work laptop on the desk under an emerald shield.',
   },
   labels: {
     marina: { name: 'Marina' },

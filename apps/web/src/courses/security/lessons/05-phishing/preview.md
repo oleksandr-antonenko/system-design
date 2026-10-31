@@ -1,5 +1,5 @@
 # Preview: Phishing
 
-<!-- Subject of the preview image. The shared prompt and the style: docs/plans/lesson-previews.md -->
+<!-- Subject of the preview image. The style and the course prompt: docs/plans/lesson-previews.md, section "Security course: its own style" -->
 
-An inbox drawn as a neat stack of envelope cards. Most envelopes are plain and calm; one of them is a bait: its outer envelope looks normal, but its true return path, shown as a thin line, leads to a suspicious lookalike server off to the side, and a fishing hook shape hangs from the envelope. A scanning ring in accent highlights the true origin of that envelope without opening it.
+A single paper envelope lies on a light desk in front of a laptop, slightly lifted, and a real metal fishing hook on a thin line hooks into the envelope's flap from above. The laptop screen in soft focus shows an inbox as rows of blank bars, one row tinted muted coral. The bait email made physical: calm and slightly ironic, not scary.

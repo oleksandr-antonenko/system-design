@@ -6,7 +6,7 @@ export default {
   summary:
     'Viskas kartu: šešios trumpos vienos darbo dienos situacijos kurso ekranuose – Wi-Fi, kavinė, laiškas, žinutė „iš IT“, plėtinys ir prieiga DI.',
   preview: {
-    alt: 'Practice schema: biuras iš viršaus, kuriame pažymėtos šešios kasdienės saugumo situacijos – nuo svečių tinklo ir slaptažodžių seifo iki užrakinto ekrano.',
+    alt: 'Iliustracija: practice – įprasta diena biure iš darbuotojo nugaros, žalios varnelės prie užrakinto kompiuterio, maršrutizatoriaus ir voko.',
   },
   labels: {
     marina: { name: 'Marina' },

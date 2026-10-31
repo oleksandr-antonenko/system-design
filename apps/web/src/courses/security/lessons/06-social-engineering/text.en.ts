@@ -6,7 +6,7 @@ export default {
   summary:
     'Fraudsters fool people, not computers: pause and check through another channel. A “director” writes from a new number and asks you to pay an invoice urgently.',
   preview: {
-    alt: 'Diagram of social engineering: an urgent message from an unknown number is not obeyed but checked through another channel with the real contact.',
+    alt: 'Illustration of social engineering: a phone rings with a call from an unknown number, and a hand reaches for the desk phone to call back on a known one.',
   },
   labels: {
     marina: { name: 'Marina' },

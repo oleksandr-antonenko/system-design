@@ -6,7 +6,7 @@ export default {
   summary:
     'Pokalbis su DI – ne seifas: asistentui išduodamas atskiras leidimas. Raktas, leidžiantis tik skaityti, vietoj slaptažodžio pokalbyje – ir atšaukimas po darbo.',
   preview: {
-    alt: 'Schema: DI asistentas gauna savą access token tik vienos saugyklos skaitymui, o savininko slaptažodis lieka užrakintas seife.',
+    alt: 'Iliustracija: pokalbis su DI nešiojamajame kompiuteryje, šalia žalias leidimas ant virvelės – asistento access token, o pagrindinis raktas lieka seife.',
   },
   labels: {
     marina: { name: 'Marina' },

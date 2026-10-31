@@ -6,7 +6,7 @@ export default {
   summary:
     'An extension with access to every site sees everything you do. Read the permissions before installing and clear out extensions you do not need every quarter.',
   preview: {
-    alt: 'Diagram: browser extensions in a browser frame — one reaches into every open page and is lifted out, while the others can reach only one site.',
+    alt: 'Illustration: one of the browser extensions, a puzzle piece, opens a request in the browser to see pages, files and the camera, with allow and cancel buttons.',
   },
   labels: {
     marina: { name: 'Marina' },
