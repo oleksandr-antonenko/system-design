@@ -138,6 +138,11 @@ describe('the «better on a computer» notice', () => {
     expect(courseRecommendsDesktop('no-such-course')).toBe(false)
     expect(courseRecommendsDesktop('system-design')).toBe(true)
     expect(courseRecommendsDesktop('networks')).toBe(true)
+    expect(courseRecommendsDesktop('security')).toBe(false)
+    expect(
+      openAt('/en/security/lessons/shared-room', { isStackedScreen: true })
+        .desktopNotice.dialog.isOpen,
+    ).toBe(false)
     expect(
       openAt('/en/no-such-course/lessons/anything', { isStackedScreen: true })
         .desktopNotice.dialog.isOpen,

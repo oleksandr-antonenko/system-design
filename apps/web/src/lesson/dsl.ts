@@ -100,7 +100,11 @@ export type LessonRunner<R> = <T extends KindTypes>(
 
 /** Запускает код, общий для всех видов, с уроком его собственного вида. */
 export const withLesson = <R>(lesson: AnyLesson, run: LessonRunner<R>): R =>
-  lesson.board === 'flow' ? run(lesson) : run(lesson)
+  lesson.board === 'flow'
+    ? run(lesson)
+    : lesson.board === 'packet'
+      ? run(lesson)
+      : run(lesson)
 
 // TEXTS
 

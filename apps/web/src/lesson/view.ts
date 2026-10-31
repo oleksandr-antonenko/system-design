@@ -399,7 +399,7 @@ const taskCardView = <T extends KindTypes>(
             ? task.state.check.withHint
               ? ui.task.solvedWithHint
               : ui.task.solved
-            : ui.task.heading,
+            : page.lesson.kind.taskHeading(ui),
           ...(task.state.attempts > 0
             ? [
                 h.span(
@@ -623,7 +623,7 @@ const quizCardView = <T extends KindTypes>(
           h.p([h.Class('quiz-question')], [quizTexts?.question ?? '']),
           isChoice
             ? choicesView(page, quiz, doc, answer, h)
-            : h.p([h.Class('quiz-how')], [ui.quiz.pickOnBoard]),
+            : h.p([h.Class('quiz-how')], [page.lesson.kind.pickHowTo(ui)]),
           h.p([h.Class('quiz-attempt')], [ui.quiz.oneAttempt]),
         ],
       ),
@@ -873,7 +873,9 @@ const toBoardView = <T extends KindTypes>(
     ? ui.player.toTask
     : isBoardQuestion
       ? ui.player.toQuestion
-      : ui.player.toBoard
+      : lesson.kind.presentation === 'slides'
+        ? ui.player.toFrame
+        : ui.player.toBoard
   return h.div(
     [h.Class('to-board-row')],
     [
@@ -1172,7 +1174,7 @@ const theoryView = <T extends KindTypes>(
             [h.Class('nav-text')],
             [
               atUnsolvedTask
-                ? ui.player.solveFirst
+                ? lesson.kind.solveFirst(ui)
                 : atUnansweredQuiz
                   ? ui.player.answerFirst
                   : isLast
@@ -1568,7 +1570,13 @@ export const lessonView = <T extends KindTypes>(
     [
       timelineView(page, h),
       h.div(
-        [h.Class('lesson-main')],
+        [
+          h.Class(
+            lesson.kind.presentation === 'slides'
+              ? 'lesson-main slides'
+              : 'lesson-main',
+          ),
+        ],
         [
           theoryView(page, choice.isFallback, choice.shownIn, h),
           h.section(

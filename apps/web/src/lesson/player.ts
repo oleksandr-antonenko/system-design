@@ -226,6 +226,25 @@ export const ScrollStepIntoView = Command.define('ScrollStepIntoView', {
     ),
 })
 
+/** Урок слайдами (design D5 add-security-course): новый шаг — в колонке
+    теории, затем страница — к началу доски. На широком экране доска и так
+    видна, и второй шаг ничего не двигает; на узком кадр стоит над текстом,
+    и ученик видит новый кадр, а текст — сразу под ним. */
+export const ScrollSlideIntoView = Command.define('ScrollSlideIntoView', {
+  args: { step: Schema.Number },
+  messages: [Message.CompletedScrollStepIntoView],
+  execute: ({ step }) =>
+    Dom.scrollIntoViewAfterPaint(`[data-step="${step}"]`, {
+      block: 'nearest',
+    }).pipe(
+      Effect.andThen(
+        Dom.scrollIntoViewIfNotVisible('.board-side', { block: 'start' }),
+      ),
+      Effect.as(Message.CompletedScrollStepIntoView()),
+      Effect.catch(() => Effect.succeed(Message.CompletedScrollStepIntoView())),
+    ),
+})
+
 export const MeasureTextScroll = Command.define('MeasureTextScroll', {
   messages: [Message.CompletedMeasureTextScroll],
   execute: Effect.sync(() =>
@@ -764,7 +783,9 @@ export const goToStep = <T extends KindTypes>(
     commands: [
       model.isStacked
         ? RestoreTextScroll({ scrollY: 0 })
-        : ScrollStepIntoView({ step }),
+        : lesson.kind.presentation === 'slides'
+          ? ScrollSlideIntoView({ step })
+          : ScrollStepIntoView({ step }),
     ],
     outMessage: OutMessage.ChangedStep({ step }),
   }

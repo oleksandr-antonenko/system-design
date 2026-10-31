@@ -174,7 +174,10 @@ export const flow: BoardKind<FlowTypes> = {
         )
       : Option.none(),
   outcome: outcomeRows,
+  taskHeading: ui => ui.task.heading,
   taskHowTo: ui => ui.task.howTo,
+  pickHowTo: ui => ui.quiz.pickOnBoard,
+  solveFirst: ui => ui.player.solveFirst,
 
   proseContext: (doc, run) => ({ sim: run, doc }),
   annotationInput: (_doc, run) => run,

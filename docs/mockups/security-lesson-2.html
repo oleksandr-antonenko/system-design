@@ -1,0 +1,1246 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Безопасность: урок 5</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Literata:opsz,wght@7..72,400;7..72,600&family=Nunito:wght@600;700;800&family=Unbounded:wght@500&display=swap">
+<style>
+/* Курс «Кибербезопасность для офиса», урок 5 «Письмо-приманка» (демо 2): учебник слева, справа кадры мультика; в вопросе и задаче — почтовый ящик */
+:root {
+  --bg: #EDF0EF;
+  --page: #FAFBF9;
+  --ink: #17202A;
+  --muted: #5A6774;
+  --line: #D2DAE0;
+  --node: #FFFFFF;
+  --node-line: #8D9BA8;
+  --accent: #2B4BD4;
+  --accent-soft: #E2E7FB;
+  --ok: #148A55;
+  --warn: #C27C05;
+  --bad: #CF3F36;
+  --bad-soft: #FBE6E4;
+  --ok-soft: #E0F3E9;
+  --screen: #FFFFFF;
+  --word: #FFE9A8;
+  --shadow: rgba(23, 32, 42, .18);
+  --toon-bg: #F4EEE2;
+  --toon-ink: #3A2A1F;
+  --toon-paper: #FFFDF8;
+  --toon-narr: #FFE7A3;
+  --sign: #1F5FBF;
+  --f-display: "Unbounded", "Arial Black", system-ui, sans-serif;
+  --f-prose: "Literata", "PT Serif", Georgia, serif;
+  --f-ui: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  --f-toon: "Nunito", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --f-phone: system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0E1318; --page: #131A21; --ink: #E3E9EF; --muted: #93A0AD;
+    --line: #27323C; --node: #18202A; --node-line: #536475; --accent: #8EA3FF; --accent-soft: #1E2850;
+    --ok: #3DC48B; --warn: #E8AA3C; --bad: #F2675C; --bad-soft: #3A1715; --ok-soft: #12301F;
+    --screen: #10161D; --word: #4A3D12; --shadow: rgba(0, 0, 0, .55);
+    --toon-bg: #1A1712;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0E1318; --page: #131A21; --ink: #E3E9EF; --muted: #93A0AD;
+  --line: #27323C; --node: #18202A; --node-line: #536475; --accent: #8EA3FF; --accent-soft: #1E2850;
+  --ok: #3DC48B; --warn: #E8AA3C; --bad: #F2675C; --bad-soft: #3A1715; --ok-soft: #12301F;
+  --screen: #10161D; --word: #4A3D12; --shadow: rgba(0, 0, 0, .55);
+  --toon-bg: #1A1712;
+  color-scheme: dark;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html, body { height: 100%; }
+body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--f-ui); font-size: 13px; line-height: 1.45; -webkit-font-smoothing: antialiased; }
+button, input { font: inherit; color: inherit; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+
+.app { height: 100%; display: grid; grid-template-rows: auto minmax(0, 1fr); }
+
+/* ---------- верхняя лента ---------- */
+.top {
+  display: flex; align-items: center; flex-wrap: wrap; gap: 8px 24px;
+  padding-block: 8px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  background: var(--page); border-bottom: 1px solid var(--line);
+}
+.crumb { font-size: 12px; color: var(--muted); white-space: nowrap; display: flex; gap: 10px; align-items: baseline; }
+.crumb .brand { font-family: var(--f-display); font-weight: 500; font-size: 12.5px; color: var(--ink); }
+.crumb b { color: var(--ink); font-weight: 600; }
+.timeline { flex: 1 1 340px; display: flex; align-items: center; justify-content: center; gap: 14px; min-width: 0; }
+.tl-steps { display: flex; align-items: center; gap: 4px; }
+.tl { appearance: none; border: 0; background: none; padding: 9px 0; cursor: pointer; display: grid; place-items: center; }
+.tl .bar { display: block; width: 34px; height: 5px; border-radius: 3px; background: var(--line); transition: background .2s, height .2s; }
+.tl.done .bar { background: var(--accent); opacity: .5; }
+.tl.current .bar { background: var(--accent); height: 8px; }
+.tl.is-task .bar { width: 11px; height: 11px; border-radius: 2px; transform: rotate(45deg); margin-inline: 5px; }
+.tl.is-task.current .bar { height: 11px; }
+.tl.is-task.solved .bar { background: var(--ok); opacity: 1; }
+.tl.is-quiz .bar { width: 13px; height: 13px; border-radius: 50%; margin-inline: 4px; background: transparent; border: 2.5px solid var(--line); }
+.tl.is-quiz.done .bar { border-color: var(--accent); background: transparent; }
+.tl.is-quiz.current .bar { height: 13px; border-color: var(--accent); background: var(--accent-soft); opacity: 1; }
+.tl.is-quiz.first .bar { border-color: var(--ok); background: var(--ok); opacity: 1; }
+.tl.is-quiz.shown .bar { border-color: var(--warn); background: transparent; opacity: 1; }
+.tl:disabled { cursor: not-allowed; }
+.tl-label { font-size: 12px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+.tl-label b { color: var(--ink); font-weight: 600; }
+.top-note { font-size: 10.5px; color: var(--muted); letter-spacing: .08em; text-transform: uppercase; white-space: nowrap; }
+
+/* ---------- раскладка ---------- */
+.main { display: grid; grid-template-columns: minmax(340px, 38%) minmax(0, 1fr); min-height: 0; }
+
+.theory { display: flex; flex-direction: column; min-height: 0; min-width: 0; background: var(--page); border-right: 1px solid var(--line); }
+.theory-scroll {
+  position: relative; flex: 1; overflow-y: auto;
+  padding-block: 26px 32px;
+  padding-left: max(28px, env(safe-area-inset-left, 0px));
+  padding-right: 28px;
+}
+.eyebrow { font-size: 10.5px; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
+h1 { font-family: var(--f-display); font-weight: 500; font-size: 23px; line-height: 1.22; margin: 8px 0 6px; text-wrap: balance; letter-spacing: -.01em; }
+.meta { font-size: 12px; color: var(--muted); }
+.lesson-head { padding-bottom: 18px; display: grid; gap: 4px; }
+.words { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin-top: 8px; font-size: 11.5px; color: var(--muted); }
+.words .w { font-weight: 600; color: var(--ink); background: var(--word); border-radius: 999px; padding: 2px 10px; }
+
+.beat { padding-block: 18px; border-top: 1px solid var(--line); }
+.beat h2 { margin: 0 0 10px; font-size: 11px; font-weight: 600; letter-spacing: .09em; text-transform: uppercase; color: var(--muted); display: flex; gap: 10px; align-items: baseline; }
+.beat h2 .n { color: var(--accent); font-variant-numeric: tabular-nums; }
+.beat.past { opacity: .5; cursor: pointer; transition: opacity .15s; }
+.beat.past:hover { opacity: .8; }
+.beat.past .prose { font-size: 15px; }
+.prose { font-family: var(--f-prose); font-size: 16.5px; line-height: 1.62; max-width: 62ch; }
+.prose p { margin: 0; }
+.prose p + p { margin-top: .75em; }
+.prose strong, .prose b { font-weight: 600; }
+.prose dfn { font-style: normal; font-weight: 600; background: linear-gradient(transparent 58%, var(--word) 58%); padding-inline: 1px; }
+.prose ul { margin: .7em 0 0; padding-left: 1.2em; display: grid; gap: .35em; }
+.prose li::marker { color: var(--accent); }
+.prose code { font-family: var(--f-ui); font-size: .82em; background: var(--accent-soft); border-radius: 4px; padding: 1px 5px; }
+.ref { font-weight: 600; border-bottom: 1.5px dashed var(--accent); cursor: pointer; border-radius: 2px; }
+.ref:hover, .ref:focus-visible, .ref.on { background: var(--accent-soft); }
+.task-done { margin: 12px 0 0; font-size: 12px; color: var(--ok); font-weight: 600; }
+.task-done.shown { color: var(--warn); }
+
+/* подробнее */
+.more { margin-top: 14px; border: 1px solid var(--line); border-radius: 12px; background: var(--node); }
+.more summary { cursor: pointer; list-style: none; padding: 11px 14px; font-size: 12.5px; font-weight: 600; display: flex; gap: 10px; align-items: center; }
+.more summary::-webkit-details-marker { display: none; }
+.more summary::before { content: "+"; width: 18px; height: 18px; border-radius: 50%; border: 1.5px solid var(--accent); color: var(--accent); display: grid; place-items: center; font-size: 13px; line-height: 1; flex: none; }
+.more[open] summary::before { content: "−"; }
+.more summary .tag { margin-left: auto; font-weight: 500; font-size: 11px; color: var(--muted); white-space: nowrap; }
+.more-body { padding: 0 16px 14px 42px; font-family: var(--f-prose); font-size: 15px; line-height: 1.58; display: grid; gap: .6em; }
+.more-body p { margin: 0; }
+
+/* итог урока */
+.finish { margin-top: 6px; padding-top: 18px; border-top: 1px solid var(--line); display: grid; gap: 12px; }
+.score { display: flex; flex-wrap: wrap; gap: 6px 10px; font-size: 12px; }
+.next { border: 1.5px solid var(--accent); border-radius: 14px; background: var(--node); padding: 16px; display: grid; gap: 8px; }
+.next h3 { margin: 0; font-family: var(--f-display); font-weight: 500; font-size: 17px; line-height: 1.3; }
+.next p { margin: 0; font-family: var(--f-prose); font-size: 15px; line-height: 1.55; }
+.next .eyebrow { color: var(--accent); font-weight: 600; }
+
+/* ---------- карточки задачи и вопроса ---------- */
+.task { margin-top: 16px; border: 1.5px solid var(--accent); border-radius: 12px; background: var(--node); padding: 16px; display: grid; gap: 12px; }
+.task.solved { border-color: var(--ok); }
+.task.revealed { border-color: var(--warn); }
+.task-head { display: flex; align-items: center; gap: 9px; font-size: 11px; font-weight: 700; letter-spacing: .09em; text-transform: uppercase; color: var(--accent); }
+.task.solved .task-head { color: var(--ok); }
+.task.revealed .task-head { color: var(--warn); }
+.task-head .dia { width: 9px; height: 9px; background: currentColor; transform: rotate(45deg); border-radius: 1px; flex: none; }
+.task-head .ring { width: 11px; height: 11px; border: 2.5px solid currentColor; border-radius: 50%; flex: none; }
+.task-head .att { margin-left: auto; font-weight: 500; color: var(--muted); letter-spacing: .04em; text-transform: none; }
+.task-goal { font-family: var(--f-prose); font-size: 16px; line-height: 1.5; font-weight: 600; margin: 0; }
+.task-how { font-size: 12px; color: var(--muted); margin: 0; }
+.checks { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.checks li { display: grid; grid-template-columns: 18px 1fr; gap: 8px; font-size: 12.5px; align-items: start; }
+.checks .mk { width: 16px; height: 16px; border-radius: 50%; border: 1.5px solid var(--node-line); display: grid; place-items: center; font-size: 10px; line-height: 1; margin-top: 1px; font-weight: 700; transition: background .25s, border-color .25s; }
+.checks li.ok .mk { background: var(--ok); border-color: var(--ok); color: var(--page); }
+.checks li.wait .mk { border-style: dashed; border-color: var(--accent); }
+.checks li.no .mk { border-color: var(--bad); color: var(--bad); }
+.checks .why { display: block; font-size: 11.5px; color: var(--muted); margin-top: 2px; }
+.checks li.no .why { color: var(--bad); }
+.fb { border-radius: 8px; padding: 10px 12px; font-size: 12.5px; }
+.fb.fail { background: var(--bad-soft); border: 1px solid var(--bad); }
+.fb.ok { background: var(--ok-soft); border: 1px solid var(--ok); }
+.fb.info { background: var(--accent-soft); border: 1px solid var(--accent); }
+.fb p { margin: 0; }
+.fb p + p { margin-top: 6px; }
+.explain { font-family: var(--f-prose); font-size: 15px; line-height: 1.5; margin: 0; }
+.mark { display: inline-flex; align-items: center; gap: 6px; font-size: 11.5px; font-weight: 600; border-radius: 999px; padding: 3px 10px; justify-self: start; }
+.mark.first { color: var(--ok); background: var(--ok-soft); }
+.mark.shown { color: var(--warn); border: 1px solid var(--warn); }
+.hints { margin: 0; padding-left: 20px; font-size: 12.5px; display: grid; gap: 4px; }
+.hints li::marker { color: var(--accent); }
+.task-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+
+/* варианты ответа */
+.opts { display: grid; gap: 8px; }
+.opt { appearance: none; text-align: left; border: 1.5px solid var(--line); background: var(--page); border-radius: 10px; padding: 10px 12px; cursor: pointer; display: grid; grid-template-columns: 22px 1fr; gap: 10px; align-items: start; font-family: var(--f-prose); font-size: 15px; line-height: 1.4; }
+.opt .k { width: 22px; height: 22px; border-radius: 50%; border: 1.5px solid var(--accent); color: var(--accent); display: grid; place-items: center; font: 600 11px var(--f-ui); margin-top: 1px; }
+.opt:hover:not(:disabled) { border-color: var(--accent); background: var(--accent-soft); }
+.opt:disabled { cursor: default; }
+.opt.right { border-color: var(--ok); background: var(--ok-soft); }
+.opt.right .k { background: var(--ok); border-color: var(--ok); color: var(--page); }
+.opt.wrong { border-color: var(--bad); background: var(--bad-soft); }
+.opt.wrong .k { background: var(--bad); border-color: var(--bad); color: var(--page); }
+.opt.dim { opacity: .55; }
+
+/* ---------- кнопки ---------- */
+.btn { appearance: none; border: 1px solid var(--line); background: var(--node); color: var(--ink); border-radius: 8px; padding: 7px 11px; font-size: 12px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
+.btn:hover:not(:disabled) { border-color: var(--node-line); }
+.btn:disabled { opacity: .42; cursor: not-allowed; }
+.btn.primary { background: var(--accent); border-color: var(--accent); color: var(--page); font-weight: 600; }
+.btn.link { border-color: transparent; background: transparent; color: var(--accent); padding-inline: 4px; }
+
+.theory-nav {
+  display: flex; justify-content: space-between; align-items: center; gap: 10px;
+  padding-block: 12px;
+  padding-left: max(28px, env(safe-area-inset-left, 0px)); padding-right: 28px;
+  border-top: 1px solid var(--line); background: var(--page);
+}
+.theory-nav .nav-text { font-size: 11.5px; color: var(--muted); text-align: center; flex: 1; min-width: 0; }
+
+/* ---------- сторона мультика ---------- */
+.boardside {
+  display: grid; min-width: 0; min-height: 0;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: minmax(0, 1fr) auto;
+  grid-template-areas: "stage" "transport";
+}
+.boardside.with-phone { grid-template-columns: minmax(0, 1fr) 336px; grid-template-areas: "stage phone" "transport phone"; }
+.stage {
+  grid-area: stage; position: relative; min-height: 240px; overflow: hidden;
+  background: var(--toon-bg);
+  container-type: size;
+  display: grid; place-items: center;
+}
+.frame {
+  position: relative;
+  width: min(calc(100cqw - 40px), calc((100cqh - 40px) * 4 / 3));
+  aspect-ratio: 4 / 3;
+  border-radius: 18px; overflow: hidden;
+  background: #F7F1E5;
+  box-shadow: 0 1px 0 rgba(58, 42, 31, .08), 0 18px 40px -26px rgba(58, 42, 31, .55);
+  container-type: inline-size;
+}
+.panel { position: absolute; inset: 0; margin: 0; opacity: 0; transition: opacity .55s ease; pointer-events: none; }
+.panel.on { opacity: 1; pointer-events: auto; }
+.panel img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: block; }
+.ph {
+  position: absolute; inset: 0; display: grid; place-content: center; gap: 10px; padding: 8% 12%; text-align: center;
+  background: repeating-linear-gradient(135deg, #F3EADA 0 14px, #EFE4D1 14px 28px);
+  color: var(--toon-ink); font-family: var(--f-toon);
+}
+.ph .ph-ic { justify-self: center; width: 54px; height: 54px; border-radius: 14px; border: 2.5px dashed rgba(58, 42, 31, .45); display: grid; place-items: center; font-size: 24px; }
+.ph .ph-t { font-weight: 800; font-size: clamp(11px, 2.4cqw, 15px); letter-spacing: .08em; text-transform: uppercase; opacity: .6; }
+.ph .ph-d { font-weight: 700; font-size: clamp(12px, 2.9cqw, 19px); line-height: 1.35; }
+.ph .ph-n { font-size: clamp(10px, 2cqw, 12.5px); opacity: .65; font-weight: 600; }
+
+/* слой реплик поверх кадра: координаты в процентах кадра */
+.ov { position: absolute; inset: 0; pointer-events: none; }
+.bub, .narr, .tag, .sign { position: absolute; pointer-events: none; font-family: var(--f-toon); color: var(--toon-ink); }
+.bub {
+  background: var(--toon-paper); border: 2.5px solid var(--toon-ink); border-radius: 18px;
+  padding: .55em .8em .6em; font-size: clamp(11px, 2.35cqw, 17px); line-height: 1.3; font-weight: 700;
+  box-shadow: 0 4px 0 rgba(58, 42, 31, .16);
+  opacity: 0; transform: translateY(6px) scale(.92); transition: opacity .3s ease, transform .3s cubic-bezier(.3, 1.5, .5, 1);
+}
+.bub.shown { opacity: 1; transform: none; }
+.bub .who { display: block; font-size: .72em; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; opacity: .6; margin-bottom: .1em; }
+.bub::before, .bub::after { content: ""; position: absolute; border-style: solid; }
+.bub.t-bl::before { left: 18%; bottom: -16px; border-width: 16px 14px 0 0; border-color: var(--toon-ink) transparent transparent; }
+.bub.t-bl::after { left: calc(18% + 3px); bottom: -10px; border-width: 11px 9px 0 0; border-color: var(--toon-paper) transparent transparent; }
+.bub.t-br::before { right: 18%; bottom: -16px; border-width: 16px 0 0 14px; border-color: var(--toon-ink) transparent transparent; }
+.bub.t-br::after { right: calc(18% + 3px); bottom: -10px; border-width: 11px 0 0 9px; border-color: var(--toon-paper) transparent transparent; }
+.bub.t-tl::before { left: 18%; top: -16px; border-width: 0 14px 16px 0; border-color: transparent transparent var(--toon-ink); }
+.bub.t-tl::after { left: calc(18% + 3px); top: -10px; border-width: 0 9px 11px 0; border-color: transparent transparent var(--toon-paper); }
+.bub.t-tr::before { right: 18%; top: -16px; border-width: 0 0 16px 14px; border-color: transparent transparent var(--toon-ink); }
+.bub.t-tr::after { right: calc(18% + 3px); top: -10px; border-width: 0 0 11px 9px; border-color: transparent transparent var(--toon-paper); }
+.bub.think { border-radius: 999px; border-style: dashed; font-weight: 600; font-style: italic; }
+.bub.think::before, .bub.think::after { border: 2.5px solid var(--toon-ink); border-radius: 50%; background: var(--toon-paper); }
+.bub.think.t-bl::before { left: 16%; bottom: -14px; width: 12px; height: 12px; border-width: 2.5px; border-color: var(--toon-ink); }
+.bub.think.t-bl::after { left: 10%; bottom: -26px; width: 8px; height: 8px; border-width: 2px; border-color: var(--toon-ink); }
+.bub.think.t-br::before { right: 16%; bottom: -14px; width: 12px; height: 12px; border-width: 2.5px; border-color: var(--toon-ink); }
+.bub.think.t-br::after { right: 10%; bottom: -26px; width: 8px; height: 8px; border-width: 2px; border-color: var(--toon-ink); }
+.bub.think.t-tr::before { right: 16%; top: -14px; width: 12px; height: 12px; border-width: 2.5px; border-color: var(--toon-ink); }
+.bub.think.t-tr::after { right: 10%; top: -26px; width: 8px; height: 8px; border-width: 2px; border-color: var(--toon-ink); }
+.bub.think.t-tl::before { left: 16%; top: -14px; width: 12px; height: 12px; border-width: 2.5px; border-color: var(--toon-ink); }
+.bub.think.t-tl::after { left: 10%; top: -26px; width: 8px; height: 8px; border-width: 2px; border-color: var(--toon-ink); }
+.bub.bad { border-color: var(--bad); }
+.bub.bad.t-br::before, .bub.bad.t-bl::before { border-top-color: var(--bad); }
+.narr {
+  left: 2.5%; top: 3%; max-width: 62%;
+  background: var(--toon-narr); border: 2.5px solid var(--toon-ink); border-radius: 6px;
+  padding: .35em .7em; font-size: clamp(10.5px, 2.1cqw, 15px); font-weight: 800; letter-spacing: .02em;
+  box-shadow: 3px 3px 0 rgba(58, 42, 31, .85);
+  transform: rotate(-1.2deg);
+}
+.tag {
+  display: inline-flex; align-items: center; gap: .4em; white-space: nowrap;
+  background: var(--toon-paper); border: 2px solid var(--toon-ink); border-radius: 999px;
+  padding: .15em .65em .2em .45em; font-size: clamp(9.5px, 1.75cqw, 13px); font-weight: 800;
+  transform: translate(-50%, -50%);
+  opacity: 0; transition: opacity .3s;
+}
+.tag::before { content: ""; width: .6em; height: .6em; border-radius: 50%; background: var(--tag, #2FA37A); border: 1.5px solid var(--toon-ink); }
+.tag.shown { opacity: 1; }
+.tag.hl { outline: 3px solid var(--accent); outline-offset: 2px; }
+.hlbox { position: absolute; border: 3px dashed var(--accent); border-radius: 14px; background: color-mix(in srgb, var(--accent) 12%, transparent); opacity: 0; transition: opacity .2s; pointer-events: none; }
+.hlbox.on { opacity: 1; }
+
+/* табличка с сетью в аэропорту */
+.sign {
+  pointer-events: auto; cursor: pointer; appearance: none; text-align: left;
+  background: var(--sign); color: #fff; border: 2.5px solid var(--toon-ink); border-radius: 8px;
+  padding: .45em .7em .5em; font-size: clamp(9.5px, 1.8cqw, 14px); line-height: 1.25; font-weight: 700;
+  box-shadow: 0 4px 0 rgba(58, 42, 31, .25);
+}
+.sign b { display: block; font-size: 1.25em; font-family: var(--f-ui); letter-spacing: .02em; }
+.sign small { display: block; opacity: .85; font-size: .82em; }
+.sign:hover, .sign:focus-visible, .sign.on { outline: 3px solid var(--warn); outline-offset: 2px; }
+.sign-pop {
+  position: absolute; z-index: 6; left: 50%; top: 50%; transform: translate(-50%, -50%) rotate(-.8deg);
+  width: min(320px, calc(100% - 24px));
+  background: var(--sign); color: #fff; border: 3px solid var(--toon-ink); border-radius: 12px;
+  padding: 16px 18px; box-shadow: 0 18px 40px -16px rgba(0, 0, 0, .5); display: grid; gap: 8px; font-family: var(--f-toon);
+}
+.sign-pop .sp-head { display: flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; opacity: .9; }
+.sign-pop .sp-x { margin-left: auto; appearance: none; border: 0; background: none; color: inherit; cursor: pointer; font-size: 18px; line-height: 1; padding: 2px 6px; border-radius: 4px; }
+.sign-pop .ssid { font-family: var(--f-ui); font-size: 22px; font-weight: 700; letter-spacing: .03em; }
+.sign-pop p { margin: 0; font-size: 13.5px; line-height: 1.4; }
+
+/* итог: миниатюры кадров */
+.thumbs { position: absolute; inset: 0; display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; gap: 3%; padding: 3%; background: var(--toon-bg); }
+.thumb { position: relative; margin: 0; border-radius: 12px; overflow: hidden; background: #F7F1E5; border: 2.5px solid var(--toon-ink); }
+.thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.thumb figcaption { position: absolute; left: 6px; right: 6px; bottom: 6px; background: var(--toon-paper); border: 2px solid var(--toon-ink); border-radius: 8px; padding: .3em .55em; font: 800 clamp(9px, 1.7cqw, 13px)/1.25 var(--f-toon); color: var(--toon-ink); }
+.thumb .ph { padding: 6%; }
+.thumb .ph .ph-ic { width: 34px; height: 34px; font-size: 16px; }
+.thumb .ph .ph-d { font-size: clamp(10px, 1.8cqw, 13px); }
+
+.mode-chip { position: absolute; top: 10px; right: max(10px, env(safe-area-inset-right, 0px)); font-size: 11px; padding: 5px 10px; border-radius: 999px; background: var(--page); border: 1px solid var(--line); color: var(--muted); pointer-events: none; z-index: 3; }
+.mode-chip.quiz, .mode-chip.edit { color: var(--accent); border-color: var(--accent); font-weight: 600; }
+.stage.flash .frame { animation: flash 1.3s ease-out; }
+@keyframes flash { 0% { box-shadow: 0 0 0 6px var(--ok); } 100% { box-shadow: 0 0 0 0 var(--ok); } }
+
+/* ---------- под кадром ---------- */
+.transport {
+  grid-area: transport; background: var(--page); border-top: 1px solid var(--line);
+  padding-block: 10px;
+  padding-left: 16px; padding-right: max(16px, env(safe-area-inset-right, 0px));
+  display: flex; align-items: center; gap: 14px; min-width: 0;
+}
+/* прогресс под кадром: точки шагов и «2 / 10»; листают только «Назад» и «Далее» */
+.pnav { display: flex; align-items: center; gap: 10px; flex: none; }
+.pdots { display: flex; gap: 5px; align-items: center; }
+.pdot { width: 8px; height: 8px; border-radius: 50%; background: var(--line); }
+.pdot.past { background: var(--accent); opacity: .45; }
+.pdot.on { background: var(--accent); width: 18px; border-radius: 4px; }
+.pdot.is-task { border-radius: 2px; transform: rotate(45deg); width: 7px; height: 7px; }
+.pdot.is-task.on { width: 9px; height: 9px; border-radius: 2px; }
+.pdot.is-quiz { background: transparent; border: 2px solid var(--line); }
+.pdot.is-quiz.past { border-color: var(--accent); }
+.pdot.is-quiz.on { border-color: var(--accent); background: var(--accent-soft); width: 10px; height: 10px; border-radius: 50%; }
+.pcount { font-size: 12px; font-weight: 600; color: var(--muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.theory-nav .nav-text { display: grid; gap: 1px; justify-items: center; }
+.theory-nav .progress { font-size: 13px; font-weight: 700; color: var(--ink); font-variant-numeric: tabular-nums; }
+.theory-nav .nav-hint { font-size: 11px; color: var(--muted); }
+.caption { margin: 0; display: flex; gap: 9px; align-items: baseline; min-width: 0; font-family: var(--f-prose); font-size: 14.5px; line-height: 1.4; }
+.caption .dot { width: 9px; height: 9px; border-radius: 50%; flex: none; transform: translateY(1px); background: var(--node-line); }
+.caption.info .dot { background: var(--accent); }
+.caption.ok .dot { background: var(--ok); }
+.caption.bad .dot { background: var(--bad); }
+.caption.bad { color: var(--bad); }
+
+/* карточка-лупа поверх кадра: адрес отправителя крупно */
+.bub.zoom { font-family: var(--f-phone); font-weight: 500; border-radius: 12px; padding: .6em .8em; }
+.zoom .z-from { display: block; font-size: .78em; color: #6B5A4C; }
+.zoom .z-addr { display: block; font-family: var(--f-ui); font-weight: 700; font-size: 1.05em; letter-spacing: .01em; }
+.zoom .z-addr mark { background: #FFD6CF; color: #B3261E; border-radius: 3px; padding: 0 1px; }
+.zoom .z-note { display: block; margin-top: .25em; font-family: var(--f-toon); font-weight: 800; font-size: .8em; color: #B3261E; }
+
+/* ---------- проверка: окно «Выиграй iPhone Duo» (страница-двойник, светлая в любой теме, как настоящий сайт) ---------- */
+.trap { display: grid; grid-template-rows: auto minmax(0, 1fr); background: #FFFFFF; color: #202124; border: 1px solid var(--line); border-radius: 14px; overflow: hidden; box-shadow: 0 18px 40px -28px var(--shadow); font-family: var(--f-phone); min-height: 0; position: relative; }
+.trap-bar { display: flex; align-items: center; gap: 10px; padding: 8px 12px; background: #F1F3F4; border-bottom: 1px solid #DADCE0; font-size: 12px; }
+.trap-bar .wd { display: flex; gap: 5px; }
+.trap-bar .wd i { width: 10px; height: 10px; border-radius: 50%; background: #C9CDD2; display: block; }
+.trap-url { flex: 1; min-width: 0; display: flex; align-items: center; gap: 6px; background: #FFFFFF; border: 1px solid #DADCE0; border-radius: 999px; padding: 4px 12px; color: #3C4043; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.trap-url .lock { font-size: 10px; }
+.trap-url.reveal { border-color: var(--bad); box-shadow: 0 0 0 3px var(--bad-soft); }
+.trap-url.reveal b { color: #C5221F; }
+.trap-body { overflow-y: auto; min-height: 0; padding: 18px 16px 22px; display: grid; justify-items: center; align-content: start; gap: 14px; background: linear-gradient(180deg, #FFF4D6 0, #FFFFFF 180px); }
+.trap-prize { text-align: center; display: grid; gap: 4px; }
+.trap-prize .conf { font-size: 22px; letter-spacing: 6px; }
+.trap-prize h3 { margin: 0; font-family: var(--f-display); font-size: clamp(22px, 4.4cqw, 30px); line-height: 1.1; color: #202124; }
+.trap-prize p { margin: 0; font-size: 13px; color: #5F6368; }
+.trap-prize .timer { display: inline-block; margin-top: 4px; font-weight: 700; color: #C5221F; font-variant-numeric: tabular-nums; }
+.trap-card { width: min(100%, 360px); background: #FFFFFF; border: 1px solid #DADCE0; border-radius: 10px; padding: 20px 22px 18px; display: grid; gap: 12px; box-shadow: 0 1px 3px rgba(60, 64, 67, .18); }
+.trap-logo { font-family: "Product Sans", var(--f-phone); font-size: 24px; font-weight: 500; letter-spacing: -.3px; text-align: center; }
+.trap-logo span:nth-child(1), .trap-logo span:nth-child(4) { color: #4285F4; }
+.trap-logo span:nth-child(2), .trap-logo span:nth-child(7) { color: #EA4335; }
+.trap-logo span:nth-child(3) { color: #FBBC05; }
+.trap-logo span:nth-child(5) { color: #34A853; }
+.trap-logo span:nth-child(6) { color: #EA4335; }
+.trap-card h4 { margin: 0; text-align: center; font-size: 18px; font-weight: 400; color: #202124; }
+.trap-card .sub { margin: -6px 0 2px; text-align: center; font-size: 13px; color: #5F6368; }
+.trap-field { display: grid; gap: 4px; }
+.trap-field label { font-size: 12px; color: #5F6368; }
+.trap-field input { font: inherit; font-size: 14px; color: #202124; background: #FFFFFF; border: 1px solid #DADCE0; border-radius: 6px; padding: 10px 12px; }
+.trap-field input:focus { outline: none; border-color: #1A73E8; box-shadow: 0 0 0 1px #1A73E8; }
+.trap-field input.masked { -webkit-text-security: disc; text-security: disc; }
+.trap-field .err { min-height: 1em; font-size: 12px; color: #C5221F; }
+.trap-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-top: 4px; }
+.trap-row button { font: inherit; font-size: 13.5px; border-radius: 999px; padding: 8px 20px; cursor: pointer; }
+.trap-skip { background: transparent; border: none; color: #1A73E8; font-weight: 500; padding-inline: 8px !important; }
+.trap-skip:hover { background: #F1F6FE; }
+.trap-login { background: #1A73E8; border: 1px solid #1A73E8; color: #FFFFFF; font-weight: 500; }
+.trap-login:hover { background: #185ABC; }
+.trap-fine { font-size: 11px; color: #80868B; text-align: center; max-width: 360px; }
+.trap.decided .trap-body { filter: grayscale(.85); opacity: .45; pointer-events: none; }
+.trap-stamp { position: absolute; left: 50%; top: 56%; transform: translate(-50%, -50%) rotate(-6deg); padding: 10px 18px; border: 3px solid currentColor; border-radius: 10px; background: rgba(255, 255, 255, .92); font-family: var(--f-display); font-size: clamp(16px, 3.4cqw, 24px); font-weight: 700; text-align: center; line-height: 1.2; letter-spacing: .02em; }
+.trap-stamp small { display: block; font-family: var(--f-ui); font-size: 12px; font-weight: 600; letter-spacing: 0; }
+.trap-stamp.ok { color: #148A55; }
+.trap-stamp.bad { color: #C5221F; }
+
+/* ---------- почта ---------- */
+.mailwrap { position: absolute; inset: 14px; display: grid; }
+.mail { display: grid; grid-template-rows: auto minmax(0, 1fr) auto; background: var(--node); border: 1px solid var(--line); border-radius: 14px; overflow: hidden; box-shadow: 0 18px 40px -28px var(--shadow); font-family: var(--f-phone); min-height: 0; }
+.mail-bar { display: flex; align-items: center; gap: 10px; padding: 9px 14px; border-bottom: 1px solid var(--line); background: var(--page); font-size: 12.5px; }
+.mail-bar .wd { display: flex; gap: 5px; }
+.mail-bar .wd i { width: 10px; height: 10px; border-radius: 50%; background: var(--line); display: block; }
+.mail-bar .app-t { font-weight: 700; }
+.mail-bar .acc { margin-left: auto; color: var(--muted); font-family: var(--f-ui); font-size: 11.5px; }
+.mail-main { display: grid; grid-template-columns: minmax(210px, 37%) minmax(0, 1fr); min-height: 0; }
+.mail-main.single { grid-template-columns: minmax(0, 1fr); }
+.inbox { overflow-y: auto; border-right: 1px solid var(--line); min-height: 0; }
+.inbox-h { padding: 10px 12px 6px; font-size: 11px; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); font-weight: 700; display: flex; justify-content: space-between; }
+.msg { appearance: none; width: 100%; border: 0; border-top: 1px solid var(--line); background: none; text-align: left; cursor: pointer; display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 1px 8px; padding: 10px 12px 10px 14px; position: relative; }
+.msg:hover { background: color-mix(in srgb, var(--accent-soft) 55%, transparent); }
+.msg.sel { background: var(--accent-soft); }
+.msg.sel::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 3px; background: var(--accent); }
+.msg .from { font-weight: 700; font-size: 13.5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.msg.unread .from::before { content: ""; display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: var(--accent); margin-right: 6px; vertical-align: 1px; }
+.msg .time { font-size: 11.5px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.msg .subj { grid-column: 1 / -1; font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.msg .prev { grid-column: 1 / -1; font-size: 12px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.msg .lbl { grid-column: 1 / -1; justify-self: start; margin-top: 4px; font-size: 10.5px; font-weight: 700; letter-spacing: .04em; border-radius: 999px; padding: 1px 8px; }
+.lbl.phish { color: var(--bad); background: var(--bad-soft); border: 1px solid var(--bad); }
+.lbl.okm { color: var(--ok); background: var(--ok-soft); border: 1px solid var(--ok); }
+.lbl.wrongm { color: var(--warn); border: 1px dashed var(--warn); }
+.msg.ghost { outline-offset: -4px; }
+
+.reader { overflow-y: auto; padding: 16px 20px 18px; display: grid; align-content: start; gap: 12px; position: relative; min-height: 0; }
+.r-subj { margin: 0; font-size: 19px; font-weight: 700; line-height: 1.3; letter-spacing: -.005em; }
+.r-from { display: grid; grid-template-columns: 38px minmax(0, 1fr) auto; gap: 10px; align-items: center; }
+.ava { width: 38px; height: 38px; border-radius: 50%; display: grid; place-items: center; font-weight: 800; color: #fff; font-size: 15px; }
+.r-who { display: grid; gap: 1px; min-width: 0; }
+.namebtn { appearance: none; border: 0; background: none; padding: 0; text-align: left; cursor: pointer; font-weight: 700; font-size: 14px; color: var(--ink); display: inline-flex; gap: 5px; align-items: center; justify-self: start; border-bottom: 1.5px dashed var(--node-line); }
+.namebtn:hover { border-bottom-color: var(--accent); color: var(--accent); }
+.namebtn .car { font-size: 10px; color: var(--muted); }
+.addr { font-family: var(--f-ui); font-size: 12px; color: var(--ink); background: var(--page); border: 1px solid var(--line); border-radius: 6px; padding: 2px 7px; justify-self: start; overflow-wrap: anywhere; }
+.r-to { font-size: 11.5px; color: var(--muted); }
+.r-time { font-size: 12px; color: var(--muted); align-self: start; }
+.r-body { font-size: 14.5px; line-height: 1.55; display: grid; gap: .6em; }
+.r-body p { margin: 0; }
+.r-link { appearance: none; justify-self: start; border: 0; border-radius: 8px; padding: 9px 14px; font-size: 14px; font-weight: 700; cursor: pointer; background: #2D6CDF; color: #fff; }
+.r-link.text { background: none; color: #2D6CDF; padding: 0; text-decoration: underline; font-weight: 600; }
+.r-att { appearance: none; justify-self: start; display: inline-flex; gap: 8px; align-items: center; border: 1px solid var(--line); border-radius: 10px; padding: 8px 12px; background: var(--page); cursor: pointer; font-size: 13px; }
+.r-att .pdf { width: 26px; height: 30px; border-radius: 4px; background: #D9483B; color: #fff; display: grid; place-items: center; font-size: 9px; font-weight: 800; }
+.r-actions { display: flex; flex-wrap: wrap; gap: 8px; padding-top: 10px; border-top: 1px solid var(--line); }
+.mbtn { appearance: none; border: 1.5px solid var(--line); background: var(--node); border-radius: 9px; padding: 8px 12px; font-size: 13px; font-weight: 700; cursor: pointer; display: inline-flex; gap: 6px; align-items: center; }
+.mbtn.phish { color: var(--bad); border-color: color-mix(in srgb, var(--bad) 55%, var(--line)); }
+.mbtn.phish:hover:not(:disabled) { background: var(--bad-soft); border-color: var(--bad); }
+.mbtn.okb { color: var(--ok); border-color: color-mix(in srgb, var(--ok) 55%, var(--line)); }
+.mbtn.okb:hover:not(:disabled) { background: var(--ok-soft); border-color: var(--ok); }
+.mbtn:disabled { opacity: .45; cursor: not-allowed; }
+.r-fb { border-radius: 10px; padding: 10px 12px; font-size: 13px; line-height: 1.45; }
+.r-fb.ok { background: var(--ok-soft); border: 1px solid var(--ok); }
+.r-fb.fail { background: var(--bad-soft); border: 1px solid var(--bad); }
+.r-fb b { display: block; margin-bottom: 2px; }
+.r-empty { color: var(--muted); font-size: 14px; display: grid; place-items: center; text-align: center; padding: 40px 20px; gap: 8px; }
+.statusbar { font-family: var(--f-ui); font-size: 11.5px; padding: 5px 12px; border-top: 1px solid var(--line); color: var(--muted); min-height: 27px; background: var(--page); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.statusbar b { color: var(--ink); font-weight: 600; }
+
+/* страница по ссылке */
+.webpage { position: absolute; inset: 0; background: var(--node); display: grid; grid-template-rows: auto minmax(0, 1fr); z-index: 2; }
+.wp-bar { display: flex; gap: 8px; align-items: center; padding: 8px 12px; border-bottom: 1px solid var(--line); background: var(--page); }
+.wp-url { flex: 1; font-family: var(--f-ui); font-size: 12px; background: var(--node); border: 1px solid var(--line); border-radius: 999px; padding: 5px 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.wp-body { overflow-y: auto; padding: 22px 22px; display: grid; gap: 12px; align-content: start; justify-items: start; }
+.wp-body h4 { margin: 0; font-size: 18px; }
+.wp-body p { margin: 0; font-size: 14px; line-height: 1.5; }
+.wp-form { display: grid; gap: 8px; width: min(100%, 300px); padding: 16px; border: 1px solid var(--line); border-radius: 12px; }
+.wp-form .in { height: 34px; border: 1.5px solid var(--line); border-radius: 8px; background: var(--page); }
+.wp-form .go { height: 36px; border-radius: 8px; background: #2D6CDF; }
+.cardboard { border: 2px dashed #B98A4E; background: repeating-linear-gradient(90deg, #F3E3C6 0 10px, #EFDDBB 10px 20px); border-radius: 12px; padding: 14px 16px; color: #4A3418; font-size: 13.5px; line-height: 1.45; max-width: 460px; font-family: var(--f-toon); font-weight: 700; }
+
+/* вопрос: письмо с горячими точками */
+.mail-main.single .reader { max-width: 760px; }
+.hot { justify-self: start; appearance: none; border: 2px dashed transparent; background: none; border-radius: 8px; padding: 2px 6px; margin: -2px -8px; cursor: pointer; text-align: left; font: inherit; color: inherit; position: relative; transition: border-color .15s, background .15s; }
+.quizmode .hot { border-color: color-mix(in srgb, var(--accent) 45%, transparent); }
+.quizmode .hot:hover, .quizmode .hot:focus-visible { border-color: var(--accent); background: var(--accent-soft); }
+.hot.right { border: 2.5px solid var(--ok); background: var(--ok-soft); }
+.hot.wrong { border: 2.5px solid var(--bad); background: var(--bad-soft); }
+.hot:disabled { cursor: default; }
+.hot-note { display: block; font: 700 11px/1.35 var(--f-ui); margin-top: 4px; }
+.hot.right .hot-note { color: var(--ok); }
+.hot.wrong .hot-note { color: var(--bad); }
+.logo { width: 38px; height: 38px; border-radius: 50%; background: #FFF4C9; border: 1.5px solid #E5C24A; display: grid; place-items: center; font-size: 20px; }
+.r-sign { font-size: 13px; color: var(--muted); line-height: 1.45; }
+
+/* ---------- узкий экран ---------- */
+@media (max-width: 880px) {
+  html, body { height: auto; }
+  .app { height: auto; display: block; }
+  .main { display: flex; flex-direction: column; }
+  .boardside { order: -1; }
+  .boardside { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto; grid-template-areas: "stage" "transport"; }
+  .theory { border-right: 0; border-top: 1px solid var(--line); }
+  .theory-scroll { overflow: visible; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+  /* на телефоне текст стоит сразу под кадром: прошлые шаги не показываем, к ним ведёт «Назад» */
+  .beat.past { display: none; }
+  .theory-nav { position: sticky; bottom: 0; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); z-index: 4; }
+  .stage { min-height: 0; height: auto; container-type: inline-size; padding: 12px; display: block; }
+  .frame { width: 100%; }
+  .mailwrap { position: relative; inset: auto; }
+  .mail-main { grid-template-columns: minmax(0, 1fr); }
+  .inbox { border-right: 0; border-bottom: 1px solid var(--line); max-height: 260px; }
+  .reader { min-height: 360px; }
+  .transport { padding-left: max(16px, env(safe-area-inset-left, 0px)); flex-wrap: wrap; gap: 8px 12px; }
+  .caption { flex-basis: 100%; }
+  .top-note { display: none; }
+  .mode-chip { top: 16px; right: 16px; }
+}
+@media (max-width: 600px) {
+  .tl .bar { width: 22px; }
+  .tl-steps { gap: 3px; }
+  .timeline { flex-wrap: wrap; gap: 4px 12px; }
+  .caption { font-size: 14px; }
+  .theory-nav .nav-hint { display: none; }
+  .mode-chip { display: none; }
+  .more-body { padding-left: 16px; }
+  .bub { border-width: 2px; padding: .4em .6em .45em; }
+  .reader { padding: 14px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .panel, .bub, .tag { transition: none; }
+  .stage.flash .frame { animation: none; }
+  .tl .bar, .checks .mk { transition: none; }
+}
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="top">
+    <div class="crumb"><span class="brand">Кибербезопасность для офиса</span><span>Урок <b>5</b> из 12</span></div>
+    <nav class="timeline" id="timeline" aria-label="Шаги урока"></nav>
+    <div class="top-note">Макет · демо-урок 2 из 2</div>
+  </header>
+
+  <main class="main">
+    <section class="theory" aria-label="Теория">
+      <div class="theory-scroll" id="theory-scroll">
+        <div class="lesson-head">
+          <div class="eyebrow">Модуль 2 · Люди и письма</div>
+          <h1>Письмо-приманка</h1>
+          <div class="meta">≈ 10 минут · 10 шагов · 1 проверка · 1 вопрос · 1 задача</div>
+          <div class="words" aria-label="Новые слова урока">Новые слова: <span class="w">фишинг</span><span class="w">персональный фишинг</span></div>
+        </div>
+        <div id="beats"></div>
+      </div>
+      <div class="theory-nav" id="theory-nav"></div>
+    </section>
+
+    <section class="boardside" id="boardside" aria-label="Мультик и почта">
+      <div class="stage" id="stage">
+        <div class="frame" id="frame"></div>
+        <div class="mailwrap" id="mailwrap" hidden></div>
+        <div class="mode-chip" id="mode-chip"></div>
+      </div>
+
+      <div class="transport" id="transport">
+        <div class="pnav" aria-hidden="true">
+          <span class="pdots" id="pdots"></span>
+          <span class="pcount" id="pcount"></span>
+        </div>
+        <p class="caption" id="caption" aria-live="polite"></p>
+      </div>
+    </section>
+  </main>
+</div>
+
+<script>
+(() => {
+'use strict';
+
+const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+const mobileMQ = window.matchMedia('(max-width: 880px)');
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const $ = id => document.getElementById(id);
+const ART = 'security/';
+const OWN = 'romashka.example';
+
+// ---------- кадры мультика (координаты реплик — в процентах кадра 4:3, на картинках нет текста) ----------
+const P = {
+  bait: { img: 'l2-bait', alt: 'Полосатый сидит на огромном мониторе, как на причале, и опускает в офис леску. На крючке — блестящий конверт с красным восклицательным знаком и будильником. Олег с кружкой тянется к конверту, Марина рядом поднимает бровь.',
+    narr: 'Понедельник, 9:12. Новое письмо.', np: [2.5, 91],
+    bubbles: [{ who: 'Письмо', t: '«Ваш пароль истекает сегодня! Подтвердите его, иначе доступ к почте закроют».', x: 55, y: 3, w: 43, tail: 'bl' },
+      { who: 'Олег', t: 'Сейчас, нажимаю!', x: 60, y: 40, w: 22, tail: 'bl' },
+      { who: 'Марина', t: 'Подожди-ка…', x: 79, y: 28, w: 20, tail: 'bl', think: true }] },
+  fakedoor: { img: 'l2-fakedoor', alt: 'Картонная декорация, нарисованная как дверь входа в почту, подпёрта палками. Олег просовывает в щель золотой ключ — свой пароль. За картоном Полосатый ловит ключ сачком.',
+    narr: 'Минуту спустя.', np: [2.5, 91],
+    bubbles: [{ who: 'Олег', t: 'Странно, страница просто обновилась.', x: 2, y: 3, w: 28, tail: 'br' },
+      { who: 'Полосатый', t: 'Ключ получен. Спасибо!', x: 62, y: 2, w: 34, tail: 'bl', bad: true }] },
+  costume: { img: 'l2-costume', alt: 'Полосатый в дешёвом костюме «IT-поддержки»: гарнитура, поло с шестерёнкой, бейдж. Из-под рукавов торчат полоски, виден край маски. Марина разглядывает подпись на его конверте через большую лупу — в лупе полоски.',
+    narr: 'Имя — это костюм.',
+    bubbles: [{ who: 'Полосатый', t: 'Здравствуйте, это IT-отдел!', x: 75, y: 24, w: 24, tail: 'bl' },
+      { zoom: true, html: '<span class="z-from">От: IT-отдел</span><span class="z-addr">it-support@ro<mark>rn</mark>ashka.example</span><span class="z-note">не «m», а «r» и «n»</span>', x: 2, y: 78, w: 46, tail: 'tr' }] },
+  research: { img: 'l2-research', alt: 'Ночь. Полосатый у пробковой доски с фото Марины и директора Виктора, страницей сайта компании, снимком корпоратива и флаером поездки; всё соединено красными нитками. Он записывает в блокнот.',
+    narr: 'Вечер. Полосатый готовится.',
+    bubbles: [{ who: 'Полосатый', t: 'Директор — Виктор. Счета платит Марина. В пятницу у них выставка в Вильнюсе…', x: 62, y: 3, w: 36, tail: 'bl' }] },
+  mask: { img: 'l2-mask', alt: 'Марина за рабочим столом смотрит на письмо. В мониторе Полосатый держит картонную маску с лицом Виктора и стучит по часам, указывая на счёт с мешком денег. В кружке в углу настоящий Виктор отдыхает на пляже.',
+    narr: 'Пятница, 16:40.', np: [2.5, 92],
+    bubbles: [{ who: '«Виктор»', t: 'Марина, срочно оплатите стенд до 17:00, реквизиты новые. Я на встрече — не звоните.', x: 32, y: 2, w: 38, tail: 'br' },
+      { who: 'Марина', t: 'Он всегда звонит сам. И почему «не звоните»?', x: 2, y: 3, w: 27, tail: 'br', think: true }] },
+  call: { img: 'l2-call', alt: 'Слева Марина звонит с рабочего телефона. Справа настоящий Виктор на пляже отвечает и удивлённо поднимает руку. Внизу на полу лежит картонная маска, Полосатый на цыпочках уходит.',
+    narr: 'Марина звонит Виктору по номеру из справочника.', np: [2.5, 92],
+    bubbles: [{ who: 'Марина', t: 'Виктор Андреевич, вы просили оплатить стенд?', x: 2, y: 2, w: 34, tail: 'br' },
+      { who: 'Виктор', t: 'Какой стенд? Я в отпуске! Перешлите письмо Ире.', x: 56, y: 1.5, w: 42, tail: 'bl' }] },
+};
+
+// ---------- шаги ----------
+const R = (id, text) => `<span class="ref" data-ref="${id}" tabindex="0">${text}</span>`;
+const MORE = `<details class="more" id="more"><summary>Подробнее: как читать адрес ссылки<span class="tag">для любопытных</span></summary>
+  <div class="more-body">
+    <p><b>Домен читают справа.</b> В адресе <code>romashka.example.login-check.example</code> хозяин — <code>login-check.example</code>, а «romashka» — просто слово в начале. А <code>hr.romashka.example</code> — ваш: справа стоит <code>romashka.example</code>.</p>
+    <p><b>«Ответить» может уйти не туда.</b> Мошенник подставляет в ответ свой адрес, и он отличается от адреса в строке «От». Проверьте и его.</p>
+    <p><b>QR-код в письме</b> — та же ссылка, только её не видно до сканирования. QR из писем «про пароль» и «про оплату» не сканируйте.</p>
+    <p><b>Нашли приманку</b> — нажмите «Сообщить о фишинге» или перешлите письмо в IT. Не удаляйте молча: оно пришло не только вам.</p>
+  </div></details>`;
+
+// Один шаг — один кадр и его текст. Кадры сами не листаются: следующий кадр
+// вместе со следующим текстом открывает «Далее» (или стрелка →).
+const STEPS = [
+  { id: 'prize', title: 'Проверка: вам повезло?', trap: true,
+    html: () => `<p>Начнём с проверки. Обеденный перерыв, вы листаете новости, и в браузере открывается окно с призом.</p>
+      <p>Поступите с ним так, как поступили бы в жизни. Попытка одна.</p>` },
+  { id: 'bait', title: 'Письмо с крючком', panel: P.bait,
+    html: () => `<p>Утром Олегу приходит письмо: «Ваш пароль истекает сегодня. Подтвердите его, иначе доступ к почте закроют». Логотип, кнопка, подпись «IT-отдел». Олег спешит и нажимает.</p>
+      <p>Крючок почти всегда один из двух: страшно что-то потерять или жалко упустить подарок. Окно с iPhone Duo в начале урока — второй крючок.</p>` },
+  { id: 'fakedoor', title: 'Картонная дверь', panel: P.fakedoor,
+    html: () => `<p>Кнопка ведёт на страницу, похожую на вход в рабочую почту, но это декорация: пароль, введённый там, уходит мошеннику.</p>
+      <p>Такое письмо-приманку называют <dfn>фишингом</dfn>, от английского «рыбалка»: закидывают тысячи писем и ждут, кто клюнет.</p>` },
+  { id: 'costume', title: 'Имя — это костюм', panel: P.costume, more: true,
+    html: () => `<p>«IT-отдел», «Банк», «Виктор Андреевич» в строке «От» — костюм. Это имя пишет сам отправитель, и надеть его может кто угодно. Правду говорит <b>адрес</b>: то, что после <code>@</code>.</p>
+      <p>Нажмите на имя отправителя, и почта покажет адрес. У писем коллег он заканчивается ровно на <code>@romashka.example</code>. В письме Олегу — ${R('addr', '<code>@rornashka.example</code>')}: вместо «m» стоят «r» и «n», на бегу не отличить.</p>
+      <p>То же со ссылками: прежде чем нажать, наведите курсор на кнопку и прочитайте адрес внизу окна.</p>` },
+  { id: 'research', title: 'Письмо лично вам', panel: P.research,
+    html: () => `<p>Массовую приманку рассылают тысячам. <dfn>Персональный фишинг</dfn> пишут лично вам.</p>
+      <p>Мошенник заранее читает сайт компании, соцсети и новости: знает имя директора, кто платит счета и куда вы едете на выставку.</p>` },
+  { id: 'mask', title: 'Маска директора', panel: P.mask,
+    html: () => `<p>Такое письмо называет вас по имени, упоминает настоящий проект и приходит «от директора» в пятницу вечером: срочно, тайно, «не звоните, я на встрече».</p>
+      <p>Адрес может отличаться одним словом, а иногда письмо приходит из настоящего, но взломанного ящика партнёра.</p>` },
+  { id: 'call', title: 'Проверка по другому каналу', panel: P.call,
+    html: () => `<p>Поэтому просьбы о деньгах, паролях и доступах проверяют по другому каналу: звонком по номеру из справочника, а не из письма, или в рабочем чате.</p>
+      <p>Марина так и сделала — и маска упала.</p>` },
+  { id: 'clue', title: 'Вопрос: найдите улику', quiz: true,
+    html: () => `<p>Марине пишет «бухгалтерия». Всё выглядит как обычно: логотип, тема со сроком, подпись главбуха. Одно место в письме выдаёт подделку наверняка. Нажмите его на письме справа.</p>` },
+  { id: 'inbox', title: 'Задача: разберите почту', task: true,
+    html: () => `<p>Это почта Марины за понедельник: шесть писем. Три из них — приманки, три — настоящие.</p>
+      <p>Откройте каждое письмо и отметьте: «Это фишинг» или «Настоящее». Чтобы увидеть адрес отправителя, нажмите на его имя; чтобы увидеть адрес ссылки — наведите на неё курсор. В приманках ничего не нажимайте.</p>` },
+  { id: 'summary', title: 'Итог', summary: true,
+    html: () => `<p>Олег клюнул на приманку, а Марина её раскусила — и с «бухгалтерией», и с «директором».</p>
+      <ul><li><b>Фишинг</b> — письмо-приманка: торопит, пугает и ведёт на поддельную страницу.</li>
+      <li>Имя отправителя — костюм. Смотрите адрес после <code>@</code> и адрес ссылки до клика.</li>
+      <li><b>Персональный фишинг</b> знает ваше имя и проекты. Просьбы о деньгах, паролях и доступах проверяйте по другому каналу.</li></ul>` },
+];
+const TRAP = 0, QUIZ_STEP = 7, TASK = 8, LAST = 9;
+
+// ---------- проверка: страница-двойник «Выиграй iPhone Duo» ----------
+// Поля учебные: их значения не попадают ни в состояние, ни в хранилище, ни в сеть.
+// Мы читаем только «поле не пустое», сразу стираем текст и запоминаем лишь выбор: войти или пропустить.
+// Поле пароля — обычный text с маской через CSS, чтобы браузер не предлагал сохранить «пароль».
+const TRAP_URL = 'https://gooogle-prizes.example/iphone-duo';
+const TRAP_TIME = 5 * 60;
+const THUMBS = [[P.bait, 'Приманка торопит и пугает'], [P.costume, 'Имя — костюм, правда — в адресе'], [P.mask, 'Персональное письмо знает всё о вас'], [P.call, 'Проверьте звонком по своему номеру']];
+
+// ---------- вопрос: письмо «бухгалтерии» ----------
+const QUIZ = {
+  answer: 'addr',
+  notes: {
+    name: 'Имя и логотип копируются за минуту — это костюм.',
+    addr: 'romashka-docs.example — чужой домен, его мог купить кто угодно.',
+    subj: 'Срок сам по себе ничего не доказывает: настоящая бухгалтерия тоже торопит.',
+    btn: 'Кнопку проверяют наведением, но выглядит она одинаково в любом письме.',
+    sign: 'Имя главбуха и телефон легко списать с сайта компании.',
+  },
+  explain: 'Всё, что видно в письме, отправитель рисует сам: имя, логотип, тему, кнопку, подпись. Подделать нельзя только домен — часть адреса после @. Здесь это romashka-docs.example, а не romashka.example.',
+};
+
+// ---------- задача: почта ----------
+const EMAILS = [
+  { id: 'ceo', phish: true, name: 'Виктор Андреевич', addr: 'viktor@romashka-group.example', color: '#3E5BA9', time: '16:40',
+    subj: 'Счёт за стенд в Вильнюсе — оплатить сегодня',
+    body: ['Марина, добрый день.', 'Организаторы выставки в Вильнюсе прислали новые реквизиты, старый счёт недействителен. Оплатите, пожалуйста, сегодня до 17:00, иначе стенд отдадут другим.', 'Я на переговорах, не звоните — просто сделайте. Счёт во вложении.', 'В.'],
+    att: { name: 'Счёт_стенд_Vilnius.pdf', url: 'https://romashka-group.example/files/invoice-vilnius.pdf' },
+    why: 'Домен romashka-group.example — не ваш. И весь набор персонального фишинга: новые реквизиты, срочно, «не звоните». Такую просьбу проверяют звонком по номеру из справочника.' },
+  { id: 'hr', phish: false, name: 'HR · Ромашка', addr: 'hr@romashka.example', color: '#B0569A', time: '15:15',
+    subj: 'Опрос: куда едем летом?',
+    body: ['Коллеги, выбираем место для летнего выезда: озеро, горы или море. Проголосуйте до пятницы.'],
+    link: { text: 'Открыть опрос', url: 'https://hr.romashka.example/poll/summer', kind: 'text' },
+    why: 'Адрес @romashka.example, ссылка на hr.romashka.example — справа стоит ваш домен. Ничего не просит и не торопит.' },
+  { id: 'oleg', phish: false, name: 'Олег Ковальчук', addr: 'oleg@romashka.example', color: '#D0782F', time: '13:02',
+    subj: 'Фото с корпоратива',
+    body: ['Марина, привет! Выложил фото в общую папку. Ты там в очках-сердечках :)'],
+    link: { text: 'Папка «Корпоратив»', url: 'https://drive.romashka.example/party-2026', kind: 'text' },
+    why: 'Свой адрес, ссылка ведёт в рабочее хранилище drive.romashka.example.' },
+  { id: 'parcel', phish: true, name: 'Служба доставки', addr: 'notify@parcel-track.example', color: '#C2453A', time: '11:30',
+    subj: 'Посылка задержана: оплатите 1,99 €',
+    body: ['Ваша посылка ожидает на складе. Оплатите доставку 1,99 € в течение 24 часов, иначе она вернётся отправителю.'],
+    link: { text: 'Оплатить 1,99 €', url: 'https://parcel-track.example/pay?id=88213' },
+    why: 'Массовая приманка: посылку вы не ждёте, оплата по ссылке, срок «24 часа». С карты, введённой там, спишут не 1,99 €.' },
+  { id: 'ira', phish: false, name: 'Ира · IT', addr: 'ira@romashka.example', color: '#6A4FC4', time: '10:05',
+    subj: 'В субботу почта не работает с 10 до 12',
+    body: ['Коллеги, в субботу обновляем почтовый сервер. С 10:00 до 12:00 почта будет недоступна.', 'Ничего делать не нужно. Вопросы — в рабочий чат.', 'Ира'],
+    why: 'Свой адрес, ни ссылок, ни просьб. Настоящий IT предупреждает, а не просит пароль.' },
+  { id: 'it', phish: true, name: 'IT-отдел', addr: 'it-support@rornashka.example', color: '#2F8F7A', time: '09:12',
+    subj: 'Ваш пароль истекает сегодня',
+    body: ['Здравствуйте!', 'Срок действия вашего пароля истекает сегодня в 18:00. Чтобы сохранить доступ к почте, подтвердите текущий пароль.', 'С уважением, IT-отдел'],
+    link: { text: 'Сохранить текущий пароль', url: 'https://rornashka.example/mail/login' },
+    why: 'rornashka вместо romashka: «r» и «n» рядом похожи на «m». И IT никогда не просит подтвердить пароль по ссылке.' },
+];
+const PHISH_N = EMAILS.filter(m => m.phish).length, REAL_N = EMAILS.length - PHISH_N;
+
+const HINTS = [
+  'Начните с адреса: нажмите на имя отправителя. У писем коллег адрес заканчивается ровно на @romashka.example — сверяйте по буквам.',
+  'Наведите курсор на кнопку или ссылку: внизу окна появится её адрес. hr.romashka.example и drive.romashka.example — ваши, домен читают справа. Подозрительно всё, что торопит и просит пароль, деньги или «не звонить».',
+  'Приманки: «Ваш пароль истекает сегодня», «Посылка задержана» и «Счёт за стенд в Вильнюсе». Остальные три — настоящие. Неразобранные письма обведены пунктиром.',
+];
+
+// ---------- состояние ----------
+const S = { step: 0, maxStep: 0, quiz: null, refHl: null, trap: null, trapLeft: TRAP_TIME };
+let TT = null;
+const M = { sel: null, read: {}, shown: {}, marks: {}, fb: null, page: null, status: '', clicked: [], fails: 0, hint: 0, help: false, demo: false, solved: false };
+
+// ---------- кадр ----------
+function imgTag(p) {
+  return `<img src="${ART}${p.img}.webp" alt="${esc(p.alt)}" data-ph="${esc(p.alt)}" decoding="async">`;
+}
+function phHtml(alt, small) {
+  return `<div class="ph" role="img" aria-label="${esc(alt)}"><div class="ph-ic" aria-hidden="true">✎</div>${small ? '' : '<div class="ph-t">Кадр мультика</div>'}<div class="ph-d">${esc(alt)}</div>${small ? '' : '<div class="ph-n">заглушка: картинка ещё не сгенерирована</div>'}</div>`;
+}
+function guardImages(root) {
+  root.querySelectorAll('img[data-ph]').forEach(img => {
+    const swap = () => { const small = !!img.closest('.thumb'); img.insertAdjacentHTML('afterend', phHtml(img.dataset.ph, small)); img.remove(); };
+    if (img.complete && img.naturalWidth === 0) swap();
+    else img.addEventListener('error', swap, { once: true });
+  });
+}
+// Реплики появляются вместе с кадром (лёгкая очерёдность — только CSS-задержка
+// перехода): ничего не идёт само по таймеру.
+function bubbleHtml(b, i) {
+  const st = `left:${b.x}%;top:${b.y}%;max-width:${b.w}%;transition-delay:${reduce ? 0 : 120 + i * 140}ms`;
+  const inner = b.html || `${b.who ? `<span class="who">${esc(b.who)}</span>` : ''}${esc(b.t)}`;
+  return `<div class="bub t-${b.tail}${b.think ? ' think' : ''}${b.bad ? ' bad' : ''}${b.zoom ? ' zoom' : ''}" data-b="${i}" style="${st}">${inner}</div>`;
+}
+function renderStage() {
+  const st = STEPS[S.step], f = $('frame'), mw = $('mailwrap');
+  const mail = st.quiz || st.task || st.trap;
+  f.hidden = mail; mw.hidden = !mail;
+  if (mail) { f.innerHTML = ''; renderMail(); return; }
+  mw.innerHTML = '';
+  if (st.summary) {
+    f.innerHTML = `<div class="thumbs">${THUMBS.map(([p, cap]) => `<figure class="thumb">${imgTag(p)}<figcaption>${esc(cap)}</figcaption></figure>`).join('')}</div>`;
+    guardImages(f);
+    return;
+  }
+  const p = st.panel;
+  f.innerHTML = `<figure class="panel">
+      ${imgTag(p)}
+      <div class="ov">
+        ${p.narr ? `<div class="narr"${p.np ? ` style="left:${p.np[0]}%;top:${p.np[1]}%"` : ''}>${esc(p.narr)}</div>` : ''}
+        <div class="bubs">${(p.bubbles || []).map(bubbleHtml).join('')}</div>
+      </div></figure>`;
+  guardImages(f);
+  void f.offsetWidth;
+  applyFrame();
+}
+function applyFrame() {
+  const st = STEPS[S.step];
+  if (st.summary || st.quiz || st.task || st.trap) return;
+  $('frame').querySelectorAll('.panel').forEach(el => {
+    el.classList.add('on');
+    el.querySelectorAll('.bub').forEach(b => {
+      b.classList.add('shown');
+      b.style.outline = b.classList.contains('zoom') && S.refHl === 'addr' ? '3px solid var(--accent)' : '';
+    });
+  });
+}
+// ---------- почта ----------
+const domainOf = a => a.split('@')[1];
+const initial = n => n.replace(/[«»"]/g, '').trim()[0].toUpperCase();
+function mailShell(main, acc = 'marina@romashka.example') {
+  return `<div class="mail"><div class="mail-bar"><span class="wd" aria-hidden="true"><i></i><i></i><i></i></span><span class="app-t">Почта</span><span class="acc">${acc}</span></div>
+    ${main}<div class="statusbar" id="statusbar">${M.status ? `Ссылка ведёт на: <b>${esc(M.status)}</b>` : '&nbsp;'}</div></div>`;
+}
+function quizMail() {
+  const q = S.quiz;
+  const hot = (id, inner, extra = '') => {
+    let cls = 'hot';
+    if (q) cls += id === QUIZ.answer ? ' right' : id === q.pick ? ' wrong' : '';
+    const note = q && (id === QUIZ.answer || id === q.pick) ? `<span class="hot-note">${esc(QUIZ.notes[id])}</span>` : '';
+    return `<button type="button" class="${cls}" data-hot="${id}" ${q ? 'disabled' : ''} ${extra}>${inner}${note}</button>`;
+  };
+  const main = `<div class="mail-main single${q ? '' : ' quizmode'}"><div class="reader">
+      ${hot('subj', '<h3 class="r-subj">Акт сверки за октябрь — подпишите до 18:00</h3>')}
+      <div class="r-from"><span class="logo" aria-hidden="true">✿</span>
+        <div class="r-who">${hot('name', '<b>Бухгалтерия · Ромашка</b>')}${hot('addr', '<span class="addr">buh@romashka-docs.example</span>')}<span class="r-to">Кому: marina@romashka.example</span></div>
+        <span class="r-time">14:52</span></div>
+      <div class="r-body"><p>Марина, добрый день!</p><p>Во вложении акт сверки с «Ласточкой» за октябрь. Подпишите, пожалуйста, сегодня: завтра закрываем месяц.</p></div>
+      ${hot('btn', '<span class="r-link" style="display:inline-block">Открыть акт в «Документах»</span>')}
+      ${hot('sign', '<span class="r-sign">Ольга Петренко, главный бухгалтер<br>ООО «Ромашка» · внутренний 214</span>')}
+    </div></div>`;
+  return mailShell(main);
+}
+function inboxRow(m) {
+  const mk = M.marks[m.id];
+  const ghost = M.hint >= 3 && !mk && !M.solved;
+  let lbl = '';
+  if (mk) lbl = mk === (m.phish ? 'phish' : 'real') ? (mk === 'phish' ? '<span class="lbl phish">⚑ фишинг</span>' : '<span class="lbl okm">✓ настоящее</span>') : '<span class="lbl wrongm">отмечено неверно</span>';
+  return `<button type="button" class="msg${M.sel === m.id ? ' sel' : ''}${M.read[m.id] ? '' : ' unread'}${ghost ? ' ghost' : ''}" data-mail="${m.id}" ${M.demo ? 'disabled' : ''}>
+    <span class="from">${esc(m.name)}</span><span class="time">${m.time}</span>
+    <span class="subj">${esc(m.subj)}</span><span class="prev">${esc(m.body[m.body.length > 1 && m.body[0].length < 24 ? 1 : 0])}</span>${lbl}</button>`;
+}
+function readerHtml() {
+  const m = EMAILS.find(x => x.id === M.sel);
+  if (!m) return `<div class="reader"><div class="r-empty"><span style="font-size:28px" aria-hidden="true">✉</span>Выберите письмо слева.<br>Нажмите на имя отправителя, чтобы увидеть адрес.</div></div>`;
+  const shown = M.shown[m.id];
+  const link = m.link ? `<button type="button" class="r-link${m.link.kind === 'text' ? ' text' : ''}" data-link="${m.id}" data-url="${esc(m.link.url)}" ${M.demo ? 'disabled' : ''}>${esc(m.link.text)}</button>` : '';
+  const att = m.att ? `<button type="button" class="r-att" data-link="${m.id}" data-url="${esc(m.att.url)}" ${M.demo ? 'disabled' : ''}><span class="pdf">PDF</span>${esc(m.att.name)}</button>` : '';
+  const mk = M.marks[m.id];
+  const fb = M.fb && M.fb.id === m.id ? `<div class="r-fb ${M.fb.ok ? 'ok' : 'fail'}" role="status"><b>${M.fb.ok ? (m.phish ? 'Верно: приманка.' : 'Верно: настоящее письмо.') : (m.phish ? 'Это приманка.' : 'Это настоящее письмо.')}</b>${esc(M.fb.ok ? m.why : (m.phish ? m.why : m.why + ' Пометка «фишинг» на настоящем письме — тоже ошибка: коллега ждёт ответа.'))}</div>` : '';
+  const page = M.page ? webPage() : '';
+  return `<div class="reader">
+    <h3 class="r-subj">${esc(m.subj)}</h3>
+    <div class="r-from"><span class="ava" style="background:${m.color}" aria-hidden="true">${esc(initial(m.name))}</span>
+      <div class="r-who"><button type="button" class="namebtn" data-name="${m.id}" aria-expanded="${!!shown}">${esc(m.name)} <span class="car">${shown ? '▴' : '▾'}</span></button>
+        ${shown ? `<span class="addr">${esc(m.addr)}</span>` : ''}<span class="r-to">Кому: marina@romashka.example</span></div>
+      <span class="r-time">${m.time}</span></div>
+    <div class="r-body">${m.body.map(p => `<p>${esc(p)}</p>`).join('')}</div>
+    ${link}${att}
+    <div class="r-actions">
+      <button type="button" class="mbtn phish" data-mark="phish" ${M.demo || mk === 'phish' ? 'disabled' : ''}>⚑ Это фишинг</button>
+      <button type="button" class="mbtn okb" data-mark="real" ${M.demo || mk === 'real' ? 'disabled' : ''}>✓ Настоящее</button>
+    </div>${fb}${page}</div>`;
+}
+function webPage() {
+  const m = EMAILS.find(x => x.id === M.page.id);
+  const url = M.page.url;
+  let body;
+  if (m.phish && m.id === 'it') body = `<h4>Вход в почту</h4><div class="wp-form" aria-hidden="true"><span class="in"></span><span class="in"></span><span class="go"></span></div>
+      <div class="cardboard">Это та самая картонная дверь. Страница похожа на вход в почту, но адрес — ${esc(new URL(url).host)}. Всё, что вы введёте, достанется Полосатому.</div>`;
+  else if (m.phish && m.id === 'parcel') body = `<h4>Оплата доставки · 1,99 €</h4><div class="wp-form" aria-hidden="true"><span class="in"></span><span class="in"></span><span class="go"></span></div>
+      <div class="cardboard">Форма оплаты на чужом домене ${esc(new URL(url).host)}. Данные карты с такой страницы уходят мошеннику, и списывают с неё совсем не 1,99 €.</div>`;
+  else if (m.phish) body = `<h4>Счёт_стенд_Vilnius.pdf</h4>
+      <div class="cardboard">Вложение из поддельного письма. Внутри «новые реквизиты» мошенника, а бывает и программа, которая притворяется документом (урок 8). Такие вложения не открывают: письмо пересылают в IT.</div>`;
+  else body = `<h4>${m.id === 'hr' ? 'Опрос: куда едем летом?' : 'Папка «Корпоратив»'}</h4><p>${m.id === 'hr' ? 'Озеро · Горы · Море' : '128 фото · обновлено сегодня'}</p><p style="color:var(--ok);font-weight:600">Это ваш сайт: ${esc(new URL(url).host)} заканчивается на ${OWN}.</p>`;
+  return `<div class="webpage" role="dialog" aria-label="Страница по ссылке"><div class="wp-bar"><button type="button" class="mbtn" data-page="close">← К письму</button><span class="wp-url">${esc(url)}</span></div><div class="wp-body">${body}</div></div>`;
+}
+function trapClock() {
+  const s = Math.max(0, S.trapLeft);
+  return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
+}
+function trapPage() {
+  const t = S.trap;
+  const logo = 'Gooogle'.split('').map(c => `<span>${c}</span>`).join('');
+  const stamp = !t ? ''
+    : t.pick === 'skip' ? '<div class="trap-stamp ok">Это был фишинг<small>Вы не попались</small></div>'
+    : '<div class="trap-stamp bad">Это был фишинг<small>Вы попались · пароль мы не сохраняли</small></div>';
+  return `<div class="trap${t ? ' decided' : ''}" role="group" aria-label="Учебная страница: окно с призом">
+    <div class="trap-bar"><span class="wd" aria-hidden="true"><i></i><i></i><i></i></span>
+      <span class="trap-url${t ? ' reveal' : ''}"><span class="lock" aria-hidden="true">🔒</span><span>https://<b>gooogle-prizes.example</b>/iphone-duo</span></span></div>
+    <div class="trap-body">
+      <div class="trap-prize"><div class="conf" aria-hidden="true">🎉📱🎉</div>
+        <h3>Выиграй iPhone Duo</h3>
+        <p>Вы — 1 000 000-й посетитель! Войдите в аккаунт, чтобы забрать приз.</p>
+        <p>Приз сгорит через <span class="timer" id="trap-timer">${trapClock()}</span></p></div>
+      <div class="trap-card">
+        <div class="trap-logo" aria-label="Gooogle">${logo}</div>
+        <h4>Вход</h4>
+        <p class="sub">Используйте аккаунт Gooogle</p>
+        <div class="trap-field"><label for="trap-email">Телефон или адрес эл. почты</label>
+          <input id="trap-email" type="text" inputmode="email" autocomplete="off" autocapitalize="off" spellcheck="false" data-1p-ignore data-lpignore="true" ${t ? 'disabled' : ''}>
+          <span class="err" id="trap-email-err" aria-live="polite"></span></div>
+        <div class="trap-field"><label for="trap-pass">Пароль</label>
+          <input id="trap-pass" class="masked" type="text" autocomplete="off" autocapitalize="off" spellcheck="false" data-1p-ignore data-lpignore="true" ${t ? 'disabled' : ''}>
+          <span class="err" id="trap-pass-err" aria-live="polite"></span></div>
+        <div class="trap-row">
+          <button class="trap-skip" type="button" data-trap="skip" ${t ? 'disabled' : ''}>Пропустить</button>
+          <button class="trap-login" type="button" data-trap="login" ${t ? 'disabled' : ''}>Войти</button></div>
+      </div>
+      <p class="trap-fine">Нажимая «Войти», вы соглашаетесь с правилами акции. Количество призов ограничено.</p>
+    </div>${stamp}</div>`;
+}
+function trapTick() {
+  clearInterval(TT); TT = null;
+  if (S.step !== TRAP || S.trap) return;
+  TT = setInterval(() => {
+    if (S.step !== TRAP || S.trap) { clearInterval(TT); TT = null; return; }
+    S.trapLeft = S.trapLeft > 1 ? S.trapLeft - 1 : TRAP_TIME;
+    const el = $('trap-timer');
+    if (el) el.textContent = trapClock();
+  }, 1000);
+}
+function answerTrap(kind) {
+  if (S.step !== TRAP || S.trap) return;
+  const email = $('trap-email'), pass = $('trap-pass');
+  if (kind === 'login') {
+    // Только проверка «не пусто», как на настоящей странице входа; сам текст никуда не копируется.
+    const hasEmail = !!(email && email.value.trim()), hasPass = !!(pass && pass.value);
+    $('trap-email-err').textContent = hasEmail ? '' : 'Введите адрес эл. почты или телефон';
+    $('trap-pass-err').textContent = hasEmail && !hasPass ? 'Введите пароль' : '';
+    if (!hasEmail) { email.focus(); return; }
+    if (!hasPass) { pass.focus(); return; }
+  }
+  if (email) email.value = '';
+  if (pass) pass.value = '';
+  S.trap = { pick: kind };
+  clearInterval(TT); TT = null;
+  renderMail(); renderCard(); renderTransport(); showCard();
+}
+function trapCard() {
+  const t = S.trap;
+  let body;
+  if (!t) body = `<p class="task-how">Окно ${mobileMQ.matches ? 'выше' : 'справа'}. Действуйте, как в жизни: войти, чтобы забрать приз, или пропустить.</p>`;
+  else {
+    body = t.pick === 'skip'
+      ? `<div class="fb ok"><p>Молодец! Вы не стали входить на странице с призом. Это и был фишинг: яркий подарок, таймер и знакомое окно входа. Пароль, введённый там, достался бы мошеннику.</p></div>`
+      : `<div class="fb fail"><p><b>Вы попались.</b> Это был фишинг: страница только притворялась входом в аккаунт.</p>
+        <p>Мы ваш пароль никуда не сохраняли и не отправляли: поля стёрты сразу. Но в реальной жизни после такого срочно меняйте пароль.</p></div>`;
+    body += `<p class="explain">Что выдавало подделку: в адресной строке <code>gooogle-prizes.example</code> — чужой сайт, и в имени три «o»; приз ни за что; таймер, чтобы не дать подумать. Замок в адресной строке ничего не доказывает: он есть и у сайтов мошенников.</p>
+      <span class="mark ${t.pick === 'skip' ? 'first' : 'shown'}">${t.pick === 'skip' ? '✓ Не попались' : '● Попались · в прогресс без отметки'}</span>
+      <div class="task-actions"><button class="btn primary" type="button" data-action="next" id="card-next">Далее →</button></div>`;
+  }
+  const st = t ? (t.pick === 'skip' ? ' solved' : ' revealed') : '';
+  return `<div class="task${st}"><div class="task-head"><span class="ring" aria-hidden="true"></span>Проверка в браузере<span class="att">одна попытка</span></div>
+    <p class="task-goal">Что вы сделаете с этим окном?</p>${body}</div>`;
+}
+function renderMail() {
+  const st = STEPS[S.step], mw = $('mailwrap');
+  if (st.trap) { mw.innerHTML = trapPage(); trapTick(); return; }
+  if (st.quiz) { mw.innerHTML = quizMail(); return; }
+  const done = Object.keys(M.marks).length;
+  const main = `<div class="mail-main"><div class="inbox"><div class="inbox-h"><span>Входящие</span><span>разобрано ${done} из ${EMAILS.length}</span></div>${EMAILS.map(inboxRow).join('')}</div>${readerHtml()}</div>`;
+  const fid = document.activeElement && document.activeElement.dataset && (document.activeElement.dataset.mail || document.activeElement.dataset.mark);
+  mw.innerHTML = mailShell(main);
+  if (fid) { const f = mw.querySelector(`[data-mail="${fid}"],[data-mark="${fid}"]`); if (f && !f.disabled) f.focus({ preventScroll: true }); }
+}
+function setStatus(url) {
+  M.status = url || '';
+  const sb = $('statusbar');
+  if (sb) sb.innerHTML = M.status ? `Ссылка ведёт на: <b>${esc(M.status)}</b>` : '&nbsp;';
+}
+
+function counts() {
+  let ph = 0, re = 0;
+  for (const m of EMAILS) { const k = M.marks[m.id]; if (m.phish && k === 'phish') ph++; if (!m.phish && k === 'real') re++; }
+  return { ph, re };
+}
+function checkSolved() {
+  const { ph, re } = counts();
+  if (!M.solved && ph === PHISH_N && re === REAL_N) {
+    M.solved = true; M.demo = false;
+    const st = $('stage'); st.classList.remove('flash'); void st.offsetWidth; st.classList.add('flash');
+  }
+}
+function openMail(id) {
+  M.sel = id; M.read[id] = true; M.page = null;
+  if (M.fb && M.fb.id !== id) M.fb = null;
+  setStatus('');
+  refresh();
+}
+function markMail(kind) {
+  const m = EMAILS.find(x => x.id === M.sel);
+  if (!m) return;
+  M.marks[m.id] = kind;
+  const ok = (kind === 'phish') === m.phish;
+  if (!ok) M.fails++;
+  M.fb = { id: m.id, ok };
+  checkSolved();
+  refresh();
+}
+function clickLink(id, url) {
+  const m = EMAILS.find(x => x.id === id);
+  if (m.phish && !M.clicked.includes(id)) { M.clicked.push(id); M.fails++; }
+  M.page = { id, url };
+  refresh();
+}
+function showSolution() {
+  if (M.solved || M.demo) return;
+  M.help = true; M.demo = true;
+  const queue = EMAILS.filter(m => M.marks[m.id] !== (m.phish ? 'phish' : 'real'));
+  const d = reduce ? 60 : 800;
+  const stepFn = () => {
+    if (S.step !== TASK) { M.demo = false; return; }
+    const m = queue.shift();
+    if (!m) { M.demo = false; refresh(); return; }
+    M.sel = m.id; M.read[m.id] = true; M.shown[m.id] = true; M.page = null; refresh();
+    setTimeout(() => { M.marks[m.id] = m.phish ? 'phish' : 'real'; M.fb = { id: m.id, ok: true }; checkSolved(); refresh(); setTimeout(stepFn, d); }, d);
+  };
+  refresh();
+  setTimeout(stepFn, d / 2);
+}
+function refresh() { renderMail(); renderCard(); renderTransport(); }
+
+// ---------- лента, теория, карточки ----------
+function stepDone(i) { return i === TRAP ? !!S.trap : i === QUIZ_STEP ? !!S.quiz : i === TASK ? M.solved : true; }
+function canGo(i) {
+  if (i < 0 || i >= STEPS.length || i > S.maxStep + 1) return false;
+  for (let j = 0; j < i; j++) if (!stepDone(j)) return false;
+  return true;
+}
+function renderTimeline() {
+  const steps = STEPS.map((b, i) => {
+    const q = (b.quiz && S.quiz) || (b.trap && S.trap && { first: S.trap.pick === 'skip' });
+    const cls = ['tl', i < S.step ? 'done' : '', i === S.step ? 'current' : '', b.task ? 'is-task' : '', b.quiz || b.trap ? 'is-quiz' : '', q ? (q.first ? 'first' : 'shown') : '', b.task && M.solved ? 'solved' : ''].filter(Boolean).join(' ');
+    const note = b.trap && q ? (q.first ? ' · не попались' : ' · попались') : q ? (q.first ? ' · верно с первой попытки' : ' · ответ показан') : b.task && M.solved ? ' · решено' : '';
+    return `<button type="button" class="${cls}" data-goto="${i}" ${canGo(i) ? '' : 'disabled'} title="${esc(b.title + note)}" aria-label="Шаг ${i + 1}: ${esc(b.title + note)}" ${i === S.step ? 'aria-current="step"' : ''}><span class="bar"></span></button>`;
+  }).join('');
+  $('timeline').innerHTML = `<div class="tl-steps">${steps}</div><div class="tl-label">Шаг ${S.step + 1} из ${STEPS.length} · <b>${esc(STEPS[S.step].title)}</b></div>`;
+}
+function pastTail(i) {
+  if (i === TRAP && S.trap) return `<p class="task-done${S.trap.pick === 'skip' ? '' : ' shown'}">${S.trap.pick === 'skip' ? '✓ Не попались на приманку' : '● Попались на приманку'}</p>`;
+  if (i === QUIZ_STEP && S.quiz) return `<p class="task-done${S.quiz.first ? '' : ' shown'}">${S.quiz.first ? '✓ Верно с первой попытки' : '● Ответ показан'}</p>`;
+  if (i === TASK && M.solved) return `<p class="task-done">✓ Задача решена${M.help ? ' с показом решения' : ''}</p>`;
+  return '';
+}
+function renderTheory() {
+  const openMore = $('more') && $('more').open;
+  const parts = [];
+  for (let i = 0; i <= S.step; i++) {
+    const b = STEPS[i], past = i < S.step;
+    const label = b.task ? '◆ Задача' : b.quiz ? '● Вопрос' : b.trap ? '● Проверка' : `Шаг ${i + 1}`;
+    const tail = past ? pastTail(i) : '<div id="card"></div>';
+    parts.push(`<article class="beat ${past ? 'past' : 'current'}" id="beat-${i}" ${past ? `data-goto="${i}" title="Вернуться к этому шагу"` : ''}>
+      <h2><span class="n">${label}</span>${esc(b.title.replace(/^(Задача|Вопрос|Проверка): /, ''))}</h2>
+      <div class="prose">${b.html()}</div>${b.more && !past ? MORE : ''}${tail}</article>`);
+  }
+  if (S.step === LAST) {
+    const score = [
+      S.trap ? (S.trap.pick === 'skip' ? '<span class="mark first">✓ Проверка: не попались</span>' : '<span class="mark shown">● Проверка: попались</span>') : '',
+      S.quiz ? (S.quiz.first ? '<span class="mark first">✓ Вопрос: с первой попытки</span>' : '<span class="mark shown">● Вопрос: ответ показан</span>') : '',
+      M.solved ? `<span class="mark ${M.help || M.clicked.length ? 'shown' : 'first'}">${M.help ? '● Задача: с показом решения' : M.clicked.length ? '● Задача: решена, но ссылка в приманке нажата' : '✓ Задача решена'}</span>` : '',
+    ].join('');
+    parts.push(`<div class="finish">
+      <div class="eyebrow">Урок 5 пройден</div>
+      <div class="score">${score}</div>
+      <div class="next">
+        <div class="eyebrow">Дальше · урок 6</div>
+        <h3>Звонок «из IT»</h3>
+        <p>Полосатый больше не пишет — он звонит. Голосом «Иры из IT» просит поставить программу «для проверки», а потом пишет в мессенджер с нового номера «Виктора». Разберём, почему людей обмануть проще, чем компьютеры, и как отказать вежливо.</p>
+        <div><a class="btn" href="security-lesson-1.html">← Демо-урок 1: «Wi-Fi — общая комната»</a></div>
+      </div>
+    </div>`);
+  }
+  $('beats').innerHTML = parts.join('');
+  if (openMore && $('more')) $('more').open = true;
+  const sc = $('theory-scroll'), cur = $('beat-' + S.step);
+  if (cur && getComputedStyle(sc).overflowY === 'auto') sc.scrollTo({ top: Math.max(0, cur.offsetTop - 16), behavior: reduce ? 'auto' : 'smooth' });
+}
+function quizCard() {
+  const q = S.quiz;
+  let body;
+  if (!q) body = `<p class="task-how">На письме ${mobileMQ.matches ? 'выше' : 'справа'} пунктиром обведены пять мест: имя, адрес, тема, кнопка и подпись. Нажмите одно. Попытка одна, после неё покажем ответ и объяснение.</p>`;
+  else {
+    body = q.first ? '<div class="fb ok"><p>Верно: адрес отправителя.</p></div>'
+      : `<div class="fb fail"><p>${esc(QUIZ.notes[q.pick])}</p><p>Правильный ответ: <strong>адрес отправителя</strong>.</p></div>`;
+    body += `<p class="explain">${esc(QUIZ.explain)}</p>
+      <span class="mark ${q.first ? 'first' : 'shown'}">${q.first ? '✓ Верно с первой попытки' : '● Ответ показан · в прогресс без отметки'}</span>
+      <div class="task-actions"><button class="btn primary" type="button" data-action="next" id="card-next">Далее →</button></div>`;
+  }
+  const st = q ? (q.first ? ' solved' : ' revealed') : '';
+  return `<div class="task${st}"><div class="task-head"><span class="ring" aria-hidden="true"></span>Вопрос на письме<span class="att">одна попытка</span></div>
+    <p class="task-goal">Что в этом письме выдаёт подделку наверняка?</p>${body}</div>`;
+}
+function taskCard() {
+  const { ph, re } = counts();
+  const wrong = Object.entries(M.marks).filter(([id, k]) => (k === 'phish') !== EMAILS.find(m => m.id === id).phish).length;
+  const goals = [
+    { st: ph === PHISH_N ? 'ok' : ph ? 'wait' : '', label: `Найдены все приманки · ${ph} из ${PHISH_N}`, why: ph === PHISH_N ? 'Все три помечены «Это фишинг».' : '' },
+    { st: re === REAL_N ? 'ok' : re ? 'wait' : '', label: `Настоящие письма не тронуты · ${re} из ${REAL_N}`, why: wrong ? `Отмечено неверно: ${wrong}. Откройте письмо и поправьте пометку.` : re === REAL_N ? 'Три настоящих письма отмечены «Настоящее».' : '' },
+    { st: M.clicked.length ? 'no' : M.solved ? 'ok' : '', label: 'В приманках ничего не нажато', why: M.clicked.length ? `Нажата ссылка или вложение в приманке: ${M.clicked.length}. В жизни — сразу сообщить в IT.` : 'Проверяйте адрес наведением, без клика.' },
+  ];
+  const items = goals.map(g => `<li class="${g.st}"><span class="mk" aria-hidden="true">${g.st === 'ok' ? '✓' : g.st === 'no' ? '✕' : ''}</span><span>${g.label}${g.why ? `<span class="why">${esc(g.why)}</span>` : ''}</span></li>`).join('');
+  let body;
+  if (M.solved) {
+    body = `<div class="fb ok">Готово: три приманки пойманы, настоящие письма на месте.${M.clicked.length ? ' Одна ошибка всё же была: ссылку в приманке нажимать не стоило.' : ''} В жизни каждую приманку ещё пересылают в IT — письмо пришло не только вам.</div>
+      <div class="task-actions"><button class="btn primary" type="button" data-action="next" id="card-next">Далее: итог →</button></div>`;
+  } else {
+    const hints = M.hint ? `<ol class="hints">${HINTS.slice(0, M.hint).map(t => `<li>${t}</li>`).join('')}</ol>` : '';
+    const showSol = M.fails >= 2 || M.hint >= 2;
+    body = `${hints}<div class="task-actions">
+      <button class="btn" type="button" data-action="hint" id="task-hint" ${M.hint >= 3 || M.demo ? 'disabled' : ''}>Подсказка · ${M.hint} из 3</button>
+      ${showSol ? `<button class="btn link" type="button" data-action="solution" id="task-solution" ${M.demo ? 'disabled' : ''}>Показать решение</button>` : ''}</div>`;
+  }
+  return `<div class="task${M.solved ? ' solved' : ''}">
+    <div class="task-head"><span class="dia" aria-hidden="true"></span>${M.solved ? `Решено${M.help ? ' с показом решения' : ''}` : 'Задача в почте'}</div>
+    <p class="task-goal">Разберите шесть писем: найдите три приманки.</p>
+    ${M.solved ? '' : `<p class="task-how">Почта ${mobileMQ.matches ? 'выше' : 'справа'}. Имя отправителя нажимается, ссылки показывают адрес при наведении. Цели проверяются сами.</p>`}
+    <ul class="checks">${items}</ul>${body}</div>`;
+}
+function renderCard() {
+  const el = $('card');
+  if (el) {
+    const fid = document.activeElement && document.activeElement.id;
+    el.innerHTML = S.step === TRAP ? trapCard() : S.step === QUIZ_STEP ? quizCard() : S.step === TASK ? taskCard() : '';
+    if (fid) { const f = document.getElementById(fid); if (f && !f.disabled && el.contains(f)) f.focus({ preventScroll: true }); }
+  }
+  renderNav();
+  renderTimeline();
+}
+function renderNav() {
+  const fid = document.activeElement && document.activeElement.id;
+  const done = stepDone(S.step), last = S.step === LAST;
+  const text = !done ? (S.step === TRAP ? 'Решите, что делать с окном, чтобы продолжить' : S.step === QUIZ_STEP ? 'Ответьте на вопрос, чтобы продолжить' : 'Разберите почту, чтобы продолжить') : last ? 'Конец урока' : 'Прочитали? Нажмите «Далее» · стрелки ← → тоже работают';
+  $('theory-nav').innerHTML = `<button class="btn" type="button" id="nav-prev" ${S.step === 0 ? 'disabled' : ''}>← Назад</button>
+    <span class="nav-text"><span class="progress" aria-label="Шаг ${S.step + 1} из ${STEPS.length}">${S.step + 1} / ${STEPS.length}</span><span class="nav-hint">${text}</span></span>
+    <button class="btn primary" type="button" id="nav-next" ${!done || last ? 'disabled' : ''}>Далее →</button>`;
+  if (fid === 'nav-prev' || fid === 'nav-next') { const f = $(fid); if (f && !f.disabled) f.focus({ preventScroll: true }); }
+}
+function renderModeChip() {
+  const c = $('mode-chip'), st = STEPS[S.step];
+  let t = '', k = '';
+  if (st.quiz) { t = S.quiz ? 'Вопрос · ответ показан' : 'Вопрос · нажмите место на письме'; k = S.quiz ? '' : 'quiz'; }
+  if (st.task) { t = M.solved ? 'Задача решена' : 'Задача · почта Марины'; k = M.solved ? '' : 'edit'; }
+  if (st.summary) t = 'Кадры урока';
+  c.className = 'mode-chip' + (k ? ' ' + k : '');
+  c.textContent = t;
+  c.hidden = !t || !!(st.quiz || st.task || st.trap);
+}
+function caption() {
+  const st = STEPS[S.step];
+  if (st.summary) return ['', 'Четыре кадра, которые стоит запомнить.'];
+  if (st.trap) return !S.trap ? ['info', 'Решите сами, что сделать с окном.'] : S.trap.pick === 'skip' ? ['ok', 'Вы пропустили приманку.'] : ['bad', 'Вы попались. Пароль мы не сохраняли, поля стёрты.'];
+  if (st.quiz) return S.quiz ? [S.quiz.first ? 'ok' : 'bad', S.quiz.first ? 'Верно: подделку выдаёт домен в адресе.' : 'Подделку выдаёт домен в адресе отправителя.'] : ['info', 'Нажмите на письме место, которое выдаёт подделку.'];
+  if (st.task) {
+    const { ph, re } = counts();
+    if (M.solved) return ['ok', 'Почта разобрана: три приманки помечены.'];
+    return ['', `Приманок найдено: ${ph} из ${PHISH_N} · настоящих отмечено: ${re} из ${REAL_N}.`];
+  }
+  return ['', st.panel ? st.panel.narr : ''];
+}
+function renderTransport() {
+  $('pdots').innerHTML = STEPS.map((b, i) => `<span class="pdot${i === S.step ? ' on' : i < S.step ? ' past' : ''}${b.task ? ' is-task' : b.quiz || b.trap ? ' is-quiz' : ''}"></span>`).join('');
+  $('pcount').textContent = `${S.step + 1} / ${STEPS.length}`;
+  const [tone, text] = caption(), c = $('caption');
+  c.className = 'caption' + (tone ? ' ' + tone : '');
+  c.innerHTML = `<span class="dot" aria-hidden="true"></span><span>${esc(text)}</span>`;
+  renderModeChip();
+}
+
+// ---------- переходы ----------
+function goTo(n) {
+  if (n === S.step || !canGo(n)) return;
+  S.step = n; S.maxStep = Math.max(S.maxStep, n); S.refHl = null;
+  M.status = '';
+  renderTheory(); renderCard(); renderStage(); renderTransport();
+  // На телефоне кадр над текстом: после «Далее» показываем новый кадр, текст — сразу под ним.
+  if (mobileMQ.matches) window.scrollTo({ top: 0, behavior: 'auto' });
+  else if (n === TRAP || n === QUIZ_STEP || n === TASK) showCard();
+}
+function showCard() {
+  const c = $('card'), sc = $('theory-scroll');
+  if (c && getComputedStyle(sc).overflowY === 'auto') c.scrollIntoView({ block: 'nearest', behavior: reduce ? 'auto' : 'smooth' });
+}
+function answerQuiz(id) {
+  if (S.step !== QUIZ_STEP || S.quiz) return;
+  S.quiz = { pick: id, first: id === QUIZ.answer };
+  renderMail(); renderCard(); renderTransport(); showCard();
+}
+
+// ---------- события ----------
+$('mailwrap').addEventListener('keydown', e => {
+  if (e.key === 'Enter' && e.target.closest('.trap-field input')) { e.preventDefault(); answerTrap('login'); }
+});
+$('mailwrap').addEventListener('input', e => {
+  const f = e.target.closest('.trap-field');
+  if (f) { const err = f.querySelector('.err'); if (err) err.textContent = ''; }
+});
+$('mailwrap').addEventListener('click', e => {
+  const tr = e.target.closest('[data-trap]');
+  if (tr && !tr.disabled) { answerTrap(tr.dataset.trap); return; }
+  const h = e.target.closest('[data-hot]');
+  if (h && !h.disabled) { answerQuiz(h.dataset.hot); return; }
+  if (M.demo) return;
+  const ml = e.target.closest('[data-mail]');
+  if (ml) { openMail(ml.dataset.mail); return; }
+  const nm = e.target.closest('[data-name]');
+  if (nm) { M.shown[nm.dataset.name] = !M.shown[nm.dataset.name]; renderMail(); return; }
+  const mk = e.target.closest('[data-mark]');
+  if (mk && !mk.disabled) { markMail(mk.dataset.mark); return; }
+  const lk = e.target.closest('[data-link]');
+  if (lk) { clickLink(lk.dataset.link, lk.dataset.url); return; }
+  const pg = e.target.closest('[data-page]');
+  if (pg) { M.page = null; renderMail(); }
+});
+const linkHover = (e, on) => { const lk = e.target.closest && e.target.closest('[data-url]'); if (lk) setStatus(on ? lk.dataset.url : ''); };
+$('mailwrap').addEventListener('pointerover', e => linkHover(e, true));
+$('mailwrap').addEventListener('pointerout', e => linkHover(e, false));
+$('mailwrap').addEventListener('focusin', e => linkHover(e, true));
+$('mailwrap').addEventListener('focusout', e => linkHover(e, false));
+
+function hoverRef(e, on) {
+  const r = e.target.closest && e.target.closest('.ref');
+  if (!r) return;
+  S.refHl = on ? r.dataset.ref : null;
+  applyFrame();
+}
+$('beats').addEventListener('pointerover', e => hoverRef(e, true));
+$('beats').addEventListener('pointerout', e => hoverRef(e, false));
+$('beats').addEventListener('focusin', e => hoverRef(e, true));
+$('beats').addEventListener('focusout', e => hoverRef(e, false));
+$('beats').addEventListener('click', e => {
+  const a = e.target.closest('[data-action]');
+  if (a) {
+    const k = a.dataset.action;
+    if (k === 'next') goTo(S.step + 1);
+    else if (k === 'hint') { M.hint = Math.min(3, M.hint + 1); renderCard(); renderMail(); }
+    else if (k === 'solution') showSolution();
+    return;
+  }
+  if (e.target.closest('.more') || e.target.closest('.ref')) return;
+  const past = e.target.closest('.beat.past');
+  if (past) goTo(+past.dataset.goto);
+});
+$('timeline').addEventListener('click', e => { const b = e.target.closest('[data-goto]'); if (b && !b.disabled) goTo(+b.dataset.goto); });
+$('theory-nav').addEventListener('click', e => {
+  if (e.target.closest('#nav-prev')) goTo(S.step - 1);
+  if (e.target.closest('#nav-next')) goTo(S.step + 1);
+});
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape' && M.page) { M.page = null; renderMail(); return; }
+  if (e.target.closest && e.target.closest('input, textarea, select, .mail')) return;
+  if (e.metaKey || e.ctrlKey || e.altKey) return;
+  if (e.key === 'ArrowRight') goTo(S.step + 1);
+  if (e.key === 'ArrowLeft') goTo(S.step - 1);
+});
+const onMQ = () => { renderCard(); renderTransport(); };
+mobileMQ.addEventListener ? mobileMQ.addEventListener('change', onMQ) : mobileMQ.addListener(onMQ);
+
+renderTheory(); renderCard(); renderStage(); renderTransport();
+})();
+</script>
+</body>
+</html>

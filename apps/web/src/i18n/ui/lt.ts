@@ -6,6 +6,7 @@ import { plural } from '../plural'
 import { deviceLt } from './device/lt'
 import { packetBoardLt } from './packetBoard/lt'
 import { panelLt } from './panel/lt'
+import { scenarioLt } from './scenario/lt'
 import type { UiStrings } from './types'
 
 const inLanguage: UiStrings['inLanguage'] = {
@@ -171,6 +172,7 @@ export const lt = {
     goToCourse: 'Eiti į kursą →',
     answerFirst: 'Pirmiau atsakykite į klausimą',
     toBoard: 'Žiūrėti lentoje →',
+    toFrame: 'Žiūrėti kadrą →',
     toTask: 'Į užduotį →',
     toQuestion: 'Į klausimą →',
     toText: '← Tekstas',
@@ -224,6 +226,7 @@ export const lt = {
   device: deviceLt,
   panel: panelLt,
   packetBoard: packetBoardLt,
+  scenario: scenarioLt,
   notFound: {
     title: 'Puslapis nerastas',
     body: path => `Adresu „${path}“ nieko nėra.`,

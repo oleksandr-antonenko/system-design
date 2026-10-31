@@ -39,10 +39,11 @@ describe('course registry', () => {
     expect(catalog.problems).toEqual([])
   })
 
-  test('the catalogue lists System Design, then Networking', () => {
+  test('the catalogue lists System Design, Networking, then Security', () => {
     expect(courses.map(course => course.definition.id)).toEqual([
       'system-design',
       'networks',
+      'security',
     ])
   })
 

@@ -17,6 +17,7 @@ export type QuizKind =
   | 'SpotFault'
   | 'PickRule'
   | 'Match'
+  | 'PickHotspot'
 
 /** Ответ, который считает движок по доске шага: автор его не пишет, и
     ошибиться в нём нельзя. */

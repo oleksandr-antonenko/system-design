@@ -5,7 +5,7 @@ import type { LooseLessonTexts } from '../lesson/dsl'
 
 // COURSE
 
-export const BoardKindId = Schema.Literals(['flow', 'packet'])
+export const BoardKindId = Schema.Literals(['flow', 'packet', 'scenario'])
 export type BoardKindId = typeof BoardKindId.Type
 
 /** Как палитра курса подаёт блоки. `progressive` (по умолчанию): блок

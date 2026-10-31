@@ -165,7 +165,10 @@ export const packet: BoardKind<PacketTypes> = {
   isHiddenGoal: () => false,
   solvedGoalText: () => Option.none(),
   outcome: () => [],
+  taskHeading: ui => ui.task.heading,
   taskHowTo: ui => ui.packetBoard.taskHowTo,
+  pickHowTo: ui => ui.quiz.pickOnBoard,
+  solveFirst: ui => ui.player.solveFirst,
 
   proseContext: (doc, run) => ({ doc, run }),
   annotationInput: (doc, run) => ({ doc, run }),

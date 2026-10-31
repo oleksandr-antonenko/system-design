@@ -6,6 +6,7 @@ import { plural } from '../plural'
 import { deviceUk } from './device/uk'
 import { packetBoardUk } from './packetBoard/uk'
 import { panelUk } from './panel/uk'
+import { scenarioUk } from './scenario/uk'
 import type { UiStrings } from './types'
 
 const inLanguage: UiStrings['inLanguage'] = {
@@ -169,6 +170,7 @@ export const uk = {
     goToCourse: 'Перейти до курсу →',
     answerFirst: 'Спершу дайте відповідь на питання',
     toBoard: 'Дивитися на дошці →',
+    toFrame: 'Дивитися кадр →',
     toTask: 'До задачі →',
     toQuestion: 'До питання →',
     toText: '← Текст',
@@ -222,6 +224,7 @@ export const uk = {
   device: deviceUk,
   panel: panelUk,
   packetBoard: packetBoardUk,
+  scenario: scenarioUk,
   notFound: {
     title: 'Сторінку не знайдено',
     body: path => `За адресою «${path}» нічого немає.`,

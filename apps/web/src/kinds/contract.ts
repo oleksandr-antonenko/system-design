@@ -312,11 +312,18 @@ export type StageContract<Stage> = Readonly<{
   persists?: (item: Stage) => boolean
 }>
 
+/** Как урок вида показывается в плеере. `slides` — шаг это кадр и его
+    текст: на узком экране кадр над текстом, прошлые шаги скрыты, а после
+    смены шага страница возвращается к доске (design D5 add-security-course). */
+export type Presentation = 'board' | 'slides'
+
 export type BoardKind<T extends KindTypes> = Readonly<{
   id: T['Id']
   /** Только для вывода типов (`defineLesson(flow, …)`): во время работы
       этого поля нет. */
   types?: T
+  /** По умолчанию — `board`. */
+  presentation?: Presentation
 
   // DOCUMENT
   empty: T['Doc']
@@ -343,8 +350,14 @@ export type BoardKind<T extends KindTypes> = Readonly<{
     after: T['Doc'],
     ui: UiStrings,
   ) => ReadonlyArray<OutcomeRow>
+  /** Заголовок карточки задачи: «Задача на доске», «Задача на экране». */
+  taskHeading: (ui: UiStrings) => string
   /** Как решать задачу этого вида: строка под условием в карточке задачи. */
   taskHowTo: (ui: UiStrings) => string
+  /** Как отвечать на квиз, который выбирают на доске вида. */
+  pickHowTo: (ui: UiStrings) => string
+  /** Строка у закрытой «Далее» на шаге нерешённой задачи. */
+  solveFirst: (ui: UiStrings) => string
 
   // TEXT
   proseContext: (doc: T['Doc'], run: T['Run']) => T['Prose']
