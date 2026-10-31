@@ -5,7 +5,14 @@ import type { Plugin, Rolldown } from 'vite'
 // opened (see `src/courses/registry.ts`). `meta.ts` and the course files stay
 // in the main bundle, so the course maps can show every lesson.
 
-const LESSON_MODULE = /\/src\/courses\/([^/]+)\/lessons\/([^/]+)\/([^/?]+)\.ts$/
+// A lesson's own modules: its `.ts` files and the pictures of its `art/`
+// folder. The pictures go into the lesson's file too: left alone, the bundler
+// may put their addresses into the small file that re-exports the lesson,
+// and the two files then import each other, so that whichever of the
+// lesson's script and texts starts loading first decides whether the
+// pictures are still undefined when the script runs.
+const LESSON_MODULE =
+  /\/src\/courses\/([^/]+)\/lessons\/([^/]+)\/([^/?]+\.ts|art\/[^/?]+)$/
 
 export type LessonModule = Readonly<{
   course: string
@@ -21,7 +28,7 @@ export const lessonModuleOf = (moduleId: string): LessonModule | undefined => {
     return undefined
   }
   const [, course = '', folder = '', file = ''] = match
-  return file === 'meta' || file.endsWith('.test')
+  return file === 'meta.ts' || file.endsWith('.test.ts')
     ? undefined
     : { course, folder, file }
 }
@@ -113,6 +120,16 @@ export const lessonChunkProblems = (
       .map(file => `${chunk.fileName} imports another lesson's file ${file}`),
   )
 
+  const byFile = new Map(chunks.map(chunk => [chunk.fileName, chunk]))
+  const cycles = lessonChunks.flatMap(chunk =>
+    chunk.imports
+      .filter(file => byFile.get(file)?.imports.includes(chunk.fileName))
+      .map(
+        file =>
+          `${chunk.fileName} and ${file} import each other: the lesson may run before its imports are set`,
+      ),
+  )
+
   const eager = chunks
     .filter(chunk => chunk.isEntry)
     .flatMap(entry =>
@@ -124,7 +141,7 @@ export const lessonChunkProblems = (
         ),
     )
 
-  return [...mixed, ...crossImports, ...eager]
+  return [...mixed, ...crossImports, ...cycles, ...eager]
 }
 
 /** Fails the build when a lesson is not alone in its own lazily loaded file. */
