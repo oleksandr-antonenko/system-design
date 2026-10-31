@@ -3,7 +3,7 @@ import { modifyFields } from 'foldkit/struct'
 
 import { type GoalResult, ScenarioMessage, goalResult } from './codes'
 
-// Мессенджер (урок 6 «Social engineering», урок 11 «Incident»): чаты с
+// Мессенджер (урок 7 «Social engineering», урок 12 «Incident»): чаты с
 // готовыми ответами, справочник компании со звонками и пересылка чата в IT.
 // Ответ, который соглашается на срочную просьбу без проверки, и звонок на
 // номер из сообщения — ошибки: документ их записывает, задача решается

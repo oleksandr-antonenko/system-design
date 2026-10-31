@@ -2084,9 +2084,14 @@
   font-size: 13.5px;
   overflow-wrap: anywhere;
 }
-.look-downloads .scenario-tray-name {
+.look-downloads .scenario-tray-name,
+.look-passwords .scenario-tray-name {
   font-family: var(--font-ui);
   font-weight: 600;
+}
+/* Пароль на проверке пишется как есть, крупнее: важна каждая буква. */
+.look-passwords .scenario-tray-name {
+  font-size: 15px;
 }
 .scenario-tray-ext {
   font-weight: 800;

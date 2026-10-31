@@ -3,8 +3,8 @@ import { modifyFields } from 'foldkit/struct'
 
 import { type GoalResult, ScenarioMessage, goalResult } from './codes'
 
-// Разбор предметов (уроки 7–9): стол перед обедом, папка «Загрузки»,
-// расширения браузера. Предмет — подпись урока `item:<id>` (имя и
+// Разбор предметов (уроки 2 и 8–10): пароли на проверке, стол перед обедом,
+// папка «Загрузки», расширения браузера. Предмет — подпись урока `item:<id>` (имя и
 // пояснение), его действия — подписи `action:<id>`, итог выбора — подпись
 // `res:<предмет>:<действие>`, если урок её дал. У предмета одно верное
 // действие и, может быть, одно опасное: его документ записывает ошибкой.
@@ -48,8 +48,14 @@ export const TrayItem = Schema.Struct({
 })
 export type TrayItem = typeof TrayItem.Type
 
-/** Как выглядит экран: стол, папка с файлами или страница расширений. */
-export const Look = Schema.Literals(['desk', 'downloads', 'extensions'])
+/** Как выглядит экран: проверка паролей, стол, папка с файлами или
+    страница расширений. */
+export const Look = Schema.Literals([
+  'passwords',
+  'desk',
+  'downloads',
+  'extensions',
+])
 export type Look = typeof Look.Type
 
 export const Tray = Schema.Struct({

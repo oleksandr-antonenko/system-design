@@ -3,11 +3,11 @@ import type { HtmlBuilder } from 'foldkit/html'
 import { click, expect, given, role, scene, text } from 'foldkit/scene'
 import { describe, test } from 'vitest'
 
-import passwordManager from '../../../courses/security/lessons/02-password-manager/lesson'
+import passwordManager from '../../../courses/security/lessons/03-password-manager/lesson'
 import * as Player from '../../../lesson/player'
 import { lessonView, loadedEntry } from '../../../lesson/view'
 
-// Менеджер паролей в задаче урока 2: стикеры уходят в сейф, повтор виден и
+// Менеджер паролей в задаче урока 3: стикеры уходят в сейф, повтор виден и
 // заменяется сгенерированным паролем, доступ к соцсети — через общий сейф.
 // Пароль, отправленный в чат, — ошибка с объяснением, задача решается дальше.
 

@@ -3,11 +3,11 @@ import type { HtmlBuilder } from 'foldkit/html'
 import { click, expect, given, label, role, scene, text } from 'foldkit/scene'
 import { describe, test } from 'vitest'
 
-import aiAccess from '../../../courses/security/lessons/10-ai-access/lesson'
+import aiAccess from '../../../courses/security/lessons/11-ai-access/lesson'
 import * as Player from '../../../lesson/player'
 import { lessonView, loadedEntry } from '../../../lesson/view'
 
-// Чат с ассистентом и токены CRM в задаче урока 10: узкий токен, ссылка
+// Чат с ассистентом и токены CRM в задаче урока 11: узкий токен, ссылка
 // на запись в менеджере паролей и отзыв после работы решают задачу.
 // Пароль администратора в чате — ошибка: сообщение удаляют, пароль меняют.
 

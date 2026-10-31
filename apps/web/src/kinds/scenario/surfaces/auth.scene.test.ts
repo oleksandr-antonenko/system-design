@@ -12,11 +12,11 @@ import {
 } from 'foldkit/scene'
 import { describe, test } from 'vitest'
 
-import twoFactor from '../../../courses/security/lessons/04-two-factor/lesson'
+import twoFactor from '../../../courses/security/lessons/05-two-factor/lesson'
 import * as Player from '../../../lesson/player'
 import { lessonView, loadedEntry } from '../../../lesson/view'
 
-// Страница безопасности и аутентификатор в задаче урока 4: QR-код, шесть
+// Страница безопасности и аутентификатор в задаче урока 5: QR-код, шесть
 // цифр, резервные коды, чужой запрос входа. «Да» на чужой запрос — ошибка
 // с объяснением, вход тут же завершают, задача решается дальше.
 

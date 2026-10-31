@@ -288,11 +288,13 @@ export const scenarioLt: ScenarioStrings = {
 
   tray: {
     tab: (look, owner) =>
-      look === 'desk'
-        ? `Stalas · ${owner}`
-        : look === 'downloads'
-          ? `Atsisiuntimai · ${owner}`
-          : `Plėtiniai · ${owner}`,
+      look === 'passwords'
+        ? `Slaptažodžiai · ${owner}`
+        : look === 'desk'
+          ? `Stalas · ${owner}`
+          : look === 'downloads'
+            ? `Atsisiuntimai · ${owner}`
+            : `Plėtiniai · ${owner}`,
     showExtensions: 'Rodyti failų plėtinius',
     extensionsShown:
       'Matomas visas pavadinimas: failo tipas – raidės po paskutinio taško.',

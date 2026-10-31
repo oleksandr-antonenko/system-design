@@ -289,11 +289,13 @@ export const scenarioUk: ScenarioStrings = {
 
   tray: {
     tab: (look, owner) =>
-      look === 'desk'
-        ? `Стіл · ${owner}`
-        : look === 'downloads'
-          ? `Завантаження · ${owner}`
-          : `Розширення · ${owner}`,
+      look === 'passwords'
+        ? `Паролі · ${owner}`
+        : look === 'desk'
+          ? `Стіл · ${owner}`
+          : look === 'downloads'
+            ? `Завантаження · ${owner}`
+            : `Розширення · ${owner}`,
     showExtensions: 'Показувати розширення файлів',
     extensionsShown:
       'Видно повне імʼя: тип файлу — у літерах після останньої крапки.',

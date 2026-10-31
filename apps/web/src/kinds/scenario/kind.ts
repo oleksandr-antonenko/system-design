@@ -27,6 +27,7 @@ import {
   deskSurface,
   downloadsSurface,
   extensionsSurface,
+  passwordsSurface,
 } from './surfaces/tray'
 import { vaultSurface } from './surfaces/vault'
 import { instruments, view } from './view'
@@ -241,6 +242,7 @@ export const scenario: BoardKind<ScenarioTypes> = {
     assistantSurface,
     crmSurface,
     keepassSurface,
+    passwordsSurface,
     deskSurface,
     downloadsSurface,
     extensionsSurface,

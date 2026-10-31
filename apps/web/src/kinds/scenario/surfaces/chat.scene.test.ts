@@ -3,11 +3,11 @@ import type { HtmlBuilder } from 'foldkit/html'
 import { click, expect, given, role, scene, text } from 'foldkit/scene'
 import { describe, test } from 'vitest'
 
-import socialEngineering from '../../../courses/security/lessons/06-social-engineering/lesson'
+import socialEngineering from '../../../courses/security/lessons/07-social-engineering/lesson'
 import * as Player from '../../../lesson/player'
 import { lessonView, loadedEntry } from '../../../lesson/view'
 
-// Мессенджер в задаче урока 6: «Виктор» с нового номера торопит со счётом.
+// Мессенджер в задаче урока 7: «Виктор» с нового номера торопит со счётом.
 // Пауза, звонок по номеру из справочника и пересылка в IT решают задачу;
 // согласие без проверки и звонок на номер из сообщения — ошибки с
 // объяснением, задача решается дальше.
