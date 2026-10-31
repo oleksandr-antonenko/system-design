@@ -49,6 +49,17 @@ const allClosed = (course: Course): Course =>
     Array.map(course.lessons, lesson => lesson.meta.slug),
   )
 
+/** System Design up to url-shortener: lessons after it (if a build has any)
+    are closed, so url-shortener is the last open one. */
+const throughUrlShortener = (): Course =>
+  withClosed(
+    systemDesign,
+    Array.map(
+      Array.filter(systemDesign.lessons, lesson => lesson.meta.order > 13),
+      lesson => lesson.meta.slug,
+    ),
+  )
+
 const sceneFor = (
   lesson: LessonDefinition<FlowTypes>,
   catalogue?: ReadonlyArray<Course>,
@@ -145,7 +156,7 @@ describe('end of a lesson', () => {
 
   test('the last lesson offers the next course of the catalogue', () => {
     scene(
-      sceneFor(urlShortener),
+      sceneFor(urlShortener, [throughUrlShortener(), networks]),
       given(atEnd(urlShortener)),
       pointerReady,
       expect(text('Course complete')).toExist(),
@@ -176,7 +187,7 @@ describe('end of a lesson', () => {
 
   test('the catalogue order wraps around to an earlier course', () => {
     scene(
-      sceneFor(urlShortener, [networks, systemDesign]),
+      sceneFor(urlShortener, [networks, throughUrlShortener()]),
       given(atEnd(urlShortener)),
       pointerReady,
       expect(
@@ -190,7 +201,7 @@ describe('end of a lesson', () => {
 
   test('a course without available lessons is not offered', () => {
     scene(
-      sceneFor(urlShortener, [systemDesign, allClosed(networks)]),
+      sceneFor(urlShortener, [throughUrlShortener(), allClosed(networks)]),
       given(atEnd(urlShortener)),
       pointerReady,
       expect(role('region', { name: 'Next course' })).not.toExist(),
@@ -202,7 +213,7 @@ describe('end of a lesson', () => {
 
   test('with a single course only the course outline is offered', () => {
     scene(
-      sceneFor(urlShortener, [systemDesign]),
+      sceneFor(urlShortener, [throughUrlShortener()]),
       given(atEnd(urlShortener)),
       pointerReady,
       expect(text('Course complete')).toExist(),
