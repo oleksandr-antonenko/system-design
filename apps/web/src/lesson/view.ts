@@ -2,14 +2,20 @@ import { Array, Option, Record, pipe } from 'effect'
 import { Submodel } from 'foldkit'
 import type { Html, HtmlBuilder } from 'foldkit/html'
 
-import { type LocalizedText, lessonTextFor, textFor } from '../courses/assemble'
+import {
+  type Course,
+  type LocalizedText,
+  courseTextFor,
+  lessonTextFor,
+  textFor,
+} from '../courses/assemble'
 import type { LessonMeta, LessonText } from '../courses/model'
 import {
   courseLessons,
   coursePaletteMode,
+  courses,
   findDefinition,
   findLesson,
-  lessonsOf,
   loadedLesson,
 } from '../courses/registry'
 import { renderDomainMessage } from '../i18n/domainMessage'
@@ -31,6 +37,7 @@ import {
   taskOf,
   withLesson,
 } from './dsl'
+import { nextAvailableLesson, nextCourse } from './finish'
 import { type Paragraph, parseBlocks } from './markup'
 import {
   CheckState,
@@ -72,6 +79,9 @@ export type PlayerViewInputs = Readonly<{
   /** Markup the page adds after the last step of this lesson (a slot built
       by the parent, in its own boundary). */
   lessonEnd?: (() => Html) | undefined
+  /** Courses the lesson end may offer next, in catalogue order (default:
+      every registered course). */
+  catalogue?: ReadonlyArray<Course> | undefined
 }>
 
 /** Урок, его тексты и язык страницы: то, что нужно каждой части вида. */
@@ -82,6 +92,7 @@ type Page<T extends KindTypes> = Readonly<{
   locale: Locale
   ui: UiStrings
   lessonEnd?: (() => Html) | undefined
+  catalogue: ReadonlyArray<Course>
 }>
 
 // TEXT
@@ -750,17 +761,17 @@ const askAiView = <T extends KindTypes>(
     ],
   })
 
-/** Конец урока: ссылка на следующий урок курса. После последнего урока
-    курса — конец курса и дорога к программе. */
+/** Конец урока: кнопка к следующему открытому уроку курса. Когда открытых
+    уроков в курсе не осталось — курс пройден на сейчас: карточка следующего
+    курса каталога и ссылка на программу курса. */
 const finishView = <T extends KindTypes>(
   page: Page<T>,
   h: HtmlBuilder<Message>,
 ): Html => {
-  const { lesson, model, locale, ui } = page
-  const lessons = lessonsOf(model.course)
-  const maybeNext = pipe(
-    Array.findFirstIndex(lessons, entry => entry.meta.slug === lesson.slug),
-    Option.flatMap(index => Array.get(lessons, index + 1)),
+  const { lesson, model, locale, ui, catalogue } = page
+  const lessons = pipe(
+    Array.findFirst(catalogue, course => course.definition.id === model.course),
+    Option.match({ onNone: () => [], onSome: course => course.lessons }),
   )
   const backToCourse = h.p(
     [],
@@ -772,42 +783,67 @@ const finishView = <T extends KindTypes>(
     ],
   )
 
+  const nextCourseCard = (course: Course): Html => {
+    const choice = courseTextFor(course, locale)
+    return h.section(
+      [h.Class('finish-course'), h.AriaLabel(ui.player.nextCourse)],
+      [
+        h.p([h.Class('eyebrow')], [ui.player.nextCourse]),
+        h.p(
+          [h.Lang(choice.shownIn), h.Class('finish-course-title')],
+          [choice.text.title],
+        ),
+        h.p([h.Lang(choice.shownIn)], [choice.text.tagline]),
+        h.p(
+          [],
+          [
+            h.a(
+              [
+                h.Class('btn primary finish-go'),
+                h.Href(courseUrl(locale, course.definition.id)),
+              ],
+              [ui.player.goToCourse],
+            ),
+          ],
+        ),
+      ],
+    )
+  }
+
   return h.div(
     [h.Class('finish')],
-    Option.match(maybeNext, {
+    Option.match(nextAvailableLesson(lessons, lesson.slug), {
       onNone: () => [
         h.p([h.Class('eyebrow')], [ui.player.courseFinishedTitle]),
         h.p([], [ui.player.courseFinishedBody]),
+        ...Option.match(nextCourse(catalogue, model.course), {
+          onNone: () => [],
+          onSome: course => [nextCourseCard(course)],
+        }),
         backToCourse,
       ],
-      onSome: next => {
-        const { text } = lessonTextFor(next, locale)
-        return [
-          h.p([h.Class('eyebrow')], [ui.player.finishedTitle]),
-          ...(next.meta.available
-            ? [
-                h.p(
-                  [],
-                  [
-                    h.a(
-                      [
-                        h.Href(
-                          lessonUrl({
-                            locale,
-                            course: model.course,
-                            slug: next.meta.slug,
-                            step: Option.none(),
-                          }),
-                        ),
-                      ],
-                      [ui.player.nextLesson(text.title)],
-                    ),
-                  ],
+      onSome: next => [
+        h.p([h.Class('eyebrow')], [ui.player.finishedTitle]),
+        h.p(
+          [],
+          [
+            h.a(
+              [
+                h.Class('btn primary finish-go'),
+                h.Href(
+                  lessonUrl({
+                    locale,
+                    course: model.course,
+                    slug: next.meta.slug,
+                    step: Option.none(),
+                  }),
                 ),
-              ]
-            : [h.p([], [ui.player.finishedBody]), backToCourse]),
-        ]
-      },
+              ],
+              [ui.player.nextLesson(lessonTextFor(next, locale).text.title)],
+            ),
+          ],
+        ),
+      ],
     }),
   )
 }
@@ -1519,6 +1555,7 @@ export const lessonView = <T extends KindTypes>(
     locale: inputs.locale,
     ui,
     lessonEnd: inputs.lessonEnd,
+    catalogue: inputs.catalogue ?? courses,
   }
   return h.main(
     [

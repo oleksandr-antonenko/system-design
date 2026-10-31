@@ -164,10 +164,11 @@ export const lt = {
     journalNote:
       'Lenta bet kuriame žingsnyje – tai šios operacijos, pritaikytos nuo pamokos pradžios. Demonstracijos ir jūsų ėjimai užrašomi viena kalba, todėl veikia persukimas, atšaukimas ir „Rodyti sprendimą“.',
     finishedTitle: 'Pamoka baigta',
-    finishedBody: 'Kitos pamokos atsiras kurso programoje.',
     nextLesson: title => `Kita pamoka: ${title} →`,
     courseFinishedTitle: 'Kursas baigtas',
-    courseFinishedBody: 'Tai buvo paskutinė kurso pamoka.',
+    courseFinishedBody: 'Baigėte visas šiuo metu prieinamas kurso pamokas.',
+    nextCourse: 'Kitas kursas',
+    goToCourse: 'Eiti į kursą →',
     answerFirst: 'Pirmiau atsakykite į klausimą',
     toBoard: 'Žiūrėti lentoje →',
     toTask: 'Į užduotį →',

@@ -159,10 +159,12 @@ export const en = {
     journalNote:
       'The board on any step is these operations applied from the start of the lesson. Demonstrations and your moves use one language, which is what makes rewinding, undo and “Show solution” work.',
     finishedTitle: 'Lesson complete',
-    finishedBody: 'More lessons will appear in the course outline.',
     nextLesson: title => `Next lesson: ${title} →`,
     courseFinishedTitle: 'Course complete',
-    courseFinishedBody: 'This was the last lesson of the course.',
+    courseFinishedBody:
+      'You have completed every available lesson of this course.',
+    nextCourse: 'Next course',
+    goToCourse: 'Go to the course →',
     answerFirst: 'Answer the question first',
     toBoard: 'See it on the board →',
     toTask: 'To the task →',

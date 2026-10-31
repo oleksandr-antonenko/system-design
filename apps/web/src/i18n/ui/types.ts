@@ -106,10 +106,11 @@ export type UiStrings = Readonly<{
     journalMineEmpty: string
     journalNote: string
     finishedTitle: string
-    finishedBody: string
     nextLesson: (title: string) => string
     courseFinishedTitle: string
     courseFinishedBody: string
+    nextCourse: string
+    goToCourse: string
     answerFirst: string
     /** Phones show the step's text or the board, one at a time. The button
         at the end of the text opens the board: plain, on a task step, or on
