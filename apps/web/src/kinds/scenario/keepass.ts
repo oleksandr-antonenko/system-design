@@ -3,7 +3,7 @@ import { modifyFields } from 'foldkit/struct'
 
 import { type GoalResult, ScenarioMessage, goalResult } from './codes'
 
-// Сейф-файл KeePass (урок 3 «KeePass»): база паролей — один файл на
+// Сейф-файл KeePass (урок 4 «KeePass»): база паролей — один файл на
 // устройстве владельца. Облака нет, поэтому восстановить его некому:
 // нужна надёжная мастер-фраза и свежая копия на другом устройстве. Фразы,
 // места и записи — подписи урока (`phrase:<id>`, `place:<id>`, `kp:<id>`);

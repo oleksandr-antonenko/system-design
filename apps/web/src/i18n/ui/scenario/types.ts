@@ -246,7 +246,10 @@ export type ScenarioStrings = Readonly<{
 
   // TRAY
   tray: Readonly<{
-    tab: (look: 'desk' | 'downloads' | 'extensions', owner: string) => string
+    tab: (
+      look: 'passwords' | 'desk' | 'downloads' | 'extensions',
+      owner: string,
+    ) => string
     showExtensions: string
     extensionsShown: string
     extensionsHidden: string

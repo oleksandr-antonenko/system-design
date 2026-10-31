@@ -12,11 +12,11 @@ import {
 } from 'foldkit/scene'
 import { describe, test } from 'vitest'
 
-import phishing from '../../../courses/security/lessons/05-phishing/lesson'
+import phishing from '../../../courses/security/lessons/06-phishing/lesson'
 import * as Player from '../../../lesson/player'
 import { lessonView, loadedEntry } from '../../../lesson/view'
 
-// Почта в задаче урока 5 (spec scenario-board, «Почтовый ящик»): адрес по
+// Почта в задаче урока 6 (spec scenario-board, «Почтовый ящик»): адрес по
 // нажатию на имя, адрес ссылки в строке состояния, «картонная» страница
 // приманки, пометки и итог с ошибкой по ходу.
 

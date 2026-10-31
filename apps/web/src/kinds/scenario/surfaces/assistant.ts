@@ -16,7 +16,7 @@ import { type Assistant, type ChatLine, latestActive } from '../assistant'
 import { ScenarioOp } from '../doc'
 import { classes, ghostOps, nameOf, produceOps } from './parts'
 
-// Чат с ИИ-ассистентом `assistant:<владелец>` (урок 10): ассистент просит
+// Чат с ИИ-ассистентом `assistant:<владелец>` (урок 11): ассистент просит
 // доступ к CRM, ученик выбирает, что отправить: пароль администратора,
 // токен текстом или ссылку на запись в менеджере паролей. Тексты сообщений
 // — подписи урока; строк паролей и токенов нет нигде, только маски.

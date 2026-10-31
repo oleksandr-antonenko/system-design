@@ -24,9 +24,10 @@ import {
 } from '../tray'
 import { classes, ghostOps, nameOf, noteOf, produceOps } from './parts'
 
-// Разбор предметов: стол перед обедом `desk:<владелец>` (урок 7), папка
-// «Загрузки» `downloads:<владелец>` (урок 8) и расширения браузера
-// `extensions:<владелец>` (урок 9). Один документ и один вид: у каждого
+// Разбор предметов: пароли на проверке `passwords:<владелец>` (урок 2), стол
+// перед обедом `desk:<владелец>` (урок 8), папка «Загрузки»
+// `downloads:<владелец>` (урок 9) и расширения браузера
+// `extensions:<владелец>` (урок 10). Один документ и один вид: у каждого
 // предмета кнопки действий, выбранное отмечено, под ним — итог выбора из
 // подписей урока. В «Загрузках» расширения файлов скрыты, как в системе по
 // умолчанию, и включаются переключателем: это состояние только экрана.
@@ -316,6 +317,7 @@ const groupView = <ParentMessage>(
 }
 
 const MARKS: Readonly<Record<Look, string>> = {
+  passwords: '🔑',
   desk: '🏢',
   downloads: '📁',
   extensions: '🧩',
@@ -446,6 +448,7 @@ const traySurface = (look: Look): SurfaceDefinition<ScenarioTypes> => ({
     }),
 })
 
+export const passwordsSurface = traySurface('passwords')
 export const deskSurface = traySurface('desk')
 export const downloadsSurface = traySurface('downloads')
 export const extensionsSurface = traySurface('extensions')

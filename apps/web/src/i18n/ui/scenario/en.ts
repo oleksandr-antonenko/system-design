@@ -291,11 +291,13 @@ export const scenarioEn: ScenarioStrings = {
 
   tray: {
     tab: (look, owner) =>
-      look === 'desk'
-        ? `Desk · ${owner}`
-        : look === 'downloads'
-          ? `Downloads · ${owner}`
-          : `Extensions · ${owner}`,
+      look === 'passwords'
+        ? `Passwords · ${owner}`
+        : look === 'desk'
+          ? `Desk · ${owner}`
+          : look === 'downloads'
+            ? `Downloads · ${owner}`
+            : `Extensions · ${owner}`,
     showExtensions: 'Show file extensions',
     extensionsShown:
       'The full name is visible: the file type is the letters after the last dot.',

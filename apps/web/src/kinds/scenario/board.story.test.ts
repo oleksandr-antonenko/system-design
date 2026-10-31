@@ -3,7 +3,7 @@ import { Command, given, message, model, story } from 'foldkit/story'
 import { describe, expect, test } from 'vitest'
 
 import sharedRoom from '../../courses/security/lessons/01-shared-room/lesson'
-import phishing from '../../courses/security/lessons/05-phishing/lesson'
+import phishing from '../../courses/security/lessons/06-phishing/lesson'
 import * as Player from '../../lesson/player'
 import { BoardMessage } from '../state'
 import * as Board from './board'

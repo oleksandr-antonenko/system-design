@@ -286,11 +286,13 @@ export const scenarioRu: ScenarioStrings = {
 
   tray: {
     tab: (look, owner) =>
-      look === 'desk'
-        ? `Стол · ${owner}`
-        : look === 'downloads'
-          ? `Загрузки · ${owner}`
-          : `Расширения · ${owner}`,
+      look === 'passwords'
+        ? `Пароли · ${owner}`
+        : look === 'desk'
+          ? `Стол · ${owner}`
+          : look === 'downloads'
+            ? `Загрузки · ${owner}`
+            : `Расширения · ${owner}`,
     showExtensions: 'Показывать расширения файлов',
     extensionsShown:
       'Видно полное имя: тип файла — в буквах после последней точки.',

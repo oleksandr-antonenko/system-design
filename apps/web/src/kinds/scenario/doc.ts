@@ -127,8 +127,8 @@ export const Mail = Schema.Struct({
 })
 export type Mail = typeof Mail.Type
 
-/** Что делают с письмами: помечают (урок 5) или пересылают в IT и
-    удаляют (урок 11). */
+/** Что делают с письмами: помечают (урок 6) или пересылают в IT и
+    удаляют (урок 12). */
 export const InboxActions = Schema.Literals(['mark', 'report'])
 export type InboxActions = typeof InboxActions.Type
 

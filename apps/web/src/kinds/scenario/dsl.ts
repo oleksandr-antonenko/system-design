@@ -42,6 +42,7 @@ export type ScenarioSurface =
   | `assistant:${string}`
   | `crm:${string}`
   | `keepass:${string}`
+  | `passwords:${string}`
   | `desk:${string}`
   | `downloads:${string}`
   | `extensions:${string}`
