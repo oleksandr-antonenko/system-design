@@ -6,7 +6,7 @@ export default {
   summary:
     'An AI chat is not a vault: the assistant gets a pass of its own. A read-only token instead of a password in the chat, revoked when the work is done.',
   preview: {
-    alt: 'Diagram: an AI assistant gets its own access token with read-only access to one store, while the owner’s password stays locked in a vault.',
+    alt: 'Illustration: an AI chat on a laptop, beside it a green pass on a lanyard, the assistant’s own access token, while the master key stays in a safe.',
   },
   labels: {
     marina: { name: 'Marina' },

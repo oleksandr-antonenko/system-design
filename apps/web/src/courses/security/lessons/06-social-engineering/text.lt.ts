@@ -6,7 +6,7 @@ export default {
   summary:
     'Apgaudinėja žmones, o ne kompiuterius: pauzė ir patikrinimas kitu kanalu. „Direktorius“ iš naujo numerio prašo skubiai apmokėti sąskaitą.',
   preview: {
-    alt: 'Schema: social engineering – skubi žinutė iš nepažįstamo numerio nevykdoma, o patikrinama kitu kanalu su tikru kontaktu.',
+    alt: 'Iliustracija: social engineering – skambina nežinomas numeris, o ranka kelia stalinį telefoną, kad perskambintų žinomu numeriu.',
   },
   labels: {
     marina: { name: 'Marina' },

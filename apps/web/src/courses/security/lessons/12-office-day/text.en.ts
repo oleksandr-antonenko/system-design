@@ -6,7 +6,7 @@ export default {
   summary:
     'Everything together: six short situations of one working day on the course screens — Wi-Fi, a café, an email, a message “from IT”, an extension and access for AI.',
   preview: {
-    alt: 'Diagram for practice: an office from above with six everyday security situations marked, from a guest network and a password vault to a locked screen.',
+    alt: 'Illustration for practice: an ordinary office day seen from behind a worker, with green ticks by the locked laptop, the router and an envelope.',
   },
   labels: {
     marina: { name: 'Marina' },

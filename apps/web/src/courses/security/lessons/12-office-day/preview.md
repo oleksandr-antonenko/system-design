@@ -1,5 +1,5 @@
-# Preview: Office day
+# Preview: Practice
 
-<!-- Subject of the preview image. The shared prompt and the style: docs/plans/lesson-previews.md -->
+<!-- Subject of the preview image. The style and the course prompt: docs/plans/lesson-previews.md, section "Security course: its own style" -->
 
-An isometric overview of a small office floor with several workstations, a meeting area, a router and a server cabinet. Six small accent check rings mark six separate spots across the floor where everyday security situations happen and are handled: a locked screen, a guest network, a verified message, a vault, a token, an alert. Calm, orderly, technical.
+A bright, calm open-plan office corner seen at eye level from behind a worker's shoulder: a desk with a laptop on a lock screen, a phone face down, a closed envelope, a small potted plant, a white Wi-Fi router on a shelf and a coffee mug. A few small soft emerald check marks float near the laptop, the router and the envelope: everyday situations handled well. Warm daylight, an ordinary good working day. The figure only from behind.

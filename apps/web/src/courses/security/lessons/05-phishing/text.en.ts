@@ -6,7 +6,7 @@ export default {
   summary:
     'The name in an email is a costume; the address tells the truth. Find the baits in the inbox without pressing anything in them.',
   preview: {
-    alt: 'Diagram of phishing: in a stack of emails one bait looks normal, but its real return path leads to a lookalike site, revealed without opening it.',
+    alt: 'Illustration of phishing: a fishing hook catches an envelope on a desk, while the inbox on the laptop has one suspicious email highlighted in red.',
   },
   labels: {
     marina: { name: 'Marina' },

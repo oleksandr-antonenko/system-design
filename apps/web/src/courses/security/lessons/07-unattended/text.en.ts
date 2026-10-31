@@ -6,7 +6,7 @@ export default {
   summary:
     'An open laptop and a found USB stick are open doors. When you leave, lock the screen, put away passwords and printouts, and hand found sticks to IT.',
   preview: {
-    alt: 'Diagram: a screen lock closes the laptop on an empty, tidy desk, while a found USB stick lies untouched and is marked as a risk.',
+    alt: 'Illustration: an empty chair at a desk, the laptop on screen lock with a green lock icon, and a stranger’s USB stick lying untouched at the edge.',
   },
   labels: {
     marina: { name: 'Marina' },

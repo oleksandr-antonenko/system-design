@@ -1,5 +1,5 @@
 # Preview: Wi-Fi
 
-<!-- Subject of the preview image. The shared prompt and the style: docs/plans/lesson-previews.md -->
+<!-- Subject of the preview image. The style and the course prompt: docs/plans/lesson-previews.md, section "Security course: its own style" -->
 
-A shared Wi-Fi network drawn as one translucent dome over several unrelated devices: a work laptop, a phone and a few unknown tablets and phones. Thin lines show the unknown devices peeking at traffic inside the dome. A separate, smaller dome stands beside it for guests. From the work laptop, one solid shielded emerald tube leaves the shared dome entirely and runs to a distant office gateway box, its contents sealed. The tube is plain, with no markings.
+A small white office Wi-Fi router with two short antennas stands on a light oak shelf beside a potted plant, three gentle wireless arcs rising from it. Propped against the router is a small blank card showing only a simple guest icon (a plain person silhouette with a tiny star): a separate guest network for visitors. In the soft-focus foreground a closed generic laptop rests on the desk with a soft emerald shield glow on its lid: the work device kept apart. A calm, homely office corner; no cables, no diagrams.

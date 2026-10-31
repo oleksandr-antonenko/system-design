@@ -1,5 +1,5 @@
 # Preview: Incident
 
-<!-- Subject of the preview image. The shared prompt and the style: docs/plans/lesson-previews.md -->
+<!-- Subject of the preview image. The style and the course prompt: docs/plans/lesson-previews.md, section "Security course: its own style" -->
 
-An alert beacon pulses at a workstation after a bad click. From it, a clear sequence of four accent steps runs to an IT response station: a message signal, a key being replaced, sessions on several devices being closed one after another, and an evidence envelope kept intact in a secure tray. The response is fast and orderly, the spreading red stays contained.
+Seen over a person's shoulder from behind: at an office desk, a hand presses a large, friendly round emerald button on the laptop screen, calmly and decisively: the report button. Beside it on the screen a single small muted coral warning triangle sits over a blank email. A phone lies ready next to the laptop. A calm, orderly response, not panic: the right first step after a bad click. No faces.

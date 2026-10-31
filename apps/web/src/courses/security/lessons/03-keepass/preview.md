@@ -1,5 +1,5 @@
 # Preview: KeePass
 
-<!-- Subject of the preview image. The shared prompt and the style: docs/plans/lesson-previews.md -->
+<!-- Subject of the preview image. The style and the course prompt: docs/plans/lesson-previews.md, section "Security course: its own style" -->
 
-A single encrypted vault file drawn as a solid, compact sealed container on a local device, opened only by one master key held beside it. A thin accent line carries an exact copy of the container to a second, separate backup drive standing apart on its own platform. There is no cloud and no outside path: the vault stays in its owner's hands.
+A still life on a light desk: a generic laptop whose calm screen shows one large file icon shaped like a small steel safe with a soft emerald dial. Beside the laptop lies a small external backup drive, and a single brass key on a ring rests between them. The feeling: one vault file of your own, kept on your own devices, with a backup copy beside it. No cloud, no network, no cables.

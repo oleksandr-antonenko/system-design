@@ -6,7 +6,7 @@ export default {
   summary:
     'The danger is not the slip but the silence. The first 15 minutes: tell IT, change the password, sign out everywhere and keep the email for IT.',
   preview: {
-    alt: 'Diagram of an incident response: after a bad click the alarm goes to IT, the password is changed, sessions are closed and the email is kept as evidence.',
+    alt: 'Illustration of an incident: after a suspicious email on the screen, a person seen from behind calmly presses a big green report button.',
   },
   labels: {
     oleg: { name: 'Oleg' },

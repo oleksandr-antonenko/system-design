@@ -6,7 +6,7 @@ export default {
   summary:
     'A stolen password is not enough when the second key is in your pocket. Turn on 2FA with a QR code, save the backup codes and reject a stranger’s sign-in request.',
   preview: {
-    alt: 'Diagram of 2FA: a password opens the first lock, the second opens only with a code from your phone, so a stranger with the password is stopped.',
+    alt: 'Illustration of 2FA: a hand holds a phone with a sign-in code and a green confirm button, while the laptop behind waits for this second step.',
   },
   labels: {
     marina: { name: 'Marina' },

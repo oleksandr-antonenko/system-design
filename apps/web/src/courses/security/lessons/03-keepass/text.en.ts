@@ -6,7 +6,7 @@ export default {
   summary:
     'A password vault you keep yourself as one file. Nobody can recover it, so you need a strong master phrase and a fresh copy in another place.',
   preview: {
-    alt: 'Diagram: a KeePass vault is one file on your own device, opened by a single master phrase, with a fresh backup on a separate drive.',
+    alt: 'Illustration: a laptop screen shows a single KeePass vault file as a small safe, with a backup drive and one key lying next to it on the desk.',
   },
   labels: {
     marina: { name: 'Marina' },

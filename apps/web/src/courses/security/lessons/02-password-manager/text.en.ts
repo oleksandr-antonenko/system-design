@@ -6,7 +6,7 @@ export default {
   summary:
     'The vault remembers all the different passwords; you remember one. Move the passwords from sticky notes into a password manager, replace the reused one and share access through a shared vault.',
   preview: {
-    alt: 'Diagram: a password manager is one vault opened by one master password, holding a different key for every door around it instead of sticky notes.',
+    alt: 'Illustration: a hand peels a sticky note with a password off a monitor, while the screen shows a password manager with a vault and a key for every account.',
   },
   labels: {
     marina: { name: 'Marina' },

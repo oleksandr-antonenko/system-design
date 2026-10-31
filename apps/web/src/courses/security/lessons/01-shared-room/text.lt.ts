@@ -7,7 +7,7 @@ export default {
   summary:
     'Kas jūsų tinkle, tas jūsų kambaryje. Svečiams – svečių tinklas, svetimame tinkle – pirmiausia VPN.',
   preview: {
-    alt: 'Schema: bendras Wi-Fi – vienas kambarys, kuriame svetimi įrenginiai mato srautą, svečiams skirtas savas tinklas, o darbo kompiuteris išeina per VPN.',
+    alt: 'Iliustracija: biuro Wi-Fi maršrutizatorius lentynoje, šalia atskiro svečių tinklo kortelė, o darbo kompiuteris ant stalo po smaragdiniu skydu.',
   },
   labels: {
     marina: { name: 'Marina' },
