@@ -5,6 +5,7 @@ import type { Locale } from '../locale'
 import type { DeviceStrings } from './device/types'
 import type { PacketBoardStrings } from './packetBoard/types'
 import type { PanelStrings } from './panel/types'
+import type { ScenarioStrings } from './scenario/types'
 
 export type UiStrings = Readonly<{
   siteTitle: string
@@ -116,6 +117,8 @@ export type UiStrings = Readonly<{
         at the end of the text opens the board: plain, on a task step, or on
         a question answered on the board. */
     toBoard: string
+    /** The same button in a slides lesson, where it opens the picture. */
+    toFrame: string
     toTask: string
     toQuestion: string
     /** The board's bottom bar: back to the step's text. */
@@ -169,6 +172,8 @@ export type UiStrings = Readonly<{
   device: DeviceStrings
   panel: PanelStrings
   packetBoard: PacketBoardStrings
+  /** Кадры и экраны курса безопасности (вид доски `scenario`). */
+  scenario: ScenarioStrings
   notFound: Readonly<{
     title: string
     body: (path: string) => string

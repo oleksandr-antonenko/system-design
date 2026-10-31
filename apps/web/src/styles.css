@@ -5,6 +5,7 @@
 @import './kinds/packet/surfaces/surfaces.css';
 @import './kinds/packet/board.css';
 @import './kinds/packet/surfaces/panel/panel.css';
+@import './kinds/scenario/scenario.css';
 
 /* Палитра и шрифты из макета docs/mockups/lesson-load-balancer.html.
    Светлые значения по умолчанию, тёмные — по системной настройке. */

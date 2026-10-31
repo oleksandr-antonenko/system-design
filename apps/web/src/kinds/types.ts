@@ -16,6 +16,14 @@ import type {
   PacketRun,
 } from './packet/doc'
 import type { PacketStage, PacketSurface } from './packet/dsl'
+import type * as ScenarioBoard from './scenario/board'
+import type {
+  ScenarioDoc,
+  ScenarioGoal,
+  ScenarioMessage,
+  ScenarioOp,
+} from './scenario/doc'
+import type { ScenarioStage, ScenarioSurface } from './scenario/dsl'
 
 /** Типы вида System Design. */
 export type FlowTypes = Readonly<{
@@ -51,8 +59,26 @@ export type PacketTypes = Readonly<{
   BoardMessage: PacketBoard.Message
 }>
 
+/** Типы вида «сценарий» (курс безопасности): кадры и экраны. */
+export type ScenarioTypes = Readonly<{
+  Id: 'scenario'
+  Doc: ScenarioDoc
+  Op: ScenarioOp
+  Goal: ScenarioGoal
+  Run: ScenarioDoc
+  Stage: ScenarioStage
+  Palette: never
+  Message: ScenarioMessage
+  Prose: ScenarioDoc
+  Annotation: ScenarioDoc
+  Surface: ScenarioSurface
+  BoardModel: ScenarioBoard.Model
+  BoardMessage: ScenarioBoard.Message
+}>
+
 /** Виды доски по id из `defineCourse({ board })`. Новый вид — новая строка. */
 export type KindTypesById = Readonly<{
   flow: FlowTypes
   packet: PacketTypes
+  scenario: ScenarioTypes
 }>

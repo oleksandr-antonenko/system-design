@@ -27,7 +27,7 @@ import * as Menu from '@foldkit/ui/menu'
 import * as Board from './board/board'
 import { BoardPointer } from './board/pointer'
 import { courseTextFor, lessonTextFor } from './courses/assemble'
-import { findCourse, lessonsOf } from './courses/registry'
+import { courses, findCourse, lessonsOf } from './courses/registry'
 import type { BoardOp } from './domain/board'
 import type { Locale } from './i18n/locale'
 import { uiFor } from './i18n/ui'
@@ -186,14 +186,25 @@ describe('catalogue', () => {
       { update, view },
       given(at(AppRoute.Home({ locale: 'lt' }), 'lt')),
       expect(role('heading', { name: 'Interaktyvūs kursai' })).toExist(),
-      expectAll(all.selector('main li')).toHaveCount(2),
+      expectAll(all.selector('main li')).toHaveCount(courses.length),
       expect(
         within(role('main'), role('link', { name: 'System Design' })),
       ).toHaveAttr('href', '/lt/system-design/'),
       expect(
         within(role('main'), role('link', { name: 'Tinklai vaibkoderiams' })),
       ).toHaveAttr('href', '/lt/networks/'),
-      expect(within(role('main'), text('13 pamokų'))).toExist(),
+      expect(
+        within(
+          role('main'),
+          role('link', { name: 'Kibernetinis saugumas biure' }),
+        ),
+      ).toHaveAttr('href', '/lt/security/'),
+      expect(
+        within(
+          role('main'),
+          text(uiFor('lt').home.lessonCount(lessonsOf('system-design').length)),
+        ),
+      ).toExist(),
       expect(
         within(
           role('main'),
@@ -206,7 +217,7 @@ describe('catalogue', () => {
 })
 
 describe('course map', () => {
-  test('lists all 13 System Design lessons; only available ones are links', () => {
+  test('lists all System Design lessons; only available ones are links', () => {
     const lessons = lessonsOf('system-design')
     const available = Array.filter(lessons, lesson => lesson.meta.available)
     const unavailable = Array.filter(lessons, lesson => !lesson.meta.available)
@@ -216,8 +227,8 @@ describe('course map', () => {
         at(AppRoute.Course({ locale: 'uk', course: 'system-design' }), 'uk'),
       ),
       expect(role('heading', { name: 'System Design', level: 1 })).toExist(),
-      expect(text('13 уроків')).toExist(),
-      expectAll(all.selector('main li')).toHaveCount(13),
+      expect(text(uiFor('uk').home.lessonCount(lessons.length))).toExist(),
+      expectAll(all.selector('main li')).toHaveCount(lessons.length),
       expectAll(all.selector('main a')).toHaveCount(available.length),
       expect(
         role('link', { name: 'Load balancer. Навантаження ділиться порівну' }),

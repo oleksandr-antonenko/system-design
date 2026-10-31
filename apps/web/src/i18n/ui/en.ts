@@ -6,6 +6,7 @@ import { plural } from '../plural'
 import { deviceEn } from './device/en'
 import { packetBoardEn } from './packetBoard/en'
 import { panelEn } from './panel/en'
+import { scenarioEn } from './scenario/en'
 import type { UiStrings } from './types'
 
 const inLanguage: UiStrings['inLanguage'] = {
@@ -167,6 +168,7 @@ export const en = {
     goToCourse: 'Go to the course →',
     answerFirst: 'Answer the question first',
     toBoard: 'See it on the board →',
+    toFrame: 'See the scene →',
     toTask: 'To the task →',
     toQuestion: 'To the question →',
     toText: '← Text',
@@ -222,6 +224,7 @@ export const en = {
   device: deviceEn,
   panel: panelEn,
   packetBoard: packetBoardEn,
+  scenario: scenarioEn,
   notFound: {
     title: 'Page not found',
     body: path => `There is nothing at “${path}”.`,

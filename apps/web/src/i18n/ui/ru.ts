@@ -6,6 +6,7 @@ import { plural } from '../plural'
 import { deviceRu } from './device/ru'
 import { packetBoardRu } from './packetBoard/ru'
 import { panelRu } from './panel/ru'
+import { scenarioRu } from './scenario/ru'
 import type { UiStrings } from './types'
 
 const inLanguage: UiStrings['inLanguage'] = {
@@ -169,6 +170,7 @@ export const ru = {
     goToCourse: 'Перейти к курсу →',
     answerFirst: 'Сначала ответьте на вопрос',
     toBoard: 'Смотреть на доске →',
+    toFrame: 'Смотреть кадр →',
     toTask: 'К задаче →',
     toQuestion: 'К вопросу →',
     toText: '← Текст',
@@ -221,6 +223,7 @@ export const ru = {
   device: deviceRu,
   panel: panelRu,
   packetBoard: packetBoardRu,
+  scenario: scenarioRu,
   notFound: {
     title: 'Страница не найдена',
     body: path => `По адресу «${path}» ничего нет.`,

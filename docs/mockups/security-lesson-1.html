@@ -1,0 +1,1140 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Безопасность: урок 1</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Literata:opsz,wght@7..72,400;7..72,600&family=Nunito:wght@600;700;800&family=Unbounded:wght@500&display=swap">
+<style>
+/* Курс «Кибербезопасность для офиса», урок 1 (демо): учебник слева, справа кадры мультика; в задаче рядом с кадром экран телефона */
+:root {
+  --bg: #EDF0EF;
+  --page: #FAFBF9;
+  --ink: #17202A;
+  --muted: #5A6774;
+  --line: #D2DAE0;
+  --node: #FFFFFF;
+  --node-line: #8D9BA8;
+  --accent: #2B4BD4;
+  --accent-soft: #E2E7FB;
+  --ok: #148A55;
+  --warn: #C27C05;
+  --bad: #CF3F36;
+  --bad-soft: #FBE6E4;
+  --ok-soft: #E0F3E9;
+  --screen: #FFFFFF;
+  --word: #FFE9A8;
+  --shadow: rgba(23, 32, 42, .18);
+  --toon-bg: #F4EEE2;
+  --toon-ink: #3A2A1F;
+  --toon-paper: #FFFDF8;
+  --toon-narr: #FFE7A3;
+  --sign: #1F5FBF;
+  --f-display: "Unbounded", "Arial Black", system-ui, sans-serif;
+  --f-prose: "Literata", "PT Serif", Georgia, serif;
+  --f-ui: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  --f-toon: "Nunito", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --f-phone: system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0E1318; --page: #131A21; --ink: #E3E9EF; --muted: #93A0AD;
+    --line: #27323C; --node: #18202A; --node-line: #536475; --accent: #8EA3FF; --accent-soft: #1E2850;
+    --ok: #3DC48B; --warn: #E8AA3C; --bad: #F2675C; --bad-soft: #3A1715; --ok-soft: #12301F;
+    --screen: #10161D; --word: #4A3D12; --shadow: rgba(0, 0, 0, .55);
+    --toon-bg: #1A1712;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0E1318; --page: #131A21; --ink: #E3E9EF; --muted: #93A0AD;
+  --line: #27323C; --node: #18202A; --node-line: #536475; --accent: #8EA3FF; --accent-soft: #1E2850;
+  --ok: #3DC48B; --warn: #E8AA3C; --bad: #F2675C; --bad-soft: #3A1715; --ok-soft: #12301F;
+  --screen: #10161D; --word: #4A3D12; --shadow: rgba(0, 0, 0, .55);
+  --toon-bg: #1A1712;
+  color-scheme: dark;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html, body { height: 100%; }
+body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--f-ui); font-size: 13px; line-height: 1.45; -webkit-font-smoothing: antialiased; }
+button, input { font: inherit; color: inherit; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+
+.app { height: 100%; display: grid; grid-template-rows: auto minmax(0, 1fr); }
+
+/* ---------- верхняя лента ---------- */
+.top {
+  display: flex; align-items: center; flex-wrap: wrap; gap: 8px 24px;
+  padding-block: 8px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  background: var(--page); border-bottom: 1px solid var(--line);
+}
+.crumb { font-size: 12px; color: var(--muted); white-space: nowrap; display: flex; gap: 10px; align-items: baseline; }
+.crumb .brand { font-family: var(--f-display); font-weight: 500; font-size: 12.5px; color: var(--ink); }
+.crumb b { color: var(--ink); font-weight: 600; }
+.timeline { flex: 1 1 340px; display: flex; align-items: center; justify-content: center; gap: 14px; min-width: 0; }
+.tl-steps { display: flex; align-items: center; gap: 4px; }
+.tl { appearance: none; border: 0; background: none; padding: 9px 0; cursor: pointer; display: grid; place-items: center; }
+.tl .bar { display: block; width: 34px; height: 5px; border-radius: 3px; background: var(--line); transition: background .2s, height .2s; }
+.tl.done .bar { background: var(--accent); opacity: .5; }
+.tl.current .bar { background: var(--accent); height: 8px; }
+.tl.is-task .bar { width: 11px; height: 11px; border-radius: 2px; transform: rotate(45deg); margin-inline: 5px; }
+.tl.is-task.current .bar { height: 11px; }
+.tl.is-task.solved .bar { background: var(--ok); opacity: 1; }
+.tl.is-quiz .bar { width: 13px; height: 13px; border-radius: 50%; margin-inline: 4px; background: transparent; border: 2.5px solid var(--line); }
+.tl.is-quiz.done .bar { border-color: var(--accent); background: transparent; }
+.tl.is-quiz.current .bar { height: 13px; border-color: var(--accent); background: var(--accent-soft); opacity: 1; }
+.tl.is-quiz.first .bar { border-color: var(--ok); background: var(--ok); opacity: 1; }
+.tl.is-quiz.shown .bar { border-color: var(--warn); background: transparent; opacity: 1; }
+.tl:disabled { cursor: not-allowed; }
+.tl-label { font-size: 12px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+.tl-label b { color: var(--ink); font-weight: 600; }
+.top-note { font-size: 10.5px; color: var(--muted); letter-spacing: .08em; text-transform: uppercase; white-space: nowrap; }
+
+/* ---------- раскладка ---------- */
+.main { display: grid; grid-template-columns: minmax(340px, 38%) minmax(0, 1fr); min-height: 0; }
+
+.theory { display: flex; flex-direction: column; min-height: 0; min-width: 0; background: var(--page); border-right: 1px solid var(--line); }
+.theory-scroll {
+  position: relative; flex: 1; overflow-y: auto;
+  padding-block: 26px 32px;
+  padding-left: max(28px, env(safe-area-inset-left, 0px));
+  padding-right: 28px;
+}
+.eyebrow { font-size: 10.5px; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
+h1 { font-family: var(--f-display); font-weight: 500; font-size: 23px; line-height: 1.22; margin: 8px 0 6px; text-wrap: balance; letter-spacing: -.01em; }
+.meta { font-size: 12px; color: var(--muted); }
+.lesson-head { padding-bottom: 18px; display: grid; gap: 4px; }
+.words { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin-top: 8px; font-size: 11.5px; color: var(--muted); }
+.words .w { font-weight: 600; color: var(--ink); background: var(--word); border-radius: 999px; padding: 2px 10px; }
+
+.beat { padding-block: 18px; border-top: 1px solid var(--line); }
+.beat h2 { margin: 0 0 10px; font-size: 11px; font-weight: 600; letter-spacing: .09em; text-transform: uppercase; color: var(--muted); display: flex; gap: 10px; align-items: baseline; }
+.beat h2 .n { color: var(--accent); font-variant-numeric: tabular-nums; }
+.beat.past { opacity: .5; cursor: pointer; transition: opacity .15s; }
+.beat.past:hover { opacity: .8; }
+.beat.past .prose { font-size: 15px; }
+.prose { font-family: var(--f-prose); font-size: 16.5px; line-height: 1.62; max-width: 62ch; }
+.prose p { margin: 0; }
+.prose p + p { margin-top: .75em; }
+.prose strong, .prose b { font-weight: 600; }
+.prose dfn { font-style: normal; font-weight: 600; background: linear-gradient(transparent 58%, var(--word) 58%); padding-inline: 1px; }
+.prose ul { margin: .7em 0 0; padding-left: 1.2em; display: grid; gap: .35em; }
+.prose li::marker { color: var(--accent); }
+.prose code { font-family: var(--f-ui); font-size: .82em; background: var(--accent-soft); border-radius: 4px; padding: 1px 5px; }
+.ref { font-weight: 600; border-bottom: 1.5px dashed var(--accent); cursor: pointer; border-radius: 2px; }
+.ref:hover, .ref:focus-visible, .ref.on { background: var(--accent-soft); }
+.task-done { margin: 12px 0 0; font-size: 12px; color: var(--ok); font-weight: 600; }
+.task-done.shown { color: var(--warn); }
+
+/* подробнее */
+.more { margin-top: 14px; border: 1px solid var(--line); border-radius: 12px; background: var(--node); }
+.more summary { cursor: pointer; list-style: none; padding: 11px 14px; font-size: 12.5px; font-weight: 600; display: flex; gap: 10px; align-items: center; }
+.more summary::-webkit-details-marker { display: none; }
+.more summary::before { content: "+"; width: 18px; height: 18px; border-radius: 50%; border: 1.5px solid var(--accent); color: var(--accent); display: grid; place-items: center; font-size: 13px; line-height: 1; flex: none; }
+.more[open] summary::before { content: "−"; }
+.more summary .tag { margin-left: auto; font-weight: 500; font-size: 11px; color: var(--muted); white-space: nowrap; }
+.more-body { padding: 0 16px 14px 42px; font-family: var(--f-prose); font-size: 15px; line-height: 1.58; display: grid; gap: .6em; }
+.more-body p { margin: 0; }
+
+/* итог урока */
+.finish { margin-top: 6px; padding-top: 18px; border-top: 1px solid var(--line); display: grid; gap: 12px; }
+.score { display: flex; flex-wrap: wrap; gap: 6px 10px; font-size: 12px; }
+.next { border: 1.5px solid var(--accent); border-radius: 14px; background: var(--node); padding: 16px; display: grid; gap: 8px; }
+.next h3 { margin: 0; font-family: var(--f-display); font-weight: 500; font-size: 17px; line-height: 1.3; }
+.next p { margin: 0; font-family: var(--f-prose); font-size: 15px; line-height: 1.55; }
+.next .eyebrow { color: var(--accent); font-weight: 600; }
+
+/* ---------- карточки задачи и вопроса ---------- */
+.task { margin-top: 16px; border: 1.5px solid var(--accent); border-radius: 12px; background: var(--node); padding: 16px; display: grid; gap: 12px; }
+.task.solved { border-color: var(--ok); }
+.task.revealed { border-color: var(--warn); }
+.task-head { display: flex; align-items: center; gap: 9px; font-size: 11px; font-weight: 700; letter-spacing: .09em; text-transform: uppercase; color: var(--accent); }
+.task.solved .task-head { color: var(--ok); }
+.task.revealed .task-head { color: var(--warn); }
+.task-head .dia { width: 9px; height: 9px; background: currentColor; transform: rotate(45deg); border-radius: 1px; flex: none; }
+.task-head .ring { width: 11px; height: 11px; border: 2.5px solid currentColor; border-radius: 50%; flex: none; }
+.task-head .att { margin-left: auto; font-weight: 500; color: var(--muted); letter-spacing: .04em; text-transform: none; }
+.task-goal { font-family: var(--f-prose); font-size: 16px; line-height: 1.5; font-weight: 600; margin: 0; }
+.task-how { font-size: 12px; color: var(--muted); margin: 0; }
+.checks { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.checks li { display: grid; grid-template-columns: 18px 1fr; gap: 8px; font-size: 12.5px; align-items: start; }
+.checks .mk { width: 16px; height: 16px; border-radius: 50%; border: 1.5px solid var(--node-line); display: grid; place-items: center; font-size: 10px; line-height: 1; margin-top: 1px; font-weight: 700; transition: background .25s, border-color .25s; }
+.checks li.ok .mk { background: var(--ok); border-color: var(--ok); color: var(--page); }
+.checks li.wait .mk { border-style: dashed; border-color: var(--accent); }
+.checks li.no .mk { border-color: var(--bad); color: var(--bad); }
+.checks .why { display: block; font-size: 11.5px; color: var(--muted); margin-top: 2px; }
+.checks li.no .why { color: var(--bad); }
+.fb { border-radius: 8px; padding: 10px 12px; font-size: 12.5px; }
+.fb.fail { background: var(--bad-soft); border: 1px solid var(--bad); }
+.fb.ok { background: var(--ok-soft); border: 1px solid var(--ok); }
+.fb.info { background: var(--accent-soft); border: 1px solid var(--accent); }
+.fb p { margin: 0; }
+.fb p + p { margin-top: 6px; }
+.explain { font-family: var(--f-prose); font-size: 15px; line-height: 1.5; margin: 0; }
+.mark { display: inline-flex; align-items: center; gap: 6px; font-size: 11.5px; font-weight: 600; border-radius: 999px; padding: 3px 10px; justify-self: start; }
+.mark.first { color: var(--ok); background: var(--ok-soft); }
+.mark.shown { color: var(--warn); border: 1px solid var(--warn); }
+.hints { margin: 0; padding-left: 20px; font-size: 12.5px; display: grid; gap: 4px; }
+.hints li::marker { color: var(--accent); }
+.task-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+
+/* варианты ответа */
+.opts { display: grid; gap: 8px; }
+.opt { appearance: none; text-align: left; border: 1.5px solid var(--line); background: var(--page); border-radius: 10px; padding: 10px 12px; cursor: pointer; display: grid; grid-template-columns: 22px 1fr; gap: 10px; align-items: start; font-family: var(--f-prose); font-size: 15px; line-height: 1.4; }
+.opt .k { width: 22px; height: 22px; border-radius: 50%; border: 1.5px solid var(--accent); color: var(--accent); display: grid; place-items: center; font: 600 11px var(--f-ui); margin-top: 1px; }
+.opt:hover:not(:disabled) { border-color: var(--accent); background: var(--accent-soft); }
+.opt:disabled { cursor: default; }
+.opt.right { border-color: var(--ok); background: var(--ok-soft); }
+.opt.right .k { background: var(--ok); border-color: var(--ok); color: var(--page); }
+.opt.wrong { border-color: var(--bad); background: var(--bad-soft); }
+.opt.wrong .k { background: var(--bad); border-color: var(--bad); color: var(--page); }
+.opt.dim { opacity: .55; }
+
+/* ---------- кнопки ---------- */
+.btn { appearance: none; border: 1px solid var(--line); background: var(--node); color: var(--ink); border-radius: 8px; padding: 7px 11px; font-size: 12px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
+.btn:hover:not(:disabled) { border-color: var(--node-line); }
+.btn:disabled { opacity: .42; cursor: not-allowed; }
+.btn.primary { background: var(--accent); border-color: var(--accent); color: var(--page); font-weight: 600; }
+.btn.link { border-color: transparent; background: transparent; color: var(--accent); padding-inline: 4px; }
+
+.theory-nav {
+  display: flex; justify-content: space-between; align-items: center; gap: 10px;
+  padding-block: 12px;
+  padding-left: max(28px, env(safe-area-inset-left, 0px)); padding-right: 28px;
+  border-top: 1px solid var(--line); background: var(--page);
+}
+.theory-nav .nav-text { font-size: 11.5px; color: var(--muted); text-align: center; flex: 1; min-width: 0; }
+
+/* ---------- сторона мультика ---------- */
+.boardside {
+  display: grid; min-width: 0; min-height: 0;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: minmax(0, 1fr) auto;
+  grid-template-areas: "stage" "transport";
+}
+.boardside.with-phone { grid-template-columns: minmax(0, 1fr) 336px; grid-template-areas: "stage phone" "transport phone"; }
+.stage {
+  grid-area: stage; position: relative; min-height: 240px; overflow: hidden;
+  background: var(--toon-bg);
+  container-type: size;
+  display: grid; place-items: center;
+}
+.frame {
+  position: relative;
+  width: min(calc(100cqw - 40px), calc((100cqh - 40px) * 4 / 3));
+  aspect-ratio: 4 / 3;
+  border-radius: 18px; overflow: hidden;
+  background: #F7F1E5;
+  box-shadow: 0 1px 0 rgba(58, 42, 31, .08), 0 18px 40px -26px rgba(58, 42, 31, .55);
+  container-type: inline-size;
+}
+.panel { position: absolute; inset: 0; margin: 0; opacity: 0; transition: opacity .55s ease; pointer-events: none; }
+.panel.on { opacity: 1; pointer-events: auto; }
+.panel img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: block; }
+.ph {
+  position: absolute; inset: 0; display: grid; place-content: center; gap: 10px; padding: 8% 12%; text-align: center;
+  background: repeating-linear-gradient(135deg, #F3EADA 0 14px, #EFE4D1 14px 28px);
+  color: var(--toon-ink); font-family: var(--f-toon);
+}
+.ph .ph-ic { justify-self: center; width: 54px; height: 54px; border-radius: 14px; border: 2.5px dashed rgba(58, 42, 31, .45); display: grid; place-items: center; font-size: 24px; }
+.ph .ph-t { font-weight: 800; font-size: clamp(11px, 2.4cqw, 15px); letter-spacing: .08em; text-transform: uppercase; opacity: .6; }
+.ph .ph-d { font-weight: 700; font-size: clamp(12px, 2.9cqw, 19px); line-height: 1.35; }
+.ph .ph-n { font-size: clamp(10px, 2cqw, 12.5px); opacity: .65; font-weight: 600; }
+
+/* слой реплик поверх кадра: координаты в процентах кадра */
+.ov { position: absolute; inset: 0; pointer-events: none; }
+.bub, .narr, .tag, .sign { position: absolute; pointer-events: none; font-family: var(--f-toon); color: var(--toon-ink); }
+.bub {
+  background: var(--toon-paper); border: 2.5px solid var(--toon-ink); border-radius: 18px;
+  padding: .55em .8em .6em; font-size: clamp(11px, 2.35cqw, 17px); line-height: 1.3; font-weight: 700;
+  box-shadow: 0 4px 0 rgba(58, 42, 31, .16);
+  opacity: 0; transform: translateY(6px) scale(.92); transition: opacity .3s ease, transform .3s cubic-bezier(.3, 1.5, .5, 1);
+}
+.bub.shown { opacity: 1; transform: none; }
+.bub .who { display: block; font-size: .72em; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; opacity: .6; margin-bottom: .1em; }
+.bub::before, .bub::after { content: ""; position: absolute; border-style: solid; }
+.bub.t-bl::before { left: 18%; bottom: -16px; border-width: 16px 14px 0 0; border-color: var(--toon-ink) transparent transparent; }
+.bub.t-bl::after { left: calc(18% + 3px); bottom: -10px; border-width: 11px 9px 0 0; border-color: var(--toon-paper) transparent transparent; }
+.bub.t-br::before { right: 18%; bottom: -16px; border-width: 16px 0 0 14px; border-color: var(--toon-ink) transparent transparent; }
+.bub.t-br::after { right: calc(18% + 3px); bottom: -10px; border-width: 11px 0 0 9px; border-color: var(--toon-paper) transparent transparent; }
+.bub.t-tl::before { left: 18%; top: -16px; border-width: 0 14px 16px 0; border-color: transparent transparent var(--toon-ink); }
+.bub.t-tl::after { left: calc(18% + 3px); top: -10px; border-width: 0 9px 11px 0; border-color: transparent transparent var(--toon-paper); }
+.bub.t-tr::before { right: 18%; top: -16px; border-width: 0 0 16px 14px; border-color: transparent transparent var(--toon-ink); }
+.bub.t-tr::after { right: calc(18% + 3px); top: -10px; border-width: 0 0 11px 9px; border-color: transparent transparent var(--toon-paper); }
+.bub.think { border-radius: 999px; border-style: dashed; font-weight: 600; font-style: italic; }
+.bub.think::before, .bub.think::after { border: 2.5px solid var(--toon-ink); border-radius: 50%; background: var(--toon-paper); }
+.bub.think.t-bl::before { left: 16%; bottom: -14px; width: 12px; height: 12px; border-width: 2.5px; border-color: var(--toon-ink); }
+.bub.think.t-bl::after { left: 10%; bottom: -26px; width: 8px; height: 8px; border-width: 2px; border-color: var(--toon-ink); }
+.bub.think.t-br::before { right: 16%; bottom: -14px; width: 12px; height: 12px; border-width: 2.5px; border-color: var(--toon-ink); }
+.bub.think.t-br::after { right: 10%; bottom: -26px; width: 8px; height: 8px; border-width: 2px; border-color: var(--toon-ink); }
+.bub.think.t-tr::before { right: 16%; top: -14px; width: 12px; height: 12px; border-width: 2.5px; border-color: var(--toon-ink); }
+.bub.think.t-tr::after { right: 10%; top: -26px; width: 8px; height: 8px; border-width: 2px; border-color: var(--toon-ink); }
+.bub.think.t-tl::before { left: 16%; top: -14px; width: 12px; height: 12px; border-width: 2.5px; border-color: var(--toon-ink); }
+.bub.think.t-tl::after { left: 10%; top: -26px; width: 8px; height: 8px; border-width: 2px; border-color: var(--toon-ink); }
+.bub.bad { border-color: var(--bad); }
+.bub.bad.t-br::before, .bub.bad.t-bl::before { border-top-color: var(--bad); }
+.narr {
+  left: 2.5%; top: 3%; max-width: 62%;
+  background: var(--toon-narr); border: 2.5px solid var(--toon-ink); border-radius: 6px;
+  padding: .35em .7em; font-size: clamp(10.5px, 2.1cqw, 15px); font-weight: 800; letter-spacing: .02em;
+  box-shadow: 3px 3px 0 rgba(58, 42, 31, .85);
+  transform: rotate(-1.2deg);
+}
+.tag {
+  display: inline-flex; align-items: center; gap: .4em; white-space: nowrap;
+  background: var(--toon-paper); border: 2px solid var(--toon-ink); border-radius: 999px;
+  padding: .15em .65em .2em .45em; font-size: clamp(9.5px, 1.75cqw, 13px); font-weight: 800;
+  transform: translate(-50%, -50%);
+  opacity: 0; transition: opacity .3s;
+}
+.tag::before { content: ""; width: .6em; height: .6em; border-radius: 50%; background: var(--tag, #2FA37A); border: 1.5px solid var(--toon-ink); }
+.tag.shown { opacity: 1; }
+.tag.hl { outline: 3px solid var(--accent); outline-offset: 2px; }
+.hlbox { position: absolute; border: 3px dashed var(--accent); border-radius: 14px; background: color-mix(in srgb, var(--accent) 12%, transparent); opacity: 0; transition: opacity .2s; pointer-events: none; }
+.hlbox.on { opacity: 1; }
+
+/* табличка с сетью в аэропорту */
+.sign {
+  pointer-events: auto; cursor: pointer; appearance: none; text-align: left;
+  background: var(--sign); color: #fff; border: 2.5px solid var(--toon-ink); border-radius: 8px;
+  padding: .45em .7em .5em; font-size: clamp(9.5px, 1.8cqw, 14px); line-height: 1.25; font-weight: 700;
+  box-shadow: 0 4px 0 rgba(58, 42, 31, .25);
+}
+.sign b { display: block; font-size: 1.25em; font-family: var(--f-ui); letter-spacing: .02em; }
+.sign small { display: block; opacity: .85; font-size: .82em; }
+.sign:hover, .sign:focus-visible, .sign.on { outline: 3px solid var(--warn); outline-offset: 2px; }
+.sign-pop {
+  position: absolute; z-index: 6; left: 50%; top: 50%; transform: translate(-50%, -50%) rotate(-.8deg);
+  width: min(320px, calc(100% - 24px));
+  background: var(--sign); color: #fff; border: 3px solid var(--toon-ink); border-radius: 12px;
+  padding: 16px 18px; box-shadow: 0 18px 40px -16px rgba(0, 0, 0, .5); display: grid; gap: 8px; font-family: var(--f-toon);
+}
+.sign-pop .sp-head { display: flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; opacity: .9; }
+.sign-pop .sp-x { margin-left: auto; appearance: none; border: 0; background: none; color: inherit; cursor: pointer; font-size: 18px; line-height: 1; padding: 2px 6px; border-radius: 4px; }
+.sign-pop .ssid { font-family: var(--f-ui); font-size: 22px; font-weight: 700; letter-spacing: .03em; }
+.sign-pop p { margin: 0; font-size: 13.5px; line-height: 1.4; }
+
+/* итог: миниатюры кадров */
+.thumbs { position: absolute; inset: 0; display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; gap: 3%; padding: 3%; background: var(--toon-bg); }
+.thumb { position: relative; margin: 0; border-radius: 12px; overflow: hidden; background: #F7F1E5; border: 2.5px solid var(--toon-ink); }
+.thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.thumb figcaption { position: absolute; left: 6px; right: 6px; bottom: 6px; background: var(--toon-paper); border: 2px solid var(--toon-ink); border-radius: 8px; padding: .3em .55em; font: 800 clamp(9px, 1.7cqw, 13px)/1.25 var(--f-toon); color: var(--toon-ink); }
+.thumb .ph { padding: 6%; }
+.thumb .ph .ph-ic { width: 34px; height: 34px; font-size: 16px; }
+.thumb .ph .ph-d { font-size: clamp(10px, 1.8cqw, 13px); }
+
+.mode-chip { position: absolute; top: 10px; right: max(10px, env(safe-area-inset-right, 0px)); font-size: 11px; padding: 5px 10px; border-radius: 999px; background: var(--page); border: 1px solid var(--line); color: var(--muted); pointer-events: none; z-index: 3; }
+.mode-chip.quiz, .mode-chip.edit { color: var(--accent); border-color: var(--accent); font-weight: 600; }
+.stage.flash .frame { animation: flash 1.3s ease-out; }
+@keyframes flash { 0% { box-shadow: 0 0 0 6px var(--ok); } 100% { box-shadow: 0 0 0 0 var(--ok); } }
+
+/* ---------- под кадром ---------- */
+.transport {
+  grid-area: transport; background: var(--page); border-top: 1px solid var(--line);
+  padding-block: 10px;
+  padding-left: 16px; padding-right: max(16px, env(safe-area-inset-right, 0px));
+  display: flex; align-items: center; gap: 14px; min-width: 0;
+}
+/* прогресс под кадром: точки шагов и «2 / 9»; листают только «Назад» и «Далее» */
+.pnav { display: flex; align-items: center; gap: 10px; flex: none; }
+.pdots { display: flex; gap: 5px; align-items: center; }
+.pdot { width: 8px; height: 8px; border-radius: 50%; background: var(--line); }
+.pdot.past { background: var(--accent); opacity: .45; }
+.pdot.on { background: var(--accent); width: 18px; border-radius: 4px; }
+.pdot.is-task { border-radius: 2px; transform: rotate(45deg); width: 7px; height: 7px; }
+.pdot.is-task.on { width: 9px; height: 9px; border-radius: 2px; }
+.pdot.is-quiz { background: transparent; border: 2px solid var(--line); }
+.pdot.is-quiz.past { border-color: var(--accent); }
+.pdot.is-quiz.on { border-color: var(--accent); background: var(--accent-soft); width: 10px; height: 10px; border-radius: 50%; }
+.pcount { font-size: 12px; font-weight: 600; color: var(--muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.theory-nav .nav-text { display: grid; gap: 1px; justify-items: center; }
+.theory-nav .progress { font-size: 13px; font-weight: 700; color: var(--ink); font-variant-numeric: tabular-nums; }
+.theory-nav .nav-hint { font-size: 11px; color: var(--muted); }
+.caption { margin: 0; display: flex; gap: 9px; align-items: baseline; min-width: 0; font-family: var(--f-prose); font-size: 14.5px; line-height: 1.4; }
+.caption .dot { width: 9px; height: 9px; border-radius: 50%; flex: none; transform: translateY(1px); background: var(--node-line); }
+.caption.info .dot { background: var(--accent); }
+.caption.ok .dot { background: var(--ok); }
+.caption.bad .dot { background: var(--bad); }
+.caption.bad { color: var(--bad); }
+
+/* ---------- экран телефона ---------- */
+.phone-panel { grid-area: phone; background: var(--page); border-left: 1px solid var(--line); padding: 16px; overflow-y: auto; display: grid; justify-items: center; align-content: start; gap: 10px; min-height: 0; }
+.pp-cap { font-size: 10.5px; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); text-align: center; }
+.pp-cap b { color: var(--accent); }
+.phone { width: 100%; max-width: 300px; border: 2px solid var(--node-line); border-radius: 32px; background: var(--node); padding: 10px 10px 14px; box-shadow: 0 16px 34px -22px var(--shadow); font-family: var(--f-phone); }
+.phone .notch { width: 64px; height: 5px; border-radius: 3px; background: var(--line); margin: 2px auto 8px; }
+.sbar { display: flex; justify-content: space-between; align-items: center; font-size: 11.5px; padding: 0 12px 8px; color: var(--muted); font-weight: 600; font-variant-numeric: tabular-nums; }
+.sbar .r { display: inline-flex; gap: 6px; align-items: center; }
+.sbar svg { width: 15px; height: 12px; }
+.sbar .nonet { color: var(--bad); font-weight: 600; font-size: 11px; }
+.sbar .vpn { font-size: 9.5px; font-weight: 800; border: 1.5px solid currentColor; border-radius: 4px; padding: 0 3px; color: var(--ok); letter-spacing: .04em; }
+.scr { border-radius: 20px; background: var(--screen); border: 1px solid var(--line); height: 470px; position: relative; overflow: hidden; display: flex; flex-direction: column; }
+.scr-head { padding: 12px 14px 4px; display: grid; gap: 2px; }
+.scr-head .back { appearance: none; border: 0; background: none; padding: 0; color: var(--accent); font-size: 13px; cursor: pointer; justify-self: start; }
+.scr-head .back:disabled { cursor: default; opacity: .5; }
+.scr-head h3 { margin: 0; font-size: 24px; font-weight: 700; letter-spacing: -.01em; }
+.scr-body { flex: 1; overflow-y: auto; padding: 4px 10px 14px; }
+.grp { margin: 14px 10px 4px; font-size: 11px; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); font-weight: 600; }
+.nets { list-style: none; margin: 0; padding: 0; border-radius: 12px; background: var(--page); border: 1px solid var(--line); overflow: hidden; }
+.nets li + li { border-top: 1px solid var(--line); }
+.net, .row { appearance: none; width: 100%; border: 0; background: none; text-align: left; cursor: pointer; display: grid; grid-template-columns: 18px minmax(0, 1fr) auto auto; gap: 8px; align-items: center; padding: 10px 10px; font-size: 15px; }
+.net:hover:not(:disabled), .row:hover:not(:disabled) { background: var(--accent-soft); }
+.net:disabled, .row:disabled { cursor: default; }
+.net .chk { color: var(--ok); font-weight: 700; font-size: 14px; }
+.net .nm, .row .nm { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.net .st, .row .st { display: block; font-size: 11.5px; color: var(--muted); font-weight: 400; }
+.net.on .st, .row .st.ok { color: var(--ok); font-weight: 600; }
+.row .st.bad { color: var(--bad); font-weight: 600; }
+.row .chev { color: var(--muted); font-size: 18px; line-height: 1; }
+.ic { width: 16px; height: 16px; fill: none; stroke: var(--muted); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.net .sig { width: 18px; height: 14px; }
+.net .sig rect { fill: var(--line); }
+.net .sig rect.f { fill: var(--ink); }
+.ghost { outline: 2px dashed var(--accent); outline-offset: -3px; border-radius: 10px; }
+.scr-note { margin: 10px 10px 0; font-size: 11.5px; color: var(--muted); line-height: 1.4; }
+.sw { width: 42px; height: 26px; border-radius: 13px; background: var(--line); position: relative; flex: none; transition: background .2s; border: 0; padding: 0; cursor: pointer; }
+.sw::after { content: ""; position: absolute; top: 3px; left: 3px; width: 20px; height: 20px; border-radius: 50%; background: #fff; box-shadow: 0 1px 2px rgba(0,0,0,.25); transition: left .2s; }
+.sw.on { background: var(--ok); }
+.sw.on::after { left: 19px; }
+.sw:disabled { opacity: .45; cursor: not-allowed; }
+.spin { width: 14px; height: 14px; border-radius: 50%; border: 2px solid var(--line); border-top-color: var(--accent); animation: spin .8s linear infinite; display: inline-block; vertical-align: -2px; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.apps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; padding: 6px 10px 0; }
+.app-ic { appearance: none; border: 0; background: none; cursor: pointer; display: grid; justify-items: center; gap: 4px; font-size: 11.5px; color: var(--ink); padding: 4px 0; border-radius: 12px; }
+.app-ic .sq { width: 52px; height: 52px; border-radius: 14px; display: grid; place-items: center; background: var(--accent); }
+.app-ic .sq svg { width: 26px; height: 26px; fill: none; stroke: #fff; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.app-ic.dimapp { opacity: .45; cursor: default; }
+.app-ic.dimapp .sq { background: var(--node-line); }
+.app-ic:hover:not(.dimapp) .sq { filter: brightness(1.08); }
+
+.scrim { position: absolute; inset: 0; background: color-mix(in srgb, var(--ink) 26%, transparent); }
+.sheet { position: absolute; left: 0; right: 0; bottom: 0; background: var(--node); border-top: 1px solid var(--line); border-radius: 18px 18px 0 0; padding: 10px 14px 16px; box-shadow: 0 -14px 30px -22px var(--shadow); display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px; margin: 0; }
+.sheet .grab { width: 36px; height: 4px; border-radius: 2px; background: var(--line); justify-self: center; }
+.sheet h4 { margin: 0; font-size: 15.5px; font-weight: 700; line-height: 1.3; }
+.sheet p { margin: 0; font-size: 13.5px; line-height: 1.45; }
+.sheet.portal { top: 0; border-radius: 0; border-top: 0; align-content: start; padding-top: 14px; }
+.portal .pt-brand { display: flex; align-items: center; gap: 8px; font-weight: 800; font-size: 14px; }
+.portal .pt-brand .lg { width: 28px; height: 28px; border-radius: 8px; background: var(--sign); display: grid; place-items: center; color: #fff; font-size: 14px; }
+.portal .pt-brand .lg.fake { background: #E0592A; }
+.portal .pt-url { font-family: var(--f-ui); font-size: 10.5px; color: var(--muted); background: var(--page); border: 1px solid var(--line); border-radius: 6px; padding: 4px 8px; }
+.field { display: grid; gap: 3px; font-size: 12px; color: var(--muted); }
+.field input { border: 1.5px solid var(--line); border-radius: 10px; background: var(--page); padding: 9px 11px; font-size: 14.5px; font-family: var(--f-phone); color: var(--ink); width: 100%; }
+.sh-err { color: var(--bad); font-size: 13px; line-height: 1.4; background: var(--bad-soft); border-radius: 8px; padding: 8px 10px; }
+.sh-ok { color: var(--ok); font-size: 13px; line-height: 1.4; background: var(--ok-soft); border-radius: 8px; padding: 8px 10px; }
+.sh-actions { display: flex; flex-wrap: wrap; gap: 8px; justify-content: flex-end; }
+.pbtn { appearance: none; border: 0; border-radius: 10px; padding: 9px 14px; font-size: 14px; font-weight: 600; cursor: pointer; background: var(--page); color: var(--accent); }
+.pbtn.go { background: var(--accent); color: var(--page); }
+.pbtn.danger { background: var(--bad-soft); color: var(--bad); }
+.pbtn:disabled { opacity: .5; cursor: not-allowed; }
+.mail-top { display: flex; align-items: center; gap: 8px; padding: 10px 12px; border-bottom: 1px solid var(--line); font-size: 13px; }
+.mail-top .back { appearance: none; border: 0; background: none; color: var(--accent); cursor: pointer; padding: 0; font-size: 13px; }
+.mail-top .ttl { margin-left: auto; margin-right: auto; font-weight: 700; transform: translateX(-20px); }
+.mail-body { padding: 12px; display: grid; gap: 10px; align-content: start; }
+.banner { border-radius: 10px; padding: 8px 10px; font-size: 12.5px; line-height: 1.4; }
+.banner.bad { background: var(--bad-soft); color: var(--bad); border: 1px solid var(--bad); }
+.banner.ok { background: var(--ok-soft); color: var(--ok); border: 1px solid var(--ok); font-weight: 600; }
+.draft { border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px; display: grid; gap: 6px; font-size: 13px; background: var(--page); }
+.draft .to { color: var(--muted); font-size: 12px; }
+.draft .subj { font-weight: 700; font-size: 14px; }
+.draft .att { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; border: 1px solid var(--line); border-radius: 8px; padding: 4px 8px; justify-self: start; background: var(--node); }
+
+/* ---------- узкий экран ---------- */
+@media (max-width: 880px) {
+  html, body { height: auto; }
+  .app { height: auto; display: block; }
+  .main { display: flex; flex-direction: column; }
+  .boardside { order: -1; }
+  .boardside, .boardside.with-phone { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto; grid-template-areas: "stage" "transport" "phone"; }
+  .theory { border-right: 0; border-top: 1px solid var(--line); }
+  .theory-scroll { overflow: visible; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+  /* на телефоне текст стоит сразу под кадром: прошлые шаги не показываем, к ним ведёт «Назад» */
+  .beat.past { display: none; }
+  .theory-nav { position: sticky; bottom: 0; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); z-index: 4; }
+  .stage { min-height: 0; height: auto; container-type: inline-size; padding: 12px; display: block; }
+  .frame { width: 100%; }
+  .transport { padding-left: max(16px, env(safe-area-inset-left, 0px)); flex-wrap: wrap; gap: 8px 12px; }
+  .caption { flex-basis: 100%; }
+  .phone-panel { border-left: 0; border-top: 1px solid var(--line); overflow: visible; padding-inline: max(16px, env(safe-area-inset-left, 0px)) max(16px, env(safe-area-inset-right, 0px)); }
+  .top-note { display: none; }
+  .mode-chip { top: 16px; right: 16px; }
+}
+@media (max-width: 600px) {
+  .tl .bar { width: 22px; }
+  .tl-steps { gap: 3px; }
+  .timeline { flex-wrap: wrap; gap: 4px 12px; }
+  .caption { font-size: 14px; }
+  .theory-nav .nav-hint { display: none; }
+  .mode-chip { display: none; }
+  .more-body { padding-left: 16px; }
+  .bub { border-width: 2px; padding: .4em .6em .45em; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .panel, .bub, .tag { transition: none; }
+  .stage.flash .frame, .spin { animation: none; }
+  .tl .bar, .checks .mk, .sw, .sw::after { transition: none; }
+}
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="top">
+    <div class="crumb"><span class="brand">Кибербезопасность для офиса</span><span>Урок <b>1</b> из 12</span></div>
+    <nav class="timeline" id="timeline" aria-label="Шаги урока"></nav>
+    <div class="top-note">Макет · демо-урок 1 из 2</div>
+  </header>
+
+  <main class="main">
+    <section class="theory" aria-label="Теория">
+      <div class="theory-scroll" id="theory-scroll">
+        <div class="lesson-head">
+          <div class="eyebrow">Модуль 1 · Сеть и пароли</div>
+          <h1>Wi-Fi — общая комната</h1>
+          <div class="meta">≈ 8 минут · 9 шагов · 1 вопрос · 1 задача</div>
+          <div class="words" aria-label="Новые слова урока">Новые слова: <span class="w">гостевая сеть</span><span class="w">VPN</span></div>
+        </div>
+        <div id="beats"></div>
+      </div>
+      <div class="theory-nav" id="theory-nav"></div>
+    </section>
+
+    <section class="boardside" id="boardside" aria-label="Мультик">
+      <div class="stage" id="stage">
+        <div class="frame" id="frame"></div>
+        <div class="mode-chip" id="mode-chip"></div>
+        <div class="sign-pop" id="sign-pop" role="dialog" aria-label="Табличка в аэропорту" hidden>
+          <div class="sp-head">Табличка у колонны<button class="sp-x" type="button" id="sp-x" aria-label="Закрыть табличку">×</button></div>
+          <p>Бесплатный Wi-Fi аэропорта</p>
+          <div class="ssid">AIRPORT-FREE</div>
+          <p>Без пароля. Аэропорт никогда не просит логин и пароль от вашей почты или соцсетей.</p>
+        </div>
+      </div>
+
+      <div class="transport" id="transport">
+        <div class="pnav" aria-hidden="true">
+          <span class="pdots" id="pdots"></span>
+          <span class="pcount" id="pcount"></span>
+        </div>
+        <p class="caption" id="caption" aria-live="polite"></p>
+      </div>
+
+      <aside class="phone-panel" id="phone-panel" aria-label="Экран телефона" hidden>
+        <div class="pp-cap" id="pp-cap"></div>
+        <div class="phone">
+          <div class="notch" aria-hidden="true"></div>
+          <div class="sbar" id="sbar"></div>
+          <div class="scr" id="scr"></div>
+        </div>
+      </aside>
+    </section>
+  </main>
+</div>
+
+<script>
+(() => {
+'use strict';
+
+const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+const mobileMQ = window.matchMedia('(max-width: 880px)');
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const $ = id => document.getElementById(id);
+const ART = 'security/';
+
+// ---------- кадры мультика ----------
+// Координаты реплик и подписей — в процентах кадра 4:3. На картинках нет текста: всё текстовое здесь, поэтому кадр годится для всех языков.
+const P = {
+  office: { img: 'l1-office', alt: 'Офис в разрезе под большим мятным куполом Wi-Fi: ноутбуки Марины и Олега, принтер, общая папка-хранилище и камера связаны пунктиром.',
+    narr: 'Офис «Ромашки». Все устройства — под одним куполом Wi-Fi.',
+    tags: [{ id: 'printer', t: 'принтер', x: 63, y: 64 }, { id: 'nas', t: 'общие папки', x: 76, y: 39, c: '#E8A33A' }, { id: 'cam', t: 'камера', x: 86, y: 33, c: '#7A6FD8' }],
+    bubbles: [{ who: 'Олег', t: 'Удобно: печатаю с телефона, не вставая.', x: 22, y: 15, w: 30, tail: 'br' }] },
+  courier: { img: 'l1-courier', alt: 'Полосатый в костюме курьера: красная кепка, жилет, из-под рукавов торчат полоски. Он протягивает телефон через стойку. Марина сомневается, на мониторе жёлтый стикер.',
+    narr: 'Утро. У стойки курьер.',
+    bubbles: [{ who: 'Курьер', t: 'Можно пароль от Wi-Fi? Мне только накладную отправить.', x: 50, y: 2, w: 47, tail: 'bl' },
+      { who: 'Марина', t: 'Ну… жалко, что ли?', x: 3, y: 13, w: 26, tail: 'br', think: true }] },
+  parking: { img: 'l1-parking', alt: 'Вечер. Купол Wi-Fi выходит за стены офиса на парковку. Полосатый сидит в машине у входа с ноутбуком и удочкой вылавливает из офиса папку и лист с принтера.',
+    narr: 'Неделю спустя. Парковка у офиса.',
+    bubbles: [{ who: 'Полосатый', t: 'Пароль-то никто не поменял. Что сегодня в общих папках?', x: 50, y: 31, w: 36, tail: 'br' }] },
+  guest: { img: 'l1-guest', alt: 'Два купола: большой мятный над рабочими местами и маленький персиковый над диваном у стойки. Между ними стеклянная стена с замком. Марина даёт гостье карточку с QR-кодом.',
+    narr: 'Тот же офис, теперь с гостевой сетью.',
+    tags: [{ id: 'office-net', t: 'офисная сеть', x: 66, y: 93 }, { id: 'guest-net', t: 'гостевая сеть', x: 19, y: 93, c: '#F29A6B' }],
+    bubbles: [{ who: 'Марина', t: 'Вот гостевой Wi-Fi: наведите камеру на код.', x: 33, y: 21, w: 32, tail: 'bl' },
+      { who: 'Гостья', t: 'Работает, спасибо!', x: 3, y: 37, w: 22, tail: 'br' }] },
+  meeting: { img: 'l1-meeting', alt: 'Переговорная. Клиентка в бирюзовом пальто поднимает телефон со значком Wi-Fi. Олег с блокнотом и кружкой думает, что ответить.',
+    narr: 'Переговорная. Клиент пришёл с презентацией.',
+    bubbles: [{ who: 'Клиентка', t: 'Можно подключиться к вашему Wi-Fi? Хочу показать презентацию.', x: 52, y: 3, w: 44, tail: 'bl' }] },
+  cafe: { img: 'l1-cafe', alt: 'Кафе под общим серым куполом Wi-Fi. От ноутбука Марины к роутеру на стойке летят прозрачные конверты. За соседним столиком Полосатый в фартуке с карманным роутером разглядывает их в лупу.',
+    narr: 'Обед в кафе. Одна сеть на всех посетителей.',
+    bubbles: [{ who: 'Полосатый', t: 'Так-так. Почта, CRM, общие папки…', x: 50, y: 25, w: 30, tail: 'bl' }] },
+  vpn: { img: 'l1-vpn', alt: 'То же кафе. От ноутбука Марины через стену к далёкому офису идёт плотная синяя труба с заклёпками. Полосатый прикладывает лупу к трубе, ничего не видит и чешет затылок.',
+    narr: 'То же кафе. Марина включила VPN.',
+    bubbles: [{ who: 'Полосатый', t: 'Труба какая-то. Ничего не видно!', x: 50, y: 25, w: 30, tail: 'bl' },
+      { who: 'Марина', t: 'Теперь можно и почту.', x: 2, y: 27, w: 24, tail: 'br' }] },
+  airport: { img: 'l1-airport', alt: 'Зал ожидания в аэропорту. Марина с телефоном, вокруг значки нескольких сетей Wi-Fi. У колонны синяя табличка. Напротив Полосатый в панаме и тёмных очках с карманным роутером на чемодане.',
+    narr: 'Аэропорт. До посадки 20 минут.',
+    bubbles: [{ who: 'Марина', t: 'Успею отправить клиенту договор?', x: 4, y: 20, w: 27, tail: 'br' }] },
+};
+
+// ---------- шаги ----------
+const R = (id, text) => `<span class="ref" data-ref="${id}" tabindex="0">${text}</span>`;
+const MORE = `<details class="more" id="more"><summary>Подробнее: разве замок в браузере не защищает?<span class="tag">для любопытных</span></summary>
+  <div class="more-body">
+    <p><b>Замок в адресной строке</b> (HTTPS) шифрует содержимое страницы: сосед в кафе не прочитает текст письма. Но хозяин сети всё равно видит, на какие сайты вы ходите, может подсунуть поддельную страницу входа, а часть программ на ноутбуке ходит в сеть без шифрования. VPN закрывает всё сразу, а офисные системы часто открываются только через него.</p>
+    <p><b>Сеть-двойник.</b> Имя сети придумывает её хозяин. Сосед может включить на телефоне или карманном роутере сеть «Кафе Утро» или «AIRPORT-FREE-WiFi», и ваш ноутбук сам к ней подключится, если когда-то был в сети с похожим именем. Поэтому выбирайте сеть по табличке и выключайте «подключаться автоматически» для чужих сетей.</p>
+    <p><b>VPN не включается?</b> Раздайте интернет с телефона: это ваша собственная комната.</p>
+  </div></details>`;
+
+// Один шаг — один кадр и его текст. Кадры сами не листаются: следующий кадр
+// вместе со следующим текстом открывает «Далее» (или стрелка →).
+const STEPS = [
+  { id: 'office', title: 'Wi-Fi — общая комната', panel: P.office,
+    html: () => `<p>Офисный Wi-Fi похож на общую комнату. Все, кто в ней, видят друг друга: ноутбуки коллег, ${R('printer', 'принтер')}, ${R('nas', 'общие папки')}, ${R('cam', 'камеры')}. Многие из этих устройств доверяют любому «своему» и пароля не спрашивают.</p>` },
+  { id: 'courier', title: 'Курьер просит пароль', panel: P.courier,
+    html: () => `<p>Пароль от Wi-Fi — ключ от этой комнаты. Курьеру «только накладную отправить», и отказать неловко: жалко, что ли?</p>
+      <p>Но сказали пароль — ключ теперь и у него.</p>` },
+  { id: 'parking', title: 'Неделю спустя', panel: P.parking,
+    html: () => `<p>Сигнал Wi-Fi добивает до парковки, а пароль работает, пока его не сменят. Обычно это месяцы. Курьер давно уехал, а ключ от комнаты так и остался у него.</p>` },
+  { id: 'guest', title: 'Гостям — гостевая сеть', panel: P.guest,
+    html: () => `<p>Поэтому для гостей делают отдельную комнату — <dfn>гостевую сеть</dfn>. Из неё есть интернет, но не видно ни принтера, ни папок, ни ноутбуков сотрудников: между ${R('guest-net', 'гостевой')} и ${R('office-net', 'офисной')} сетью стена.</p>
+      <p>Пароль от гостевой сети не жалко: его часто меняют и печатают на карточке с QR-кодом. Курьеру, клиенту, подрядчику, другу на час — гостевая сеть. Пароль от офисной знают только сотрудники, и когда кто-то уходит из компании, IT его меняет.</p>` },
+  { id: 'client-wifi', title: 'Вопрос: клиенту нужен Wi-Fi', quiz: true, panel: P.meeting,
+    html: () => `<p>На встречу пришла клиентка и хочет показать презентацию со своего ноутбука. Олег знает пароль от офисной сети, на стойке лежат карточки гостевой, а в списке сетей видна открытая «Free_WiFi». Что ей дать?</p>` },
+  { id: 'cafe', title: 'Кафе: комната с незнакомцами', panel: P.cafe,
+    html: () => `<p>В кафе, гостинице или аэропорту всё наоборот: теперь вы гость в чужой комнате. В одной сети с вами незнакомые люди, а хозяин сети видит, куда уходят ваши конверты.</p>
+      <p>Хуже того, сеть с именем «Кафе» мог включить сосед за столиком: имя сети придумывает кто угодно.</p>` },
+  { id: 'vpn', title: 'VPN — закрытая труба', panel: P.vpn, more: true,
+    html: () => `<p><dfn>VPN</dfn> — закрытая труба от вашего ноутбука до офиса. Конверты идут внутри неё, и сосед с хозяином сети видят только трубу.</p>
+      <p>Правило: в чужой сети сначала VPN, потом рабочая почта, CRM и общие папки.</p>` },
+  { id: 'airport', title: 'Задача: аэропорт', task: true, panel: P.airport,
+    html: () => `<p>До посадки 20 минут, а клиенту надо отправить договор из рабочей почты. Телефон видит несколько сетей.</p>
+      <p>Подключитесь к сети аэропорта — её имя на ${R('sign', 'табличке')} у колонны, — включите VPN и только потом откройте почту.</p>` },
+  { id: 'summary', title: 'Итог', summary: true,
+    html: () => `<p>Вы прошли всю историю: офис, курьер, гостевая сеть, кафе и аэропорт.</p>
+      <ul><li><b>Wi-Fi — общая комната:</b> кто в сети, тот видит принтер, папки и ноутбуки.</li>
+      <li>Пароль от офисной сети — только сотрудникам. Гостям, курьерам и клиентам — <b>гостевая сеть</b>.</li>
+      <li>В чужой сети: сеть — по табличке, потом <b>VPN</b>, потом рабочие дела.</li></ul>` },
+];
+const QUIZ_STEP = 4, TASK = 7, LAST = 8;
+const THUMBS = [[P.parking, 'Пароль работает и с парковки'], [P.guest, 'Гостям — гостевая сеть'], [P.cafe, 'В кафе вы в чужой комнате'], [P.vpn, 'VPN — закрытая труба']];
+
+const QUIZ = {
+  q: 'Клиентке нужен Wi-Fi. Что ей дать?',
+  answer: 'b',
+  opts: [
+    { id: 'a', t: 'Пароль от офисной сети: это клиент, а не курьер с улицы.' },
+    { id: 'b', t: 'Карточку гостевой сети с QR-кодом.' },
+    { id: 'c', t: 'Подсказать открытую «Free_WiFi» из списка: пароль не нужен.' },
+  ],
+  wrong: {
+    a: 'Клиент — тоже гость. С паролем офисной сети её ноутбук окажется в одной комнате с вашими папками и принтером, а пароль уйдёт вместе с ней.',
+    c: 'Чья это сеть, неизвестно. Открытую сеть с любым именем может включить кто угодно поблизости, и всё, что через неё идёт, видит её хозяин.',
+  },
+  explain: 'Гостевая сеть даёт клиентке интернет и ничего больше: офисные устройства из неё не видны, а пароль на карточке не жалко.',
+};
+
+const HINTS = [
+  'Сравните имена сетей с табличкой у колонны: нажмите её на кадре. Важна каждая буква и дефис.',
+  'Сеть аэропорта открытая, без замка. Сеть с самым сильным сигналом не обязательно настоящая: двойник сидит рядом, поэтому и ловит лучше.',
+  'Подключитесь к AIRPORT-FREE и примите условия, на главном экране включите VPN, затем откройте «Почту» и отправьте договор. Нужная строка обведена пунктиром.',
+];
+
+// ---------- состояние ----------
+const S = { step: 0, maxStep: 0, quiz: null, refHl: null, signOpen: false };
+const T = { net: null, sheet: null, vpn: 'off', screen: 'home', mailNoVpn: false, sent: false, solved: false, fails: 0, hint: 0, help: false, demo: false, leaked: false, msg: null };
+
+// ---------- кадр ----------
+function imgTag(p, cls = '') {
+  return `<img class="${cls}" src="${ART}${p.img}.webp" alt="${esc(p.alt)}" data-ph="${esc(p.alt)}" decoding="async">`;
+}
+function phHtml(alt, small) {
+  return `<div class="ph" role="img" aria-label="${esc(alt)}"><div class="ph-ic" aria-hidden="true">✎</div>${small ? '' : '<div class="ph-t">Кадр мультика</div>'}<div class="ph-d">${esc(alt)}</div>${small ? '' : '<div class="ph-n">заглушка: картинка ещё не сгенерирована</div>'}</div>`;
+}
+function guardImages(root) {
+  root.querySelectorAll('img[data-ph]').forEach(img => {
+    const swap = () => { const small = !!img.closest('.thumb'); img.insertAdjacentHTML('afterend', phHtml(img.dataset.ph, small)); img.remove(); };
+    if (img.complete && img.naturalWidth === 0) swap();
+    else img.addEventListener('error', swap, { once: true });
+  });
+}
+// Реплики появляются вместе с кадром (лёгкая очерёдность — только CSS-задержка
+// перехода): ничего не идёт само по таймеру.
+function bubbleHtml(b, i) {
+  const st = `left:${b.x}%;top:${b.y}%;max-width:${b.w}%;transition-delay:${reduce ? 0 : 120 + i * 140}ms`;
+  return `<div class="bub t-${b.tail}${b.think ? ' think' : ''}${b.bad ? ' bad' : ''}" data-b="${i}" style="${st}">${b.who ? `<span class="who">${esc(b.who)}</span>` : ''}${esc(b.t)}</div>`;
+}
+function frameBubbles(p) {
+  if (STEPS[S.step].task) return taskBubbles();
+  return p.bubbles || [];
+}
+function renderFrame() {
+  const st = STEPS[S.step], f = $('frame');
+  if (st.summary) {
+    f.innerHTML = `<div class="thumbs">${THUMBS.map(([p, cap]) => `<figure class="thumb">${imgTag(p)}<figcaption>${esc(cap)}</figcaption></figure>`).join('')}</div>`;
+    guardImages(f);
+    return;
+  }
+  const p = st.panel;
+  f.innerHTML = `<figure class="panel">
+      ${imgTag(p)}
+      <div class="ov">
+        ${p.narr ? `<div class="narr"${p.np ? ` style="left:${p.np[0]}%;top:${p.np[1]}%"` : ''}>${esc(p.narr)}</div>` : ''}
+        ${(p.tags || []).map(t => `<span class="tag" data-tag="${t.id}" style="left:${t.x}%;top:${t.y}%;${t.c ? `--tag:${t.c}` : ''}">${esc(t.t)}</span>`).join('')}
+        ${st.task ? '<button class="sign" type="button" id="sign" style="left:31%;top:12%" aria-label="Табличка: Wi-Fi аэропорта AIRPORT-FREE"><small>Wi-Fi аэропорта</small><b>AIRPORT-FREE</b><small>без пароля</small></button>' : ''}
+        <div class="bubs">${frameBubbles(p).map(bubbleHtml).join('')}</div>
+      </div></figure>`;
+  guardImages(f);
+  void f.offsetWidth;
+  applyFrame();
+}
+function applyFrame() {
+  const st = STEPS[S.step];
+  if (st.summary) return;
+  $('frame').querySelectorAll('.panel').forEach(el => {
+    el.classList.add('on');
+    el.querySelectorAll('.bub').forEach(b => b.classList.add('shown'));
+    el.querySelectorAll('.tag').forEach(t => { t.classList.add('shown'); t.classList.toggle('hl', t.dataset.tag === S.refHl); });
+  });
+  const sign = $('sign');
+  if (sign) sign.classList.toggle('on', S.refHl === 'sign' || S.signOpen);
+  $('sign-pop').hidden = !S.signOpen;
+}
+function taskBubbles() {
+  const b = [];
+  if (T.solved) b.push({ who: 'Марина', t: 'Договор ушёл. Можно на посадку!', x: 4, y: 20, w: 27, tail: 'br' });
+  else if (T.vpn === 'on') b.push({ who: 'Марина', t: 'VPN включён — теперь почта.', x: 4, y: 20, w: 27, tail: 'br' });
+  else if (T.net === 'real') b.push({ who: 'Марина', t: 'Сеть как на табличке. Теперь VPN.', x: 4, y: 20, w: 27, tail: 'br' });
+  else b.push({ who: 'Марина', t: 'Успею отправить клиенту договор?', x: 4, y: 20, w: 27, tail: 'br' });
+  if (T.net === 'twin' || T.leaked) b.push({ who: 'Полосатый', t: T.leaked ? 'Пароль от почты? Спасибо!' : 'Добро пожаловать в «бесплатный» Wi-Fi!', x: 64, y: 10, w: 33, tail: 'bl', bad: true });
+  return b;
+}
+// ---------- лента, теория, карточки ----------
+function stepDone(i) { return i === QUIZ_STEP ? !!S.quiz : i === TASK ? T.solved : true; }
+function canGo(i) {
+  if (i < 0 || i >= STEPS.length || i > S.maxStep + 1) return false;
+  for (let j = 0; j < i; j++) if (!stepDone(j)) return false;
+  return true;
+}
+function renderTimeline() {
+  const steps = STEPS.map((b, i) => {
+    const q = b.quiz && S.quiz;
+    const cls = ['tl', i < S.step ? 'done' : '', i === S.step ? 'current' : '', b.task ? 'is-task' : '', b.quiz ? 'is-quiz' : '', q ? (q.first ? 'first' : 'shown') : '', b.task && T.solved ? 'solved' : ''].filter(Boolean).join(' ');
+    const note = q ? (q.first ? ' · верно с первой попытки' : ' · ответ показан') : b.task && T.solved ? ' · решено' : '';
+    return `<button type="button" class="${cls}" data-goto="${i}" ${canGo(i) ? '' : 'disabled'} title="${esc(b.title + note)}" aria-label="Шаг ${i + 1}: ${esc(b.title + note)}" ${i === S.step ? 'aria-current="step"' : ''}><span class="bar"></span></button>`;
+  }).join('');
+  $('timeline').innerHTML = `<div class="tl-steps">${steps}</div><div class="tl-label">Шаг ${S.step + 1} из ${STEPS.length} · <b>${esc(STEPS[S.step].title)}</b></div>`;
+}
+function pastTail(i) {
+  if (i === QUIZ_STEP && S.quiz) return `<p class="task-done${S.quiz.first ? '' : ' shown'}">${S.quiz.first ? '✓ Верно с первой попытки' : '● Ответ показан'}</p>`;
+  if (i === TASK && T.solved) return `<p class="task-done">✓ Задача решена${T.help ? ' с показом решения' : ''}</p>`;
+  return '';
+}
+function renderTheory() {
+  const openMore = $('more') && $('more').open;
+  const parts = [];
+  for (let i = 0; i <= S.step; i++) {
+    const b = STEPS[i], past = i < S.step;
+    const label = b.task ? '◆ Задача' : b.quiz ? '● Вопрос' : `Шаг ${i + 1}`;
+    const tail = past ? pastTail(i) : '<div id="card"></div>';
+    parts.push(`<article class="beat ${past ? 'past' : 'current'}" id="beat-${i}" ${past ? `data-goto="${i}" title="Вернуться к этому шагу"` : ''}>
+      <h2><span class="n">${label}</span>${esc(b.title.replace(/^(Задача|Вопрос): /, ''))}</h2>
+      <div class="prose">${b.html()}</div>${b.more && !past ? MORE : ''}${tail}</article>`);
+  }
+  if (S.step === LAST) {
+    const score = [
+      S.quiz ? (S.quiz.first ? '<span class="mark first">✓ Вопрос: с первой попытки</span>' : '<span class="mark shown">● Вопрос: ответ показан</span>') : '',
+      T.solved ? `<span class="mark ${T.help || T.leaked || T.mailNoVpn ? 'shown' : 'first'}">${T.help ? '● Задача: с показом решения' : T.leaked || T.mailNoVpn ? '● Задача: решена с ошибками' : '✓ Задача решена'}</span>` : '',
+    ].join('');
+    parts.push(`<div class="finish">
+      <div class="eyebrow">Урок 1 пройден</div>
+      <div class="score">${score}</div>
+      <div class="next">
+        <div class="eyebrow">Дальше · урок 2</div>
+        <h3>Один пароль — одна дверь</h3>
+        <p>Олег ставит один пароль везде: «так проще запомнить». В уроке 2 Полосатый найдёт этот пароль в утечке сайта доставки и примерит его к почте, CRM и банку, а Марина покажет, как 1Password помнит сотню разных паролей за вас.</p>
+        <div><a class="btn" href="security-lesson-2.html">Демо-урок 2: «Письмо-приманка» →</a></div>
+      </div>
+    </div>`);
+  }
+  $('beats').innerHTML = parts.join('');
+  if (openMore && $('more')) $('more').open = true;
+  const sc = $('theory-scroll'), cur = $('beat-' + S.step);
+  if (cur && getComputedStyle(sc).overflowY === 'auto') sc.scrollTo({ top: Math.max(0, cur.offsetTop - 16), behavior: reduce ? 'auto' : 'smooth' });
+}
+function quizCard() {
+  const q = S.quiz;
+  const opts = QUIZ.opts.map((o, i) => {
+    let cls = 'opt';
+    if (q) cls += o.id === QUIZ.answer ? ' right' : o.id === q.pick ? ' wrong' : ' dim';
+    return `<button type="button" class="${cls}" data-opt="${o.id}" ${q ? 'disabled' : ''}><span class="k">${'АБВ'[i]}</span><span>${esc(o.t)}</span></button>`;
+  }).join('');
+  let body = '';
+  if (q) {
+    body = q.first
+      ? '<div class="fb ok"><p>Верно: гостевая сеть.</p></div>'
+      : `<div class="fb fail"><p>${QUIZ.wrong[q.pick]}</p><p>Правильный ответ: <strong>карточка гостевой сети</strong>.</p></div>`;
+    body += `<p class="explain">${QUIZ.explain}</p>
+      <span class="mark ${q.first ? 'first' : 'shown'}">${q.first ? '✓ Верно с первой попытки' : '● Ответ показан · в прогресс без отметки'}</span>
+      <div class="task-actions"><button class="btn primary" type="button" data-action="next" id="card-next">Далее →</button></div>`;
+  }
+  const st = q ? (q.first ? ' solved' : ' revealed') : '';
+  return `<div class="task${st}"><div class="task-head"><span class="ring" aria-hidden="true"></span>Вопрос<span class="att">одна попытка</span></div>
+    <p class="task-goal">${QUIZ.q}</p><div class="opts">${opts}</div>${body}</div>`;
+}
+function goals() {
+  const twinNow = T.net === 'twin';
+  return [
+    { st: T.net === 'real' ? 'ok' : twinNow ? 'no' : '', label: 'Телефон в сети с таблички', why: T.net === 'real' ? 'AIRPORT-FREE, как у колонны' : twinNow ? 'Это двойник: имя не совпадает с табличкой.' : 'Пока ни к какой сети.' },
+    { st: T.vpn === 'on' ? 'ok' : T.vpn === 'connecting' ? 'wait' : '', label: 'VPN включён', why: T.vpn === 'on' ? 'Подключено к офису' : T.vpn === 'connecting' ? 'Подключается…' : T.net ? 'Переключатель на главном экране телефона.' : '' },
+    { st: T.sent ? 'ok' : '', label: 'Договор отправлен через VPN', why: T.sent ? 'Ушёл по закрытой трубе.' : T.mailNoVpn && T.vpn !== 'on' ? 'Почта открыта без VPN — так не засчитывается.' : '' },
+  ];
+}
+function taskCard() {
+  const items = goals().map(g => `<li class="${g.st}"><span class="mk" aria-hidden="true">${g.st === 'ok' ? '✓' : g.st === 'no' ? '✕' : ''}</span><span>${g.label}${g.why ? `<span class="why">${esc(g.why)}</span>` : ''}</span></li>`).join('');
+  let body;
+  if (T.solved) {
+    body = `<div class="fb ok">Готово: настоящая сеть аэропорта, VPN до офиса, договор у клиента.${T.leaked ? ' В жизни пароль, введённый на странице двойника, пришлось бы сразу сменить и сообщить в IT.' : ''}</div>
+      <div class="task-actions"><button class="btn primary" type="button" data-action="next" id="card-next">Далее: итог →</button></div>`;
+  } else {
+    const msg = T.msg ? `<div class="fb ${T.msg.k}"><p>${T.msg.t}</p></div>` : '';
+    const hints = T.hint ? `<ol class="hints">${HINTS.slice(0, T.hint).map(t => `<li>${t}</li>`).join('')}</ol>` : '';
+    const showSol = T.fails >= 2 || T.hint >= 2;
+    body = `${msg}${hints}<div class="task-actions">
+      <button class="btn" type="button" data-action="hint" id="task-hint" ${T.hint >= 3 || T.demo ? 'disabled' : ''}>Подсказка · ${T.hint} из 3</button>
+      ${showSol ? `<button class="btn link" type="button" data-action="solution" id="task-solution" ${T.demo ? 'disabled' : ''}>Показать решение</button>` : ''}</div>`;
+  }
+  return `<div class="task${T.solved ? ' solved' : ''}">
+    <div class="task-head"><span class="dia" aria-hidden="true"></span>${T.solved ? `Решено${T.help ? ' с показом решения' : ''}` : 'Задача на экране телефона'}</div>
+    <p class="task-goal">Отправьте договор из рабочей почты, не подставившись в чужой сети.</p>
+    ${T.solved ? '' : '<p class="task-how">Сеть — по табличке на кадре, потом VPN, потом почта. Цели проверяются сами.</p>'}
+    <ul class="checks">${items}</ul>${body}</div>`;
+}
+function renderCard() {
+  const el = $('card');
+  if (el) {
+    const fid = document.activeElement && document.activeElement.id;
+    el.innerHTML = S.step === QUIZ_STEP ? quizCard() : S.step === TASK ? taskCard() : '';
+    if (fid) { const f = document.getElementById(fid); if (f && !f.disabled && el.contains(f)) f.focus({ preventScroll: true }); }
+  }
+  renderNav();
+  renderTimeline();
+}
+function renderNav() {
+  const fid = document.activeElement && document.activeElement.id;
+  const done = stepDone(S.step), last = S.step === LAST;
+  const text = !done ? (S.step === QUIZ_STEP ? 'Ответьте на вопрос, чтобы продолжить' : 'Отправьте договор, чтобы продолжить') : last ? 'Конец урока' : 'Прочитали? Нажмите «Далее» · стрелки ← → тоже работают';
+  $('theory-nav').innerHTML = `<button class="btn" type="button" id="nav-prev" ${S.step === 0 ? 'disabled' : ''}>← Назад</button>
+    <span class="nav-text"><span class="progress" aria-label="Шаг ${S.step + 1} из ${STEPS.length}">${S.step + 1} / ${STEPS.length}</span><span class="nav-hint">${text}</span></span>
+    <button class="btn primary" type="button" id="nav-next" ${!done || last ? 'disabled' : ''}>Далее →</button>`;
+  if (fid === 'nav-prev' || fid === 'nav-next') { const f = $(fid); if (f && !f.disabled) f.focus({ preventScroll: true }); }
+}
+function renderModeChip() {
+  const c = $('mode-chip'), st = STEPS[S.step];
+  let t = '', k = '';
+  if (S.step === QUIZ_STEP && !S.quiz) { t = 'Вопрос · ответ слева'; k = 'quiz'; }
+  if (S.step === TASK) { t = T.solved ? 'Задача решена' : `Задача · телефон ${mobileMQ.matches ? 'ниже' : 'справа'}`; k = T.solved ? '' : 'edit'; }
+  if (st.summary) t = 'Кадры урока';
+  c.className = 'mode-chip' + (k ? ' ' + k : '');
+  c.textContent = t;
+  c.hidden = !t;
+}
+function caption() {
+  const st = STEPS[S.step];
+  if (st.summary) return ['', 'Четыре кадра, которые стоит запомнить.'];
+  if (S.step === TASK) {
+    if (T.solved) return ['ok', 'Договор отправлен по VPN из настоящей сети аэропорта.'];
+    if (T.net === 'twin') return ['bad', 'Телефон в сети-двойнике: её включил Полосатый.'];
+    if (T.vpn === 'on') return ['ok', 'Сеть настоящая, VPN включён. Осталось отправить договор.'];
+    if (T.net === 'real') return ['info', 'Сеть настоящая. Теперь включите VPN.'];
+    return ['', 'Нажмите табличку на кадре: на ней имя сети аэропорта.'];
+  }
+  return ['', st.panel ? st.panel.narr : ''];
+}
+function renderTransport() {
+  $('pdots').innerHTML = STEPS.map((b, i) => `<span class="pdot${i === S.step ? ' on' : i < S.step ? ' past' : ''}${b.task ? ' is-task' : b.quiz ? ' is-quiz' : ''}"></span>`).join('');
+  $('pcount').textContent = `${S.step + 1} / ${STEPS.length}`;
+  const [tone, text] = caption(), c = $('caption');
+  c.className = 'caption' + (tone ? ' ' + tone : '');
+  c.innerHTML = `<span class="dot" aria-hidden="true"></span><span>${esc(text)}</span>`;
+  renderModeChip();
+}
+
+// ---------- экран телефона ----------
+const NETS = [
+  { id: 'twin', ssid: 'AIRPORT-FREE-WiFi', open: true, sig: 3 },
+  { id: 'real', ssid: 'AIRPORT-FREE', open: true, sig: 2 },
+  { id: 'lounge', ssid: 'Lounge-Business', open: false, sig: 2 },
+  { id: 'hot', ssid: 'Galaxy A52', open: false, sig: 1 },
+];
+const SVG_LOCK = '<svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>';
+const SVG_MAIL = '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3.5 6.5 8.5 6.5 8.5-6.5"/></svg>';
+const SVG_SHIELD = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 5 6v5c0 4.5 3 8.3 7 10 4-1.7 7-5.5 7-10V6z"/><path d="m9 12 2 2 4-4"/></svg>';
+const SVG_GEAR = '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M2 12h3M19 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1"/></svg>';
+const WIFI_ICON = '<svg viewBox="0 0 16 12" aria-hidden="true"><path d="M1 4.2a10 10 0 0 1 14 0M3.4 6.8a6.6 6.6 0 0 1 9.2 0M5.8 9.3a3.2 3.2 0 0 1 4.4 0" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><circle cx="8" cy="11" r="1" fill="currentColor"/></svg>';
+const BATT = '<svg viewBox="0 0 24 12" aria-hidden="true" style="width:22px"><rect x="1" y="1.5" width="19" height="9" rx="2.5" fill="none" stroke="currentColor" stroke-width="1.2"/><rect x="3" y="3.5" width="9" height="5" rx="1" fill="currentColor"/><rect x="21" y="4.5" width="2" height="3" rx="1" fill="currentColor"/></svg>';
+const sigSvg = n => `<svg class="sig" viewBox="0 0 18 14" aria-label="сигнал ${n} из 3"><rect x="1" y="9" width="4" height="4" rx="1" class="${n >= 1 ? 'f' : ''}"/><rect x="7" y="5" width="4" height="8" rx="1" class="${n >= 2 ? 'f' : ''}"/><rect x="13" y="1" width="4" height="12" rx="1" class="${n >= 3 ? 'f' : ''}"/></svg>`;
+const netName = id => (NETS.find(n => n.id === id) || {}).ssid;
+const busy = () => T.demo || T.vpn === 'connecting';
+const ghostOn = what => T.hint >= 3 && !T.solved && what;
+
+function homeScreen() {
+  const online = T.net === 'real' || T.net === 'twin';
+  const wifiSt = T.net ? `<span class="st ${T.net === 'real' ? 'ok' : 'bad'}">${esc(netName(T.net))}</span>` : '<span class="st">Не подключено</span>';
+  const vpnSt = T.vpn === 'on' ? '<span class="st ok">Подключено к офису</span>' : T.vpn === 'connecting' ? '<span class="st">Подключение… <span class="spin"></span></span>' : online ? '<span class="st">Выключен</span>' : '<span class="st">Нужен интернет</span>';
+  return `<div class="scr-head"><button class="back" type="button" disabled>&nbsp;</button><h3>Телефон</h3></div>
+    <div class="scr-body">
+      <p class="grp">Настройки</p>
+      <ul class="nets">
+        <li><button class="row${ghostOn(!T.net || T.net === 'twin') ? ' ghost' : ''}" type="button" data-ph="to-wifi" ${busy() ? 'disabled' : ''}><span aria-hidden="true">${WIFI_ICON}</span><span class="nm">Wi-Fi${wifiSt}</span><span></span><span class="chev">›</span></button></li>
+        <li><div class="row" style="cursor:default"><span aria-hidden="true" style="color:var(--muted)">⛨</span><span class="nm">VPN · Ромашка${vpnSt}</span><span></span>
+          <button class="sw${T.vpn === 'on' ? ' on' : ''}${ghostOn(T.net === 'real' && T.vpn === 'off') ? ' ghost' : ''}" type="button" data-ph="vpn" role="switch" aria-checked="${T.vpn === 'on'}" aria-label="VPN" ${!online || busy() ? 'disabled' : ''}></button></div></li>
+      </ul>
+      <p class="grp">Приложения</p>
+      <div class="apps">
+        <button class="app-ic${ghostOn(T.vpn === 'on') ? ' ghost' : ''}" type="button" data-ph="mail" ${busy() ? 'disabled' : ''}><span class="sq">${SVG_MAIL}</span>Почта</button>
+        <span class="app-ic dimapp"><span class="sq">${SVG_SHIELD}</span>Пароли</span>
+        <span class="app-ic dimapp"><span class="sq">${SVG_GEAR}</span>Настройки</span>
+      </div>
+      <p class="scr-note">${T.vpn === 'on' ? 'VPN включён: всё, что телефон отправляет, идёт по закрытой трубе до офиса.' : 'Порядок в чужой сети: сеть — VPN — рабочие дела.'}</p>
+    </div>${sheetHtml()}`;
+}
+function netRow(n) {
+  const on = T.net === n.id;
+  const st = on ? 'Подключено' : n.open ? 'Открытая сеть, без пароля' : 'Защищена паролем';
+  return `<li><button class="net${on ? ' on' : ''}${ghostOn(n.id === 'real' && !on) ? ' ghost' : ''}" type="button" data-net="${n.id}" ${busy() ? 'disabled' : ''}>
+    <span class="chk" aria-hidden="true">${on ? '✓' : ''}</span>
+    <span class="nm">${esc(n.ssid)}<span class="st">${st}</span></span>
+    ${n.open ? '<span></span>' : SVG_LOCK}${sigSvg(n.sig)}</button></li>`;
+}
+function wifiScreen() {
+  return `<div class="scr-head"><button class="back" type="button" data-ph="home">‹ Телефон</button><h3>Wi-Fi</h3></div>
+    <div class="scr-body">
+      <p class="grp">Сети рядом</p>
+      <ul class="nets">${NETS.map(netRow).join('')}</ul>
+      <p class="scr-note">Замок — сеть с паролем. Полоски — сила сигнала, а не честность сети.</p>
+    </div>${sheetHtml()}`;
+}
+function mailScreen() {
+  const noVpn = T.vpn !== 'on';
+  return `<div class="mail-top"><button class="back" type="button" data-ph="home">‹ Телефон</button><span class="ttl">Почта</span></div>
+    <div class="mail-body">
+      ${noVpn ? '<div class="banner bad">Почта открыта без VPN. Вернитесь, включите VPN и откройте её снова.</div>' : T.sent ? '<div class="banner ok">✓ Отправлено через VPN</div>' : '<div class="banner ok">VPN · защищённое подключение к офису</div>'}
+      <div class="draft">
+        <span class="to">Кому: client@lastochka.example</span>
+        <span class="subj">Договор на поставку</span>
+        <span>Добрый день! Высылаю договор, жду подпись до пятницы. Марина</span>
+        <span class="att">📎 Договор_Ласточка.pdf</span>
+        <div class="sh-actions"><button class="pbtn go${ghostOn(!noVpn && !T.sent) ? ' ghost' : ''}" type="button" data-ph="send" ${noVpn || T.sent || busy() ? 'disabled' : ''}>${T.sent ? 'Отправлено' : 'Отправить'}</button></div>
+      </div>
+    </div>`;
+}
+function sheetHtml() {
+  const s = T.sheet;
+  if (!s) return '';
+  if (s === 'portal-real') return `<div class="sheet portal" role="dialog" aria-label="Страница Wi-Fi аэропорта">
+      <div class="pt-brand"><span class="lg">✈</span>Wi-Fi аэропорта</div>
+      <span class="pt-url">wifi.airport.example</span>
+      <p>Бесплатный интернет на 2 часа. Нажимая «Принять», вы соглашаетесь с правилами пользования сетью.</p>
+      <p class="scr-note" style="margin:0">Настоящая страница: просит только согласие. Ни почты, ни паролей.</p>
+      <div class="sh-actions"><button class="pbtn go${ghostOn(true) ? ' ghost' : ''}" type="button" data-ph="accept" ${T.demo ? 'disabled' : ''}>Принять</button></div></div>`;
+  if (s === 'portal-twin') return `<div class="sheet portal" role="dialog" aria-label="Страница входа в сеть">
+      <div class="pt-brand"><span class="lg fake">✈</span>Free WiFi · вход</div>
+      <span class="pt-url">free-wifi-login.example</span>
+      <p>Чтобы получить бесплатный интернет, войдите с рабочей почтой.</p>
+      <label class="field">Почта<input type="text" value="marina@romashka.example" readonly></label>
+      <label class="field">Пароль от почты<input type="password" value="••••••••••" readonly></label>
+      <div class="sh-actions"><button class="pbtn" type="button" data-ph="twin-cancel">Закрыть и отключиться</button><button class="pbtn go" type="button" data-ph="twin-login">Войти</button></div></div>`;
+  if (s === 'leaked') return `<div class="scrim"></div><div class="sheet" role="alertdialog" aria-label="Пароль ушёл">
+      <div class="grab" aria-hidden="true"></div>
+      <h4>Стоп: пароль ушёл соседу</h4>
+      <p class="sh-err">Настоящему Wi-Fi аэропорта не нужен пароль от вашей почты. Эту страницу показал двойник — сеть с похожим именем, которую включил Полосатый с карманным роутером.</p>
+      <p>В жизни сейчас: сменить пароль от почты и написать в IT. Здесь телефон отключится от двойника — выберите сеть с таблички.</p>
+      <div class="sh-actions"><button class="pbtn go" type="button" data-ph="close">Понятно</button></div></div>`;
+  if (s === 'locked') return `<div class="scrim" data-ph="close"></div><div class="sheet" role="dialog" aria-label="Сеть с паролем">
+      <div class="grab" aria-hidden="true"></div>
+      <h4>«${esc(netName(T.lockedNet))}» — с паролем</h4>
+      <p>${T.lockedNet === 'lounge' ? 'Это сеть бизнес-зала. Пароль от неё дают на стойке зала, у вас его нет.' : 'Это чья-то раздача интернета с телефона. Пароль знает только её хозяин.'}</p>
+      <p>Сеть аэропорта открытая: ищите имя с таблички.</p>
+      <div class="sh-actions"><button class="pbtn go" type="button" data-ph="close">Понятно</button></div></div>`;
+  if (s === 'need-net') return `<div class="scrim" data-ph="close"></div><div class="sheet" role="dialog" aria-label="Нет интернета">
+      <div class="grab" aria-hidden="true"></div>
+      <h4>Нет подключения к интернету</h4>
+      <p>Сначала подключитесь к Wi-Fi аэропорта.</p>
+      <div class="sh-actions"><button class="pbtn go" type="button" data-ph="close">Понятно</button></div></div>`;
+  if (s === 'need-vpn') return `<div class="scrim" data-ph="close"></div><div class="sheet" role="dialog" aria-label="VPN выключен">
+      <div class="grab" aria-hidden="true"></div>
+      <h4>VPN выключен</h4>
+      <p>Вы в чужой сети. Рабочую почту открывают только через VPN: тогда её видно лишь вам и офису.</p>
+      <div class="sh-actions"><button class="pbtn danger" type="button" data-ph="mail-anyway">Открыть без VPN</button><button class="pbtn go" type="button" data-ph="vpn-from-mail">Включить VPN</button></div></div>`;
+  return '';
+}
+function renderPhone() {
+  const show = S.step === TASK;
+  $('boardside').classList.toggle('with-phone', show);
+  $('phone-panel').hidden = !show;
+  if (!show) return;
+  $('pp-cap').innerHTML = T.solved ? 'Экран телефона · <b>готово</b>' : 'Экран телефона · <b>задача</b>';
+  const online = T.net === 'real' || T.net === 'twin';
+  $('sbar').innerHTML = `<span>14:20</span><span class="r">${T.vpn === 'on' ? '<span class="vpn">VPN</span>' : ''}${online ? `<span style="color:var(--ink)">${WIFI_ICON}</span>` : '<span class="nonet">нет сети</span>'}${BATT}</span>`;
+  $('scr').innerHTML = T.screen === 'wifi' ? wifiScreen() : T.screen === 'mail' ? mailScreen() : homeScreen();
+}
+function refreshTask() {
+  renderPhone(); renderCard(); renderTransport();
+  const bubs = $('frame').querySelector('.panel .bubs');
+  if (bubs) { bubs.innerHTML = taskBubbles().map(bubbleHtml).join(''); applyFrame(); }
+}
+function say(k, t) { T.msg = { k, t }; }
+
+function tapNet(id) {
+  if (busy()) return;
+  if (T.net === id) return;
+  if (id === 'lounge' || id === 'hot') { T.lockedNet = id; T.sheet = 'locked'; renderPhone(); return; }
+  T.net = id; T.vpn = 'off';
+  T.sheet = id === 'real' ? 'portal-real' : 'portal-twin';
+  if (id === 'twin') say('fail', 'Телефон подключился к «AIRPORT-FREE-WiFi». Сверьте с табличкой: там «AIRPORT-FREE», без «-WiFi». Посмотрите, что спросит страница входа.');
+  else T.msg = null;
+  refreshTask();
+}
+function onPhone(k) {
+  if (k === 'to-wifi') { T.screen = 'wifi'; renderPhone(); return; }
+  if (k === 'home') { T.screen = 'home'; T.sheet = null; renderPhone(); return; }
+  if (k === 'close') { if (T.sheet === 'leaked') { T.net = null; } T.sheet = null; refreshTask(); return; }
+  if (k === 'accept') { T.sheet = null; T.screen = 'home'; say('info', 'Сеть аэропорта: страница просила только согласие с правилами. Теперь включите VPN на главном экране.'); refreshTask(); return; }
+  if (k === 'twin-cancel') { T.sheet = null; T.net = null; T.vpn = 'off'; say('ok', 'Правильно, что не стали вводить пароль: Wi-Fi аэропорта не просит пароль от почты. Это был двойник. Выберите сеть с таблички.'); refreshTask(); return; }
+  if (k === 'twin-login') { T.leaked = true; T.fails++; T.sheet = 'leaked'; T.vpn = 'off'; say('fail', 'Пароль от почты ушёл на страницу двойника. Правило: страница Wi-Fi, которая просит рабочий пароль, — всегда подделка.'); refreshTask(); return; }
+  if (k === 'vpn' || k === 'vpn-from-mail') {
+    if (T.vpn === 'on') { T.vpn = 'off'; refreshTask(); return; }
+    if (!(T.net === 'real' || T.net === 'twin')) return;
+    T.sheet = null; T.screen = 'home'; T.vpn = 'connecting'; refreshTask();
+    setTimeout(() => {
+      T.vpn = 'on';
+      if (T.net === 'real') say('info', 'VPN включён. Теперь откройте «Почту» и отправьте договор.');
+      refreshTask();
+    }, reduce ? 150 : 1100);
+    return;
+  }
+  if (k === 'mail') {
+    if (!(T.net === 'real' || T.net === 'twin')) { T.sheet = 'need-net'; renderPhone(); return; }
+    if (T.vpn !== 'on') { T.sheet = 'need-vpn'; renderPhone(); return; }
+    T.screen = 'mail'; renderPhone(); return;
+  }
+  if (k === 'mail-anyway') { T.sheet = null; T.mailNoVpn = true; T.fails++; T.screen = 'mail'; say('fail', 'Почта открылась без VPN: в чужой сети её трафик идёт мимо трубы. Вернитесь, включите VPN и откройте почту снова.'); refreshTask(); return; }
+  if (k === 'send') {
+    if (T.vpn !== 'on' || T.sent) return;
+    if (T.net !== 'real') { say('fail', 'VPN спас бы содержимое, но телефон всё ещё в сети-двойнике. Сначала подключитесь к сети с таблички.'); T.fails++; refreshTask(); return; }
+    T.sent = true; T.solved = true; T.msg = null; T.demo = false;
+    refreshTask();
+    const st = $('stage'); st.classList.remove('flash'); void st.offsetWidth; st.classList.add('flash');
+  }
+}
+function showSolution() {
+  if (T.solved || T.demo) return;
+  T.help = true; T.demo = true; T.msg = null; T.sheet = null; T.net = null; T.vpn = 'off';
+  const d = reduce ? 60 : 900;
+  const seq = [
+    () => { T.screen = 'wifi'; refreshTask(); },
+    () => { T.net = 'real'; T.sheet = 'portal-real'; refreshTask(); },
+    () => { T.sheet = null; T.screen = 'home'; refreshTask(); },
+    () => { T.vpn = 'connecting'; refreshTask(); },
+    () => { T.vpn = 'on'; refreshTask(); },
+    () => { T.screen = 'mail'; refreshTask(); },
+    () => { T.demo = false; onPhone('send'); },
+  ];
+  const step = () => { if (S.step !== TASK) { T.demo = false; return; } const f = seq.shift(); if (f) { f(); if (seq.length) setTimeout(step, d); } };
+  refreshTask();
+  setTimeout(step, d);
+}
+
+// ---------- переходы ----------
+function goTo(n) {
+  if (n === S.step || !canGo(n)) return;
+  S.step = n; S.maxStep = Math.max(S.maxStep, n); S.signOpen = false; S.refHl = null;
+  renderTheory(); renderCard(); renderPhone(); renderFrame(); renderTransport();
+  // На телефоне кадр над текстом: после «Далее» показываем новый кадр, текст — сразу под ним.
+  if (mobileMQ.matches) window.scrollTo({ top: 0, behavior: 'auto' });
+  else if (n === QUIZ_STEP || n === TASK) showCard();
+}
+function showCard() {
+  const c = $('card'), sc = $('theory-scroll');
+  if (c && getComputedStyle(sc).overflowY === 'auto') c.scrollIntoView({ block: 'nearest', behavior: reduce ? 'auto' : 'smooth' });
+}
+function answerQuiz(id) {
+  if (S.step !== QUIZ_STEP || S.quiz) return;
+  S.quiz = { pick: id, first: id === QUIZ.answer };
+  renderCard(); renderTransport(); showCard();
+}
+function openSign(on) { S.signOpen = on; applyFrame(); if (on) $('sp-x').focus({ preventScroll: true }); }
+
+// ---------- события ----------
+$('frame').addEventListener('click', e => { if (e.target.closest('#sign')) openSign(!S.signOpen); else if (S.signOpen) openSign(false); });
+$('sp-x').addEventListener('click', () => { openSign(false); const s = $('sign'); if (s) s.focus({ preventScroll: true }); });
+
+function hoverRef(e, on) {
+  const r = e.target.closest && e.target.closest('.ref');
+  if (!r) return;
+  S.refHl = on ? r.dataset.ref : null;
+  applyFrame();
+}
+$('beats').addEventListener('pointerover', e => hoverRef(e, true));
+$('beats').addEventListener('pointerout', e => hoverRef(e, false));
+$('beats').addEventListener('focusin', e => hoverRef(e, true));
+$('beats').addEventListener('focusout', e => hoverRef(e, false));
+$('beats').addEventListener('click', e => {
+  const a = e.target.closest('[data-action]');
+  if (a) {
+    const k = a.dataset.action;
+    if (k === 'next') goTo(S.step + 1);
+    else if (k === 'hint') { T.hint = Math.min(3, T.hint + 1); renderCard(); renderPhone(); }
+    else if (k === 'solution') showSolution();
+    return;
+  }
+  const o = e.target.closest('[data-opt]');
+  if (o && !o.disabled) { answerQuiz(o.dataset.opt); return; }
+  if (e.target.closest('.more')) return;
+  const r = e.target.closest('.ref');
+  if (r) {
+    if (r.dataset.ref === 'sign' && S.step === TASK) { openSign(true); if (mobileMQ.matches) $('stage').scrollIntoView({ block: 'nearest', behavior: reduce ? 'auto' : 'smooth' }); }
+    return;
+  }
+  const past = e.target.closest('.beat.past');
+  if (past) goTo(+past.dataset.goto);
+});
+$('beats').addEventListener('keydown', e => {
+  const r = e.target.closest && e.target.closest('.ref');
+  if (r && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); r.click(); }
+});
+$('timeline').addEventListener('click', e => { const b = e.target.closest('[data-goto]'); if (b && !b.disabled) goTo(+b.dataset.goto); });
+$('theory-nav').addEventListener('click', e => {
+  if (e.target.closest('#nav-prev')) goTo(S.step - 1);
+  if (e.target.closest('#nav-next')) goTo(S.step + 1);
+});
+$('scr').addEventListener('click', e => {
+  if (T.demo) return;
+  const n = e.target.closest('[data-net]');
+  if (n && !n.disabled) { tapNet(n.dataset.net); return; }
+  const a = e.target.closest('[data-ph]');
+  if (a && !a.disabled) onPhone(a.dataset.ph);
+});
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') {
+    if (S.signOpen) { openSign(false); return; }
+    if (T.sheet && !T.demo && T.sheet !== 'portal-real' && T.sheet !== 'portal-twin') { onPhone('close'); return; }
+  }
+  if (e.target.closest && e.target.closest('input, textarea, select, .scr')) return;
+  if (e.metaKey || e.ctrlKey || e.altKey) return;
+  if (e.key === 'ArrowRight') goTo(S.step + 1);
+  if (e.key === 'ArrowLeft') goTo(S.step - 1);
+});
+const onMQ = () => { renderTransport(); };
+mobileMQ.addEventListener ? mobileMQ.addEventListener('change', onMQ) : mobileMQ.addListener(onMQ);
+
+renderTheory(); renderCard(); renderPhone(); renderFrame(); renderTransport();
+})();
+</script>
+</body>
+</html>
