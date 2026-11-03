@@ -523,6 +523,13 @@ const hostRoutes = (
           ),
         ),
       )
+      // Рабочий VPN в режиме «весь трафик» запрещает домашнюю сеть
+      // (local LAN access off): строки дома в таблице нет, и 0.0.0.0/0
+      // через wg0 забирает и конверты к принтеру, как на доске.
+      const lanBlocked = Option.exists(
+        host.maybeVpn,
+        client => client.connected && client.mode === 'full',
+      )
       return [
         ...vpn,
         ...Option.toArray(
@@ -530,13 +537,17 @@ const hostRoutes = (
             row('default', '0.0.0.0', 0, Option.some(gateway), IFACE),
           ),
         ),
-        row(
-          'connected',
-          networkAddress(iface.ip, iface.prefix),
-          iface.prefix,
-          Option.none(),
-          IFACE,
-        ),
+        ...(lanBlocked
+          ? []
+          : [
+              row(
+                'connected',
+                networkAddress(iface.ip, iface.prefix),
+                iface.prefix,
+                Option.none(),
+                IFACE,
+              ),
+            ]),
         ...docker,
       ]
     },
