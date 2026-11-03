@@ -110,6 +110,27 @@ export const lt = {
     rejecting: rps => `atmesta ${n(rps)}/s`,
     zoneDown: region => `${regionName[region]} · regionas neveikia`,
     edgeFlow: rps => `${n(rps)} rps`,
+    edgeName: (from, to) => `Ryšys ${from} → ${to}`,
+    moveEdgeEnd: (end, from, to) =>
+      `${end === 'from' ? 'Perkelti ryšio pradžią' : 'Perkelti ryšio galą'} ${from} → ${to}`,
+    dragEdgeEnd: 'Nuvilkite ant kito bloko, kad perkeltumėte ryšį',
+    reconnectHint: 'Pasirinkite bloką ryšio galui · Esc – atšaukti',
+    cacheModeHint: {
+      'read-through': 'per miss cache pats skaito database',
+      'cache-aside':
+        'per miss „Server“ pats skaito database ir įdeda atsakymą į cache',
+    },
+    idleCacheEdge:
+      'ryšys nenaudojamas: taikant cache-aside, database skaito „Server“',
+    flowName: {
+      requests: 'užklausos',
+      reads: 'skaitymas',
+      writes: 'rašymas',
+      misses: 'miss',
+      fills: 'pildymas',
+      jobs: 'užduotys',
+      events: 'įvykiai',
+    },
     ghost: kind => `čia: ${componentName[kind]}`,
     modePick: 'Klausimas · pasirinkite lentoje',
     loadHidden: 'apkrova paslėpta iki atsakymo',
@@ -193,7 +214,7 @@ export const lt = {
     solvedWithHint: 'Išspręsta su užuomina',
     attempts: count => `bandymų: ${n(count)}`,
     howTo:
-      'Nuvilkite bloką iš paletės į lentą. Ryšys tempiamas nuo apskritimo dešiniajame bloko krašte. Norėdami ištrinti ryšį, spustelėkite jį, tada raudoną kryželį.',
+      'Nuvilkite bloką iš paletės į lentą. Ryšys tempiamas nuo apskritimo dešiniajame bloko krašte. Norėdami ištrinti ryšį, spustelėkite jį, tada raudoną kryželį; norėdami perkelti, nuvilkite vieną jo galą ant kito bloko.',
     hiddenGoal: 'Dar vienas kriterijus tikrinamas paleidus apkrovą',
     metricGoal: load => `Atlaiko ${n(load)} rps, kai klaidų mažiau nei 1 %`,
     metricGoalPassed: (load, errorRate) =>
@@ -254,6 +275,7 @@ export const lt = {
     NodeIsPartOfTask: ({ id }) =>
       `Blokas ${id} yra užduoties sąlygos dalis, jo ištrinti negalima.`,
     UnknownNode: ({ id }) => `Bloko ${id} lentoje nėra.`,
+    UnknownEdge: ({ from, to }) => `Ryšio ${from} → ${to} lentoje nėra.`,
     DuplicateNodeId: ({ id }) => `Blokas pavadinimu ${id} jau yra.`,
     GoalMissingKind: ({ kind }) =>
       `Lentoje dar nėra bloko „${componentName[kind]}“. Jis yra paletėje kairėje.`,
@@ -261,10 +283,14 @@ export const lt = {
       `Ryšių nuo „${componentName[from]}“ iki blokų „${componentName[to]}“: ${n(have)} iš ${n(need)}. Nutieskite trūkstamus.`,
     GoalDirectPath: ({ from, via, targets }) =>
       `„${componentName[from]}“ kreipiasi į ${targets.join(', ')} tiesiogiai, aplenkdami bloką „${componentName[via]}“. Spustelėkite paryškintą ryšį ir ištrinkite jį.`,
+    GoalUnwantedLink: ({ from, to, edges }) =>
+      `Ryšys „${componentName[from]}“ → „${componentName[to]}“ čia nereikalingas (${edges.join(', ')}). Spustelėkite paryškintą ryšį ir ištrinkite jį.`,
     GoalNotConnected: ({ from, via }) =>
       `Nėra ryšio nuo „${componentName[from]}“ iki bloko „${componentName[via]}“: užklausoms nėra kur eiti.`,
     GoalTooManyErrors: ({ load, errorRate, overloaded }) =>
       `Esant ${n(load)} rps prarandama ${percent(errorRate)} užklausų. Užklausas praranda: ${overloaded.join(', ')}.`,
+    ConnectCacheAside: () =>
+      'Taikant cache-aside, cache pats į database nesikreipia: per miss ją skaito „Server“ ir įdeda atsakymą į cache. Prie „Database“ junkite bloką „Server“.',
     ConnectFromSink: ({ from }) =>
       `Bloke „${componentName[from]}“ užklausos kelias baigiasi: toliau jis nieko neperduoda.`,
     ConnectNotAllowed: ({ from, to, allowed }) =>

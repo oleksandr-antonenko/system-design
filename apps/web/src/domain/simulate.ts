@@ -10,7 +10,7 @@ import {
   shareOf,
   targetsOf,
 } from './board'
-import { type ComponentKind, catalog } from './catalog'
+import { type ComponentKind, cacheStoreKinds, catalog } from './catalog'
 import { type TrafficProfile, defaultTraffic, readShareOf } from './traffic'
 
 export type NodeFlow = Readonly<{
@@ -23,10 +23,37 @@ export type NodeFlow = Readonly<{
   isDown: boolean
 }>
 
+/** Что течёт по связи: запросы пользователей, чтение, запись, промахи кеша,
+    заполнение кеша сервером (cache-aside), задачи очереди или события шины
+    (add-flow-labels-and-cache-modes). */
+export type FlowKind =
+  | 'requests'
+  | 'reads'
+  | 'writes'
+  | 'misses'
+  | 'fills'
+  | 'jobs'
+  | 'events'
+
+export const flowKinds: ReadonlyArray<FlowKind> = [
+  'requests',
+  'reads',
+  'writes',
+  'misses',
+  'fills',
+  'jobs',
+  'events',
+]
+
+/** Поток связи по видам, rps. Вида, которого нет на связи, нет и в записи. */
+export type EdgeKinds = Readonly<Partial<Record<FlowKind, number>>>
+
 export type SimResult = Readonly<{
   load: number
   nodes: Readonly<Record<string, NodeFlow>>
   edges: Readonly<Record<string, number>>
+  /** Те же связи, что `edges`, но по видам потока: сумма видов равна `edges`. */
+  edgeKinds: Readonly<Record<string, EdgeKinds>>
   errorRate: number
   p95: Option.Option<number>
   databaseLoad: number
@@ -89,6 +116,7 @@ type Send = Readonly<{
   to: string
   amount: number
   isUser: boolean
+  kind: FlowKind
   parcels: ReadonlyArray<Parcel>
 }>
 
@@ -119,6 +147,7 @@ type Flow = Readonly<{
   arrivals: Readonly<Record<string, Arrival>>
   handled: Readonly<Record<string, Handled>>
   edges: Readonly<Record<string, number>>
+  edgeKinds: Readonly<Record<string, EdgeKinds>>
   plans: ReadonlyArray<LatencyPlan>
 }>
 
@@ -226,6 +255,7 @@ const forwardRequests = (
       to: target.id,
       amount: amountOf(share),
       isUser: true,
+      kind: 'requests',
       parcels: delayed(
         share,
         hopMs + simulationRules.regionCrossingMs * crossings(from, target),
@@ -237,11 +267,13 @@ const spread = (
   amount: number,
   targets: ReadonlyArray<BoardNode>,
   isUser: boolean,
+  kind: FlowKind,
 ): ReadonlyArray<Send> =>
   Array.map(targets, target => ({
     to: target.id,
     amount: amount / targets.length,
     isUser,
+    kind,
     parcels: [],
   }))
 
@@ -406,11 +438,34 @@ const storeBranches = (
       })),
   })
 
+const isCacheAside = (context: Context): boolean =>
+  context.doc.cacheMode === 'cache-aside'
+
 const cacheStores = (
   context: Context,
   cache: BoardNode,
 ): ReadonlyArray<BoardNode> =>
-  alive(context, ofKinds(targetNodes(context, cache), ['db', 'replica']))
+  alive(context, ofKinds(targetNodes(context, cache), cacheStoreKinds))
+
+/** Промахи одного кеша: в read-through их читает кеш из своих хранилищ, в
+    cache-aside — сервер из своих, после похода в кеш. */
+const missBranches = (
+  context: Context,
+  server: BoardNode,
+  cache: BoardNode,
+  weight: number,
+  readTargets: ReadonlyArray<BoardNode>,
+  toCache: number,
+): ReadonlyArray<Branch> =>
+  isCacheAside(context)
+    ? Array.map(
+        storeBranches(server, weight, readTargets, toCache),
+        branch => ({
+          ...branch,
+          fixedMs: branch.fixedMs + simulationRules.cacheHitMs,
+        }),
+      )
+    : storeBranches(cache, weight, cacheStores(context, cache), toCache)
 
 const readBranches = (
   context: Context,
@@ -433,10 +488,12 @@ const readBranches = (
             maybeStore: Option.none(),
             crossings: toCache,
           },
-          ...storeBranches(
+          ...missBranches(
+            context,
+            server,
             cache,
             weight * (1 - hitShare),
-            cacheStores(context, cache),
+            readTargets,
             toCache,
           ),
         ]
@@ -474,13 +531,28 @@ const handleServer: Handler = (context, node, arrival) => {
   const deferred = served * traffic.deferredShare
   const reads = served - writes - deferred
   const syncWrites = canDefer ? writes : writes + deferred
+  // Cache-aside: промахи сервер читает из баз и реплик сам и кладёт ответ
+  // в кеш — заполнение не пользовательский запрос.
+  const asideMisses =
+    isCacheAside(context) && Array.isReadonlyArrayNonEmpty(caches)
+      ? reads * (1 - traffic.cacheHitShare)
+      : 0
   const readSends = Array.isReadonlyArrayNonEmpty(caches)
-    ? spread(reads, caches, true)
-    : spread(reads, readTargets, true)
-  const taskSends = Array.map(handoffs, target => ({
+    ? [
+        ...spread(reads, caches, true, 'reads'),
+        ...(asideMisses > 0
+          ? [
+              ...spread(asideMisses, readTargets, true, 'misses'),
+              ...spread(asideMisses, caches, false, 'fills'),
+            ]
+          : []),
+      ]
+    : spread(reads, readTargets, true, 'reads')
+  const taskSends = Array.map(handoffs, (target): Send => ({
     to: target.id,
     amount: served * traffic.jobsPerRequest,
     isUser: false,
+    kind: target.kind === 'queue' ? 'jobs' : 'events',
     parcels: [],
   }))
   const deferredBranches: ReadonlyArray<Branch> = canDefer
@@ -497,7 +569,7 @@ const handleServer: Handler = (context, node, arrival) => {
     served,
     dropped: arrival.total - served,
     sends: [
-      ...spread(syncWrites, writeTargets, true),
+      ...spread(syncWrites, writeTargets, true, 'writes'),
       ...readSends,
       ...taskSends,
     ],
@@ -520,13 +592,16 @@ const handleServer: Handler = (context, node, arrival) => {
 
 const handleCache: Handler = (context, node, arrival) => {
   const accepted = Math.min(arrival.total, capacityOf(node))
+  if (isCacheAside(context)) {
+    return handled({ served: accepted, dropped: arrival.total - accepted })
+  }
   const misses = accepted * (1 - context.doc.traffic.cacheHitShare)
   const stores = cacheStores(context, node)
   return Array.isReadonlyArrayNonEmpty(stores)
     ? handled({
         served: accepted,
         dropped: arrival.total - accepted,
-        sends: spread(misses, stores, true),
+        sends: spread(misses, stores, true, 'misses'),
       })
     : handled({
         served: accepted - misses,
@@ -547,10 +622,11 @@ const handleQueue: Handler = (context, node, arrival, flow) => {
     served: accepted,
     dropped: arrival.total - accepted,
     backlog: accepted - Number.sumAll(delivered),
-    sends: Array.zipWith(workers, delivered, (worker, amount) => ({
+    sends: Array.zipWith(workers, delivered, (worker, amount): Send => ({
       to: worker.id,
       amount,
       isUser: false,
+      kind: 'jobs',
       parcels: [],
     })),
   })
@@ -570,12 +646,17 @@ const handleEvents: Handler = (context, node, arrival, flow) => {
     served: accepted,
     dropped: arrival.total - accepted,
     backlog: Number.sumAll(Array.map(delivered, amount => accepted - amount)),
-    sends: Array.zipWith(subscribers, delivered, (subscriber, amount) => ({
-      to: subscriber.id,
-      amount,
-      isUser: false,
-      parcels: [],
-    })),
+    sends: Array.zipWith(
+      subscribers,
+      delivered,
+      (subscriber, amount): Send => ({
+        to: subscriber.id,
+        amount,
+        isUser: false,
+        kind: 'events',
+        parcels: [],
+      }),
+    ),
   })
 }
 
@@ -593,8 +674,9 @@ const handleWorker: Handler = (context, node, arrival) => {
         served * context.doc.traffic.writesPerJob,
         ofKinds(live, ['db']),
         false,
+        'writes',
       ),
-      ...spread(served, ofKinds(live, ['storage']), false),
+      ...spread(served, ofKinds(live, ['storage']), false, 'writes'),
     ],
   })
 }
@@ -661,6 +743,14 @@ const receive = (arrivals: Flow['arrivals'], send: Send): Flow['arrivals'] => {
   }
 }
 
+const noKinds: EdgeKinds = {}
+
+const kindsOf = (sends: ReadonlyArray<Send>): EdgeKinds =>
+  Array.reduce(sends, noKinds, (kinds, send) => ({
+    ...kinds,
+    [send.kind]: (kinds[send.kind] ?? 0) + send.amount,
+  }))
+
 const flowThrough =
   (context: Context) =>
   (flow: Flow, node: BoardNode): Flow => {
@@ -682,6 +772,16 @@ const flowThrough =
               Array.filter(send => send.to === target),
               Array.map(send => send.amount),
             ),
+          ),
+        }),
+      ),
+      edgeKinds: Array.reduce(
+        targetsOf(context.doc, node.id),
+        flow.edgeKinds,
+        (edgeKinds, target) => ({
+          ...edgeKinds,
+          [edgeKey({ from: node.id, to: target })]: kindsOf(
+            Array.filter(result.sends, send => send.to === target),
           ),
         }),
       ),
@@ -771,6 +871,7 @@ export const simulate = (doc: BoardDoc, load: number): SimResult => {
     ),
     handled: {},
     edges: {},
+    edgeKinds: {},
     plans: [],
   }
   const ordered = Array.sort(doc.nodes, Order.mapInput(Order.Number, rankOf))
@@ -822,6 +923,7 @@ export const simulate = (doc: BoardDoc, load: number): SimResult => {
     load,
     nodes,
     edges: flow.edges,
+    edgeKinds: flow.edgeKinds,
     errorRate: load > 0 ? (userLost + rejected) / load : 0,
     p95: weightedP95(
       latencySamples(flow.plans, id => nodes[id]?.utilization ?? 0),

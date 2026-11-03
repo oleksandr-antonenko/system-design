@@ -105,6 +105,27 @@ export const en = {
     rejecting: rps => `rejected ${n(rps)}/s`,
     zoneDown: region => `${regionName[region]} · region down`,
     edgeFlow: rps => `${n(rps)} rps`,
+    edgeName: (from, to) => `Connection ${from} → ${to}`,
+    moveEdgeEnd: (end, from, to) =>
+      `Move the ${end === 'from' ? 'start' : 'end'} of the connection ${from} → ${to}`,
+    dragEdgeEnd: 'Drag onto another block to move the connection',
+    reconnectHint: 'Pick a block for the end of the connection · Esc cancels',
+    cacheModeHint: {
+      'read-through': 'on a miss the cache reads the database itself',
+      'cache-aside':
+        'on a miss the server reads the database itself and puts the answer into the cache',
+    },
+    idleCacheEdge:
+      'connection not used: in cache-aside the server reads the database',
+    flowName: {
+      requests: 'requests',
+      reads: 'reads',
+      writes: 'writes',
+      misses: 'misses',
+      fills: 'fills',
+      jobs: 'jobs',
+      events: 'events',
+    },
     ghost: kind => `${componentName[kind]} here`,
     modePick: 'Question · pick on the board',
     loadHidden: 'load hidden until you answer',
@@ -190,7 +211,7 @@ export const en = {
     attempts: count =>
       `${n(count)} ${plural('en', count, { one: 'attempt', other: 'attempts' })}`,
     howTo:
-      'Drag a block from the palette onto the board. Draw a connection from the circle on the right edge of a block. To delete a connection, click it, then the red cross.',
+      'Drag a block from the palette onto the board. Draw a connection from the circle on the right edge of a block. To delete a connection, click it, then the red cross; to move it, drag one of its ends onto another block.',
     hiddenGoal: 'One more criterion is checked by running the load',
     metricGoal: load => `Handles ${n(load)} rps with less than 1% errors`,
     metricGoalPassed: (load, errorRate) =>
@@ -252,6 +273,8 @@ export const en = {
     NodeIsPartOfTask: ({ id }) =>
       `Block ${id} is part of the task and cannot be deleted.`,
     UnknownNode: ({ id }) => `There is no block ${id} on the board.`,
+    UnknownEdge: ({ from, to }) =>
+      `There is no connection ${from} → ${to} on the board.`,
     DuplicateNodeId: ({ id }) => `A block named ${id} already exists.`,
     GoalMissingKind: ({ kind }) =>
       `There is no “${componentName[kind]}” block on the board yet. It is in the palette on the left.`,
@@ -259,10 +282,14 @@ export const en = {
       `Connections from “${componentName[from]}” to “${componentName[to]}” blocks: ${n(have)} of ${n(need)}. Draw the missing ones.`,
     GoalDirectPath: ({ from, via, targets }) =>
       `“${componentName[from]}” reach ${targets.join(', ')} directly, bypassing the “${componentName[via]}” block. Click the highlighted connection and delete it.`,
+    GoalUnwantedLink: ({ from, to, edges }) =>
+      `The “${componentName[from]}” → “${componentName[to]}” connection is not needed here (${edges.join(', ')}). Click the highlighted connection and delete it.`,
     GoalNotConnected: ({ from, via }) =>
       `There is no connection from “${componentName[from]}” to the “${componentName[via]}” block, so requests have nowhere to go.`,
     GoalTooManyErrors: ({ load, errorRate, overloaded }) =>
       `At ${n(load)} rps, ${percent(errorRate)} of requests are lost. Losing requests: ${overloaded.join(', ')}.`,
+    ConnectCacheAside: () =>
+      'In cache-aside the cache never reads the database itself: on a miss the server reads it and puts the answer into the cache. Connect the server to the database instead.',
     ConnectFromSink: ({ from }) =>
       `Requests end at the “${componentName[from]}” block: it does not pass them any further.`,
     ConnectNotAllowed: ({ from, to, allowed }) =>

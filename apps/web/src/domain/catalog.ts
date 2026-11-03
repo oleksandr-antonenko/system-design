@@ -46,6 +46,18 @@ export type Region = typeof Region.Type
 
 export const regions: ReadonlyArray<Region> = Region.literals
 
+/** Кто читает базу при промахе кеша (add-flow-labels-and-cache-modes).
+    `read-through` — сам кеш, по связи кеш → база; `cache-aside` — сервер:
+    спрашивает кеш, при промахе читает базу сам и кладёт ответ в кеш. Названия
+    паттернов не переводятся, как и названия блоков. */
+export const CacheMode = Schema.Literals(['read-through', 'cache-aside'])
+export type CacheMode = typeof CacheMode.Type
+
+export const cacheModes: ReadonlyArray<CacheMode> = CacheMode.literals
+
+/** Хранилища, которые кеш в режиме read-through читает при промахе. */
+export const cacheStoreKinds: ReadonlyArray<ComponentKind> = ['db', 'replica']
+
 export type ComponentSpec = Readonly<{
   rank: number
   capacity: number

@@ -3,9 +3,10 @@ import { Mount } from 'foldkit'
 
 import { ComponentKind } from '../domain/catalog'
 import type { Point } from '../domain/geometry'
-import { Message, PointerTarget } from './message'
+import { EdgeEnd, Message, PointerTarget } from './message'
 
 const isComponentKind = Schema.is(ComponentKind)
+const isEdgeEnd = Schema.is(EdgeEnd)
 
 const datasetValue = (
   element: Element | null,
@@ -34,6 +35,17 @@ const targetOf = (
       from: Option.getOrElse(datasetValue(deleteEdge, 'deleteFrom'), () => ''),
       to: Option.getOrElse(datasetValue(deleteEdge, 'deleteTo'), () => ''),
     })
+  }
+  const edgeEnd = closest(element, '[data-edge-end]')
+  if (edgeEnd !== null) {
+    const end = Option.getOrElse(datasetValue(edgeEnd, 'edgeEnd'), () => '')
+    return isEdgeEnd(end)
+      ? PointerTarget.EdgeEnd({
+          from: Option.getOrElse(datasetValue(edgeEnd, 'endFrom'), () => ''),
+          to: Option.getOrElse(datasetValue(edgeEnd, 'endTo'), () => ''),
+          end,
+        })
+      : PointerTarget.Outside()
   }
   const port = closest(element, '[data-port]')
   if (port !== null) {
@@ -81,6 +93,7 @@ const isDragSource = (
     Palette: () =>
       closest(element, '[data-palette]')?.matches(':disabled') === false,
     Edge: () => false,
+    EdgeEnd: () => true,
     DeleteNode: () => false,
     DeleteEdge: () => false,
     Background: () => false,
@@ -96,6 +109,7 @@ const keepsTouch = (element: Element | null, target: PointerTarget): boolean =>
     Port: () => true,
     Node: () => isEditableNode(element),
     Edge: () => true,
+    EdgeEnd: () => true,
     DeleteNode: () => true,
     DeleteEdge: () => true,
     Palette: () => false,

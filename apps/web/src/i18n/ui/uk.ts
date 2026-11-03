@@ -108,6 +108,27 @@ export const uk = {
     rejecting: rps => `відхилено ${n(rps)}/с`,
     zoneDown: region => `${regionName[region]} · регіон недоступний`,
     edgeFlow: rps => `${n(rps)} rps`,
+    edgeName: (from, to) => `Зв’язок ${from} → ${to}`,
+    moveEdgeEnd: (end, from, to) =>
+      `${end === 'from' ? 'Перенести початок' : 'Перенести кінець'} зв’язку ${from} → ${to}`,
+    dragEdgeEnd: 'Потягніть до іншого блока, щоб перенести зв’язок',
+    reconnectHint: 'Виберіть блок для кінця зв’язку · Esc — скасувати',
+    cacheModeHint: {
+      'read-through': 'при miss cache сам читає database',
+      'cache-aside':
+        'при miss «Server» читає database сам і кладе відповідь у cache',
+    },
+    idleCacheEdge:
+      'зв’язок не використовується: у cache-aside database читає «Server»',
+    flowName: {
+      requests: 'запити',
+      reads: 'читання',
+      writes: 'запис',
+      misses: 'miss',
+      fills: 'заповнення',
+      jobs: 'задачі',
+      events: 'події',
+    },
     ghost: kind => `сюди: ${componentName[kind]}`,
     modePick: 'Питання · оберіть на дошці',
     loadHidden: 'навантаження приховане до відповіді',
@@ -191,7 +212,7 @@ export const uk = {
     solvedWithHint: 'Розв’язано з підказкою',
     attempts: count => `спроб: ${n(count)}`,
     howTo:
-      'Перетягніть блок із палітри на дошку. Зв’язок тягнеться з кружечка на правому краї блока. Щоб видалити зв’язок, натисніть на нього, потім на червоний хрестик.',
+      'Перетягніть блок із палітри на дошку. Зв’язок тягнеться з кружечка на правому краї блока. Щоб видалити зв’язок, натисніть на нього, потім на червоний хрестик; щоб перенести, перетягніть один із його кінців на інший блок.',
     hiddenGoal: 'Ще один критерій перевіряється прогоном навантаження',
     metricGoal: load => `Витримує ${n(load)} rps з помилками менше 1%`,
     metricGoalPassed: (load, errorRate) =>
@@ -252,6 +273,7 @@ export const uk = {
     NodeIsPartOfTask: ({ id }) =>
       `Блок ${id} входить в умову задачі, його не можна видалити.`,
     UnknownNode: ({ id }) => `Блока ${id} немає на дошці.`,
+    UnknownEdge: ({ from, to }) => `Зв’язку ${from} → ${to} немає на дошці.`,
     DuplicateNodeId: ({ id }) => `Блок з іменем ${id} уже є.`,
     GoalMissingKind: ({ kind }) =>
       `На дошці поки немає блока «${componentName[kind]}». Він у палітрі зліва.`,
@@ -259,10 +281,14 @@ export const uk = {
       `Зв’язків від «${componentName[from]}» до блоків «${componentName[to]}»: ${n(have)} з ${n(need)}. Протягніть відсутні.`,
     GoalDirectPath: ({ from, via, targets }) =>
       `«${componentName[from]}» ходять на ${targets.join(', ')} напряму, повз блок «${componentName[via]}». Натисніть на підсвічений зв’язок і видаліть його.`,
+    GoalUnwantedLink: ({ from, to, edges }) =>
+      `Зв’язок «${componentName[from]}» → «${componentName[to]}» тут зайвий (${edges.join(', ')}). Натисніть на підсвічений зв’язок і видаліть його.`,
     GoalNotConnected: ({ from, via }) =>
       `Немає зв’язку від «${componentName[from]}» до блока «${componentName[via]}»: запитам нікуди йти.`,
     GoalTooManyErrors: ({ load, errorRate, overloaded }) =>
       `При ${n(load)} rps втрачається ${percent(errorRate)} запитів. Втрачають запити: ${overloaded.join(', ')}.`,
+    ConnectCacheAside: () =>
+      'У cache-aside cache сам до database не звертається: при miss її читає «Server» і кладе відповідь у cache. Підключіть до «Database» блок «Server».',
     ConnectFromSink: ({ from }) =>
       `На блоці «${componentName[from]}» шлях запиту закінчується: далі він нічого не передає.`,
     ConnectNotAllowed: ({ from, to, allowed }) =>

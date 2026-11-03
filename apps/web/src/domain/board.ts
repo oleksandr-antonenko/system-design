@@ -2,7 +2,15 @@ import { Array, Option, Result, Schema, pipe } from 'effect'
 import { defineTaggedUnion } from 'foldkit/schema'
 
 import { DomainMessage } from '../i18n/domainMessage'
-import { ComponentKind, Region, canConnect, catalog, isSink } from './catalog'
+import {
+  CacheMode,
+  ComponentKind,
+  Region,
+  cacheStoreKinds,
+  canConnect,
+  catalog,
+  isSink,
+} from './catalog'
 import {
   TrafficPatch,
   TrafficProfile,
@@ -36,6 +44,9 @@ export const BoardDoc = Schema.Struct({
   shares: Schema.Record(Schema.String, Schema.Number),
   /** Из чего состоит обслуженный запрос; по умолчанию прежние константы. */
   traffic: TrafficProfile,
+  /** Кто читает базу при промахе кеша, для всех кешей доски. По умолчанию
+      `read-through`, как в уроках 1–13. */
+  cacheMode: CacheMode,
 })
 export type BoardDoc = typeof BoardDoc.Type
 
@@ -46,6 +57,7 @@ export const emptyBoard: BoardDoc = {
   failed: [],
   shares: {},
   traffic: defaultTraffic,
+  cacheMode: 'read-through',
 }
 
 const DEFAULT_SHARE = 1
@@ -72,6 +84,15 @@ export const BoardOp = defineTaggedUnion({
   MoveNode: { id: Schema.String, x: Schema.Number, y: Schema.Number },
   Connect: { from: Schema.String, to: Schema.String },
   Disconnect: { from: Schema.String, to: Schema.String },
+  /** Перенести конец связи `from → to` на другой блок: одна операция, одна
+      строка журнала и одна отмена. Новая связь проверяется теми же правилами,
+      что и `Connect`, и встаёт на место старой. */
+  Reconnect: {
+    from: Schema.String,
+    to: Schema.String,
+    nextFrom: Schema.String,
+    nextTo: Schema.String,
+  },
   SetLoad: { rps: Schema.Number },
   FailNode: { id: Schema.String },
   RecoverNode: { id: Schema.String },
@@ -84,6 +105,8 @@ export const BoardOp = defineTaggedUnion({
   Reset: {},
   /** Меняет названные ручки профиля трафика (add-flow-traffic-profile). */
   SetTraffic: { traffic: TrafficPatch },
+  /** Режим всех кешей доски (add-flow-labels-and-cache-modes). */
+  SetCacheMode: { mode: CacheMode },
 })
 export type BoardOp = typeof BoardOp.Type
 
@@ -107,6 +130,13 @@ const connectRefusal = (
     Array.some(doc.edges, edge => edge.from === from.id && edge.to === to.id)
   ) {
     return Option.some(DomainMessage.ConnectDuplicate())
+  }
+  if (
+    from.kind === 'cache' &&
+    doc.cacheMode === 'cache-aside' &&
+    Array.contains(cacheStoreKinds, to.kind)
+  ) {
+    return Option.some(DomainMessage.ConnectCacheAside())
   }
   if (canConnect(from.kind, to.kind)) {
     return Option.none()
@@ -180,6 +210,38 @@ const isValidCapacity = (maybeCapacity: Option.Option<number>): boolean =>
     onSome: capacity => globalThis.Number.isFinite(capacity) && capacity > 0,
   })
 
+const hasEdge = (doc: BoardDoc, edge: Edge): boolean =>
+  Array.some(
+    doc.edges,
+    candidate => candidate.from === edge.from && candidate.to === edge.to,
+  )
+
+const reconnect = (doc: BoardDoc, edge: Edge, next: Edge): BoardResult => {
+  if (!hasEdge(doc, edge)) {
+    return Result.fail(
+      DomainMessage.UnknownEdge({ from: edge.from, to: edge.to }),
+    )
+  }
+  if (edge.from === next.from && edge.to === next.to) {
+    return Result.succeed(doc)
+  }
+  const isMoved = (candidate: Edge) =>
+    candidate.from === edge.from && candidate.to === edge.to
+  const without = {
+    ...doc,
+    edges: Array.filter(doc.edges, candidate => !isMoved(candidate)),
+  }
+  return Result.map(
+    applyOp(without, BoardOp.Connect({ from: next.from, to: next.to })),
+    () => ({
+      ...doc,
+      edges: Array.map(doc.edges, candidate =>
+        isMoved(candidate) ? { from: next.from, to: next.to } : candidate,
+      ),
+    }),
+  )
+}
+
 export const applyOp = (doc: BoardDoc, op: BoardOp): BoardResult =>
   BoardOp.match(op, {
     AddNode: node =>
@@ -238,6 +300,8 @@ export const applyOp = (doc: BoardDoc, op: BoardOp): BoardResult =>
           }),
         ),
       ),
+    Reconnect: ({ from, to, nextFrom, nextTo }) =>
+      reconnect(doc, { from, to }, { from: nextFrom, to: nextTo }),
     Disconnect: ({ from, to }) =>
       Result.succeed({
         ...doc,
@@ -291,6 +355,7 @@ export const applyOp = (doc: BoardDoc, op: BoardOp): BoardResult =>
         onSome: knob => Result.fail(DomainMessage.InvalidTraffic({ knob })),
       })
     },
+    SetCacheMode: ({ mode }) => Result.succeed({ ...doc, cacheMode: mode }),
   })
 
 export const foldOps = (doc: BoardDoc, ops: ReadonlyArray<BoardOp>): BoardDoc =>
@@ -303,6 +368,15 @@ export const nodesOfKind = (
   kind: ComponentKind,
 ): ReadonlyArray<BoardNode> =>
   Array.filter(doc.nodes, node => node.kind === kind)
+
+/** Связь кеша с базой или репликой, по которой в режиме cache-aside ничего не
+    течёт: доска рисует её пунктиром, цель `NoLink` просит её убрать. */
+export const isIdleCacheEdge = (doc: BoardDoc, edge: Edge): boolean =>
+  doc.cacheMode === 'cache-aside' &&
+  Option.exists(findNode(doc, edge.from), node => node.kind === 'cache') &&
+  Option.exists(findNode(doc, edge.to), node =>
+    Array.contains(cacheStoreKinds, node.kind),
+  )
 
 export const targetsOf = (doc: BoardDoc, id: string): ReadonlyArray<string> =>
   pipe(

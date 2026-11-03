@@ -1,4 +1,4 @@
-import { Array, Option, Result, pipe } from 'effect'
+import { Array, Number, Option, Order, Result, pipe } from 'effect'
 import { Canvas, Submodel } from 'foldkit'
 import { type Html, type HtmlBuilder } from 'foldkit/html'
 
@@ -8,6 +8,7 @@ import {
   BoardOp,
   applyOp,
   edgeKey,
+  isIdleCacheEdge,
   isRegionDown,
 } from '../domain/board'
 import {
@@ -31,11 +32,25 @@ import {
   pointOnCurve,
   regionZones,
 } from '../domain/geometry'
-import type { SimResult } from '../domain/simulate'
+import {
+  type EdgeKinds,
+  type FlowKind,
+  type SimResult,
+  flowKinds,
+} from '../domain/simulate'
+import { formatNumber } from '../i18n/format'
 import type { Locale } from '../i18n/locale'
 import { type UiStrings, uiFor } from '../i18n/ui'
 import type { Tone } from '../kinds/contract'
-import { Gesture, Message, type Model, Selection, previewDoc } from './board'
+import {
+  type EdgeEnd,
+  Gesture,
+  Message,
+  type Model,
+  Selection,
+  previewDoc,
+  reconnectOp,
+} from './board'
 import { BoardPointer } from './pointer'
 
 export type BoardFlows = Readonly<{
@@ -177,6 +192,40 @@ const utilizationClass = (utilization: number, isDown: boolean): string =>
       ? 'util warn'
       : 'util'
 
+const MODE_CHAR_PX = 5.5
+
+/** Режим кеша на блоке: английское имя паттерна в углу, по-родному —
+    во всплывающей подсказке. */
+const cacheModeTag = (
+  doc: BoardDoc,
+  ui: UiStrings,
+  h: HtmlBuilder<Message>,
+): Html => {
+  const width = doc.cacheMode.length * MODE_CHAR_PX + 12
+  return h.g(
+    [
+      h.Class(`cache-mode ${doc.cacheMode}`),
+      h.DataAttribute('cache-mode', doc.cacheMode),
+      h.Transform(`translate(${NODE_WIDTH - width - 8},${NODE_HEIGHT - 6})`),
+    ],
+    [
+      h.title(
+        [],
+        [`${doc.cacheMode}: ${ui.board.cacheModeHint[doc.cacheMode]}`],
+      ),
+      h.rect([h.Width(`${width}`), h.Height('14'), h.Attribute('rx', '7')]),
+      h.text(
+        [
+          h.Attribute('x', `${width / 2}`),
+          h.Attribute('y', '10'),
+          h.TextAnchor('middle'),
+        ],
+        [doc.cacheMode],
+      ),
+    ],
+  )
+}
+
 const nodeView = (
   node: BoardNode,
   inputs: BoardViewInputs,
@@ -195,19 +244,25 @@ const nodeView = (
     }),
   )
   const isHovered = Option.exists(inputs.maybeHoveredRef, id => id === node.id)
+  const dropState = (maybeOp: Option.Option<BoardOp>): string =>
+    Option.match(maybeOp, {
+      onNone: () => '',
+      onSome: op =>
+        Result.isSuccess(applyOp(inputs.doc, op)) ? ' drop-ok' : ' drop-no',
+    })
   const connectState = Gesture.match(model.gesture, {
     Connecting: ({ from }) =>
       from === node.id
         ? ''
-        : Result.isSuccess(
-              applyOp(inputs.doc, BoardOp.Connect({ from, to: node.id })),
-            )
-          ? ' drop-ok'
-          : ' drop-no',
+        : dropState(Option.some(BoardOp.Connect({ from, to: node.id }))),
+    Reconnecting: edge => dropState(reconnectOp(edge, node.id)),
+    ChoosingEnd: edge => dropState(reconnectOp(edge, node.id)),
     Idle: () => '',
     DraggingNode: () => '',
     Placing: () => '',
   })
+  const isEndCandidate =
+    model.gesture._tag === 'ChoosingEnd' && connectState === ' drop-ok'
   const isHiddenLoad = isLoadHidden(inputs, node.id)
   const hasCapacity = hasFiniteCapacity(node.kind) && !isHiddenLoad
   const flow = inputs.sim.nodes[node.id]
@@ -242,7 +297,7 @@ const nodeView = (
       h.Transform(
         `translate(${node.x - NODE_WIDTH / 2},${node.y - NODE_HEIGHT / 2})`,
       ),
-      ...(isPickable(inputs, node.id)
+      ...(isPickable(inputs, node.id) || isEndCandidate
         ? [
             h.Role('button'),
             h.Tabindex(0),
@@ -254,7 +309,11 @@ const nodeView = (
           ]
         : [h.Role('img')]),
       h.AriaLabel(`${componentName[node.kind]} ${node.id}, ${subText}`),
-      h.AriaDescription(ui.kindHint[node.kind]),
+      h.AriaDescription(
+        node.kind === 'cache'
+          ? `${ui.kindHint[node.kind]}. ${inputs.doc.cacheMode}: ${ui.board.cacheModeHint[inputs.doc.cacheMode]}`
+          : ui.kindHint[node.kind],
+      ),
     ],
     [
       h.rect([
@@ -305,6 +364,7 @@ const nodeView = (
             ]),
           ]
         : []),
+      ...(node.kind === 'cache' ? [cacheModeTag(inputs.doc, ui, h)] : []),
       ...(isDown
         ? [
             h.path([
@@ -351,12 +411,181 @@ const curveBetween = (
     Array.filter(nodes, node => node.id !== from.id && node.id !== to.id),
   )
 
+export type FlowPart = Readonly<{ kind: FlowKind; rps: number }>
+
+/** Виды потока связи по убыванию: доли из симуляции, умноженные на плавный
+    поток анимации, чтобы подпись менялась вместе с частицами. */
+export const flowParts = (
+  kinds: EdgeKinds | undefined,
+  flow: number,
+): ReadonlyArray<FlowPart> => {
+  const amounts = Array.map(flowKinds, kind => ({
+    kind,
+    amount: kinds?.[kind] ?? 0,
+  }))
+  const total = Number.sumAll(Array.map(amounts, ({ amount }) => amount))
+  return total <= 0
+    ? []
+    : pipe(
+        amounts,
+        Array.map(({ kind, amount }) => ({
+          kind,
+          rps: (flow * amount) / total,
+        })),
+        Array.filter(part => part.rps >= 1),
+        Array.sort(
+          Order.flip(
+            Order.mapInput(Order.Number, (part: FlowPart) => part.rps),
+          ),
+        ),
+      )
+}
+
+const LABEL_CHAR_PX = 6.4
+const LABEL_PADDING_PX = 24
+const LABEL_HEIGHT = 18
+const MIN_LABELLED_EDGE = 110
+const LABEL_MARGIN = 16
+const LABEL_SPOTS: ReadonlyArray<number> = [0.5, 0.4, 0.6, 0.32, 0.68]
+
+const labelWidth = (text: string): number =>
+  text.length * LABEL_CHAR_PX + LABEL_PADDING_PX
+
+/** Тексты подписи от полного к короткому. Два вида — оба («reads 192 ·
+    writes 48 rps»), без «rps», затем главный и «+N»; в крайнем случае только
+    число. */
+export const labelTexts = (
+  parts: ReadonlyArray<FlowPart>,
+  flow: number,
+  locale: Locale,
+  ui: UiStrings,
+): ReadonlyArray<string> => {
+  const n = (rps: number) => formatNumber(locale, Math.round(rps))
+  const part = ({ kind, rps }: FlowPart) =>
+    `${ui.board.flowName[kind]} ${n(rps)}`
+  const bare = ui.board.edgeFlow(flow)
+  return Array.match(parts, {
+    onEmpty: () => [bare],
+    onNonEmpty: nonEmpty => {
+      const main = Array.headNonEmpty(nonEmpty)
+      const more = nonEmpty.length - 1
+      return [
+        ...(nonEmpty.length === 2
+          ? [
+              `${Array.map(nonEmpty, part).join(' · ')} rps`,
+              Array.map(nonEmpty, part).join(' · '),
+            ]
+          : []),
+        more > 0 ? `${part(main)} rps +${more}` : `${part(main)} rps`,
+        bare,
+      ]
+    },
+  })
+}
+
+export type EdgeLabel = Readonly<{
+  text: string
+  kind: Option.Option<FlowKind>
+  at: Point
+}>
+
+const overlaps = (center: Point, width: number, node: Point): boolean =>
+  Math.abs(center.x - node.x) < width / 2 + NODE_WIDTH / 2 + 2 &&
+  Math.abs(center.y - node.y) < LABEL_HEIGHT / 2 + NODE_HEIGHT / 2 + 2
+
+const crossesLabel = (
+  center: Point,
+  width: number,
+  other: EdgeLabel,
+): boolean =>
+  Math.abs(center.x - other.at.x) < (width + labelWidth(other.text)) / 2 + 2 &&
+  Math.abs(center.y - other.at.y) < LABEL_HEIGHT + 2
+
+/** Подпись связи: самый полный текст, который помещается на связи и не
+    ложится ни на блоки, ни на подписи, уже поставленные на других связях
+    (`taken`). Если не помещается даже число, подписи нет. */
+export const edgeLabel = (
+  parts: ReadonlyArray<FlowPart>,
+  flow: number,
+  curve: Curve,
+  blocks: ReadonlyArray<Point>,
+  locale: Locale,
+  ui: UiStrings,
+  taken: ReadonlyArray<EdgeLabel> = [],
+): Option.Option<EdgeLabel> => {
+  const length = curveLength(curve)
+  if (flow < 1 || length < MIN_LABELLED_EDGE) {
+    return Option.none()
+  }
+  const kind = Option.map(Array.head(parts), part => part.kind)
+  return pipe(
+    labelTexts(parts, flow, locale, ui),
+    Array.filter(text => labelWidth(text) <= length - LABEL_MARGIN),
+    Array.flatMap(text =>
+      Array.map(LABEL_SPOTS, t => ({ text, at: pointOnCurve(curve, t) })),
+    ),
+    Array.findFirst(
+      ({ text, at }) =>
+        blocks.every(block => !overlaps(at, labelWidth(text), block)) &&
+        taken.every(other => !crossesLabel(at, labelWidth(text), other)),
+    ),
+    Option.map(({ text, at }) => ({
+      text,
+      kind: text === ui.board.edgeFlow(flow) ? Option.none() : kind,
+      at,
+    })),
+  )
+}
+
+const noLabels: Readonly<Record<string, EdgeLabel>> = {}
+
+/** Подписи всех связей доски по порядку связей: каждая следующая обходит
+    уже поставленные. Пока ученик тянет блок или связь, подписей нет. */
+const edgeLabels = (
+  inputs: BoardViewInputs,
+  model: Model,
+): Readonly<Record<string, EdgeLabel>> => {
+  if (model.gesture._tag !== 'Idle') {
+    return noLabels
+  }
+  const ui = uiFor(inputs.locale)
+  const nodeById = (id: string) =>
+    Array.findFirst(inputs.doc.nodes, node => node.id === id)
+  return Array.reduce(inputs.doc.edges, noLabels, (placed, edge) => {
+    const key = edgeKey(edge)
+    const flow = inputs.flows.edgeFlow[key] ?? 0
+    return pipe(
+      Option.all([nodeById(edge.from), nodeById(edge.to)]),
+      Option.filter(
+        ([from, to]) =>
+          !isLoadHidden(inputs, from.id) && !isLoadHidden(inputs, to.id),
+      ),
+      Option.flatMap(([from, to]) =>
+        edgeLabel(
+          flowParts(inputs.sim.edgeKinds[key], flow),
+          flow,
+          curveBetween(inputs.doc.nodes, from, to),
+          inputs.doc.nodes,
+          inputs.locale,
+          ui,
+          Object.values(placed),
+        ),
+      ),
+      Option.match({
+        onNone: () => placed,
+        onSome: label => ({ ...placed, [key]: label }),
+      }),
+    )
+  })
+}
+
 const edgeView = (
   from: BoardNode,
   to: BoardNode,
   inputs: BoardViewInputs,
   model: Model,
   removeEdges: ReadonlyArray<string>,
+  labels: Readonly<Record<string, EdgeLabel>>,
   h: HtmlBuilder<Message>,
 ): ReadonlyArray<Html> => {
   const key = edgeKey({ from: from.id, to: to.id })
@@ -370,28 +599,34 @@ const edgeView = (
   )
   const isFocused =
     Array.contains(inputs.focusEdges, key) || Array.contains(removeEdges, key)
-  const flow = inputs.flows.edgeFlow[key] ?? 0
-  const label =
-    inputs.mode === 'Edit' ||
-    flow < 1 ||
-    curveLength(curve) < 110 ||
-    isLoadHidden(inputs, from.id) ||
-    isLoadHidden(inputs, to.id)
-      ? Option.none()
-      : Option.some(uiFor(inputs.locale).board.edgeFlow(flow))
-  const middle = pointOnCurve(curve, 0.5)
+  const isIdle = isIdleCacheEdge(inputs.doc, { from: from.id, to: to.id })
+  const isMoving = Gesture.match(model.gesture, {
+    Reconnecting: edge => edge.from === from.id && edge.to === to.id,
+    ChoosingEnd: edge => edge.from === from.id && edge.to === to.id,
+    Idle: () => false,
+    DraggingNode: () => false,
+    Connecting: () => false,
+    Placing: () => false,
+  })
+  const ui = uiFor(inputs.locale)
+  const label = Option.fromNullishOr(labels[key])
 
   return [
-    h.keyed('path')(`edge-${key}`, [
-      h.Class(
-        `board-edge${isSelected ? ' selected' : ''}${isFocused ? ' focus' : ''}`,
-      ),
-      h.Attribute('d', path),
-      h.Attribute(
-        'marker-end',
-        `url(#${isSelected ? 'arrow-accent' : 'arrow'})`,
-      ),
-    ]),
+    h.keyed('path')(
+      `edge-${key}`,
+      [
+        h.Class(
+          `board-edge${isSelected ? ' selected' : ''}${isFocused ? ' focus' : ''}${isIdle ? ' idle' : ''}${isMoving ? ' moving' : ''}`,
+        ),
+        h.Attribute('d', path),
+        ...(isIdle ? [h.DataAttribute('idle', 'true')] : []),
+        h.Attribute(
+          'marker-end',
+          `url(#${isSelected ? 'arrow-accent' : 'arrow'})`,
+        ),
+      ],
+      isIdle ? [h.title([], [ui.board.idleCacheEdge])] : [],
+    ),
     ...(inputs.mode === 'Edit'
       ? [
           h.keyed('path')(`hit-${key}`, [
@@ -399,30 +634,69 @@ const edgeView = (
             h.Attribute('d', path),
             h.DataAttribute('edge-from', from.id),
             h.DataAttribute('edge-to', to.id),
+            h.Role('button'),
+            h.Tabindex(0),
+            h.AriaPressed(isSelected ? 'true' : 'false'),
+            h.AriaLabel(
+              [
+                ui.board.edgeName(from.id, to.id),
+                ...Option.toArray(Option.map(label, ({ text }) => text)),
+                ...(isIdle ? [ui.board.idleCacheEdge] : []),
+              ].join(', '),
+            ),
+            h.OnKeyDownPreventDefault(pressed =>
+              pressed === 'Enter' || pressed === ' '
+                ? Option.some(
+                    Message.PressedEdgeKey({ from: from.id, to: to.id }),
+                  )
+                : Option.none(),
+            ),
           ]),
         ]
       : []),
     ...Option.match(label, {
       onNone: () => [],
-      onSome: text => [
-        h.keyed('g')(
-          `label-${key}`,
-          [
-            h.Class('edge-label'),
-            h.Transform(`translate(${middle.x},${middle.y})`),
-          ],
-          [
-            h.rect([
-              h.Attribute('x', `${-(text.length * 6.1 + 14) / 2}`),
-              h.Attribute('y', '-9'),
-              h.Width(`${text.length * 6.1 + 14}`),
-              h.Height('18'),
-              h.Attribute('rx', '9'),
-            ]),
-            h.text([h.TextAnchor('middle'), h.Attribute('y', '3.5')], [text]),
-          ],
-        ),
-      ],
+      onSome: ({ text, kind, at }) => {
+        const width = labelWidth(text)
+        return [
+          h.keyed('g')(
+            `label-${key}`,
+            [
+              h.Class('edge-label'),
+              h.DataAttribute('edge-label', key),
+              h.Transform(`translate(${at.x},${at.y})`),
+            ],
+            [
+              h.rect([
+                h.Attribute('x', `${-width / 2}`),
+                h.Attribute('y', '-9'),
+                h.Width(`${width}`),
+                h.Height('18'),
+                h.Attribute('rx', '9'),
+              ]),
+              ...Option.match(kind, {
+                onNone: () => [],
+                onSome: flowKind => [
+                  h.circle([
+                    h.Class(`flow-dot flow-${flowKind}`),
+                    h.Cx(`${-width / 2 + 10}`),
+                    h.Cy('0'),
+                    h.Attribute('r', '3'),
+                  ]),
+                ],
+              }),
+              h.text(
+                [
+                  h.TextAnchor('middle'),
+                  h.Attribute('x', '5'),
+                  h.Attribute('y', '3.5'),
+                ],
+                [text],
+              ),
+            ],
+          ),
+        ]
+      },
     }),
   ]
 }
@@ -585,6 +859,38 @@ const deleteButton = (
     ],
   )
 
+const endHandle = (
+  point: Point,
+  end: EdgeEnd,
+  from: string,
+  to: string,
+  ui: UiStrings,
+  h: HtmlBuilder<Message>,
+): Html =>
+  h.keyed('g')(
+    `end-${end}`,
+    [
+      h.Class(`edge-end ${end}`),
+      h.Transform(`translate(${point.x},${point.y})`),
+      h.DataAttribute('edge-end', end),
+      h.DataAttribute('end-from', from),
+      h.DataAttribute('end-to', to),
+      h.Role('button'),
+      h.Tabindex(0),
+      h.AriaLabel(ui.board.moveEdgeEnd(end, from, to)),
+      h.OnKeyDownPreventDefault(pressed =>
+        pressed === 'Enter' || pressed === ' '
+          ? Option.some(Message.PressedEdgeEndKey({ from, to, end }))
+          : Option.none(),
+      ),
+    ],
+    [
+      h.title([], [ui.board.dragEdgeEnd]),
+      h.circle([h.Class('edge-end-hit'), h.Attribute('r', '16')]),
+      h.circle([h.Class('edge-end-dot'), h.Attribute('r', '6.5')]),
+    ],
+  )
+
 const selectionControls = (
   doc: BoardDoc,
   model: Model,
@@ -608,6 +914,7 @@ const selectionControls = (
                   curveBetween(doc.nodes, fromNode, toNode),
                   0.5,
                 )
+                const curve = curveBetween(doc.nodes, fromNode, toNode)
                 return [
                   deleteButton(
                     { x: middle.x, y: middle.y - 22 },
@@ -618,6 +925,12 @@ const selectionControls = (
                     ui.board.deleteEdge,
                     h,
                   ),
+                  ...(model.gesture._tag === 'Idle'
+                    ? [
+                        endHandle(curve.start, 'from', from, to, ui, h),
+                        endHandle(curve.end, 'to', from, to, ui, h),
+                      ]
+                    : []),
                 ]
               },
             }),
@@ -670,6 +983,33 @@ const gestureOverlay = (
           },
         }),
       ),
+    Reconnecting: ({ from, to, end, pointer }) =>
+      pipe(
+        Array.findFirst(
+          doc.nodes,
+          node => node.id === (end === 'to' ? from : to),
+        ),
+        Option.match({
+          onNone: () => [],
+          onSome: node => {
+            const [start, finish] =
+              end === 'to'
+                ? [{ x: node.x + NODE_WIDTH / 2, y: node.y }, pointer]
+                : [pointer, { x: node.x - NODE_WIDTH / 2, y: node.y }]
+            const bend = Math.max(30, Math.abs(finish.x - start.x) * 0.5)
+            return [
+              h.path([
+                h.Class('rubber'),
+                h.Attribute(
+                  'd',
+                  `M${start.x},${start.y} C${start.x + bend},${start.y} ${finish.x - bend},${finish.y} ${finish.x},${finish.y}`,
+                ),
+              ]),
+            ]
+          },
+        }),
+      ),
+    ChoosingEnd: () => [],
     Placing: ({ kind, pointer, hasMoved, isOverBoard }) =>
       hasMoved && isOverBoard
         ? ghostView(
@@ -688,6 +1028,56 @@ const gestureOverlay = (
   })
 
 // PARTICLES
+
+/** Цвет частиц по виду потока; те же цвета у точек подписи и легенды
+    (`--flow-*` в styles.css). */
+export const flowColors = (
+  prefersDark: boolean,
+): Readonly<Record<FlowKind, string>> =>
+  prefersDark
+    ? {
+        requests: '#3dc48b',
+        reads: '#6f9ef2',
+        writes: '#b28cf0',
+        misses: '#ec7ab8',
+        fills: '#5fb8dc',
+        jobs: '#3ec1c7',
+        events: '#a8bb4c',
+      }
+    : {
+        requests: '#148a55',
+        reads: '#2f6fd1',
+        writes: '#8650cc',
+        misses: '#c0478f',
+        fills: '#2a8fb8',
+        jobs: '#0f8a94',
+        events: '#6b7d1c',
+      }
+
+/** Вид потока частицы `index` из `count`: виды делят частицы по долям. */
+const kindAt = (
+  parts: ReadonlyArray<FlowPart>,
+  index: number,
+  count: number,
+): Option.Option<FlowKind> => {
+  const ends = Array.drop(
+    Array.scan(parts, 0, (sum, part) => sum + part.rps),
+    1,
+  )
+  const position =
+    ((index + 0.5) / count) *
+    pipe(
+      Array.last(ends),
+      Option.getOrElse(() => 0),
+    )
+  return pipe(
+    Array.zip(parts, ends),
+    Array.findFirst(([, end]) => position <= end),
+    Option.map(([part]) => part),
+    Option.orElse(() => Array.last(parts)),
+    Option.map(part => part.kind),
+  )
+}
 
 export const particleColors = (prefersDark: boolean) =>
   prefersDark
@@ -715,6 +1105,7 @@ export const particleShapes = (
     return []
   }
   const colors = particleColors(inputs.prefersDark)
+  const kindColors = flowColors(inputs.prefersDark)
   const nodeById = (id: string) =>
     Array.findFirst(inputs.doc.nodes, node => node.id === id)
   const flowParticles = Array.flatMap(inputs.doc.edges, edge => {
@@ -743,6 +1134,7 @@ export const particleShapes = (
             1,
             Math.min(14, Math.round(Math.sqrt(flow) / 2.1)),
           )
+          const parts = flowParts(inputs.sim.edgeKinds[edgeKey(edge)], flow)
           return Array.makeBy(count, index => {
             const point = pointOnCurve(
               curve,
@@ -753,7 +1145,14 @@ export const particleShapes = (
               x: point.x * SCALE,
               y: point.y * SCALE,
               radius: 3.4 * SCALE,
-              fill: isLost ? colors.bad : isHot ? colors.warn : colors.ok,
+              fill: isLost
+                ? colors.bad
+                : isHot
+                  ? colors.warn
+                  : Option.match(kindAt(parts, index, count), {
+                      onNone: () => colors.ok,
+                      onSome: kind => kindColors[kind],
+                    }),
             })
           })
         },
@@ -948,18 +1347,21 @@ export const view = Submodel.defineView<Model, Message, BoardViewInputs>(
     const doc = previewDoc(inputs.doc, model.gesture)
     const nodeById = (id: string) =>
       Array.findFirst(doc.nodes, node => node.id === id)
+    const labels = edgeLabels({ ...inputs, doc }, model)
     const removeEdges = Option.match(inputs.ghost, {
       onNone: () => [],
       onSome: plan => plan.removeEdges,
     })
     const modeLabel =
-      inputs.mode === 'Edit'
-        ? ui.board.modeEdit
-        : inputs.mode === 'Replay'
-          ? ui.board.modeReplay
-          : inputs.mode === 'Pick'
-            ? ui.board.modePick
-            : ui.board.modeView
+      model.gesture._tag === 'ChoosingEnd' && inputs.mode === 'Edit'
+        ? ui.board.reconnectHint
+        : inputs.mode === 'Edit'
+          ? ui.board.modeEdit
+          : inputs.mode === 'Replay'
+            ? ui.board.modeReplay
+            : inputs.mode === 'Pick'
+              ? ui.board.modePick
+              : ui.board.modeView
 
     return h.div(
       [h.Class('board-wrap'), h.OnMount(BoardPointer())],
@@ -1052,6 +1454,7 @@ export const view = Submodel.defineView<Model, Message, BoardViewInputs>(
                               { ...inputs, doc },
                               model,
                               removeEdges,
+                              labels,
                               h,
                             ),
                         },
