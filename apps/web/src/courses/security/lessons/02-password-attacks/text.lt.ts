@@ -135,9 +135,9 @@ O jei nutekėjime yra jūsų paštas kartu su slaptažodžiu, spėlioti iš viso
     },
     personal: {
       title: 'Ką apie jus žino internetas',
-      body: `Kai taikinys yra konkretus žmogus, programa į sąrašą įtraukia tai, ką apie jį lengva sužinoti: vardą ir pavardę, gimimo datą, vaikų ir katino vardus, mėgstamą komandą, įmonės pavadinimą.
+      body: `Kai taikinys yra konkretus žmogus, programa į sąrašą įtraukia tai, ką apie jį lengva sužinoti: vardą ir pavardę, gimimo datą, vaikų ir katino vardus, mėgstamą komandą.
 
-Beveik visa tai patys skelbiame [[feed|socialiniuose tinkluose]]: tortas su žvakutėmis, katinas ant sofos, „Su gimtadieniu, Barsikai!“. Todėl marina1987, Barsik2015 ir Romashka2024! krenta greitai, net jei jų nėra jokiame nutekėjime.
+Beveik visa tai patys skelbiame [[feed|socialiniuose tinkluose]]: tortas su žvakutėmis, katinas ant sofos, „Su gimtadieniu, Barsikai!“. Todėl marina1987 ir Barsik2015 krenta greitai, net jei jų nėra jokiame nutekėjime.
 
 Gimtadieniai, artimųjų ir augintinių vardai, automobilio numeris slaptažodžiui netinka. Paslaptimi jie nustojo būti, kai pateko į naujienų srautą.`,
     },
@@ -247,7 +247,7 @@ Kiekvienam slaptažodžiui nuspręskite, kaip jį atspės: **kris iškart** (yra
           'Sudėtingumas čia nesvarbus: slaptažodžio nespėja, jis jau guli nutekėjusioje bazėje toks, koks yra. Programa tiesiog bando jį kitose svetainėse.',
       },
       explain:
-        'Porą „paštas + slaptažodis“ iš nutekėjimo programa bando pašte, banke, socialiniuose tinkluose – visur. Tai credential stuffing. Olego darbo paštas pavojuje, nes slaptažodis tas pats. CRM sistemą gelbsti tik tai, kad slaptažodis ten kitas.',
+        'Porą „paštas + slaptažodis“ iš nutekėjimo programa bando pašte, banke, socialiniuose tinkluose – visur. Tai credential stuffing. Olego darbo paštas pavojuje, nes slaptažodis tas pats. Į CRM tuo pačiu slaptažodžiu dabar neprisijungs, bet per užgrobtą paštą galima atkurti ir jo slaptažodį. Todėl paštą saugo pirmą.',
     },
   },
   tasks: {

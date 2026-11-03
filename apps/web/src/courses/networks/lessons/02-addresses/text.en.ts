@@ -35,7 +35,7 @@ The router remembers which numbers are taken, so addresses never repeat within o
         title: 'More: why the neighbours have the same addresses',
         body: `Addresses like 192.168.… are home addresses. The same numbers are used in thousands of other flats: your neighbour may have their own 192.168.1.100 too. They do not get in each other’s way, because a home address only works inside its own house. How a house goes online with such addresses is the topic of lesson 9.
 
-An address can change. The router hands out a number for a while and usually gives a familiar device the same one: it keeps 192.168.1.42 for the laptop. But if the router is restarted, the number may change. How to tie an address to a device for good is also shown in lesson 9.
+An address can change. The router hands out a number for a while: the phone gets a free one from .100, and after the router restarts the number may change. The laptop, though, has a permanent number reserved by the router, 192.168.1.42, which is why it looks different from the rest. How to tie an address to a device is shown in lesson 9.
 
 Handing out addresses in networks is called **DHCP**. How it works step by step is the topic of lesson 7, “TCP/IP. An envelope in an envelope”.`,
       },

@@ -53,7 +53,7 @@ But a chat with an assistant is not a vault. A pasted password stays in the chat
       title: 'A pass of its own',
       body: `The assistant gets a pass of its own, an **access token**: a separate key just for this job. It has its own **permissions**: what it may do (only read), where (one section) and for how long (a week).
 
-The token itself is kept in the password manager, and the assistant gets not the text but a link to the item: **op://Work/crm-agent/token**. The **op run** command passes the token to the program, and it never reaches the chat.`,
+The token itself is kept in the password manager, and the assistant gets not the text but a link to the item: **op://Work/crm-agent/token**. The **op run** command from the 1Password CLI program passes the token to the program, and it never reaches the chat history. This works for agent assistants that run on your own computer (for example Claude Code or Codex). The agent itself does get the token, which is why the token’s permissions are kept narrow. An assistant in a browser isn’t given such a link: for it the CRM has to offer its own connection, or the data is exported without secrets.`,
     },
     leak: {
       title: 'Question: where is the leak',
@@ -127,7 +127,7 @@ Give the assistant a pass of its own: in the CRM, create a read-only token for t
         export:
           'An export without client names is ordinary work data: there are no secrets in it.',
         reference:
-          'This is a link to an item in the password manager, not the token itself. Only a program started with op run on your computer can get the token through it.',
+          'This is a link to an item in the password manager, not the token itself. Only a program started with op run on your computer can get the token through it: the agent can use it, but the token stays out of the chat history.',
       },
       explain:
         'A **.env** file holds secrets: tokens, database passwords, service keys. Sending the whole file is the same as pasting all those passwords into the chat. Show the assistant the error, not the secrets; if the file has already gone out, the keys in it are changed.',

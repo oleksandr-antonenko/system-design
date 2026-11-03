@@ -4,7 +4,7 @@ import type lesson from './lesson'
 export default {
   title: 'DNS. A site’s name and its address',
   summary:
-    'DNS turns a site’s name into an address, like the contacts on your phone. Fix a site that “won’t open”.',
+    'DNS turns a site’s name into an address. Fix a site that “won’t open”.',
   preview: {
     alt: 'Diagram: a laptop first asks a DNS server, gets the site’s IP address for its name and only then goes to the site’s server.',
   },
@@ -27,13 +27,15 @@ export default {
       title: 'A name and a number',
       body: `In the browser you type shop.example, not 198.51.100.10. Names are handy for people. But the network needs a number: the “to” field on the envelope must hold an address. Press “Run” and look at the envelope to the [[shop|shop website]].
 
-Your phone works the same way. You call “Mum” rather than dialling a number: the phone finds the number in its contacts by itself. For websites, such “contacts” are called **DNS**: by a site’s name, DNS finds its address.`,
+Your phone works the same way. You call “Mum” rather than dialling a number: the phone finds the number in its contacts by itself. Websites have a similar system called **DNS**: by a site’s name, DNS finds its address.`,
     },
     'ask-first': {
       title: 'First, a question to the directory',
       body: `Where did the phone get the site’s number? Before the envelope to the site there was one more, and we haven’t shown it yet. The phone is opening shop.example for the first time, and its contacts are empty. So the first envelope goes to the [[dns|directory]] — the **DNS server**. Inside is a question: “What is the address of shop.example?”
 
-The directory answers: “198.51.100.10”. The phone writes the answer into its [[phone|contacts]] (this is the DNS cache) and only then writes to the [[shop|site]]. Next time it won’t need to ask: the number is already saved. Press “Run”.`,
+The directory answers: “198.51.100.10”. The phone writes the answer into its [[phone|contacts]] (this is the DNS cache) and only then writes to the [[shop|site]]. Next time it won’t need to ask: the number is already saved. Press “Run”.
+
+In our home the router tells the phone the address of the provider’s directory, and the phone writes to it directly. On many real routers the DNS line shows the router itself, 192.168.1.1: it takes the question and passes it on to the directory.`,
       more: {
         title: 'More: why the second time is faster',
         body: `The phone remembers the directory’s answers for a while, so the second time the site opens a little faster: there is no need to ask. But it doesn’t remember forever. Every answer has an expiry time, and after it the phone will ask again. If a site has moved to a new address, the old answer can still get in the way for a while.
@@ -57,7 +59,7 @@ Find out whom the phone asks for addresses. Open the phone’s Wi-Fi settings an
       title: 'Summary',
       body: `You have seen a name turn into an address.
 
-- Names are handy for people; networks need addresses. **DNS** turns a site’s name into an address, the way the contacts on your phone turn “Mum” into a number.
+- Names are handy for people; networks need addresses. **DNS** is the system that turns a site’s name into an address.
 - If the address isn’t in the contacts (the DNS cache), the phone asks the directory — the DNS server — and remembers the answer.
 - The router tells the phone the directory’s address. If the phone has no one to ask, the browser says ERR_NAME_NOT_RESOLVED.
 
@@ -74,7 +76,7 @@ Next, lesson 4, “Ping and hops. An envelope’s way through several routers”
         'Who will the phone send the very first envelope to when it opens the shop website for the first time?',
       wrong: {
         router:
-          'The envelope will pass through the router: it is the post office of your home. But the “to” field of the first envelope holds the directory.',
+          'The envelope will pass through the router: it is the post office of your home. But the “to” field of the first envelope holds the directory: our router only told the phone its address. On many real routers the router itself would be the recipient and would pass the question on.',
         shop: 'The phone doesn’t know the shop’s address yet: there is nothing to write in the “to” field. First it has to ask the directory.',
       },
       tags: {

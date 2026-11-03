@@ -4,7 +4,7 @@ import type lesson from './lesson'
 export default {
   title: 'Phishing. The bait email',
   summary:
-    'The name in an email is a costume; the address tells the truth. Find the baits in the inbox without pressing anything in them.',
+    'The name in an email is a costume; the address is the first check. Find the baits in the inbox without pressing anything in them.',
   preview: {
     alt: 'Illustration of phishing: a fishing hook catches an envelope on a desk, while the inbox on the laptop has one suspicious email highlighted in red.',
   },
@@ -123,7 +123,7 @@ An email bait like this is called **phishing**, as in fishing: cast thousands of
     },
     costume: {
       title: 'The name is a costume',
-      body: `“IT Department”, “Bank”, “Victor Andreevich” in the From line are a costume. The sender writes that name, and anyone can put it on. The **address** tells the truth: the part after the @.
+      body: `“IT Department”, “Bank”, “Victor Andreevich” in the From line are a costume. The sender writes that name, and anyone can put it on. The first check is the **address**: the part after the @. It is harder to fake than the name.
 
 Press the sender’s name and your mail shows the address. Colleagues’ addresses end exactly in @romashka.example. Oleg’s email came from [[addr|@rornashka.example]]: “r” and “n” instead of “m”, impossible to tell apart at a glance.
 
@@ -133,6 +133,8 @@ The same goes for links: before you press, hover over the button and read the ad
         body: `**Read the domain from the right.** In romashka.example.login-check.example the owner is login-check.example; “romashka” is just a word at the start. But hr.romashka.example is yours: romashka.example is on the right.
 
 **“Reply” may go somewhere else.** A fraudster can put their own reply-to address, different from the one in the From line. Check that one too.
+
+**Your own address is not a guarantee.** The address in the From line can be faked too if the mail system doesn’t check the sender: those checks are called SPF, DKIM and DMARC, and IT sets them up. And an email from a colleague’s hacked mailbox comes from the real address. A foreign domain gives a fake away for sure; your own domain doesn’t prove an email is genuine: also look at the reply-to address and at the request itself.
 
 **A QR code in an email** is the same link, only you can’t see it until you scan it. Don’t scan QR codes from emails “about your password” or “about a payment”.
 
@@ -172,7 +174,7 @@ Open each email and mark it “Phishing” or “Genuine”. To see the sender�
       body: `Oleg took the bait, and Marina saw through it, both with “Accounts” and with the “director”.
 
 - **Phishing** is an email bait: it rushes you, scares you and leads to a fake page.
-- The sender’s name is a costume. Check the address after the @ and the link address before you click.
+- The sender’s name is a costume. Check the address after the @ and the link address before you click. A foreign domain gives a fake away; your own is not yet a guarantee.
 - **Spear phishing** knows your name and your projects. Check requests for money, passwords and access through another channel.`,
     },
   },
@@ -215,7 +217,8 @@ Open each email and mark it “Phishing” or “Genuine”. To see the sender�
     'call.victor': () =>
       'What stand? I’m on holiday! Forward that email to Ira.',
     'summary.bait': () => 'A bait rushes and scares you',
-    'summary.costume': () => 'The name is a costume; the address is the truth',
+    'summary.costume': () =>
+      'The name is a costume; the address is the first check',
     'summary.mask': () => 'A personal email knows all about you',
     'summary.call': () => 'Check by calling your own number',
   },
@@ -258,7 +261,7 @@ What gave the fake away: the address bar says **gooogle-prizes.example**, someon
         sign: 'The chief accountant’s name and phone are easy to copy from the company website.',
       },
       explain:
-        'The sender draws everything you see in an email: the name, the logo, the subject, the button, the signature. Only the domain, the part of the address after the @, can’t be faked. Here it is **romashka-docs.example**, not romashka.example.',
+        'The sender draws everything you see in an email: the name, the logo, the subject, the button, the signature. A foreign domain, the part of the address after the @, gives a fake away for sure: here it is **romashka-docs.example**, not romashka.example. It doesn’t work the other way round: your own domain is not a guarantee, since a colleague’s mailbox can be hacked and the address faked. So requests for money and passwords are checked through another channel even from your own domain.',
     },
   },
   tasks: {

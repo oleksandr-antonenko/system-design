@@ -19,7 +19,9 @@ export default {
       title: 'Antroji spyna',
       body: `Slaptažodžius vagia visaip: nutekėjimai, masalai, žvilgčiojimas per petį. Todėl į svarbias duris įstato antrą spyną.
 
-**Dviejų veiksnių apsauga** (2FA, two-factor authentication): prisijungiant be slaptažodžio reikia ir **vienkartinio kodo** – šešių skaitmenų iš programėlės jūsų telefone. Kodas keičiasi kas 30 sekundžių ir tinka tik vieną kartą.`,
+**Dviejų veiksnių apsauga** (2FA, two-factor authentication): prisijungiant be slaptažodžio reikia ir **vienkartinio kodo** – šešių skaitmenų iš programėlės jūsų telefone (kartais jie ateina SMS žinute). Kodas keičiasi kas 30 sekundžių ir tinka tik vieną kartą.
+
+Būna ir antra rūšis: programėlė pati klausia „Ar tai jūs jungiatės?“ su mygtukais „Taip“ ir „Ne“. Tai **push užklausa** (push notification), ją siunčia, pavyzdžiui, Microsoft Authenticator ir bankų programėlės. Lentoje supaprastinta: viena programėlė ir rodo kodus, ir siunčia užklausas. Paprasta kodų programėlė, pavyzdžiui, Google Authenticator, „Ar tai jūs?“ neklausia.`,
     },
     stolen: {
       title: 'Raktas yra, o durų neatrakinsi',
@@ -33,7 +35,7 @@ Su 2FA pavogto slaptažodžio neužtenka. Todėl ją įjungia visur, kur tik gal
     },
     night: {
       title: 'Užklausa vidury nakties',
-      body: `Būna ir taip: telefonas klausia „Ar tai jūs jungiatės?“, o jūs niekur nesijungėte. Vadinasi, jūsų slaptažodis jau kažkieno rankose.
+      body: `Būna ir taip: ateina push užklausa „Ar tai jūs jungiatės?“, o jūs niekur nesijungėte. Vadinasi, jūsų slaptažodis jau kažkieno rankose.
 
 Paspauskite „Ne“ – durys neatsidarys – ir praneškite IT: slaptažodį reikia pakeisti. Nespauskite „Taip“, kad tik užklausos liautųsi: būtent to sukčius ir tikisi.`,
       more: {

@@ -81,7 +81,7 @@ The rule: on someone else’s network, VPN first, then work email, CRM and share
         title: 'More: doesn’t the padlock in the browser protect me?',
         body: `**The padlock in the address bar** (HTTPS) encrypts what is on the page: the neighbour in the café can’t read your email. But the network owner still sees which sites you visit, can slip in a fake sign-in page, and some programs on your laptop talk to the internet without encryption. VPN covers all of that at once, and office systems often open only through it.
 
-**A lookalike network.** Whoever runs a network names it. A neighbour can switch on “Café Morning” or “AIRPORT-FREE-WiFi” on a phone, and your laptop may join it by itself if it was once on a network with a similar name. So pick the network from the sign and turn off “join automatically” for networks that aren’t yours.
+**A lookalike network.** Whoever runs a network names it. A neighbour can switch on “Café Morning” or “AIRPORT-FREE-WiFi” on a phone, and your laptop may join it by itself if it was once on a network with exactly the same name. A similar name is there for you to pick it by mistake yourself. So pick the network from the sign and turn off “join automatically” for networks that aren’t yours.
 
 **VPN won’t connect?** Share the internet from your phone: that is a room of your own.`,
       },

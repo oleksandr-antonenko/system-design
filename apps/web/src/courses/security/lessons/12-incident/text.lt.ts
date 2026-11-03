@@ -19,7 +19,7 @@ export default {
     },
     'reply:ira:report': {
       name: 'Ira, paspaudžiau mygtuką laiške „Jūsų slaptažodis baigia galioti“ ir įvedžiau ten pašto slaptažodį. Ką daryti?',
-      note: 'Ačiū, kad iškart parašei! Darome taip: 1) pakeisk pašto slaptažodį slaptažodžių tvarkyklėje; 2) pašte apačioje paspausk „Daugiau“ ir atsijunk visuose kituose įrenginiuose; 3) persiųsk man tą laišką ir jo netrink. Visa kita – mano rūpestis.',
+      note: 'Ačiū, kad iškart parašei! Darome taip: 1) pakeisk pašto slaptažodį pačiame pašte, o naują tegul sugalvoja ir išsaugo slaptažodžių tvarkyklė; 2) pašte apačioje paspausk „Daugiau“ ir atsijunk visuose kituose įrenginiuose; 3) persiųsk man tą laišką ir jo netrink. Visa kita – mano rūpestis.',
     },
     'chat:marina': { name: 'Marina', note: 'biuro vadybininkė' },
     'chat:marina:body': {
@@ -75,16 +75,18 @@ Suklysti gali kiekvienas – net atidus ir patyręs. Toks įvykis – tai **inci
       title: 'Iškart pasakyti IT',
       body: `Pirmiausia – pranešti IT. Iškart, net jei nejauku ir net jei „lyg ir nieko neatsitiko“.
 
-Ira nebara: ji džiaugiasi, kad sužinojo pirma. Ji turi kelias minutes, kol sukčius nepasinaudojo slaptažodžiu, ir kiekviena minutė brangi.`,
+Ira nebara: ji džiaugiasi, kad sužinojo pirma. Sukčius galėjo jau prisijungti su tuo slaptažodžiu, ir kiekviena minutė brangi: kuo anksčiau uždarysi duris, tuo mažiau jis spės.`,
     },
     'close-door': {
       title: 'Pirmosios 15 minučių',
-      body: `Toliau Ira ir Olegas uždaro duris, kol Dryžuotasis neįėjo:
+      body: `Pašto sesijų sąraše matyti svetimas prisijungimas 09:14: Dryžuotasis jau spėjo įeiti. Ira ir Olegas jį išmeta ir uždaro duris:
 
 - **pranešti IT** – jau padaryta;
-- **pakeisti slaptažodį** slaptažodžių tvarkyklėje – senas raktas nebetinka;
+- **pakeisti slaptažodį** pačiame pašte (naują sugalvoja ir išsaugo slaptažodžių tvarkyklė) – senas raktas nebetinka;
 - **atsijungti visuose įrenginiuose** – tą, kuris jau prisijungė su senu slaptažodžiu, išmeta;
-- **laiško netrinti**, o persiųsti IT: pagal jį ras, kam dar jis atėjo, ir užblokuos adresą.`,
+- **laiško netrinti**, o persiųsti IT: pagal jį ras, kam dar jis atėjo, ir užblokuos adresą.
+
+Lentoje supaprastinta: „Pakeisti sugeneruotu“ seife iš karto pakeičia slaptažodį ir pašte. Iš tikrųjų naują slaptažodį nustato pašto nustatymuose („Keisti slaptažodį“), o seifas jį tik išsaugo. Paskui Ira patikrins, ką Dryžuotasis spėjo padaryti pašte: persiuntimus, išsiųstus laiškus, atkūrimo adresą. O jei tas pats slaptažodis buvo naudojamas dar kur nors, jį keičia ir ten.`,
       more: {
         title: 'Daugiau: kas dar laikoma incidentu',
         body: `**Ne tik slaptažodis.** Incidentas – tai ir atidarytas priedas iš įtartino laiško, ir pamestas telefonas ar nešiojamasis kompiuteris, ir failas, išsiųstas ne tam gavėjui, ir keista programa, kuri pati kažką daro.
@@ -93,7 +95,7 @@ Ira nebara: ji džiaugiasi, kad sužinojo pirma. Ji turi kelias minutes, kol suk
 
 **Kodėl nebaudžia.** Įmonė, kurioje už klaidą bara, apie incidentus sužino paskutinė – kai jau per vėlu. Todėl gera IT tarnyba dėkoja už kiekvieną pranešimą, net už klaidingą pavojaus signalą.
 
-**Jei paskyra turi 2FA**, vieno slaptažodžio sukčiui neužtenka – dar viena priežastis ją įjungti visur.`,
+**Jei paskyra turi 2FA**, vieno slaptažodžio sukčiui neužtenka, nebent tame pačiame puslapyje įvedėte ir kodą. Įvedėte – pasakykite IT ir apie tai. 2FA vis tiek verta įjungti visur.`,
       },
     },
     'bait-after': {
@@ -108,7 +110,7 @@ Parašykite Irai, kas nutiko, ir atlikite jos sąrašą: pakeiskite pašto slapt
     },
     summary: {
       title: 'Santrauka',
-      body: `Olegas suklydo, bet nenutylėjo – ir Dryžuotasis liko už durų.
+      body: `Olegas suklydo, bet nenutylėjo – ir Dryžuotasis greitai buvo išmestas iš pašto.
 
 - **Incidentas** – ne priežastis slėptis: baisu ne suklysti, o nutylėti.
 - Pirmosios 15 minučių: pranešti IT, pakeisti slaptažodį, atsijungti visuose įrenginiuose.
@@ -159,7 +161,7 @@ Parašykite Irai, kas nutiko, ir atlikite jos sąrašą: pakeiskite pašto slapt
   tasks: {
     'first-15': {
       prompt:
-        'Netylėkite: praneškite IT ir uždarykite duris, kol sukčius neįėjo.',
+        'Netylėkite: praneškite IT, išmeskite sukčių iš pašto ir uždarykite duris.',
       goals: {
         told: 'Ira žino, kas nutiko',
         password: 'Pašto slaptažodis pakeistas',
@@ -168,7 +170,7 @@ Parašykite Irai, kas nutiko, ir atlikite jos sąrašą: pakeiskite pašto slapt
       },
       hints: [
         'Pradėkite nuo pokalbių programėlės: parašykite Irai, kas nutiko. Ji atsakys, ką daryti toliau.',
-        'Slaptažodį keičia slaptažodžių tvarkyklėje: įrašas „Darbo paštas“ → „Pakeisti sugeneruotu“. Svetimos sesijos – pašto apačioje, paspaudus „Daugiau“. Masalo netrinkite.',
+        'Naują slaptažodį sugalvoja slaptažodžių tvarkyklė, lentoje ji iš karto nustato jį ir pašte: įrašas „Darbo paštas“ → „Pakeisti sugeneruotu“. Svetimos sesijos – pašto apačioje, paspaudus „Daugiau“. Masalo netrinkite.',
         'Pokalbiai: atsakymas Irai. Seifas: „Darbo paštas“ → „Pakeisti sugeneruotu“. Paštas: „Daugiau“ apačioje → „Atsijungti visuose kituose įrenginiuose“, tada laiškas „Jūsų slaptažodis baigia galioti šiandien“ → „Persiųsti IT“. Reikiama vieta apvesta punktyru.',
       ],
       solvedNote:

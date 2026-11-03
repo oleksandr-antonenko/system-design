@@ -80,7 +80,7 @@ describe('lesson 10: DNS records and your own domain', () => {
       given(atQuiz()),
       expect(text('осталось 30:00')).not.toExist(),
       click(role('button', { name: 'DNS server, 192.0.2.53' })),
-      expect(text(/Но друг ею не пользуется/)).toExist(),
+      expect(text(/Друг ею не пользуется/)).toExist(),
       expect(text('друг её не спрашивает')).toExist(),
       expect(text('помнит заглушку')).toExist(),
       expect(
@@ -96,7 +96,7 @@ describe('lesson 10: DNS records and your own domain', () => {
       given(atQuiz()),
       click(role('button', { name: 'DNS server, 1.1.1.1' })),
       expect(text('помнит заглушку')).toExist(),
-      expect(text(/Но друг ею не пользуется/)).not.toExist(),
+      expect(text(/Друг ею не пользуется/)).not.toExist(),
       expect(
         text(/Старый адрес застрял в памяти справочной 1\.1\.1\.1/),
       ).toExist(),

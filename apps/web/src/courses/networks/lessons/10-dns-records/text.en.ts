@@ -40,7 +40,7 @@ The directories from lesson 3 (DNS server) learn the address from the [[ns|DNS p
     },
     ttl: {
       title: 'The directory remembers the answer',
-      body: `You have sent the link to your [[friend|friend]]. Press “Run”: their laptop asks its own directory, [[cf|1.1.1.1]]. The directory doesn’t know the answer, asks the DNS provider and remembers the answer together with a best-before time. This time is called **TTL** (time to live), and it is set in the DNS record itself: the parking page’s is 3600 seconds, that is, an hour.
+      body: `You have sent the link to your [[friend|friend]]. Press “Run”: their laptop asks its own directory, [[cf|1.1.1.1]]. The directory doesn’t know the answer, asks the DNS provider and remembers the answer together with a best-before time. This time is called **TTL** (time to live), and it is set in the DNS record itself: the parking page’s is 3600 seconds, that is, an hour. This is a different TTL from the counter in the IP envelope in lesson 8: the idea is the same (“how much longer to live”), but here it is seconds in the directory’s memory.
 
 Until the time runs out, the directory answers from memory (DNS cache) and doesn’t ask the DNS provider: that is faster. Like milk in the fridge: until it’s past its best-before date, nobody goes out for fresh milk. On the card of your friend’s directory there is a timer next to the answer: 60 minutes left.`,
       more: {
@@ -58,7 +58,9 @@ Other common DNS records: AAAA is an IPv6 address, MX is where to deliver mail f
 
 You need DNS records of three types. An A at @ is the server’s address. A CNAME at www means “the same as myapp.example”: then www.myapp.example always leads to the same place, and when you move, the address is changed in one place. A TXT at @ with the text myapp-verify=4f9c2a: your server’s panel asks for it to make sure the domain is yours.
 
-Then check the name in the laptop’s terminal: dig myapp.example or nslookup myapp.example. Both commands ask the directory and print its answer.`,
+Then check the name in the laptop’s terminal: dig myapp.example or nslookup myapp.example. Both commands ask the directory and print its answer.
+
+Simplified on the board: your home directory didn’t keep the parking-page answer, so your dig shows the new address straight away. In real life it might remember the parking page until the TTL runs out too. To ask past any memory, ask the DNS provider itself: dig @ns1.dns.example myapp.example.`,
     },
     'friend-sees-old': {
       title: 'Question: why your friend sees the old site',
@@ -85,7 +87,7 @@ Next, lesson 11: the site opens by its name, but the browser says “Not secure�
       wrong: {
         friend:
           'Your friend restarted the laptop, so it has no memory of its own right now. It honestly asks the directory 1.1.1.1.',
-        dns: 'This is your provider’s directory. It asked the DNS provider after the change and knows the new address. But your friend doesn’t use it.',
+        dns: 'This is your provider’s directory. Your friend doesn’t use it: their laptop asks 1.1.1.1, so whatever this one remembers, it doesn’t answer your friend.',
         ns: 'The DNS provider already has the new DNS record: you saved it, and your dig confirmed it.',
         vps: 'The server knows nothing about names. It waits for envelopes to its address, and your friend’s envelopes simply don’t reach it.',
       },

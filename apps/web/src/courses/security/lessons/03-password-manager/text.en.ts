@@ -39,14 +39,14 @@ Hence the rule of this lesson: **one password, one door**. Every site gets its o
       title: 'A vault for passwords',
       body: `Remembering twenty different passwords is impossible, and you don’t have to. That’s what a **password manager** is for: a program that works as a vault for your passwords. It makes up a long random password for each site, keeps it and fills it in for you when you sign in.
 
-You remember one password: the one to the vault itself. It is called the **master password**: nobody knows it, not even IT, and it isn’t written down anywhere.`,
+You remember one password: the one to the vault itself. It is called the **master password**: nobody knows it, not even IT. Don’t write it down at work or keep it in a file.`,
       more: {
         title: 'More: what makes a good master password',
         body: `**Length beats complexity.** A phrase of 4–5 random words, such as “zebra tram kefir lighthouse”, is stronger than “P@ssw0rd!” and easier to remember. Don’t use a line from a song or your cat’s name.
 
 **Leaks.** The password manager warns you itself if a site’s password turns up in a leak or is reused. Those passwords are changed first.
 
-**If you forget the master password.** Nobody can open the vault, not even the developers. When you create the vault, the program gives you a recovery sheet (Emergency Kit): print it and keep it at home, not on your desk. In a work account, the company administrator can restore access.`,
+**If you forget the master password.** Nobody can open the vault, not even the developers. When you create the vault, 1Password gives you an Emergency Kit: a sheet with your Secret Key and a blank line for the master password. Write the password in by hand and keep the sheet at home, not on your desk. Without the password written in, the sheet won’t help. In a work account, the company administrator can restore access.`,
       },
     },
     app: {
@@ -81,7 +81,9 @@ A password manager compares the address letter by letter, so it notices what you
       title: 'Task: sticky notes on the monitor',
       body: `Marina is tidying up. There are three sticky notes with passwords on her monitor, and two of them have the same password. And Oleg is asking in the chat for the company’s social media password.
 
-Move the passwords from the sticky notes into the vault, replace the reused one with a generated one, and give Oleg access to the social media account through the shared vault “Marketing”.`,
+Move the passwords from the sticky notes into the vault, replace the reused one with a generated one, and give Oleg access to the social media account through the shared vault “Marketing”.
+
+Simplified on the board: “Replace with a generated one” changes the password on the site at once. In real life the vault only makes up and saves the new password; you change it on the site itself: sign in, open “Change password” and paste the new one. Until the password is changed on the site, the old one keeps working.`,
     },
     summary: {
       title: 'Summary',
@@ -167,7 +169,7 @@ Move the passwords from the sticky notes into the vault, replace the reused one 
         'Move the three sticky notes, press “Replace with a generated one” in the “Company CRM” item, then in the “Company social media” item press “Share…” and “Move to the shared vault ‘Marketing’”. The place to press is outlined with a dashed line.',
       ],
       solvedNote:
-        'Done: the sticky notes are in the shredder, the CRM has its own long password, and Oleg sees the social media account in the shared vault. If he leaves the department, access is closed with one click.',
+        'Done: the sticky notes are in the shredder, the CRM has its own long password, and Oleg sees the social media account in the shared vault. If he leaves the department, access is closed with one click and the password is changed: he may remember a password he has seen. The delivery and social media passwords are weak too; replace them the same way.',
     },
   },
 } satisfies LessonTexts<typeof lesson>
