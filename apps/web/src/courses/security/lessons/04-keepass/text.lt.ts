@@ -33,7 +33,7 @@ export default {
     },
     'place:cloud': {
       name: 'Asmeninis debesies aplankas',
-      note: 'Failas užšifruotas, debesis saugo tik jo kopiją.',
+      note: 'Atskira failo kopija, ne sinchronizavimas. Failas užšifruotas.',
     },
     'kp:bank': { name: 'Asmeninis bankas', note: 'bank.example · marina.k' },
     'kp:router': { name: 'Namų Wi-Fi', note: 'maršrutizatorius · admin' },
@@ -64,7 +64,7 @@ Užrašykite frazę ant popieriaus ir laikykite namie, ne ant darbo stalo. Tai n
 
 **KeePass** tinka asmeniniams slaptažodžiams ir ten, kur debesimi nepasitiki. Jo versijų yra bet kuriai sistemai, pavyzdžiui, KeePassXC kompiuteriui ir KeePassDX Android telefonui. Jos atidaro tą patį bazės failą.
 
-**Sinchronizavimas.** Failą galima įdėti į debesies aplanką – jis užšifruotas, ir be pagrindinės frazės debesis mato tik baitų krūvą. Taip bazė yra ir telefone, ir kompiuteryje. Bet debesies aplankas – ne atsarginė kopija: jei failas sugadinamas, sugadintas pasklinda visur.
+**Sinchronizavimas.** Failą galima įdėti į debesies aplanką – jis užšifruotas, ir be pagrindinės frazės debesis mato tik baitų krūvą. Taip bazė yra ir telefone, ir kompiuteryje. Bet pats sinchronizavimas – ne atsarginė kopija: jei failas sugadinamas, sugadintas pasklinda visur.
 
 **Frazė iš pamokos** – tik pavyzdys. Neimkite jos sau: sugalvokite savo.`,
       },
@@ -73,7 +73,7 @@ Užrašykite frazę ant popieriaus ir laikykite namie, ne ant darbo stalo. Tai n
       title: 'Atsarginė kopija kitoje vietoje',
       body: `Sugenda kompiuteris, jį pavagia ar failas netyčia ištrinamas – kartu su failu dingsta visi slaptažodžiai. Todėl bazės failas turi turėti **atsarginę kopiją** (backup): dar vieną failo egzempliorių kitame įrenginyje.
 
-Kopija gretimame to paties kompiuterio aplanke neišgelbės: sugedus kompiuteriui, dings abi. Reikia atskiro įrenginio: [[usb|USB atmintuko]] [[cupboard|spintoje]] ar savo debesies aplanko.
+Kopija gretimame to paties kompiuterio aplanke neišgelbės: sugedus kompiuteriui, dings abi. Reikia atskiro įrenginio: [[usb|USB atmintuko]] [[cupboard|spintoje]] ar failo kopijos, atskirai įdėtos į savo debesį. Būtent kopijos, o ne to failo, kuris sinchronizuojasi su telefonu.
 
 Ir kopiją atnaujina: įtraukėte į bazę naujų slaptažodžių – išsaugokite kopiją dar kartą, kitaip jų joje nebus.`,
     },

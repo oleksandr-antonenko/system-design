@@ -52,7 +52,7 @@ Kai server klauso 127.0.0.1, jis atidarytas tik iš vidaus. Vėliavėlė --host 
 
 Vokai būna dviejų rūšių. TCP — vokas su įteikimo patvirtinimu: gavėjas patvirtina, kad viskas atkeliavo. UDP — atvirukas be patvirtinimo: išsiuntėme ir nelaukiame. Svetainės naudoja TCP, o klausimai informacijos tarnybai (DNS) dažniausiai keliauja per UDP.
 
-Jei telefonas vis tiek neatidaro svetainės, nors server paleistas su --host, duris gali laikyti kompiuterio **firewall** (lietuviškai – ugniasienė). Apie ją — 12 pamoka.
+Jei telefonas vis tiek neatidaro svetainės, nors server paleistas su --host, duris gali laikyti kompiuterio **firewall** (lietuviškai – ugniasienė): ji sprendžia, kuriuos svečius įleisti prie kompiuterio port.
 
 /24 po adreso ip a išvestyje — namų tinklo dydis. Apie jį — 8 pamoka.`,
       },

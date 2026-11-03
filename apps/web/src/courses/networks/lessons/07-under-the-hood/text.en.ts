@@ -33,7 +33,9 @@ Each nested envelope has its own job. Such an envelope is called a **layer**. Th
 - [[env:internet|Network]] — the IP address: from the phone to the website. That is lesson 2.
 - [[env:link|Link]] — the outermost envelope, the **frame** (an envelope for one stretch of the way). It carries everything else only to the neighbouring device: from the phone to the “Router”, over [[link:phone-router|Wi-Fi]].
 
-Each layer does its own job and does not look into other envelopes. The router, for example, reads only the IP address: it does not look at the request.`,
+Each layer does its own job and does not look into other envelopes. A router in the internet, for example, reads only the IP address: it doesn’t read the request, and couldn’t if it tried.
+
+Simplified on the board: the site’s address starts with https://, so in reality the request is encrypted and can’t be read on the way. How that works comes in lesson 11; until then the request is drawn open.`,
     },
     mac: {
       title: 'MAC address: the outer envelope changes',
@@ -41,7 +43,7 @@ Each layer does its own job and does not look into other envelopes. The router, 
 
 A frame travels only to the neighbour. Press “Run”, and at the pause press “Step”: the envelope will move from the [[router|“Router”]] into the [[internet|internet]]. The router takes off the old frame and puts on a new one: now it is Ethernet, the frame for the [[link:router-internet|cable]], and it carries new MAC addresses — from the router to the next neighbour. Like a parcel between warehouses: the address on the box stays the same, but a new waybill is stuck on for every stretch.
 
-You will notice that the sender’s IP address and port changed too: the router signed the envelope with the address of the whole home. Why — in lesson 9. The “Step back” button takes the envelope one hop back, and “×¼” slows the flight down.`,
+You will notice that the sender’s IP address and port changed too: the router signed the envelope with the address of the whole home. Why — in lesson 9. The home router is special here: for this it looks into Transport too, while a router in the internet reads only the IP address. The “Step back” button takes the envelope one hop back, and “×¼” slows the flight down.`,
       more: {
         title:
           'More: the switch, finding a MAC address, handing out addresses and seven layers',
@@ -67,7 +69,7 @@ You will notice that the sender’s IP address and port changed too: the router 
       title: 'Task: pack the envelope',
       body: `The phone wants to open the [[shop|shop website]]. Pack an envelope for it: put the four layers one inside another in the right order, from the outermost to the innermost.
 
-When you are done, press “Send”, and the envelope will fly across the board. If the order is wrong, even the first device on the way will not be able to read it.`,
+When you are done, press “Send”, and the envelope will fly across the board. If the order is wrong, the envelope gets stuck at whoever needs the mixed-up layer: at the phone if Link isn’t outside, at “Router” if IP is out of place, at the site if TCP is out of place.`,
     },
     summary: {
       title: 'Summary',
@@ -113,7 +115,7 @@ Module 1 is done: you know how a home network works. Next is module 2, “The in
       },
       hints: [
         'Start from the outside. Which envelope is needed to pass everything to the neighbour, the “Router”, over Wi-Fi?',
-        'Outside is Link (Wi-Fi / Ethernet), under it Network (IP): the router reads only these two layers to send the envelope on. Deeper is Transport (TCP), and in the very middle the request (HTTP).',
+        'Outside is Link (Wi-Fi / Ethernet), under it Network (IP): the router needs these two layers to send the envelope on. Deeper is Transport (TCP), and in the very middle the request (HTTP).',
         'The order from the outside in: Wi-Fi / Ethernet, IP, TCP, HTTP.',
       ],
       solvedNote:

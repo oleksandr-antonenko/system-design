@@ -81,7 +81,7 @@ Taisyklė: svetimame tinkle pirma VPN, tada darbo paštas, CRM ir bendri aplanka
         title: 'Daugiau: argi spyna naršyklėje neapsaugo?',
         body: `**Spyna adreso juostoje** (HTTPS) užšifruoja puslapio turinį: kaimynas kavinėje neperskaitys laiško teksto. Bet tinklo savininkas vis tiek mato, kokias svetaines lankote, gali pakišti netikrą prisijungimo puslapį, o dalis programų nešiojamajame jungiasi prie tinklo be šifravimo. VPN uždaro viską iš karto, o biuro sistemos dažnai atsidaro tik per jį.
 
-**Tinklas antrininkas.** Tinklo vardą sugalvoja jo savininkas. Kaimynas gali telefone įjungti tinklą „Kavinė Rytas“ arba „AIRPORT-FREE-WiFi“, ir jūsų nešiojamasis pats prie jo prisijungs, jei kažkada buvo panašiu vardu tinkle. Todėl tinklą rinkitės pagal lentelę ir svetimiems tinklams išjunkite „jungtis automatiškai“.
+**Tinklas antrininkas.** Tinklo vardą sugalvoja jo savininkas. Kaimynas gali telefone įjungti tinklą „Kavinė Rytas“ arba „AIRPORT-FREE-WiFi“, ir jūsų nešiojamasis pats prie jo prisijungs, jei kažkada buvo tinkle lygiai tokiu pačiu vardu. O panašus vardas skirtas tam, kad jį per klaidą pasirinktumėte patys. Todėl tinklą rinkitės pagal lentelę ir svetimiems tinklams išjunkite „jungtis automatiškai“.
 
 **VPN neįsijungia?** Dalinkitės internetu iš telefono: tai jūsų nuosavas kambarys.`,
       },

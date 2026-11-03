@@ -187,26 +187,26 @@ Mark the bait and the real emails without pressing anything in the bait. As in l
       title: '15:00. “Ira” from a new number',
       body: `“Ira from IT” writes in the messenger from an unknown number and asks you to urgently install a remote access program.
 
-As in lesson 6: reply with a polite pause, check with the number from the directory and forward the chat to the real Ira.`,
+As in lesson 7: reply with a polite pause, check with the number from the directory and forward the chat to the real Ira.`,
     },
     extension: {
       title: '16:00. A new extension',
       body: `Oleg recommends an extension for spreadsheets. Before installing, the browser shows its permissions.
 
-As in lesson 9: decline the extension that wants every site, and while you are at it, remove an extra one that is already installed.`,
+As in lesson 10: decline the extension that wants every site, and while you are at it, remove an extra one that is already installed.`,
     },
     assistant: {
       title: '17:00. The assistant needs access',
       body: `The AI assistant is putting together a list of clients due to renew their contracts and asks for the CRM administrator password.
 
-As in lesson 10: no passwords in the chat. Create a token with read-only access to the “Clients” section for 7 days, save it in 1Password, give the assistant a link to the entry and revoke it when the work is done.`,
+As in lesson 11: no passwords in the chat. Create a token with read-only access to the “Clients” section for 7 days, save it in 1Password, give the assistant a link to the entry and revoke it when the work is done.`,
     },
     summary: {
       title: 'Course summary',
       body: `Evening. Marina locks her screen, Ira gives a thumbs-up, and Stripes walks away empty-handed.
 
 - **Network and passwords:** guests get the guest network, the café gets a VPN; the vault remembers different passwords, important sign-ins get 2FA.
-- **People and email:** the name is a costume, the address tells the truth; a strange request is checked through another channel.
+- **People and email:** the name is a costume, the address is the first check; a strange request is checked through another channel.
 - **Programs, browser, AI:** only the files and extensions you need; the assistant gets its own limited token.
 - **If you already clicked**, tell IT at once. The real danger is not the mistake but the silence.
 

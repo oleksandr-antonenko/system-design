@@ -86,7 +86,7 @@ describe('router settings panel in lesson 5', () => {
       click(role('button', { name: 'Check' })),
       expect(
         text(
-          '2.4 GHz now reaches the kitchen: the phone and the bulb are online. The laptop in the living room stayed on the fast 5 GHz.',
+          /^2\.4 GHz now reaches the kitchen: the phone and the bulb are online\. If you left 5 GHz on/,
         ),
       ).toExist(),
     )

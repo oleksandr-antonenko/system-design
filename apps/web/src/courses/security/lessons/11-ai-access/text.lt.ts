@@ -51,7 +51,7 @@ Tačiau pokalbis su asistentu – ne seifas. Įklijuotas slaptažodis lieka poka
       title: 'Atskiras leidimas',
       body: `Asistentui duodamas atskiras leidimas – **prieigos raktas** (access token): raktas, skirtas tik šiam darbui. Jis turi savas **prieigos teises** (permissions): ką galima (tik skaityti), kur (viename skyriuje) ir kiek laiko (savaitę).
 
-Patį raktą laiko slaptažodžių tvarkyklėje, o asistentui duoda ne tekstą, o nuorodą į įrašą: **op://Work/crm-agent/token**. Komanda **op run** perduos raktą programai, ir į pokalbį jis nepateks.`,
+Patį raktą laiko slaptažodžių tvarkyklėje, o asistentui duoda ne tekstą, o nuorodą į įrašą: **op://Work/crm-agent/token**. Komanda **op run** iš programos 1Password CLI perduos raktą programai, ir į pokalbio istoriją jis nepateks. Tai veikia asistentams agentams, kurie paleidžiami jūsų kompiuteryje (pavyzdžiui, Claude Code ar Codex). Pats agentas raktą gaus, todėl rakto teises ir daro siauras. Asistentui naršyklėje tokios nuorodos neduoda: jam CRM turi siūlyti savo prisijungimą, arba duomenys eksportuojami be paslapčių.`,
     },
     leak: {
       title: 'Klausimas: kur nutekėjimas',
@@ -123,7 +123,7 @@ Duokite asistentui atskirą leidimą: CRM sistemoje sukurkite raktą, leidžiant
         export:
           'Eksportas be klientų vardų – įprasti darbo duomenys: paslapčių jame nėra.',
         reference:
-          'Tai nuoroda į įrašą slaptažodžių tvarkyklėje, o ne pats raktas. Pagal ją raktą gaus tik programa, paleista per op run jūsų kompiuteryje.',
+          'Tai nuoroda į įrašą slaptažodžių tvarkyklėje, o ne pats raktas. Pagal ją raktą gaus tik programa, paleista per op run jūsų kompiuteryje: agentas galės juo naudotis, bet į pokalbio istoriją raktas nepateks.',
       },
       explain:
         'Faile **.env** laikomos paslaptys: prieigos raktai, duomenų bazių slaptažodžiai, paslaugų raktai. Nusiųsti jį visą – tas pats, kas įklijuoti visus tuos slaptažodžius į pokalbį. Asistentui rodoma klaida, o ne paslaptys; jei failas jau išsiųstas, jame esantys raktai keičiami.',

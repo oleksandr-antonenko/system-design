@@ -39,14 +39,14 @@ Iš čia ir pamokos taisyklė: **vienas slaptažodis – vienos durys**. Kiekvie
       title: 'Seifas slaptažodžiams',
       body: `Įsiminti dvidešimt skirtingų slaptažodžių neįmanoma, ir nereikia. Tam yra **password manager** (slaptažodžių tvarkyklė) – programa, veikianti kaip seifas slaptažodžiams. Ji kiekvienai svetainei sugalvoja ilgą atsitiktinį slaptažodį, jį saugo ir pati įrašo prisijungiant.
 
-Jūs prisimenate vieną slaptažodį – nuo paties seifo. Jis vadinamas **pagrindiniu slaptažodžiu** (master password): jo nežino niekas, net IT, ir jis niekur neužrašytas.`,
+Jūs prisimenate vieną slaptažodį – nuo paties seifo. Jis vadinamas **pagrindiniu slaptažodžiu** (master password): jo nežino niekas, net IT. Neužsirašykite jo darbe ir nelaikykite faile.`,
       more: {
         title: 'Daugiau: koks turi būti pagrindinis slaptažodis',
         body: `**Ilgis svarbesnis už sudėtingumą.** 4–5 atsitiktinių žodžių frazė, pavyzdžiui, „zebras tramvajus kefyras švyturys“, stipresnė už „P@ssw0rd!“, ir ją lengviau įsiminti. Nenaudokite dainos eilutės ar katino vardo.
 
 **Nutekėjimai.** Slaptažodžių tvarkyklė pati įspėja, jei kurios nors svetainės slaptažodis rastas nutekėjusiuose duomenyse arba jei jis kartojasi. Tokius slaptažodžius keičia pirmiausia.
 
-**Jei pamiršote pagrindinį slaptažodį.** Seifo neatidarys niekas, net kūrėjai. Kuriant seifą programa išduoda atkūrimo lapą (Emergency Kit): atsispausdinkite jį ir laikykite namie, ne ant darbo stalo. Darbo paskyroje prieigą gali atkurti įmonės administratorius.`,
+**Jei pamiršote pagrindinį slaptažodį.** Seifo neatidarys niekas, net kūrėjai. Kuriant seifą 1Password išduoda Emergency Kit: lapą su slaptuoju raktu (Secret Key) ir tuščia eilute pagrindiniam slaptažodžiui. Įrašykite slaptažodį ranka ir laikykite lapą namie, ne ant darbo stalo. Be įrašyto slaptažodžio lapas nepadės. Darbo paskyroje prieigą gali atkurti įmonės administratorius.`,
       },
     },
     app: {
@@ -81,7 +81,9 @@ Password manager lygina adresą raidė po raidės, todėl pastebi tai, ko nemato
       title: 'Užduotis: lipdukai ant monitoriaus',
       body: `Marina tvarko savo darbo vietą. Ant monitoriaus trys lipdukai su slaptažodžiais, dviejuose slaptažodis tas pats. O Olegas pokalbyje prašo įmonės socialinio tinklo slaptažodžio.
 
-Perkelkite slaptažodžius nuo lipdukų į seifą, pasikartojantį pakeiskite sugeneruotu, o prieigą prie socialinio tinklo duokite Olegui per bendrą seifą „Rinkodara“.`,
+Perkelkite slaptažodžius nuo lipdukų į seifą, pasikartojantį pakeiskite sugeneruotu, o prieigą prie socialinio tinklo duokite Olegui per bendrą seifą „Rinkodara“.
+
+Lentoje supaprastinta: „Pakeisti sugeneruotu“ iš karto pakeičia slaptažodį ir svetainėje. Iš tikrųjų seifas tik sugalvoja ir išsaugo naują slaptažodį, o pakeisti jį reikia pačioje svetainėje: prisijungti, atidaryti „Keisti slaptažodį“ ir įklijuoti naują. Kol slaptažodis svetainėje nepakeistas, senasis tebeveikia.`,
     },
     summary: {
       title: 'Santrauka',
@@ -163,7 +165,7 @@ Perkelkite slaptažodžius nuo lipdukų į seifą, pasikartojantį pakeiskite su
         'Perkelkite tris lipdukus, įraše „Įmonės CRM“ paspauskite „Pakeisti sugeneruotu“, tada įraše „Įmonės socialinis tinklas“ – „Bendrinti…“ ir „Perkelti į bendrą seifą „Rinkodara““. Reikiama vieta apvesta punktyru.',
       ],
       solvedNote:
-        'Atlikta: lipdukai smulkintuve, CRM turi savo ilgą slaptažodį, o Olegas mato socialinį tinklą bendrame seife. Išeis jis iš skyriaus – prieigą uždarys vienu paspaudimu.',
+        'Atlikta: lipdukai smulkintuve, CRM turi savo ilgą slaptažodį, o Olegas mato socialinį tinklą bendrame seife. Išeis jis iš skyriaus – prieigą uždarys vienu paspaudimu ir pakeis slaptažodį: matytą slaptažodį jis galėjo įsiminti. Pristatymo ir socialinio tinklo slaptažodžiai irgi silpni, juos verta pakeisti taip pat.',
     },
   },
 } satisfies LessonTexts<typeof lesson>

@@ -19,7 +19,9 @@ export default {
       title: 'The second lock',
       body: `Passwords get stolen: leaks, baits, someone peeking over your shoulder. That is why important doors get a second lock.
 
-**Two-factor authentication** (2FA): besides the password, signing in needs a **one-time code**, six digits from an app on your phone. The code changes every 30 seconds and works only once.`,
+**Two-factor authentication** (2FA): besides the password, signing in needs a **one-time code**, six digits from an app on your phone (sometimes they come by SMS). The code changes every 30 seconds and works only once.
+
+There is a second kind too: the app itself asks “Is this you signing in?” with “Yes” and “No” buttons. This is a **push request** (push notification), sent for example by Microsoft Authenticator and banking apps. Simplified on the board: one app both shows codes and sends requests. A plain code app such as Google Authenticator never asks “Is this you?”.`,
     },
     stolen: {
       title: 'The key fits, but the door won’t open',
@@ -33,7 +35,7 @@ With 2FA, a stolen password is not enough. That is why it gets turned on whereve
     },
     night: {
       title: 'A request in the middle of the night',
-      body: `It can happen like this too: your phone asks “Is this you signing in?”, and you weren’t signing in anywhere. That means someone already has your password.
+      body: `It can happen like this too: a push request asks “Is this you signing in?”, and you weren’t signing in anywhere. That means someone already has your password.
 
 Press “No” — the door stays shut — and tell IT: the password needs changing. Don’t press “Yes” just to make the requests stop: that is exactly what the fraudster is counting on.`,
       more: {

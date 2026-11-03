@@ -33,7 +33,9 @@ Kiekvienas įdėtas vokas turi savo darbą. Toks vokas vadinamas **sluoksniu** (
 - [[env:internet|Network]] — IP address: nuo telefono iki svetainės. Tai 2 pamoka.
 - [[env:link|Link]] — pats išorinis vokas, **frame** (lietuviškai – kadras, vokas vienai kelio atkarpai). Jis neša visa kita tik iki kaimyninio įrenginio: nuo telefono iki „Router“, per [[link:phone-router|Wi-Fi]].
 
-Kiekvienas sluoksnis daro savo darbą ir nežiūri į svetimus vokus. Pavyzdžiui, router skaito tik IP address: į prašymą jis nežiūri.`,
+Kiekvienas sluoksnis daro savo darbą ir nežiūri į svetimus vokus. Pavyzdžiui, router internete skaito tik IP address: prašymo jis neskaito, ir negalėtų.
+
+Lentoje supaprastinta: svetainės adresas prasideda https://, todėl iš tikrųjų prašymas užšifruotas, ir pakeliui jo neperskaityti. Kaip tai veikia, aptarsime 11 pamokoje; iki tol prašymas nupieštas atviras.`,
     },
     mac: {
       title: 'MAC address: išorinis vokas keičiasi',
@@ -41,7 +43,7 @@ Kiekvienas sluoksnis daro savo darbą ir nežiūri į svetimus vokus. Pavyzdžiu
 
 Frame vežamas tik iki kaimyno. Paspauskite „Paleisti“, o per pauzę — „Žingsnis“: vokas pereis iš [[router|„Router“]] į [[internet|internetą]]. Router nusiims seną frame ir uždės naują: dabar tai Ethernet, frame [[link:router-internet|kabeliui]], ir ant jo nauji MAC addresses — nuo router iki kito kaimyno. Kaip siunta tarp sandėlių: adresas ant dėžutės tas pats, o važtaraštis kiekvienoje atkarpoje klijuojamas naujas.
 
-Pastebėsite, kad pasikeitė ir siuntėjo IP address, ir port: router pasirašė ant voko visų namų adresu. Kodėl — 9 pamokoje. Mygtukas „Žingsnis atgal“ grąžins voką vienu hop atgal, „×¼“ sulėtins skrydį.`,
+Pastebėsite, kad pasikeitė ir siuntėjo IP address, ir port: router pasirašė ant voko visų namų adresu. Kodėl — 9 pamokoje. Namų router čia ypatingas: dėl to jis žiūri ir į Transport, o router internete skaito tik IP address. Mygtukas „Žingsnis atgal“ grąžins voką vienu hop atgal, „×¼“ sulėtins skrydį.`,
       more: {
         title:
           'Išsamiau: switch, MAC address paieška, adresų išdavimas ir septyni sluoksniai',
@@ -67,7 +69,7 @@ Pastebėsite, kad pasikeitė ir siuntėjo IP address, ir port: router pasirašė
       title: 'Užduotis: surinkite voką',
       body: `Telefonas nori atidaryti [[shop|parduotuvės svetainę]]. Surinkite jam voką: įdėkite keturis sluoksnius vieną į kitą teisinga tvarka, nuo išorinio iki paties vidinio.
 
-Kai surinksite, paspauskite „Siųsti“, ir vokas nuskris po lentą. Jei tvarka neteisinga, jo negalės perskaityti jau pirmas įrenginys kelyje.`,
+Kai surinksite, paspauskite „Siųsti“, ir vokas nuskris po lentą. Jei tvarka neteisinga, vokas įstrigs pas tą, kuriam reikia supainioto sluoksnio: telefone – jei išorėje ne Link, prie „Router“ – jei ne vietoje IP, svetainėje – jei ne vietoje TCP.`,
     },
     summary: {
       title: 'Santrauka',
@@ -112,7 +114,7 @@ Kai surinksite, paspauskite „Siųsti“, ir vokas nuskris po lentą. Jei tvark
       },
       hints: [
         'Pradėkite iš išorės. Kokio voko reikia, kad viską perduotumėte kaimynui „Router“ per Wi-Fi?',
-        'Išorėje — Link (Wi-Fi / Ethernet), po juo — Network (IP): router skaito tik šiuos du sluoksnius, kad išsiųstų voką toliau. Giliau — Transport (TCP), pačiame viduryje — prašymas (HTTP).',
+        'Išorėje — Link (Wi-Fi / Ethernet), po juo — Network (IP): kad išsiųstų voką toliau, router reikia šių dviejų sluoksnių. Giliau — Transport (TCP), pačiame viduryje — prašymas (HTTP).',
         'Tvarka iš išorės į vidų: Wi-Fi / Ethernet, IP, TCP, HTTP.',
       ],
       solvedNote:

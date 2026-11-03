@@ -185,26 +185,26 @@ Pažymėkite masalą ir tikrus laiškus, masale nieko nespausdami. Kaip 6 pamoko
       title: '15:00. „Ira“ iš naujo numerio',
       body: `Pokalbių programoje rašo „Ira iš IT“ iš nepažįstamo numerio ir prašo skubiai įdiegti nuotolinės prieigos programą.
 
-Kaip 6 pamokoje: atsakykite mandagia pauze, patikrinkite numeriu iš katalogo ir persiųskite susirašinėjimą tikrai Irai.`,
+Kaip 7 pamokoje: atsakykite mandagia pauze, patikrinkite numeriu iš katalogo ir persiųskite susirašinėjimą tikrai Irai.`,
     },
     extension: {
       title: '16:00. Naujas plėtinys',
       body: `Olegas pataria plėtinį lentelėms. Prieš diegimą naršyklė parodo jo leidimus.
 
-Kaip 9 pamokoje: atsisakykite plėtinio, prašančio visų svetainių, ir kartu pašalinkite nereikalingą iš jau įdiegtų.`,
+Kaip 10 pamokoje: atsisakykite plėtinio, prašančio visų svetainių, ir kartu pašalinkite nereikalingą iš jau įdiegtų.`,
     },
     assistant: {
       title: '17:00. Asistentui reikia prieigos',
       body: `DI asistentas renka klientų, kuriems laikas pratęsti sutartį, sąrašą ir prašo CRM administratoriaus slaptažodžio.
 
-Kaip 10 pamokoje: jokių slaptažodžių pokalbyje. Sukurkite raktą tik skaityti skyrių „Klientai“ 7 dienoms, išsaugokite jį 1Password, duokite asistentui nuorodą į įrašą, o baigus darbą atšaukite.`,
+Kaip 11 pamokoje: jokių slaptažodžių pokalbyje. Sukurkite raktą tik skaityti skyrių „Klientai“ 7 dienoms, išsaugokite jį 1Password, duokite asistentui nuorodą į įrašą, o baigus darbą atšaukite.`,
     },
     summary: {
       title: 'Kurso santrauka',
       body: `Vakaras. Marina užrakina ekraną, Ira parodo nykštį, o Dryžuotasis išeina tuščiomis.
 
 - **Tinklas ir slaptažodžiai:** svečiams – svečių tinklas, kavinėje – VPN; skirtingus slaptažodžius atsimena seifas, svarbiems prisijungimams – 2FA.
-- **Žmonės ir laiškai:** vardas – kostiumas, tiesą sako adresas; keistą prašymą tikrina kitu kanalu.
+- **Žmonės ir laiškai:** vardas – kostiumas, adresas – pirmas patikrinimas; keistą prašymą tikrina kitu kanalu.
 - **Programos, naršyklė, DI:** tik reikalingi failai ir plėtiniai; asistentui – savas ribotas raktas.
 - **Jei jau paspaudėte** – iškart pasakykite IT. Baisu ne suklysti, o nutylėti.
 

@@ -4,7 +4,7 @@ import type lesson from './lesson'
 export default {
   title: 'Phishing. Laiškas masalas',
   summary:
-    'Vardas laiške – kostiumas, tiesą sako adresas. Raskite masalus pašte nieko juose nespausdami.',
+    'Vardas laiške – kostiumas, adresas – pirmas patikrinimas. Raskite masalus pašte nieko juose nespausdami.',
   preview: {
     alt: 'Iliustracija: phishing – meškerės kabliukas užkabina voką ant stalo, o kompiuterio pašto dėžutėje vienas įtartinas laiškas pažymėtas raudonai.',
   },
@@ -126,7 +126,7 @@ Tokį laišką masalą vadina **sukčiavimu** (angl. phishing, nuo žodžio „�
     },
     costume: {
       title: 'Vardas – tai kostiumas',
-      body: `„IT skyrius“, „Bankas“, „Viktoras Andrejevičius“ eilutėje „Nuo“ – kostiumas. Šį vardą rašo pats siuntėjas, ir užsivilkti jį gali bet kas. Tiesą sako **adresas**: tai, kas po @.
+      body: `„IT skyrius“, „Bankas“, „Viktoras Andrejevičius“ eilutėje „Nuo“ – kostiumas. Šį vardą rašo pats siuntėjas, ir užsivilkti jį gali bet kas. Pirmas patikrinimas – **adresas**: tai, kas po @. Jį suklastoti sunkiau nei vardą.
 
 Paspauskite siuntėjo vardą, ir paštas parodys adresą. Kolegų laiškų adresas baigiasi lygiai @romashka.example. Olegui atėjusiame laiške – [[addr|@rornashka.example]]: vietoj „m“ stovi „r“ ir „n“, skubant neatskirsi.
 
@@ -136,6 +136,8 @@ Tas pats su nuorodomis: prieš spausdami užveskite žymeklį ant mygtuko ir per
         body: `**Domeną skaito iš dešinės.** Adrese romashka.example.login-check.example savininkas – login-check.example, o „romashka“ – tik žodis pradžioje. O hr.romashka.example – jūsų: dešinėje stovi romashka.example.
 
 **„Atsakyti“ gali nueiti ne ten.** Sukčius į atsakymą įrašo savo adresą, ir jis skiriasi nuo adreso eilutėje „Nuo“. Patikrinkite ir jį.
+
+**Savas adresas – dar ne garantija.** Adresą eilutėje „Nuo“ irgi galima suklastoti, jei paštas netikrina siuntėjo: tokie patikrinimai vadinami SPF, DKIM ir DMARC, juos nustato IT. O iš įsilaužto kolegos pašto dėžutės laiškas ateis tikru adresu. Svetimas domenas klastotę išduoda tikrai, savas tikrumo neįrodo: žiūrėkite dar į atsakymo adresą ir į patį prašymą.
 
 **QR kodas laiške** – ta pati nuoroda, tik jos nematyti, kol nenuskenuosite. QR kodų iš laiškų „apie slaptažodį“ ir „apie mokėjimą“ neskenuokite.
 
@@ -175,7 +177,7 @@ Atidarykite kiekvieną laišką ir pažymėkite: „Sukčiavimas“ arba „Tikr
       body: `Olegas užkibo ant masalo, o Marina jį perprato – ir su „buhalterija“, ir su „direktoriumi“.
 
 - **Sukčiavimas** (phishing) – laiškas masalas: skubina, gąsdina ir veda į netikrą puslapį.
-- Siuntėjo vardas – kostiumas. Žiūrėkite adresą po @ ir nuorodos adresą prieš spausdami.
+- Siuntėjo vardas – kostiumas. Žiūrėkite adresą po @ ir nuorodos adresą prieš spausdami. Svetimas domenas išduoda klastotę, o savas – dar ne garantija.
 - **Asmeninis sukčiavimas** žino jūsų vardą ir projektus. Prašymus dėl pinigų, slaptažodžių ir prieigų tikrinkite kitu kanalu.`,
     },
   },
@@ -215,7 +217,8 @@ Atidarykite kiekvieną laišką ir pažymėkite: „Sukčiavimas“ arba „Tikr
     'call.marina': () => 'Viktorai Andrejevičiau, ar prašėte apmokėti stendą?',
     'call.victor': () => 'Kokį stendą? Aš atostogose! Persiųskite laišką Irai.',
     'summary.bait': () => 'Masalas skubina ir gąsdina',
-    'summary.costume': () => 'Vardas – kostiumas, tiesa – adrese',
+    'summary.costume': () =>
+      'Vardas – kostiumas, adresas – pirmas patikrinimas',
     'summary.mask': () => 'Asmeninis laiškas žino apie jus viską',
     'summary.call': () => 'Patikrinkite paskambinę savo numeriu',
   },
@@ -258,7 +261,7 @@ Kas išdavė klastotę: adreso juostoje **gooogle-prizes.example** – svetima s
         sign: 'Vyriausiosios buhalterės vardą ir telefoną lengva nusirašyti iš įmonės svetainės.',
       },
       explain:
-        'Viską, kas matyti laiške, siuntėjas nupiešia pats: vardą, logotipą, temą, mygtuką, parašą. Suklastoti negalima tik domeno – adreso dalies po @. Čia tai **romashka-docs.example**, o ne romashka.example.',
+        'Viską, kas matyti laiške, siuntėjas nupiešia pats: vardą, logotipą, temą, mygtuką, parašą. Svetimas domenas – adreso dalis po @ – klastotę išduoda tikrai: čia tai **romashka-docs.example**, o ne romashka.example. Atvirkščiai neveikia: savas domenas dar ne garantija, kolegos dėžutę galėjo įsilaužti, o adresą – suklastoti. Todėl prašymus dėl pinigų ir slaptažodžių tikrina kitu kanalu net iš savo adreso.',
     },
   },
   tasks: {
