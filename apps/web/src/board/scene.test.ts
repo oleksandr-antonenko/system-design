@@ -9,6 +9,7 @@ import {
   keydown,
   role,
   scene,
+  selector,
   text,
   withViewInputs,
 } from 'foldkit/scene'
@@ -16,7 +17,13 @@ import { describe, test } from 'vitest'
 
 import { type BoardDoc, emptyBoard, foldOps } from '../domain/board'
 import { simulate } from '../domain/simulate'
-import { addNode, connect, failRegion, setLoad } from '../kinds/flow/dsl'
+import {
+  addNode,
+  connect,
+  failRegion,
+  setCacheMode,
+  setLoad,
+} from '../kinds/flow/dsl'
 import * as Board from './board'
 import { BoardPointer } from './pointer'
 import { type BoardViewInputs, view } from './view'
@@ -181,6 +188,72 @@ describe('blocks', () => {
       pointerReady,
       expectAll(all.selector('[data-port="app-eu"]')).toHaveCount(2),
       expectAll(all.selector('[data-port="db"]')).toHaveCount(0),
+    )
+  })
+})
+
+describe('caches and labelled flows', () => {
+  const cached = (mode: 'read-through' | 'cache-aside') =>
+    foldOps(emptyBoard, [
+      setCacheMode(mode),
+      addNode('users', 'client', 100, 280),
+      addNode('app1', 'server', 330, 280),
+      addNode('cache-1', 'cache', 620, 120),
+      addNode('db', 'db', 760, 420),
+      connect('users', 'app1'),
+      connect('app1', 'cache-1'),
+      connect('app1', 'db'),
+      connect('cache-1', 'db'),
+      setLoad(400),
+    ])
+  const settled = (doc: BoardDoc) => {
+    const sim = simulate(doc, doc.load)
+    return {
+      mode: 'View' as const,
+      flows: { clock: 0, nodeUtil: {}, nodeIncoming: {}, edgeFlow: sim.edges },
+    }
+  }
+
+  test('the cache block shows its mode', () => {
+    const doc = cached('read-through')
+    scene(
+      boardScene(doc),
+      given(Board.initialModel),
+      pointerReady,
+      expect(selector('[data-cache-mode="read-through"]')).toExist(),
+      expect(role('img', { name: /^Cache cache-1/ })).toHaveAttr(
+        'aria-description',
+        'Keeps frequent answers in memory and takes load off the database. read-through: on a miss the cache reads the database itself',
+      ),
+    )
+  })
+
+  test('edge labels say what flows: reads to the cache, writes and misses to the database', () => {
+    const doc = foldOps(cached('read-through'), [])
+    scene(
+      boardScene(doc, settled(doc)),
+      given(Board.initialModel),
+      pointerReady,
+      expect(selector('[data-edge-label="app1>cache-1"]')).toHaveText(
+        'reads 320 rps',
+      ),
+      expect(selector('[data-edge-label="cache-1>db"]')).toHaveText(
+        'misses 64 rps',
+      ),
+    )
+  })
+
+  test('in cache-aside the old cache → database connection is drawn as unused', () => {
+    const doc = foldOps(cached('read-through'), [setCacheMode('cache-aside')])
+    scene(
+      boardScene(doc, settled(doc)),
+      given(Board.initialModel),
+      pointerReady,
+      expect(selector('[data-cache-mode="cache-aside"]')).toExist(),
+      expectAll(all.selector('[data-idle="true"]')).toHaveCount(1),
+      expect(selector('[data-edge-label="app1>db"]')).toHaveText(
+        'writes 80 · misses 64 rps',
+      ),
     )
   })
 })

@@ -105,11 +105,19 @@ export const en = {
     rejecting: rps => `rejected ${n(rps)}/s`,
     zoneDown: region => `${regionName[region]} · region down`,
     edgeFlow: rps => `${n(rps)} rps`,
+    cacheModeHint: {
+      'read-through': 'on a miss the cache reads the database itself',
+      'cache-aside':
+        'on a miss the server reads the database itself and puts the answer into the cache',
+    },
+    idleCacheEdge:
+      'connection not used: in cache-aside the server reads the database',
     flowName: {
       requests: 'requests',
       reads: 'reads',
       writes: 'writes',
       misses: 'misses',
+      fills: 'fills',
       jobs: 'jobs',
       events: 'events',
     },
@@ -267,10 +275,14 @@ export const en = {
       `Connections from “${componentName[from]}” to “${componentName[to]}” blocks: ${n(have)} of ${n(need)}. Draw the missing ones.`,
     GoalDirectPath: ({ from, via, targets }) =>
       `“${componentName[from]}” reach ${targets.join(', ')} directly, bypassing the “${componentName[via]}” block. Click the highlighted connection and delete it.`,
+    GoalUnwantedLink: ({ from, to, edges }) =>
+      `The “${componentName[from]}” → “${componentName[to]}” connection is not needed here (${edges.join(', ')}). Click the highlighted connection and delete it.`,
     GoalNotConnected: ({ from, via }) =>
       `There is no connection from “${componentName[from]}” to the “${componentName[via]}” block, so requests have nowhere to go.`,
     GoalTooManyErrors: ({ load, errorRate, overloaded }) =>
       `At ${n(load)} rps, ${percent(errorRate)} of requests are lost. Losing requests: ${overloaded.join(', ')}.`,
+    ConnectCacheAside: () =>
+      'In cache-aside the cache never reads the database itself: on a miss the server reads it and puts the answer into the cache. Connect the server to the database instead.',
     ConnectFromSink: ({ from }) =>
       `Requests end at the “${componentName[from]}” block: it does not pass them any further.`,
     ConnectNotAllowed: ({ from, to, allowed }) =>

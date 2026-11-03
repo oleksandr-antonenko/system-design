@@ -108,11 +108,19 @@ export const uk = {
     rejecting: rps => `відхилено ${n(rps)}/с`,
     zoneDown: region => `${regionName[region]} · регіон недоступний`,
     edgeFlow: rps => `${n(rps)} rps`,
+    cacheModeHint: {
+      'read-through': 'при miss cache сам читає database',
+      'cache-aside':
+        'при miss «Server» читає database сам і кладе відповідь у cache',
+    },
+    idleCacheEdge:
+      'зв’язок не використовується: у cache-aside database читає «Server»',
     flowName: {
       requests: 'запити',
       reads: 'читання',
       writes: 'запис',
       misses: 'miss',
+      fills: 'заповнення',
       jobs: 'задачі',
       events: 'події',
     },
@@ -267,10 +275,14 @@ export const uk = {
       `Зв’язків від «${componentName[from]}» до блоків «${componentName[to]}»: ${n(have)} з ${n(need)}. Протягніть відсутні.`,
     GoalDirectPath: ({ from, via, targets }) =>
       `«${componentName[from]}» ходять на ${targets.join(', ')} напряму, повз блок «${componentName[via]}». Натисніть на підсвічений зв’язок і видаліть його.`,
+    GoalUnwantedLink: ({ from, to, edges }) =>
+      `Зв’язок «${componentName[from]}» → «${componentName[to]}» тут зайвий (${edges.join(', ')}). Натисніть на підсвічений зв’язок і видаліть його.`,
     GoalNotConnected: ({ from, via }) =>
       `Немає зв’язку від «${componentName[from]}» до блока «${componentName[via]}»: запитам нікуди йти.`,
     GoalTooManyErrors: ({ load, errorRate, overloaded }) =>
       `При ${n(load)} rps втрачається ${percent(errorRate)} запитів. Втрачають запити: ${overloaded.join(', ')}.`,
+    ConnectCacheAside: () =>
+      'У cache-aside cache сам до database не звертається: при miss її читає «Server» і кладе відповідь у cache. Підключіть до «Database» блок «Server».',
     ConnectFromSink: ({ from }) =>
       `На блоці «${componentName[from]}» шлях запиту закінчується: далі він нічого не передає.`,
     ConnectNotAllowed: ({ from, to, allowed }) =>

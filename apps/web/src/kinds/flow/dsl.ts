@@ -1,7 +1,7 @@
 import { Option } from 'effect'
 
 import { type BoardDoc, BoardOp } from '../../domain/board'
-import type { ComponentKind, Region } from '../../domain/catalog'
+import type { CacheMode, ComponentKind, Region } from '../../domain/catalog'
 import type { SimResult } from '../../domain/simulate'
 import type { TrafficPatch } from '../../domain/traffic'
 import type { Tone } from '../contract'
@@ -121,3 +121,15 @@ export const reset = (): BoardOp => BoardOp.Reset()
     cacheHitShare: 0.95 })`. */
 export const setTraffic = (traffic: TrafficPatch): BoardOp =>
   BoardOp.SetTraffic({ traffic })
+
+/** Кто читает database при cache miss, для всех кешей доски:
+
+    - `read-through` (по умолчанию) — сам cache, по связи cache → database;
+    - `cache-aside` — server: спрашивает cache, при miss читает database сам
+      (связь server → database несёт запись и промахи) и кладёт ответ в cache
+      (связь server → cache несёт чтение и заполнение). Связь cache →
+      database доска не даёт провести, а уже проведённая пустует.
+
+    `reset()` возвращает `read-through`. */
+export const setCacheMode = (mode: CacheMode): BoardOp =>
+  BoardOp.SetCacheMode({ mode })

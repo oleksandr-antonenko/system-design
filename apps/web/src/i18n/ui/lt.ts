@@ -110,11 +110,19 @@ export const lt = {
     rejecting: rps => `atmesta ${n(rps)}/s`,
     zoneDown: region => `${regionName[region]} · regionas neveikia`,
     edgeFlow: rps => `${n(rps)} rps`,
+    cacheModeHint: {
+      'read-through': 'per miss cache pats skaito database',
+      'cache-aside':
+        'per miss „Server“ pats skaito database ir įdeda atsakymą į cache',
+    },
+    idleCacheEdge:
+      'ryšys nenaudojamas: taikant cache-aside, database skaito „Server“',
     flowName: {
       requests: 'užklausos',
       reads: 'skaitymas',
       writes: 'rašymas',
       misses: 'miss',
+      fills: 'pildymas',
       jobs: 'užduotys',
       events: 'įvykiai',
     },
@@ -269,10 +277,14 @@ export const lt = {
       `Ryšių nuo „${componentName[from]}“ iki blokų „${componentName[to]}“: ${n(have)} iš ${n(need)}. Nutieskite trūkstamus.`,
     GoalDirectPath: ({ from, via, targets }) =>
       `„${componentName[from]}“ kreipiasi į ${targets.join(', ')} tiesiogiai, aplenkdami bloką „${componentName[via]}“. Spustelėkite paryškintą ryšį ir ištrinkite jį.`,
+    GoalUnwantedLink: ({ from, to, edges }) =>
+      `Ryšys „${componentName[from]}“ → „${componentName[to]}“ čia nereikalingas (${edges.join(', ')}). Spustelėkite paryškintą ryšį ir ištrinkite jį.`,
     GoalNotConnected: ({ from, via }) =>
       `Nėra ryšio nuo „${componentName[from]}“ iki bloko „${componentName[via]}“: užklausoms nėra kur eiti.`,
     GoalTooManyErrors: ({ load, errorRate, overloaded }) =>
       `Esant ${n(load)} rps prarandama ${percent(errorRate)} užklausų. Užklausas praranda: ${overloaded.join(', ')}.`,
+    ConnectCacheAside: () =>
+      'Taikant cache-aside, cache pats į database nesikreipia: per miss ją skaito „Server“ ir įdeda atsakymą į cache. Prie „Database“ junkite bloką „Server“.',
     ConnectFromSink: ({ from }) =>
       `Bloke „${componentName[from]}“ užklausos kelias baigiasi: toliau jis nieko neperduoda.`,
     ConnectNotAllowed: ({ from, to, allowed }) =>

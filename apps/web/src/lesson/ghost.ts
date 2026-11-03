@@ -23,6 +23,7 @@ const addedNodes = (solution: ReadonlyArray<BoardOp>) =>
         SetShare: () => Option.none(),
         Reset: () => Option.none(),
         SetTraffic: () => Option.none(),
+        SetCacheMode: () => Option.none(),
       }),
     ),
   )

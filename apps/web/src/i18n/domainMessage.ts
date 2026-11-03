@@ -19,6 +19,8 @@ export const DomainMessage = defineTaggedUnion({
   ConnectBalancerToDatabase: {},
   ConnectWrongDirection: {},
   ConnectFromSink: { from: ComponentKind },
+  /** Cache-aside: базу при промахе читает сервер, связи кеш → база нет. */
+  ConnectCacheAside: {},
   ConnectNotAllowed: {
     from: ComponentKind,
     to: ComponentKind,
@@ -45,6 +47,11 @@ export const DomainMessage = defineTaggedUnion({
     targets: Schema.Array(Schema.String),
   },
   GoalNotConnected: { from: ComponentKind, via: ComponentKind },
+  GoalUnwantedLink: {
+    from: ComponentKind,
+    to: ComponentKind,
+    edges: Schema.Array(Schema.String),
+  },
   GoalTooManyErrors: {
     load: Schema.Number,
     errorRate: Schema.Number,
@@ -120,6 +127,7 @@ export const renderDomainMessage = (
       texts.ConnectBalancerToDatabase(params),
     ConnectWrongDirection: params => texts.ConnectWrongDirection(params),
     ConnectFromSink: params => texts.ConnectFromSink(params),
+    ConnectCacheAside: params => texts.ConnectCacheAside(params),
     ConnectNotAllowed: params => texts.ConnectNotAllowed(params),
     NodeIsPartOfTask: params => texts.NodeIsPartOfTask(params),
     UnknownNode: params => texts.UnknownNode(params),
@@ -133,6 +141,7 @@ export const renderDomainMessage = (
     GoalTooFewTargets: params => texts.GoalTooFewTargets(params),
     GoalDirectPath: params => texts.GoalDirectPath(params),
     GoalNotConnected: params => texts.GoalNotConnected(params),
+    GoalUnwantedLink: params => texts.GoalUnwantedLink(params),
     GoalTooManyErrors: params => texts.GoalTooManyErrors(params),
     GoalSlowResponse: params => texts.GoalSlowResponse(params),
     GoalOverUtilized: params => texts.GoalOverUtilized(params),

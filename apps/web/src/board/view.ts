@@ -8,6 +8,7 @@ import {
   BoardOp,
   applyOp,
   edgeKey,
+  isIdleCacheEdge,
   isRegionDown,
 } from '../domain/board'
 import {
@@ -183,6 +184,40 @@ const utilizationClass = (utilization: number, isDown: boolean): string =>
       ? 'util warn'
       : 'util'
 
+const MODE_CHAR_PX = 5.5
+
+/** Режим кеша на блоке: английское имя паттерна в углу, по-родному —
+    во всплывающей подсказке. */
+const cacheModeTag = (
+  doc: BoardDoc,
+  ui: UiStrings,
+  h: HtmlBuilder<Message>,
+): Html => {
+  const width = doc.cacheMode.length * MODE_CHAR_PX + 12
+  return h.g(
+    [
+      h.Class(`cache-mode ${doc.cacheMode}`),
+      h.DataAttribute('cache-mode', doc.cacheMode),
+      h.Transform(`translate(${NODE_WIDTH - width - 8},-7)`),
+    ],
+    [
+      h.title(
+        [],
+        [`${doc.cacheMode}: ${ui.board.cacheModeHint[doc.cacheMode]}`],
+      ),
+      h.rect([h.Width(`${width}`), h.Height('14'), h.Attribute('rx', '7')]),
+      h.text(
+        [
+          h.Attribute('x', `${width / 2}`),
+          h.Attribute('y', '10'),
+          h.TextAnchor('middle'),
+        ],
+        [doc.cacheMode],
+      ),
+    ],
+  )
+}
+
 const nodeView = (
   node: BoardNode,
   inputs: BoardViewInputs,
@@ -260,7 +295,11 @@ const nodeView = (
           ]
         : [h.Role('img')]),
       h.AriaLabel(`${componentName[node.kind]} ${node.id}, ${subText}`),
-      h.AriaDescription(ui.kindHint[node.kind]),
+      h.AriaDescription(
+        node.kind === 'cache'
+          ? `${ui.kindHint[node.kind]}. ${inputs.doc.cacheMode}: ${ui.board.cacheModeHint[inputs.doc.cacheMode]}`
+          : ui.kindHint[node.kind],
+      ),
     ],
     [
       h.rect([
@@ -311,6 +350,7 @@ const nodeView = (
             ]),
           ]
         : []),
+      ...(node.kind === 'cache' ? [cacheModeTag(inputs.doc, ui, h)] : []),
       ...(isDown
         ? [
             h.path([
@@ -486,6 +526,7 @@ const edgeView = (
   )
   const isFocused =
     Array.contains(inputs.focusEdges, key) || Array.contains(removeEdges, key)
+  const isIdle = isIdleCacheEdge(inputs.doc, { from: from.id, to: to.id })
   const flow = inputs.flows.edgeFlow[key] ?? 0
   const label =
     model.gesture._tag !== 'Idle' ||
@@ -502,16 +543,21 @@ const edgeView = (
         )
 
   return [
-    h.keyed('path')(`edge-${key}`, [
-      h.Class(
-        `board-edge${isSelected ? ' selected' : ''}${isFocused ? ' focus' : ''}`,
-      ),
-      h.Attribute('d', path),
-      h.Attribute(
-        'marker-end',
-        `url(#${isSelected ? 'arrow-accent' : 'arrow'})`,
-      ),
-    ]),
+    h.keyed('path')(
+      `edge-${key}`,
+      [
+        h.Class(
+          `board-edge${isSelected ? ' selected' : ''}${isFocused ? ' focus' : ''}${isIdle ? ' idle' : ''}`,
+        ),
+        h.Attribute('d', path),
+        ...(isIdle ? [h.DataAttribute('idle', 'true')] : []),
+        h.Attribute(
+          'marker-end',
+          `url(#${isSelected ? 'arrow-accent' : 'arrow'})`,
+        ),
+      ],
+      isIdle ? [h.title([], [uiFor(inputs.locale).board.idleCacheEdge])] : [],
+    ),
     ...(inputs.mode === 'Edit'
       ? [
           h.keyed('path')(`hit-${key}`, [
@@ -842,6 +888,7 @@ export const flowColors = (
         reads: '#6f9ef2',
         writes: '#b28cf0',
         misses: '#ec7ab8',
+        fills: '#5fb8dc',
         jobs: '#3ec1c7',
         events: '#a8bb4c',
       }
@@ -850,6 +897,7 @@ export const flowColors = (
         reads: '#2f6fd1',
         writes: '#8650cc',
         misses: '#c0478f',
+        fills: '#2a8fb8',
         jobs: '#0f8a94',
         events: '#6b7d1c',
       }

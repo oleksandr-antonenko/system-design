@@ -10,7 +10,7 @@ import {
   shareOf,
   targetsOf,
 } from './board'
-import { type ComponentKind, catalog } from './catalog'
+import { type ComponentKind, cacheStoreKinds, catalog } from './catalog'
 import { type TrafficProfile, defaultTraffic, readShareOf } from './traffic'
 
 export type NodeFlow = Readonly<{
@@ -24,12 +24,14 @@ export type NodeFlow = Readonly<{
 }>
 
 /** Что течёт по связи: запросы пользователей, чтение, запись, промахи кеша,
-    задачи очереди или события шины (add-flow-labels-and-cache-modes). */
+    заполнение кеша сервером (cache-aside), задачи очереди или события шины
+    (add-flow-labels-and-cache-modes). */
 export type FlowKind =
   | 'requests'
   | 'reads'
   | 'writes'
   | 'misses'
+  | 'fills'
   | 'jobs'
   | 'events'
 
@@ -38,6 +40,7 @@ export const flowKinds: ReadonlyArray<FlowKind> = [
   'reads',
   'writes',
   'misses',
+  'fills',
   'jobs',
   'events',
 ]
@@ -435,11 +438,34 @@ const storeBranches = (
       })),
   })
 
+const isCacheAside = (context: Context): boolean =>
+  context.doc.cacheMode === 'cache-aside'
+
 const cacheStores = (
   context: Context,
   cache: BoardNode,
 ): ReadonlyArray<BoardNode> =>
-  alive(context, ofKinds(targetNodes(context, cache), ['db', 'replica']))
+  alive(context, ofKinds(targetNodes(context, cache), cacheStoreKinds))
+
+/** Промахи одного кеша: в read-through их читает кеш из своих хранилищ, в
+    cache-aside — сервер из своих, после похода в кеш. */
+const missBranches = (
+  context: Context,
+  server: BoardNode,
+  cache: BoardNode,
+  weight: number,
+  readTargets: ReadonlyArray<BoardNode>,
+  toCache: number,
+): ReadonlyArray<Branch> =>
+  isCacheAside(context)
+    ? Array.map(
+        storeBranches(server, weight, readTargets, toCache),
+        branch => ({
+          ...branch,
+          fixedMs: branch.fixedMs + simulationRules.cacheHitMs,
+        }),
+      )
+    : storeBranches(cache, weight, cacheStores(context, cache), toCache)
 
 const readBranches = (
   context: Context,
@@ -462,10 +488,12 @@ const readBranches = (
             maybeStore: Option.none(),
             crossings: toCache,
           },
-          ...storeBranches(
+          ...missBranches(
+            context,
+            server,
             cache,
             weight * (1 - hitShare),
-            cacheStores(context, cache),
+            readTargets,
             toCache,
           ),
         ]
@@ -503,8 +531,22 @@ const handleServer: Handler = (context, node, arrival) => {
   const deferred = served * traffic.deferredShare
   const reads = served - writes - deferred
   const syncWrites = canDefer ? writes : writes + deferred
+  // Cache-aside: промахи сервер читает из баз и реплик сам и кладёт ответ
+  // в кеш — заполнение не пользовательский запрос.
+  const asideMisses =
+    isCacheAside(context) && Array.isReadonlyArrayNonEmpty(caches)
+      ? reads * (1 - traffic.cacheHitShare)
+      : 0
   const readSends = Array.isReadonlyArrayNonEmpty(caches)
-    ? spread(reads, caches, true, 'reads')
+    ? [
+        ...spread(reads, caches, true, 'reads'),
+        ...(asideMisses > 0
+          ? [
+              ...spread(asideMisses, readTargets, true, 'misses'),
+              ...spread(asideMisses, caches, false, 'fills'),
+            ]
+          : []),
+      ]
     : spread(reads, readTargets, true, 'reads')
   const taskSends = Array.map(handoffs, (target): Send => ({
     to: target.id,
@@ -550,6 +592,9 @@ const handleServer: Handler = (context, node, arrival) => {
 
 const handleCache: Handler = (context, node, arrival) => {
   const accepted = Math.min(arrival.total, capacityOf(node))
+  if (isCacheAside(context)) {
+    return handled({ served: accepted, dropped: arrival.total - accepted })
+  }
   const misses = accepted * (1 - context.doc.traffic.cacheHitShare)
   const stores = cacheStores(context, node)
   return Array.isReadonlyArrayNonEmpty(stores)

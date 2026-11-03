@@ -43,6 +43,7 @@
   --flow-reads: #2f6fd1;
   --flow-writes: #8650cc;
   --flow-misses: #c0478f;
+  --flow-fills: #2a8fb8;
   --flow-jobs: #0f8a94;
   --flow-events: #6b7d1c;
   color-scheme: light;
@@ -77,6 +78,7 @@
     --flow-reads: #6f9ef2;
     --flow-writes: #b28cf0;
     --flow-misses: #ec7ab8;
+    --flow-fills: #5fb8dc;
     --flow-jobs: #3ec1c7;
     --flow-events: #a8bb4c;
     color-scheme: dark;
@@ -995,6 +997,25 @@ h3 {
   stroke: var(--accent);
   stroke-width: 2.6;
 }
+.board-svg .board-edge.idle {
+  stroke-dasharray: 3 5;
+  stroke-opacity: 0.6;
+}
+.board-svg .cache-mode rect {
+  fill: var(--page);
+  stroke: var(--flow-misses);
+  stroke-width: 1;
+}
+.board-svg .cache-mode text {
+  font: 600 9px var(--font-ui);
+  fill: var(--flow-misses);
+}
+.board-svg .cache-mode.cache-aside rect {
+  stroke: var(--flow-fills);
+}
+.board-svg .cache-mode.cache-aside text {
+  fill: var(--flow-fills);
+}
 .board-svg .board-edge.focus {
   stroke: var(--bad);
   stroke-width: 2.4;
@@ -1047,6 +1068,9 @@ h3 {
 }
 .flow-misses {
   --flow: var(--flow-misses);
+}
+.flow-fills {
+  --flow: var(--flow-fills);
 }
 .flow-jobs {
   --flow: var(--flow-jobs);

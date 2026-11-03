@@ -17,6 +17,8 @@ export const Goal = defineTaggedUnion({
   HasKind: { kind: ComponentKind },
   FansOut: { from: ComponentKind, to: ComponentKind, min: Schema.Number },
   OnlyThrough: { from: ComponentKind, to: ComponentKind, via: ComponentKind },
+  /** На доске нет ни одной связи от блока вида `from` к блоку вида `to`. */
+  NoLink: { from: ComponentKind, to: ComponentKind },
   MaxErrorRate: { max: Schema.Number, load: Schema.Number },
   MaxP95: { max: Schema.Number, load: Schema.Number },
   /** Загрузка блоков вида не выше `max`; с `nodes` — только перечисленных. */
@@ -95,6 +97,7 @@ export const isHiddenGoal = (goal: Goal): boolean =>
     HasKind: () => false,
     FansOut: () => false,
     OnlyThrough: () => false,
+    NoLink: () => false,
     MaxCost: () => false,
     MaxErrorRate: () => true,
     MaxP95: () => true,
@@ -219,6 +222,22 @@ export const checkGoal = (doc: BoardDoc, goal: Goal): GoalCheck =>
             focusNodes: Array.map(unconnected, node => node.id),
           })
         : met
+    },
+
+    NoLink: ({ from, to }) => {
+      const unwanted = Array.flatMap(nodesOfKind(doc, from), source =>
+        Array.map(targetsOfKind(doc, source.id, to), target =>
+          edgeKey({ from: source.id, to: target }),
+        ),
+      )
+      return Array.isReadonlyArrayEmpty(unwanted)
+        ? met
+        : failed(
+            DomainMessage.GoalUnwantedLink({ from, to, edges: unwanted }),
+            {
+              focusEdges: unwanted,
+            },
+          )
     },
 
     MaxErrorRate: ({ max, load }) => {

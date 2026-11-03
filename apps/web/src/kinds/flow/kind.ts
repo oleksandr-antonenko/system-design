@@ -140,6 +140,7 @@ const opText = (op: BoardOp): string =>
       `SetTraffic ${Object.entries(traffic)
         .map(([knob, value]) => `${knob} ${value}`)
         .join(' · ')}`,
+    SetCacheMode: ({ mode }) => `SetCacheMode ${mode}`,
   })
 
 const targetText = (target: Target): string =>
