@@ -41,7 +41,9 @@ The browser warns you about it: left of the address it says “Not secure”.`,
       title: 'HTTPS is a sealed envelope',
       body: `Now let’s sign in to the [[shop|shop website]]: https://shop.example/login. Press “Run”. At the very start the phone and the site agree on a cipher — like a lock whose key only the two of them have. From then on everything inside travels sealed: along the way you can see where the envelope is going, but not what is inside.
 
-This is **HTTPS**: the same HTTP, only in a sealed envelope. It has its own port, 443, and instead of “Not secure” the address bar shows a padlock.`,
+This is **HTTPS**: the same HTTP, only in a sealed envelope. It has its own port, 443, and instead of “Not secure” the address bar shows a padlock.
+
+In earlier lessons https envelopes were drawn open. In reality they always travelled sealed; now the board shows it honestly.`,
     },
     passport: {
       title: 'A certificate is the site’s passport',

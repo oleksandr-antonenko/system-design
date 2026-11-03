@@ -236,7 +236,7 @@ export const scenarioLt: ScenarioStrings = {
     reusedWith: names =>
       `Toks pat slaptažodis: ${names}. Nutekės iš vienos svetainės – atrakins ir kitą.`,
     generatedNote:
-      'Naują slaptažodį sugeneravo seifas: 20 atsitiktinių simbolių. Įsiminti nereikia – seifas jį įrašys pats.',
+      'Naują slaptažodį sugeneravo seifas: 20 atsitiktinių simbolių. Lentoje jis iš karto pakeistas ir svetainėje; iš tikrųjų jį įklijuoja į pačios svetainės formą „Keisti slaptažodį“. Įsiminti nereikia – seifas jį įrašys pats.',
     ownNote:
       'Slaptažodis sugalvotas rankomis. Seifas gali pakeisti jį ilgu atsitiktiniu.',
     generate: 'Pakeisti sugeneruotu',

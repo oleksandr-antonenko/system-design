@@ -40,7 +40,9 @@ Naršyklė apie tai įspėja: kairėje nuo adreso ji rašo „Nesaugu“.`,
       title: 'HTTPS – užantspauduotas vokas',
       body: `Dabar prisijunkime prie [[shop|parduotuvės svetainės]]: https://shop.example/login. Paspauskite „Paleisti“. Pačioje pradžioje telefonas ir svetainė susitaria dėl šifro – tarsi dėl spynos, kurios raktą turi tik jie abu. Toliau visas turinys keliauja užantspauduotas: pakeliui matyti, kur vokas keliauja, bet ne kas viduje.
 
-Tai **HTTPS**: tas pats HTTP, tik užantspauduotame voke. Jis turi savo port, 443, o adreso juostoje vietoj „Nesaugu“ – spynelė.`,
+Tai **HTTPS**: tas pats HTTP, tik užantspauduotame voke. Jis turi savo port, 443, o adreso juostoje vietoj „Nesaugu“ – spynelė.
+
+Ankstesnėse pamokose https vokai buvo nupiešti atviri. Iš tikrųjų jie visada keliavo užantspauduoti, dabar lenta tai rodo sąžiningai.`,
     },
     passport: {
       title: 'Certificate – svetainės pasas',

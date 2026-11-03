@@ -37,7 +37,7 @@ Informacijos tarnybos iš 3 pamokos (DNS server) adresą sužino iš [[ns|DNS ti
     },
     ttl: {
       title: 'Informacijos tarnyba prisimena atsakymą',
-      body: `Nusiuntėte nuorodą [[friend|draugui]]. Paspauskite „Paleisti“: jo nešiojamasis kompiuteris klausia savo informacijos tarnybos, [[cf|1.1.1.1]]. Ji atsakymo nežino, klausia DNS tiekėjo ir įsimena atsakymą kartu su galiojimo laiku. Šis laikas vadinamas **TTL** (time to live, lietuviškai – „gyvavimo laikas“), jis nurodomas pačiame DNS record: laikino puslapio – 3600 sekundžių, tai yra valanda.
+      body: `Nusiuntėte nuorodą [[friend|draugui]]. Paspauskite „Paleisti“: jo nešiojamasis kompiuteris klausia savo informacijos tarnybos, [[cf|1.1.1.1]]. Ji atsakymo nežino, klausia DNS tiekėjo ir įsimena atsakymą kartu su galiojimo laiku. Šis laikas vadinamas **TTL** (time to live, lietuviškai – „gyvavimo laikas“), jis nurodomas pačiame DNS record: laikino puslapio – 3600 sekundžių, tai yra valanda. Tai kitas TTL, ne skaitiklis IP voke iš 8 pamokos: idėja ta pati („kiek dar gyventi“), bet čia tai sekundės informacijos tarnybos atmintyje.
 
 Kol laikas nesibaigė, informacijos tarnyba atsako iš atminties (DNS cache) ir DNS tiekėjo neklausia: taip greičiau. Kaip pienas šaldytuve: kol galiojimo laikas nepasibaigė, naujo neina pirkti. Draugo informacijos tarnybos kortelėje šalia atsakymo – laikmatis: liko 60 minučių.`,
       more: {
@@ -55,7 +55,9 @@ Kiti dažni DNS records: AAAA – IPv6 adresas, MX – kur pristatyti paštą, s
 
 Reikia trijų tipų DNS records. A ties @ – serverio adresas. CNAME ties www – „tas pats, kas myapp.example“: tada www.myapp.example visada veda ten pat, o persikeliant adresas keičiamas vienoje vietoje. TXT ties @ su tekstu myapp-verify=4f9c2a – jo prašo jūsų serverio skydelis, kad įsitikintų, jog domain jūsų.
 
-Tada patikrinkite vardą nešiojamojo kompiuterio terminale: dig myapp.example arba nslookup myapp.example. Abi komandos klausia informacijos tarnybos ir išspausdina jos atsakymą.`,
+Tada patikrinkite vardą nešiojamojo kompiuterio terminale: dig myapp.example arba nslookup myapp.example. Abi komandos klausia informacijos tarnybos ir išspausdina jos atsakymą.
+
+Lentoje supaprastinta: jūsų namų informacijos tarnyba atsakymo apie laikiną puslapį neįsiminė, todėl jūsų dig iš karto parodys naują adresą. Iš tikrųjų ji irgi galėtų prisiminti laikiną puslapį iki TTL pabaigos. Paklausti aplenkiant bet kokią atmintį galima paties DNS tiekėjo: dig @ns1.dns.example myapp.example.`,
     },
     'friend-sees-old': {
       title: 'Klausimas: kodėl draugas mato seną svetainę',
@@ -82,7 +84,7 @@ Toliau, 11 pamoka: svetainė atsidaro pagal vardą, bet naršyklė rašo „Nesa
       wrong: {
         friend:
           'Draugas perkrovė nešiojamąjį kompiuterį, savo atminties jis dabar neturi. Jis sąžiningai klausia informacijos tarnybos 1.1.1.1.',
-        dns: 'Tai jūsų tiekėjo informacijos tarnyba. Ji paklausė DNS tiekėjo po pakeitimo ir žino naują adresą. Bet draugas ja nesinaudoja.',
+        dns: 'Tai jūsų tiekėjo informacijos tarnyba. Draugas ja nesinaudoja: jo kompiuteris klausia 1.1.1.1, todėl ką ji beprisimintų, draugui ji neatsako.',
         ns: 'DNS tiekėjas jau turi naują DNS record: jūs jį išsaugojote, ir jūsų dig tai patvirtino.',
         vps: 'Serveris nieko nežino apie vardus. Jis laukia vokų savo adresu, o draugo vokai iki jo tiesiog nenueina.',
       },

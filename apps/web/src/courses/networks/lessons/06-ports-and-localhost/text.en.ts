@@ -49,7 +49,7 @@ Well-known flat numbers: 80 — websites without encryption (http), 443 — webs
 
 Envelopes come in two kinds. TCP is an envelope with a delivery receipt: the recipient confirms that everything arrived. UDP is a postcard with no receipt: sent and not waited for. Websites use TCP; questions to the directory usually go over UDP.
 
-If the phone still cannot open the site although the server runs with --host, the laptop’s firewall may be holding the door. That is lesson 12.
+If the phone still cannot open the site although the server runs with --host, the laptop’s firewall may be holding the door: it decides which guests may reach the laptop’s ports.
 
 The /24 after the address in the ip a output is the size of the home network. That is lesson 8.`,
       },

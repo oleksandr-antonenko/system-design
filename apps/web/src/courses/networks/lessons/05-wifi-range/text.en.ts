@@ -110,7 +110,7 @@ Next, lesson 6, “Ports and localhost. Flats in one building”. We will start 
         'In the “Wi-Fi” tab choose “2.4 and 5 GHz” and press “Save”. Do not change the SSID or the password.',
       ],
       solvedNote:
-        '2.4 GHz now reaches the kitchen: the phone and the bulb are online. The laptop in the living room stayed on the fast 5 GHz.',
+        '2.4 GHz now reaches the kitchen: the phone and the bulb are online. If you left 5 GHz on, the laptop in the living room stayed on the fast 5 GHz; if you turned it off, the laptop moved to the slow 2.4 too.',
     },
   },
   feedback: {

@@ -33,7 +33,7 @@ export default {
     },
     'place:cloud': {
       name: 'Personal cloud folder',
-      note: 'The file is encrypted; the cloud only keeps a copy of it.',
+      note: 'A separate copy of the file, not syncing. The file is encrypted.',
     },
     'kp:bank': { name: 'Personal bank', note: 'bank.example · marina.k' },
     'kp:router': { name: 'Home Wi-Fi', note: 'router · admin' },
@@ -64,7 +64,7 @@ Write the phrase on paper and keep it at home, not on your desk. That is not a s
 
 **KeePass** suits personal passwords and places that do not trust the cloud. There are versions for every system, for example KeePassXC for computers and KeePassDX for Android. They all open the same database file.
 
-**Syncing.** You can put the file into a cloud folder: it is encrypted, and without the master phrase the cloud only sees a pile of bytes. That way the database is on both your phone and your laptop. But a cloud folder is not a backup: if the file gets damaged, the damaged file spreads everywhere.
+**Syncing.** You can put the file into a cloud folder: it is encrypted, and without the master phrase the cloud only sees a pile of bytes. That way the database is on both your phone and your laptop. But syncing itself is not a backup: if the file gets damaged, the damaged file spreads everywhere.
 
 **The phrase in this lesson** is only an example. Do not take it: make up your own.`,
       },
@@ -73,7 +73,7 @@ Write the phrase on paper and keep it at home, not on your desk. That is not a s
       title: 'A backup in another place',
       body: `If the laptop breaks, gets stolen or the file is deleted by accident, all the passwords go with it. That is why the database file needs a **backup**: one more copy of the file on another device.
 
-A copy in the next folder of the same laptop will not help: if the laptop breaks, both are gone. You need a separate device: a [[usb|USB stick]] in the [[cupboard|cupboard]] or your own cloud folder.
+A copy in the next folder of the same laptop will not help: if the laptop breaks, both are gone. You need a separate device: a [[usb|USB stick]] in the [[cupboard|cupboard]] or a copy of the file put separately into your own cloud. A copy, not the file that syncs with your phone.
 
 And the backup gets updated: added new passwords to the database — save the copy again, or they will not be in it.`,
     },

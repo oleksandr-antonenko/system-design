@@ -4,7 +4,7 @@ import type lesson from './lesson'
 export default {
   title: 'DNS. Svetainės vardas ir adresas',
   summary:
-    'DNS paverčia svetainės vardą adresu, kaip kontaktai telefone. Sutaisykite svetainę, kuri „neatsidaro“.',
+    'DNS paverčia svetainės vardą adresu. Sutaisykite svetainę, kuri „neatsidaro“.',
   preview: {
     alt: 'Schema: kompiuteris pirmiausia klausia DNS server, pagal svetainės vardą gauna jos IP address ir tik tada eina į svetainės server.',
   },
@@ -27,13 +27,15 @@ export default {
       title: 'Vardas ir numeris',
       body: `Naršyklėje rašote shop.example, o ne 198.51.100.10. Žmonėms patogūs vardai. O tinklui reikia numerio: voko laukelyje „kam“ turi būti adresas. Paspauskite „Paleisti“ ir pažiūrėkite į voką [[shop|parduotuvės svetainei]].
 
-Taip pat veikia ir jūsų telefonas. Skambinate „Mamai“, o ne renkate numerį: telefonas pats randa numerį kontaktuose. Svetainių tokie „kontaktai“ vadinami **DNS** (lietuviškai – vardų sistema): pagal svetainės vardą DNS randa jos adresą.`,
+Taip pat veikia ir jūsų telefonas. Skambinate „Mamai“, o ne renkate numerį: telefonas pats randa numerį kontaktuose. Svetainėms yra panaši sistema – **DNS** (lietuviškai – vardų sistema): pagal svetainės vardą DNS randa jos adresą.`,
     },
     'ask-first': {
       title: 'Pirmiausia – klausimas informacijos tarnybai',
       body: `Iš kur telefonas gavo svetainės numerį? Prieš voką svetainei buvo dar vienas, ir jo kol kas nerodėme. Telefonas pirmą kartą atidaro shop.example, ir jo kontaktuose tuščia. Todėl pirmasis vokas keliauja į [[dns|informacijos tarnybą]] – tai **DNS server** (lietuviškai – vardų serveris). Jame klausimas: „Koks shop.example adresas?“
 
-Informacijos tarnyba atsako: „198.51.100.10“. Telefonas įrašo atsakymą į savo [[phone|kontaktus]] (tai DNS cache) ir tik tada rašo [[shop|svetainei]]. Kitą kartą klausti nereikės: numeris jau įrašytas. Paspauskite „Paleisti“.`,
+Informacijos tarnyba atsako: „198.51.100.10“. Telefonas įrašo atsakymą į savo [[phone|kontaktus]] (tai DNS cache) ir tik tada rašo [[shop|svetainei]]. Kitą kartą klausti nereikės: numeris jau įrašytas. Paspauskite „Paleisti“.
+
+Mūsų namuose router praneša telefonui tiekėjo informacijos tarnybos adresą, ir telefonas rašo jai tiesiogiai. Daugelyje tikrų router DNS eilutėje nurodytas pats router, 192.168.1.1: jis priima klausimą ir persiunčia jį informacijos tarnybai.`,
       more: {
         title: 'Plačiau: kodėl antrą kartą greičiau',
         body: `Telefonas kurį laiką prisimena informacijos tarnybos atsakymus, todėl antrą kartą svetainė atsidaro šiek tiek greičiau: klausti nereikia. Bet prisimena ne amžinai. Kiekvienas atsakymas turi galiojimo laiką, po jo telefonas paklaus vėl. Jei svetainė persikėlė į naują adresą, senas atsakymas dar kurį laiką gali trukdyti.
@@ -57,7 +59,7 @@ Išsiaiškinkite, ko telefonas klausia adresų. Atidarykite telefono Wi-Fi nusta
       title: 'Santrauka',
       body: `Matėte, kaip vardas virsta adresu.
 
-- Žmonėms patogūs vardai, tinklams reikia adresų. **DNS** paverčia svetainės vardą adresu, kaip kontaktai telefone paverčia „Mamą“ numeriu.
+- Žmonėms patogūs vardai, tinklams reikia adresų. **DNS** – sistema, kuri svetainės vardą paverčia adresu.
 - Jei adreso kontaktuose (DNS cache) nėra, telefonas klausia informacijos tarnybos – tai DNS server – ir įsimena atsakymą.
 - Informacijos tarnybos adresą telefonui praneša router. Jei telefonui nėra ko paklausti, naršyklė rašo ERR_NAME_NOT_RESOLVED.
 
@@ -74,7 +76,7 @@ Toliau, 4 pamoka „Ping ir hops. Voko kelias per routers grandinę“. Sužinos
         'Kam telefonas išsiųs patį pirmą voką, kai pirmą kartą atidaro parduotuvės svetainę?',
       wrong: {
         router:
-          'Per router vokas praeis: tai jūsų namų pašto skyrius. Bet pirmojo voko laukelyje „kam“ – informacijos tarnyba.',
+          'Per router vokas praeis: tai jūsų namų pašto skyrius. Bet pirmojo voko laukelyje „kam“ – informacijos tarnyba: mūsų router tik pranešė telefonui jos adresą. Daugelyje tikrų router adresatas būtų pats router, ir jis persiųstų klausimą toliau.',
         shop: 'Parduotuvės adreso telefonas dar nežino: laukelyje „kam“ nėra ką parašyti. Pirmiausia reikia paklausti informacijos tarnybos.',
       },
       tags: {

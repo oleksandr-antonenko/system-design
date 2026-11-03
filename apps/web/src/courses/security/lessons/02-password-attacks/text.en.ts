@@ -134,9 +134,9 @@ And if the leak has your email together with the password, there is nothing to g
     },
     personal: {
       title: 'What the internet knows about you',
-      body: `When the target is a particular person, the program adds to its list what is easy to learn about them: first and last name, date of birth, the names of their children and cat, their favourite team, the company name.
+      body: `When the target is a particular person, the program adds to its list what is easy to learn about them: first and last name, date of birth, the names of their children and cat, their favourite team.
 
-We post almost all of it on [[feed|social media]] ourselves: a cake with candles, a cat on the sofa, “Happy birthday, Barsik!”. That is why marina1987, Barsik2015 and Romashka2024! fall quickly, even if they are in no leak.
+We post almost all of it on [[feed|social media]] ourselves: a cake with candles, a cat on the sofa, “Happy birthday, Barsik!”. That is why marina1987 and Barsik2015 fall quickly, even if they are in no leak.
 
 Birthdays, the names of family and pets, a car number plate don’t make passwords. They stopped being secret when they reached the feed.`,
     },
@@ -249,7 +249,7 @@ For each password, decide how it will be guessed: **falls at once** (it is in th
           'Complexity doesn’t matter here: the password isn’t guessed, it already sits in the leaked database as it is. The program simply tries it on other sites.',
       },
       explain:
-        'The program tries an “email + password” pair from a leak on email, banks, social media — everywhere. That is credential stuffing. Oleg’s work email is at risk because the password is the same. Only a different password saves the CRM.',
+        'The program tries an “email + password” pair from a leak on email, banks, social media — everywhere. That is credential stuffing. Oleg’s work email is at risk because the password is the same. The same password won’t open the CRM right now, but through the captured mailbox its password can be reset too. That is why the mailbox is protected first.',
     },
   },
   tasks: {

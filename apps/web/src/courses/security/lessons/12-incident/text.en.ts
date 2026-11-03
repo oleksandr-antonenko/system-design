@@ -19,7 +19,7 @@ export default {
     },
     'reply:ira:report': {
       name: 'Ira, I pressed the button in the “Your password expires” email and typed my email password there. What do I do?',
-      note: 'Thanks for telling me right away! Here’s the plan: 1) change your email password in the password manager; 2) in your mail, press “Details” at the bottom and sign out on all other devices; 3) forward me that email and don’t delete it. I’ll take care of the rest.',
+      note: 'Thanks for telling me right away! Here’s the plan: 1) change your email password in the mail itself, and let the password manager make up and save the new one; 2) in your mail, press “Details” at the bottom and sign out on all other devices; 3) forward me that email and don’t delete it. I’ll take care of the rest.',
     },
     'chat:marina': { name: 'Marina', note: 'office manager' },
     'chat:marina:body': {
@@ -72,16 +72,18 @@ Anyone can slip up, even a careful and experienced person. Such an event is an *
       title: 'Tell IT right away',
       body: `First of all, tell IT. Right away, even if it’s awkward and even if “nothing seems to have happened”.
 
-Ira doesn’t scold: she’s glad she heard first. She has a few minutes before the fraudster uses the password, and every minute counts.`,
+Ira doesn’t scold: she’s glad she heard first. The fraudster may already be in with that password, and every minute counts: the sooner the door is shut, the less he can do.`,
     },
     'close-door': {
       title: 'The first 15 minutes',
-      body: `Then Ira and Oleg shut the door before Stripes gets in:
+      body: `The mail’s session list shows a stranger’s sign-in at 9:14 am: Stripes is already in. Ira and Oleg throw him out and shut the door:
 
 - **tell IT**: already done;
-- **change the password** in the password manager: the old key stops fitting;
+- **change the password** in the mail itself (the password manager makes up and saves the new one): the old key stops fitting;
 - **sign out on all devices**: whoever already got in with the old password is thrown out;
-- **don’t delete the email**, forward it to IT: it shows who else got it, and the address gets blocked.`,
+- **don’t delete the email**, forward it to IT: it shows who else got it, and the address gets blocked.
+
+Simplified on the board: “Replace with a generated one” in the vault changes the password in the mail at once. In real life the new password is set in the mail settings (“Change password”), and the vault only saves it. Then Ira checks what Stripes managed to do in the mailbox: forwarding rules, sent emails, the recovery address. And if the same password was used anywhere else, it is changed there too.`,
       more: {
         title: 'More: what else counts as an incident',
         body: `**Not just a password.** An incident is also an attachment opened from a suspicious email, a lost phone or laptop, a file sent to the wrong person, and a strange program that does things on its own.
@@ -90,7 +92,7 @@ Ira doesn’t scold: she’s glad she heard first. She has a few minutes before 
 
 **Why nobody is punished.** A company that scolds people for mistakes hears about incidents last, when it’s too late. That is why a good IT team thanks you for every report, even a false alarm.
 
-**If the account has 2FA**, the password alone is not enough for the fraudster: one more reason to turn it on everywhere.`,
+**If the account has 2FA**, the password alone is not enough for the fraudster, unless you also typed the code on the same page. If you did, tell IT that too. 2FA is still worth turning on everywhere.`,
       },
     },
     'bait-after': {
@@ -105,7 +107,7 @@ Write to Ira about what happened and work through her list: change the email pas
     },
     summary: {
       title: 'Summary',
-      body: `Oleg slipped up but didn’t keep quiet, and Stripes stayed outside the door.
+      body: `Oleg slipped up but didn’t keep quiet, and Stripes was quickly thrown out of the mailbox.
 
 - An **incident** is no reason to hide: the danger is not the slip but the silence.
 - The first 15 minutes: tell IT, change the password, sign out on all devices.
@@ -158,7 +160,7 @@ Write to Ira about what happened and work through her list: change the email pas
   tasks: {
     'first-15': {
       prompt:
-        'Don’t keep quiet: tell IT and shut the door before the fraudster gets in.',
+        'Don’t keep quiet: tell IT, throw the fraudster out of the mailbox and shut the door.',
       goals: {
         told: 'Ira knows what happened',
         password: 'The email password is replaced',
@@ -167,7 +169,7 @@ Write to Ira about what happened and work through her list: change the email pas
       },
       hints: [
         'Start with the messenger: write to Ira about what happened. She’ll reply with what to do next.',
-        'The password is changed in the password manager: the “Work email” item → “Replace with a generated one”. Other sessions are at the bottom of the mail, under “Details”. Don’t delete the bait.',
+        'The password manager makes up the new password, and on the board it sets it in the mail at once: the “Work email” item → “Replace with a generated one”. Other sessions are at the bottom of the mail, under “Details”. Don’t delete the bait.',
         'Messenger: reply to Ira. Vault: “Work email” → “Replace with a generated one”. Mail: “Details” at the bottom → “Sign out on all other devices”, then the “Your password expires today” email → “Forward to IT”. The place to press is outlined with a dashed line.',
       ],
       solvedNote:

@@ -32,7 +32,7 @@ Paspauskite „Paleisti“: draugas siunčia voką adresu 192.168.1.42 – tai j
       title: 'Router užrašo savo atgalinį adresą',
       body: `Kaip tada nešiojamasis kompiuteris atidaro svetaines? Paspauskite „Paleisti“. Vokas keliauja į [[shop|parduotuvės svetainę]] su kompiuterio atgaliniu adresu 192.168.1.42. Išeinant [[router|router]] jį išbraukia ir užrašo savo: 203.0.113.7. Buto numerį jis taip pat pakeičia laisvu ir užsirašo lentelėje: „šis butas – nešiojamasis kompiuteris“. Svetainė atsako router adresu, o router pagal lentelę nuneša atsakymą kompiuteriui. Vokas sustos prie router ir internete: palyginkite atgalinį adresą prieš ir po.
 
-Tai ir yra **NAT** (lietuviškai – adresų transliavimas): paštas užrašo ant voko savo atgalinį adresą ir veda žurnalą, kas ką išsiuntė. Šis žurnalas – NAT table, jis atidarytas router kortelėje. Prisimenate 3 pamoką? Už router ant telefono voko jau buvo 203.0.113.7, o ne jo namų adresas. Štai kodėl.`,
+Tai ir yra **NAT** (lietuviškai – adresų transliavimas): paštas užrašo ant voko savo atgalinį adresą ir veda žurnalą, kas ką išsiuntė. Šis žurnalas – NAT table, jis atidarytas router kortelėje. Prisimenate 7 pamoką? Už router ant telefono voko jau buvo 203.0.113.7, o ne jo namų adresas. Štai kodėl.`,
     },
     'no-way-in': {
       title: 'Iš išorės be kvietimo neįeisi',

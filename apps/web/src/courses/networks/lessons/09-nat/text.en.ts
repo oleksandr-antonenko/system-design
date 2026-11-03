@@ -35,7 +35,7 @@ Press “Run”: your friend sends an envelope to 192.168.1.42, your laptop’s 
       title: 'The router puts on its own return address',
       body: `Then how does the laptop open websites? Press “Run”. The envelope goes to the [[shop|shop website]] with the laptop’s return address, 192.168.1.42. On the way out the [[router|router]] crosses it out and writes its own: 203.0.113.7. It also changes the flat number to a free one and writes it down in a table: “this flat is the laptop”. The website answers to the router’s address, and the router uses the table to take the answer to the laptop. The envelope will stop at the router and in the internet: compare the return address before and after.
 
-This is **NAT** (Network Address Translation): the post office puts its own return address on the envelope and keeps a log of who sent what. That log is the NAT table, open in the router’s card. Remember lesson 3? Past the router, the phone’s envelope already showed 203.0.113.7, not its home address. Now you know why.`,
+This is **NAT** (Network Address Translation): the post office puts its own return address on the envelope and keeps a log of who sent what. That log is the NAT table, open in the router’s card. Remember lesson 7? Past the router, the phone’s envelope already showed 203.0.113.7, not its home address. Now you know why.`,
     },
     'no-way-in': {
       title: 'No way in without an invitation',

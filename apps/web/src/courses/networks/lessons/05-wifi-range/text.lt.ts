@@ -113,7 +113,7 @@ Toliau, 6 pamoka „Port ir localhost. Butai viename name“. Paleisime nešioja
         'Kortelėje „Wi-Fi“ pasirinkite „2.4 ir 5 GHz“ ir paspauskite „Išsaugoti“. SSID ir slaptažodžio nekeiskite.',
       ],
       solvedNote:
-        'Dabar virtuvę pasiekia 2.4 GHz: telefonas ir lemputė tinkle. Kompiuteris kambaryje liko greitoje 5 GHz juostoje.',
+        'Dabar virtuvę pasiekia 2.4 GHz: telefonas ir lemputė tinkle. Jei 5 GHz neišjungėte, kompiuteris kambaryje liko greitoje 5 GHz juostoje; jei išjungėte – jis irgi perėjo į lėtą 2.4.',
     },
   },
   feedback: {

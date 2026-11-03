@@ -32,7 +32,7 @@ Router atsimena, kurie numeriai jau užimti, todėl tuose pačiuose namuose adre
         title: 'Plačiau: kodėl kaimynai turi tokius pat adresus',
         body: `Adresai, prasidedantys 192.168.…, – namų adresai. Tokie patys numeriai naudojami tūkstančiuose kitų butų: kaimynas irgi gali turėti savo 192.168.1.100. Vienas kitam jie netrukdo, nes namų adresas veikia tik savo namuose. Kaip namai su tokiais adresais išeina į internetą, aptarsime 9 pamokoje.
 
-Adresas gali pasikeisti. Router suteikia numerį laikinai ir pažįstamam įrenginiui paprastai duoda tą patį: nešiojamajam kompiuteriui jis saugo 192.168.1.42. Bet jei router perkrausite, numeris gali tapti kitu. Kaip visam laikui priskirti adresą įrenginiui, taip pat parodysime 9 pamokoje.
+Adresas gali pasikeisti. Router suteikia numerį laikinai: telefonui – laisvą nuo .100, ir perkrovus router numeris gali tapti kitu. O nešiojamajam kompiuteriui router priskyrė pastovų numerį 192.168.1.42, todėl jis ir nepanašus į kitus. Kaip priskirti adresą įrenginiui, parodysime 9 pamokoje.
 
 Adresų dalijimas tinkluose vadinamas **DHCP**. Kaip jis veikia žingsnis po žingsnio, aptarsime 7 pamokoje „TCP/IP. Vokas voke“.`,
       },
