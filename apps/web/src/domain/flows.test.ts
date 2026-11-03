@@ -194,6 +194,32 @@ describe('edge labels', () => {
     )
   })
 
+  test('a label steps aside from a label already placed on another edge', () => {
+    const { curve, blocks } = between(700)
+    const first = Option.getOrThrow(
+      edgeLabel(
+        [{ kind: 'reads', rps: 256 }],
+        256,
+        curve,
+        blocks,
+        'en',
+        uiFor('en'),
+      ),
+    )
+    const second = edgeLabel(
+      [{ kind: 'reads', rps: 256 }],
+      256,
+      curve,
+      blocks,
+      'en',
+      uiFor('en'),
+      [first],
+    )
+    expect(
+      Option.map(second, label => Math.abs(label.at.x - first.at.x) > 0),
+    ).toEqual(Option.some(true))
+  })
+
   test.each(locales)('%s names every kind of flow', locale => {
     const names = Object.values(uiFor(locale).board.flowName)
     expect(names.every(name => name.trim().length > 0)).toBe(true)

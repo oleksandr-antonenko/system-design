@@ -1692,14 +1692,19 @@ h3 {
 
   /* Доска: страница ровно в экран, колонкой: шкала шагов, доска
      (прокрутка внутри), задание шага и нижняя панель. */
+  /* Одна колонка не шире экрана: иначе неявная колонка грида растёт до
+     min-content ленты шагов, и длинный урок (11 шагов) сдвигает страницу
+     вбок. */
   .app-lesson:has(.lesson-page.shows-board) {
     height: 100dvh;
     display: grid;
     grid-template-rows: auto minmax(0, 1fr);
+    grid-template-columns: minmax(0, 1fr);
   }
   .lesson-page.shows-board {
     display: grid;
     grid-template-rows: auto minmax(0, 1fr);
+    grid-template-columns: minmax(0, 1fr);
     min-height: 0;
   }
   .shows-board .lesson-main {

@@ -206,7 +206,7 @@ const cacheModeTag = (
     [
       h.Class(`cache-mode ${doc.cacheMode}`),
       h.DataAttribute('cache-mode', doc.cacheMode),
-      h.Transform(`translate(${NODE_WIDTH - width - 8},-7)`),
+      h.Transform(`translate(${NODE_WIDTH - width - 8},${NODE_HEIGHT - 6})`),
     ],
     [
       h.title(
@@ -493,8 +493,17 @@ const overlaps = (center: Point, width: number, node: Point): boolean =>
   Math.abs(center.x - node.x) < width / 2 + NODE_WIDTH / 2 + 2 &&
   Math.abs(center.y - node.y) < LABEL_HEIGHT / 2 + NODE_HEIGHT / 2 + 2
 
+const crossesLabel = (
+  center: Point,
+  width: number,
+  other: EdgeLabel,
+): boolean =>
+  Math.abs(center.x - other.at.x) < (width + labelWidth(other.text)) / 2 + 2 &&
+  Math.abs(center.y - other.at.y) < LABEL_HEIGHT + 2
+
 /** Подпись связи: самый полный текст, который помещается на связи и не
-    ложится на блоки. Если не помещается даже число, подписи нет. */
+    ложится ни на блоки, ни на подписи, уже поставленные на других связях
+    (`taken`). Если не помещается даже число, подписи нет. */
 export const edgeLabel = (
   parts: ReadonlyArray<FlowPart>,
   flow: number,
@@ -502,6 +511,7 @@ export const edgeLabel = (
   blocks: ReadonlyArray<Point>,
   locale: Locale,
   ui: UiStrings,
+  taken: ReadonlyArray<EdgeLabel> = [],
 ): Option.Option<EdgeLabel> => {
   const length = curveLength(curve)
   if (flow < 1 || length < MIN_LABELLED_EDGE) {
@@ -514,8 +524,10 @@ export const edgeLabel = (
     Array.flatMap(text =>
       Array.map(LABEL_SPOTS, t => ({ text, at: pointOnCurve(curve, t) })),
     ),
-    Array.findFirst(({ text, at }) =>
-      blocks.every(block => !overlaps(at, labelWidth(text), block)),
+    Array.findFirst(
+      ({ text, at }) =>
+        blocks.every(block => !overlaps(at, labelWidth(text), block)) &&
+        taken.every(other => !crossesLabel(at, labelWidth(text), other)),
     ),
     Option.map(({ text, at }) => ({
       text,
@@ -525,12 +537,59 @@ export const edgeLabel = (
   )
 }
 
+const noLabels: Readonly<Record<string, EdgeLabel>> = {}
+
+/** Подписи всех связей доски по порядку связей: каждая следующая обходит
+    уже поставленные. Пока ученик тянет блок или связь, подписей нет. */
+const edgeLabels = (
+  inputs: BoardViewInputs,
+  model: Model,
+): Readonly<Record<string, EdgeLabel>> => {
+  if (model.gesture._tag !== 'Idle') {
+    return noLabels
+  }
+  const ui = uiFor(inputs.locale)
+  const nodeById = (id: string) =>
+    Array.findFirst(inputs.doc.nodes, node => node.id === id)
+  return Array.reduce(
+    inputs.doc.edges,
+    noLabels,
+    (placed, edge) => {
+      const key = edgeKey(edge)
+      const flow = inputs.flows.edgeFlow[key] ?? 0
+      return pipe(
+        Option.all([nodeById(edge.from), nodeById(edge.to)]),
+        Option.filter(
+          ([from, to]) =>
+            !isLoadHidden(inputs, from.id) && !isLoadHidden(inputs, to.id),
+        ),
+        Option.flatMap(([from, to]) =>
+          edgeLabel(
+            flowParts(inputs.sim.edgeKinds[key], flow),
+            flow,
+            curveBetween(inputs.doc.nodes, from, to),
+            inputs.doc.nodes,
+            inputs.locale,
+            ui,
+            Object.values(placed),
+          ),
+        ),
+        Option.match({
+          onNone: () => placed,
+          onSome: label => ({ ...placed, [key]: label }),
+        }),
+      )
+    },
+  )
+}
+
 const edgeView = (
   from: BoardNode,
   to: BoardNode,
   inputs: BoardViewInputs,
   model: Model,
   removeEdges: ReadonlyArray<string>,
+  labels: Readonly<Record<string, EdgeLabel>>,
   h: HtmlBuilder<Message>,
 ): ReadonlyArray<Html> => {
   const key = edgeKey({ from: from.id, to: to.id })
@@ -554,20 +613,7 @@ const edgeView = (
     Placing: () => false,
   })
   const ui = uiFor(inputs.locale)
-  const flow = inputs.flows.edgeFlow[key] ?? 0
-  const label =
-    model.gesture._tag !== 'Idle' ||
-    isLoadHidden(inputs, from.id) ||
-    isLoadHidden(inputs, to.id)
-      ? Option.none()
-      : edgeLabel(
-          flowParts(inputs.sim.edgeKinds[key], flow),
-          flow,
-          curve,
-          inputs.doc.nodes,
-          inputs.locale,
-          ui,
-        )
+  const label = Option.fromNullishOr(labels[key])
 
   return [
     h.keyed('path')(
@@ -1305,6 +1351,7 @@ export const view = Submodel.defineView<Model, Message, BoardViewInputs>(
     const doc = previewDoc(inputs.doc, model.gesture)
     const nodeById = (id: string) =>
       Array.findFirst(doc.nodes, node => node.id === id)
+    const labels = edgeLabels({ ...inputs, doc }, model)
     const removeEdges = Option.match(inputs.ghost, {
       onNone: () => [],
       onSome: plan => plan.removeEdges,
@@ -1411,6 +1458,7 @@ export const view = Submodel.defineView<Model, Message, BoardViewInputs>(
                               { ...inputs, doc },
                               model,
                               removeEdges,
+                              labels,
                               h,
                             ),
                         },
