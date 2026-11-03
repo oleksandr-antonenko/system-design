@@ -658,7 +658,9 @@ describe('quiz step', () => {
       expect(text(/Сколько запросов в секунду дойдёт до database/)).toExist(),
       expect(text('Сначала ответьте на вопрос')).toExist(),
       expect(role('button', { name: 'Далее →' })).toBeDisabled(),
-      expect(role('button', { name: /^Далее: Кто читает database при miss/ })).toBeDisabled(),
+      expect(
+        role('button', { name: /^Далее: Кто читает database при miss/ }),
+      ).toBeDisabled(),
       click(option(/^256 rps/)),
       expect(text('Не совсем')).toExist(),
       expect(text(/это только cache miss/)).toExist(),
@@ -666,7 +668,9 @@ describe('quiz step', () => {
       expect(option(/^576 rps/)).toHaveClass('right'),
       expect(option(/^256 rps/)).toBeDisabled(),
       expect(role('button', { name: 'Далее →' })).toBeEnabled(),
-      expect(role('button', { name: /^Далее: Кто читает database при miss/ })).toBeEnabled(),
+      expect(
+        role('button', { name: /^Далее: Кто читает database при miss/ }),
+      ).toBeEnabled(),
     )
   })
 

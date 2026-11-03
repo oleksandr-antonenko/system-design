@@ -551,36 +551,32 @@ const edgeLabels = (
   const ui = uiFor(inputs.locale)
   const nodeById = (id: string) =>
     Array.findFirst(inputs.doc.nodes, node => node.id === id)
-  return Array.reduce(
-    inputs.doc.edges,
-    noLabels,
-    (placed, edge) => {
-      const key = edgeKey(edge)
-      const flow = inputs.flows.edgeFlow[key] ?? 0
-      return pipe(
-        Option.all([nodeById(edge.from), nodeById(edge.to)]),
-        Option.filter(
-          ([from, to]) =>
-            !isLoadHidden(inputs, from.id) && !isLoadHidden(inputs, to.id),
+  return Array.reduce(inputs.doc.edges, noLabels, (placed, edge) => {
+    const key = edgeKey(edge)
+    const flow = inputs.flows.edgeFlow[key] ?? 0
+    return pipe(
+      Option.all([nodeById(edge.from), nodeById(edge.to)]),
+      Option.filter(
+        ([from, to]) =>
+          !isLoadHidden(inputs, from.id) && !isLoadHidden(inputs, to.id),
+      ),
+      Option.flatMap(([from, to]) =>
+        edgeLabel(
+          flowParts(inputs.sim.edgeKinds[key], flow),
+          flow,
+          curveBetween(inputs.doc.nodes, from, to),
+          inputs.doc.nodes,
+          inputs.locale,
+          ui,
+          Object.values(placed),
         ),
-        Option.flatMap(([from, to]) =>
-          edgeLabel(
-            flowParts(inputs.sim.edgeKinds[key], flow),
-            flow,
-            curveBetween(inputs.doc.nodes, from, to),
-            inputs.doc.nodes,
-            inputs.locale,
-            ui,
-            Object.values(placed),
-          ),
-        ),
-        Option.match({
-          onNone: () => placed,
-          onSome: label => ({ ...placed, [key]: label }),
-        }),
-      )
-    },
-  )
+      ),
+      Option.match({
+        onNone: () => placed,
+        onSome: label => ({ ...placed, [key]: label }),
+      }),
+    )
+  })
 }
 
 const edgeView = (
