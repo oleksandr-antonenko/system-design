@@ -37,6 +37,14 @@
   --bad-soft: #fbe6e4;
   --ok-soft: #e0f3e9;
   --on-warn: #1a1406;
+  /* Виды потока на связях: частицы, точка подписи и легенда. Те же значения —
+     в flowColors (board/view.ts), которым рисует canvas. */
+  --flow-requests: #148a55;
+  --flow-reads: #2f6fd1;
+  --flow-writes: #8650cc;
+  --flow-misses: #c0478f;
+  --flow-jobs: #0f8a94;
+  --flow-events: #6b7d1c;
   color-scheme: light;
 }
 
@@ -65,6 +73,12 @@
     --bad: #f2675c;
     --bad-soft: #3a1715;
     --ok-soft: #12301f;
+    --flow-requests: #3dc48b;
+    --flow-reads: #6f9ef2;
+    --flow-writes: #b28cf0;
+    --flow-misses: #ec7ab8;
+    --flow-jobs: #3ec1c7;
+    --flow-events: #a8bb4c;
     color-scheme: dark;
   }
 }
@@ -1022,6 +1036,27 @@ h3 {
   fill: var(--muted);
   font-variant-numeric: tabular-nums;
 }
+.flow-requests {
+  --flow: var(--flow-requests);
+}
+.flow-reads {
+  --flow: var(--flow-reads);
+}
+.flow-writes {
+  --flow: var(--flow-writes);
+}
+.flow-misses {
+  --flow: var(--flow-misses);
+}
+.flow-jobs {
+  --flow: var(--flow-jobs);
+}
+.flow-events {
+  --flow: var(--flow-events);
+}
+.board-svg .flow-dot {
+  fill: var(--flow);
+}
 .board-svg .annotation rect {
   fill: var(--ink);
 }
@@ -1235,6 +1270,9 @@ h3 {
 }
 .legend .dot.bad {
   background: var(--bad);
+}
+.legend .dot.flow {
+  background: var(--flow);
 }
 .journal {
   display: grid;

@@ -1,4 +1,4 @@
-import { Array, Option, Result, pipe } from 'effect'
+import { Array, Number, Option, Order, Result, pipe } from 'effect'
 import { Canvas, Submodel } from 'foldkit'
 import { type Html, type HtmlBuilder } from 'foldkit/html'
 
@@ -31,7 +31,13 @@ import {
   pointOnCurve,
   regionZones,
 } from '../domain/geometry'
-import type { SimResult } from '../domain/simulate'
+import {
+  type EdgeKinds,
+  type FlowKind,
+  type SimResult,
+  flowKinds,
+} from '../domain/simulate'
+import { formatNumber } from '../i18n/format'
 import type { Locale } from '../i18n/locale'
 import { type UiStrings, uiFor } from '../i18n/ui'
 import type { Tone } from '../kinds/contract'
@@ -351,6 +357,116 @@ const curveBetween = (
     Array.filter(nodes, node => node.id !== from.id && node.id !== to.id),
   )
 
+export type FlowPart = Readonly<{ kind: FlowKind; rps: number }>
+
+/** Виды потока связи по убыванию: доли из симуляции, умноженные на плавный
+    поток анимации, чтобы подпись менялась вместе с частицами. */
+export const flowParts = (
+  kinds: EdgeKinds | undefined,
+  flow: number,
+): ReadonlyArray<FlowPart> => {
+  const amounts = Array.map(flowKinds, kind => ({
+    kind,
+    amount: kinds?.[kind] ?? 0,
+  }))
+  const total = Number.sumAll(Array.map(amounts, ({ amount }) => amount))
+  return total <= 0
+    ? []
+    : pipe(
+        amounts,
+        Array.map(({ kind, amount }) => ({
+          kind,
+          rps: (flow * amount) / total,
+        })),
+        Array.filter(part => part.rps >= 1),
+        Array.sort(
+          Order.flip(
+            Order.mapInput(Order.Number, (part: FlowPart) => part.rps),
+          ),
+        ),
+      )
+}
+
+const LABEL_CHAR_PX = 6.4
+const LABEL_PADDING_PX = 24
+const LABEL_HEIGHT = 18
+const MIN_LABELLED_EDGE = 110
+const LABEL_MARGIN = 16
+const LABEL_SPOTS: ReadonlyArray<number> = [0.5, 0.4, 0.6, 0.32, 0.68]
+
+const labelWidth = (text: string): number =>
+  text.length * LABEL_CHAR_PX + LABEL_PADDING_PX
+
+/** Тексты подписи от полного к короткому. Два вида — оба («reads 192 ·
+    writes 48 rps»), без «rps», затем главный и «+N»; в крайнем случае только
+    число. */
+export const labelTexts = (
+  parts: ReadonlyArray<FlowPart>,
+  flow: number,
+  locale: Locale,
+  ui: UiStrings,
+): ReadonlyArray<string> => {
+  const n = (rps: number) => formatNumber(locale, Math.round(rps))
+  const part = ({ kind, rps }: FlowPart) =>
+    `${ui.board.flowName[kind]} ${n(rps)}`
+  const bare = ui.board.edgeFlow(flow)
+  return Array.match(parts, {
+    onEmpty: () => [bare],
+    onNonEmpty: nonEmpty => {
+      const main = Array.headNonEmpty(nonEmpty)
+      const more = nonEmpty.length - 1
+      return [
+        ...(nonEmpty.length === 2
+          ? [
+              `${Array.map(nonEmpty, part).join(' · ')} rps`,
+              Array.map(nonEmpty, part).join(' · '),
+            ]
+          : []),
+        more > 0 ? `${part(main)} rps +${more}` : `${part(main)} rps`,
+        bare,
+      ]
+    },
+  })
+}
+
+export type EdgeLabel = Readonly<{
+  text: string
+  kind: Option.Option<FlowKind>
+  at: Point
+}>
+
+const overlaps = (center: Point, width: number, node: Point): boolean =>
+  Math.abs(center.x - node.x) < width / 2 + NODE_WIDTH / 2 + 2 &&
+  Math.abs(center.y - node.y) < LABEL_HEIGHT / 2 + NODE_HEIGHT / 2 + 2
+
+/** Подпись связи: самый полный текст, который помещается на связи и не
+    ложится на блоки. Если не помещается даже число, подписи нет. */
+export const edgeLabel = (
+  parts: ReadonlyArray<FlowPart>,
+  flow: number,
+  curve: Curve,
+  blocks: ReadonlyArray<Point>,
+  locale: Locale,
+  ui: UiStrings,
+): Option.Option<EdgeLabel> => {
+  const length = curveLength(curve)
+  if (flow < 1 || length < MIN_LABELLED_EDGE) {
+    return Option.none()
+  }
+  const kind = Option.map(Array.head(parts), part => part.kind)
+  return pipe(
+    labelTexts(parts, flow, locale, ui),
+    Array.filter(text => labelWidth(text) <= length - LABEL_MARGIN),
+    Array.flatMap(text =>
+      Array.map(LABEL_SPOTS, t => ({ text, at: pointOnCurve(curve, t) })),
+    ),
+    Array.findFirst(({ text, at }) =>
+      blocks.every(block => !overlaps(at, labelWidth(text), block)),
+    ),
+    Option.map(({ text, at }) => ({ text, kind, at })),
+  )
+}
+
 const edgeView = (
   from: BoardNode,
   to: BoardNode,
@@ -372,14 +488,18 @@ const edgeView = (
     Array.contains(inputs.focusEdges, key) || Array.contains(removeEdges, key)
   const flow = inputs.flows.edgeFlow[key] ?? 0
   const label =
-    inputs.mode === 'Edit' ||
-    flow < 1 ||
-    curveLength(curve) < 110 ||
+    model.gesture._tag !== 'Idle' ||
     isLoadHidden(inputs, from.id) ||
     isLoadHidden(inputs, to.id)
       ? Option.none()
-      : Option.some(uiFor(inputs.locale).board.edgeFlow(flow))
-  const middle = pointOnCurve(curve, 0.5)
+      : edgeLabel(
+          flowParts(inputs.sim.edgeKinds[key], flow),
+          flow,
+          curve,
+          inputs.doc.nodes,
+          inputs.locale,
+          uiFor(inputs.locale),
+        )
 
   return [
     h.keyed('path')(`edge-${key}`, [
@@ -404,25 +524,47 @@ const edgeView = (
       : []),
     ...Option.match(label, {
       onNone: () => [],
-      onSome: text => [
-        h.keyed('g')(
-          `label-${key}`,
-          [
-            h.Class('edge-label'),
-            h.Transform(`translate(${middle.x},${middle.y})`),
-          ],
-          [
-            h.rect([
-              h.Attribute('x', `${-(text.length * 6.1 + 14) / 2}`),
-              h.Attribute('y', '-9'),
-              h.Width(`${text.length * 6.1 + 14}`),
-              h.Height('18'),
-              h.Attribute('rx', '9'),
-            ]),
-            h.text([h.TextAnchor('middle'), h.Attribute('y', '3.5')], [text]),
-          ],
-        ),
-      ],
+      onSome: ({ text, kind, at }) => {
+        const width = labelWidth(text)
+        return [
+          h.keyed('g')(
+            `label-${key}`,
+            [
+              h.Class('edge-label'),
+              h.DataAttribute('edge-label', key),
+              h.Transform(`translate(${at.x},${at.y})`),
+            ],
+            [
+              h.rect([
+                h.Attribute('x', `${-width / 2}`),
+                h.Attribute('y', '-9'),
+                h.Width(`${width}`),
+                h.Height('18'),
+                h.Attribute('rx', '9'),
+              ]),
+              ...Option.match(kind, {
+                onNone: () => [],
+                onSome: flowKind => [
+                  h.circle([
+                    h.Class(`flow-dot flow-${flowKind}`),
+                    h.Cx(`${-width / 2 + 10}`),
+                    h.Cy('0'),
+                    h.Attribute('r', '3'),
+                  ]),
+                ],
+              }),
+              h.text(
+                [
+                  h.TextAnchor('middle'),
+                  h.Attribute('x', '5'),
+                  h.Attribute('y', '3.5'),
+                ],
+                [text],
+              ),
+            ],
+          ),
+        ]
+      },
     }),
   ]
 }
@@ -689,6 +831,54 @@ const gestureOverlay = (
 
 // PARTICLES
 
+/** Цвет частиц по виду потока; те же цвета у точек подписи и легенды
+    (`--flow-*` в styles.css). */
+export const flowColors = (
+  prefersDark: boolean,
+): Readonly<Record<FlowKind, string>> =>
+  prefersDark
+    ? {
+        requests: '#3dc48b',
+        reads: '#6f9ef2',
+        writes: '#b28cf0',
+        misses: '#ec7ab8',
+        jobs: '#3ec1c7',
+        events: '#a8bb4c',
+      }
+    : {
+        requests: '#148a55',
+        reads: '#2f6fd1',
+        writes: '#8650cc',
+        misses: '#c0478f',
+        jobs: '#0f8a94',
+        events: '#6b7d1c',
+      }
+
+/** Вид потока частицы `index` из `count`: виды делят частицы по долям. */
+const kindAt = (
+  parts: ReadonlyArray<FlowPart>,
+  index: number,
+  count: number,
+): Option.Option<FlowKind> => {
+  const ends = Array.drop(
+    Array.scan(parts, 0, (sum, part) => sum + part.rps),
+    1,
+  )
+  const position =
+    ((index + 0.5) / count) *
+    pipe(
+      Array.last(ends),
+      Option.getOrElse(() => 0),
+    )
+  return pipe(
+    Array.zip(parts, ends),
+    Array.findFirst(([, end]) => position <= end),
+    Option.map(([part]) => part),
+    Option.orElse(() => Array.last(parts)),
+    Option.map(part => part.kind),
+  )
+}
+
 export const particleColors = (prefersDark: boolean) =>
   prefersDark
     ? {
@@ -715,6 +905,7 @@ export const particleShapes = (
     return []
   }
   const colors = particleColors(inputs.prefersDark)
+  const kindColors = flowColors(inputs.prefersDark)
   const nodeById = (id: string) =>
     Array.findFirst(inputs.doc.nodes, node => node.id === id)
   const flowParticles = Array.flatMap(inputs.doc.edges, edge => {
@@ -743,6 +934,7 @@ export const particleShapes = (
             1,
             Math.min(14, Math.round(Math.sqrt(flow) / 2.1)),
           )
+          const parts = flowParts(inputs.sim.edgeKinds[edgeKey(edge)], flow)
           return Array.makeBy(count, index => {
             const point = pointOnCurve(
               curve,
@@ -753,7 +945,14 @@ export const particleShapes = (
               x: point.x * SCALE,
               y: point.y * SCALE,
               radius: 3.4 * SCALE,
-              fill: isLost ? colors.bad : isHot ? colors.warn : colors.ok,
+              fill: isLost
+                ? colors.bad
+                : isHot
+                  ? colors.warn
+                  : Option.match(kindAt(parts, index, count), {
+                      onNone: () => colors.ok,
+                      onSome: kind => kindColors[kind],
+                    }),
             })
           })
         },

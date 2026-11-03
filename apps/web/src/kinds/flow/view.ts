@@ -7,7 +7,7 @@ import {
   type ComponentKind,
   ComponentKind as ComponentKindSchema,
 } from '../../domain/catalog'
-import type { SimResult } from '../../domain/simulate'
+import { type FlowKind, type SimResult, flowKinds } from '../../domain/simulate'
 import { changedKnobs } from '../../domain/traffic'
 import type { UiStrings } from '../../i18n/ui'
 import { type Anim, shownSimulation } from '../../lesson/anim'
@@ -179,6 +179,13 @@ export const extraMetrics = (
     : []),
 ]
 
+/** Виды потока, которые сейчас текут по связям доски, в порядке
+    `flowKinds`: легенда объясняет только цвета, которые видны. */
+export const visibleFlowKinds = (sim: SimResult): ReadonlyArray<FlowKind> =>
+  Array.filter(flowKinds, kind =>
+    Object.values(sim.edgeKinds).some(kinds => (kinds[kind] ?? 0) >= 1),
+  )
+
 export const instruments = <ParentMessage>(
   slot: Slot<ParentMessage>,
   h: HtmlBuilder<ParentMessage>,
@@ -317,7 +324,22 @@ export const instruments = <ParentMessage>(
       h.div(
         [h.Class('legend')],
         [
-          h.span([], [h.i([h.Class('dot ok')]), ui.hud.legendOk]),
+          ...Array.match(visibleFlowKinds(shownSimulation(anim, context.doc)), {
+            onEmpty: () => [
+              h.span([], [h.i([h.Class('dot ok')]), ui.hud.legendOk]),
+            ],
+            onNonEmpty: kinds =>
+              Array.map(kinds, kind =>
+                h.keyed('span')(
+                  `flow-${kind}`,
+                  [h.DataAttribute('legend-flow', kind)],
+                  [
+                    h.i([h.Class(`dot flow flow-${kind}`)]),
+                    ui.board.flowName[kind],
+                  ],
+                ),
+              ),
+          }),
           h.span([], [h.i([h.Class('dot warn')]), ui.hud.legendHot]),
           h.span([], [h.i([h.Class('dot bad')]), ui.hud.legendLost]),
           h.span([h.Class('model-note')], [ui.hud.modelNote]),

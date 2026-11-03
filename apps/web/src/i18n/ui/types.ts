@@ -1,4 +1,5 @@
 import type { ComponentKind, Region } from '../../domain/catalog'
+import type { FlowKind } from '../../domain/simulate'
 import type { TrafficKnob } from '../../domain/traffic'
 import type { DomainMessageTexts } from '../domainMessage'
 import type { Locale } from '../locale'
@@ -58,6 +59,9 @@ export type UiStrings = Readonly<{
     rejecting: (rps: number) => string
     zoneDown: (region: Region) => string
     edgeFlow: (rps: number) => string
+    /** What flows on an edge: the word before its rps on the edge label and
+        the legend entry of its dot colour. */
+    flowName: Readonly<Record<FlowKind, string>>
     ghost: (kind: ComponentKind) => string
     modePick: string
     loadHidden: string
