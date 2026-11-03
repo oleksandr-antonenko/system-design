@@ -105,6 +105,11 @@ export const en = {
     rejecting: rps => `rejected ${n(rps)}/s`,
     zoneDown: region => `${regionName[region]} · region down`,
     edgeFlow: rps => `${n(rps)} rps`,
+    edgeName: (from, to) => `Connection ${from} → ${to}`,
+    moveEdgeEnd: (end, from, to) =>
+      `Move the ${end === 'from' ? 'start' : 'end'} of the connection ${from} → ${to}`,
+    dragEdgeEnd: 'Drag onto another block to move the connection',
+    reconnectHint: 'Pick a block for the end of the connection · Esc cancels',
     cacheModeHint: {
       'read-through': 'on a miss the cache reads the database itself',
       'cache-aside':
@@ -206,7 +211,7 @@ export const en = {
     attempts: count =>
       `${n(count)} ${plural('en', count, { one: 'attempt', other: 'attempts' })}`,
     howTo:
-      'Drag a block from the palette onto the board. Draw a connection from the circle on the right edge of a block. To delete a connection, click it, then the red cross.',
+      'Drag a block from the palette onto the board. Draw a connection from the circle on the right edge of a block. To delete a connection, click it, then the red cross; to move it, drag one of its ends onto another block.',
     hiddenGoal: 'One more criterion is checked by running the load',
     metricGoal: load => `Handles ${n(load)} rps with less than 1% errors`,
     metricGoalPassed: (load, errorRate) =>
@@ -268,6 +273,8 @@ export const en = {
     NodeIsPartOfTask: ({ id }) =>
       `Block ${id} is part of the task and cannot be deleted.`,
     UnknownNode: ({ id }) => `There is no block ${id} on the board.`,
+    UnknownEdge: ({ from, to }) =>
+      `There is no connection ${from} → ${to} on the board.`,
     DuplicateNodeId: ({ id }) => `A block named ${id} already exists.`,
     GoalMissingKind: ({ kind }) =>
       `There is no “${componentName[kind]}” block on the board yet. It is in the palette on the left.`,

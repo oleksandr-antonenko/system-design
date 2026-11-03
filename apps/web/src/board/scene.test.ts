@@ -15,7 +15,7 @@ import {
 } from 'foldkit/scene'
 import { describe, test } from 'vitest'
 
-import { type BoardDoc, emptyBoard, foldOps } from '../domain/board'
+import { type BoardDoc, BoardOp, emptyBoard, foldOps } from '../domain/board'
 import { simulate } from '../domain/simulate'
 import {
   addNode,
@@ -253,6 +253,70 @@ describe('caches and labelled flows', () => {
       expectAll(all.selector('[data-idle="true"]')).toHaveCount(1),
       expect(selector('[data-edge-label="app1>db"]')).toHaveText(
         'writes 80 · misses 64 rps',
+      ),
+    )
+  })
+})
+
+describe('reconnecting a connection', () => {
+  const shop = foldOps(emptyBoard, [
+    addNode('users', 'client', 100, 280),
+    addNode('app1', 'server', 400, 160),
+    addNode('app2', 'server', 400, 400),
+    addNode('db', 'db', 790, 280),
+    connect('users', 'app1'),
+    connect('app1', 'db'),
+    setLoad(300),
+  ])
+
+  test('connections are buttons; a selected one shows a handle at each end', () => {
+    scene(
+      boardScene(shop),
+      given(Board.initialModel),
+      pointerReady,
+      expect(role('button', { name: /^Connection users → app1/ })).toExist(),
+      expectAll(all.selector('[data-edge-end]')).toHaveCount(0),
+      keydown(role('button', { name: /^Connection users → app1/ }), 'Enter'),
+      expect(
+        role('button', {
+          name: 'Move the start of the connection users → app1',
+        }),
+      ).toExist(),
+      expect(
+        role('button', { name: 'Move the end of the connection users → app1' }),
+      ).toExist(),
+    )
+  })
+
+  test('from the keyboard: the end, then a block that accepts it', () => {
+    scene(
+      boardScene(shop),
+      given({
+        ...Board.initialModel,
+        maybeSelection: Option.some(
+          Board.Selection.Edge({ from: 'users', to: 'app1' }),
+        ),
+      }),
+      pointerReady,
+      keydown(
+        role('button', { name: 'Move the end of the connection users → app1' }),
+        'Enter',
+      ),
+      expect(
+        text('Pick a block for the end of the connection · Esc cancels'),
+      ).toExist(),
+      expect(role('button', { name: /^Server app2/ })).toExist(),
+      expect(role('img', { name: /^Database db/ })).toExist(),
+      keydown(role('button', { name: /^Server app2/ }), 'Enter'),
+      expectOutMessage(
+        Board.OutMessage.ProposedOp({
+          op: BoardOp.Reconnect({
+            from: 'users',
+            to: 'app1',
+            nextFrom: 'users',
+            nextTo: 'app2',
+          }),
+        }),
       ),
     )
   })

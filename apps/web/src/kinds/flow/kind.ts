@@ -129,6 +129,8 @@ const opText = (op: BoardOp): string =>
     MoveNode: ({ id, x, y }) => `MoveNode ${id} → (${x}, ${y})`,
     Connect: ({ from, to }) => `Connect ${from} → ${to}`,
     Disconnect: ({ from, to }) => `Disconnect ${from} → ${to}`,
+    Reconnect: ({ from, to, nextFrom, nextTo }) =>
+      `Reconnect ${from} → ${to} ⇒ ${nextFrom} → ${nextTo}`,
     SetLoad: ({ rps }) => `SetLoad ${rps} rps`,
     FailNode: ({ id }) => `FailNode ${id}`,
     RecoverNode: ({ id }) => `RecoverNode ${id}`,

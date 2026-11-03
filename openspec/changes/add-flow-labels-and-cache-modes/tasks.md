@@ -15,3 +15,10 @@
 
 - [x] 3.1 `CONTRIBUTING.md`: `setCacheMode`, `NoLink`. Проверка: `grep -n "setCacheMode" CONTRIBUTING.md`.
 - [x] 3.2 `pnpm check` зелёный, `npx oxfmt --check` на изменённых файлах, `openspec validate add-flow-labels-and-cache-modes` проходит.
+
+## 4. Перенос конца связи
+
+- [x] 4.1 `BoardOp.Reconnect` (те же правила, что у `Connect`, место в списке сохраняется, `UnknownEdge`), строка журнала. Проверка: `board/reconnect.story.test.ts` («the Reconnect operation»).
+- [x] 4.2 Ручки на концах выделенной связи, жест `Reconnecting`, подсветка подходящих блоков, мышь и касание. Проверка: `board/reconnect.story.test.ts` («dragging an end of a connection»), скриншоты в `.shots/`.
+- [x] 4.3 Клавиатура: связь — кнопка, Enter на ручке включает `ChoosingEnd`, Enter на блоке переносит, Escape отменяет. Проверка: `board/scene.test.ts` («reconnecting a connection»).
+- [x] 4.4 Одна отмена возвращает перенос. Проверка: `lesson/player.test.ts` («moving the end of a connection is one entry»).

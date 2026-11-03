@@ -84,6 +84,15 @@ export const BoardOp = defineTaggedUnion({
   MoveNode: { id: Schema.String, x: Schema.Number, y: Schema.Number },
   Connect: { from: Schema.String, to: Schema.String },
   Disconnect: { from: Schema.String, to: Schema.String },
+  /** Перенести конец связи `from → to` на другой блок: одна операция, одна
+      строка журнала и одна отмена. Новая связь проверяется теми же правилами,
+      что и `Connect`, и встаёт на место старой. */
+  Reconnect: {
+    from: Schema.String,
+    to: Schema.String,
+    nextFrom: Schema.String,
+    nextTo: Schema.String,
+  },
   SetLoad: { rps: Schema.Number },
   FailNode: { id: Schema.String },
   RecoverNode: { id: Schema.String },
@@ -201,6 +210,38 @@ const isValidCapacity = (maybeCapacity: Option.Option<number>): boolean =>
     onSome: capacity => globalThis.Number.isFinite(capacity) && capacity > 0,
   })
 
+const hasEdge = (doc: BoardDoc, edge: Edge): boolean =>
+  Array.some(
+    doc.edges,
+    candidate => candidate.from === edge.from && candidate.to === edge.to,
+  )
+
+const reconnect = (doc: BoardDoc, edge: Edge, next: Edge): BoardResult => {
+  if (!hasEdge(doc, edge)) {
+    return Result.fail(
+      DomainMessage.UnknownEdge({ from: edge.from, to: edge.to }),
+    )
+  }
+  if (edge.from === next.from && edge.to === next.to) {
+    return Result.succeed(doc)
+  }
+  const isMoved = (candidate: Edge) =>
+    candidate.from === edge.from && candidate.to === edge.to
+  const without = {
+    ...doc,
+    edges: Array.filter(doc.edges, candidate => !isMoved(candidate)),
+  }
+  return Result.map(
+    applyOp(without, BoardOp.Connect({ from: next.from, to: next.to })),
+    () => ({
+      ...doc,
+      edges: Array.map(doc.edges, candidate =>
+        isMoved(candidate) ? { from: next.from, to: next.to } : candidate,
+      ),
+    }),
+  )
+}
+
 export const applyOp = (doc: BoardDoc, op: BoardOp): BoardResult =>
   BoardOp.match(op, {
     AddNode: node =>
@@ -259,6 +300,8 @@ export const applyOp = (doc: BoardDoc, op: BoardOp): BoardResult =>
           }),
         ),
       ),
+    Reconnect: ({ from, to, nextFrom, nextTo }) =>
+      reconnect(doc, { from, to }, { from: nextFrom, to: nextTo }),
     Disconnect: ({ from, to }) =>
       Result.succeed({
         ...doc,

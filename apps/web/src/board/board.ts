@@ -12,9 +12,21 @@ import {
   regionZones,
   zoneAt,
 } from '../domain/geometry'
-import { BoardPoint, Message, OutMessage, PointerTarget } from './message'
+import {
+  BoardPoint,
+  EdgeEnd,
+  Message,
+  OutMessage,
+  PointerTarget,
+} from './message'
 
-export { BoardPoint, Message, OutMessage, PointerTarget } from './message'
+export {
+  BoardPoint,
+  EdgeEnd,
+  Message,
+  OutMessage,
+  PointerTarget,
+} from './message'
 
 // MODEL
 
@@ -34,6 +46,16 @@ export const Gesture = defineTaggedUnion({
     hasMoved: Schema.Boolean,
   },
   Connecting: { from: Schema.String, pointer: BoardPoint },
+  /** Конец связи `from → to` тянут мышью или пальцем к другому блоку. */
+  Reconnecting: {
+    from: Schema.String,
+    to: Schema.String,
+    end: EdgeEnd,
+    pointer: BoardPoint,
+  },
+  /** Конец связи переносят с клавиатуры: блоки-кандидаты в фокусе, Enter на
+      блоке переносит, Escape отменяет. */
+  ChoosingEnd: { from: Schema.String, to: Schema.String, end: EdgeEnd },
   Placing: {
     kind: ComponentKind,
     start: BoardPoint,
@@ -83,6 +105,38 @@ const propose = (model: Model, op: BoardOp): UpdateReturn => ({
   model,
   outMessage: OutMessage.ProposedOp({ op }),
 })
+
+/** Операция переноса конца связи на блок `id`; `None`, если конец остаётся
+    на месте. */
+export const reconnectOp = (
+  edge: Readonly<{ from: string; to: string; end: EdgeEnd }>,
+  id: string,
+): Option.Option<BoardOp> => {
+  const nextFrom = edge.end === 'from' ? id : edge.from
+  const nextTo = edge.end === 'to' ? id : edge.to
+  return nextFrom === edge.from && nextTo === edge.to
+    ? Option.none()
+    : Option.some(
+        BoardOp.Reconnect({ from: edge.from, to: edge.to, nextFrom, nextTo }),
+      )
+}
+
+const proposeReconnect = (
+  model: Model,
+  edge: Readonly<{ from: string; to: string; end: EdgeEnd }>,
+  maybeId: Option.Option<string>,
+): UpdateReturn =>
+  Option.match(
+    Option.flatMap(maybeId, id => reconnectOp(edge, id)),
+    {
+      onNone: () => ({ model: idle(model) }),
+      onSome: op =>
+        propose(
+          modifyFields(idle(model), { maybeSelection: () => Option.none() }),
+          op,
+        ),
+    },
+  )
 
 const defaultSpots: Readonly<Record<ComponentKind, ReadonlyArray<Point>>> = {
   client: [
@@ -205,6 +259,11 @@ const pressed = (
         maybeSelection: () => Option.some(Selection.Edge({ from, to })),
       }),
     }),
+    EdgeEnd: ({ from, to, end }) => ({
+      model: modifyFields(model, {
+        gesture: () => Gesture.Reconnecting({ from, to, end, pointer: point }),
+      }),
+    }),
     DeleteNode: ({ id }) =>
       propose(
         modifyFields(model, { maybeSelection: () => Option.none() }),
@@ -262,6 +321,13 @@ const moved = (
         gesture: () => Gesture.Connecting({ from, pointer: point }),
       }),
     }),
+    Reconnecting: reconnecting => ({
+      model: modifyFields(model, {
+        gesture: () =>
+          Gesture.Reconnecting({ ...reconnecting, pointer: point }),
+      }),
+    }),
+    ChoosingEnd: () => ({ model }),
     Placing: placing => ({
       model: modifyFields(model, {
         gesture: () =>
@@ -282,6 +348,7 @@ const targetNodeId = (target: PointerTarget): Option.Option<string> =>
     Node: ({ id }) => Option.some(id),
     Port: ({ id }) => Option.some(id),
     Edge: () => Option.none(),
+    EdgeEnd: () => Option.none(),
     DeleteNode: () => Option.none(),
     DeleteEdge: () => Option.none(),
     Palette: () => Option.none(),
@@ -317,6 +384,8 @@ const released = (
           onSome: to => propose(idle(model), BoardOp.Connect({ from, to })),
         },
       ),
+    Reconnecting: edge => proposeReconnect(model, edge, targetNodeId(target)),
+    ChoosingEnd: () => ({ model }),
     Placing: ({ kind, hasMoved }) =>
       hasMoved && isOverBoard
         ? propose(idle(model), addNodeAt(doc, kind, point))
@@ -344,6 +413,8 @@ const pickedBy = (
     Message.match(message, {
       ReleasedPointer: ({ target }) => targetNodeId(target),
       PressedPickKey: ({ id }) => Option.some(id),
+      PressedEdgeKey: () => Option.none<string>(),
+      PressedEdgeEndKey: () => Option.none<string>(),
       PressedPointer: () => Option.none<string>(),
       MovedPointer: () => Option.none<string>(),
       CancelledPointer: () => Option.none<string>(),
@@ -373,7 +444,26 @@ export const update =
       CancelledPointer: () => ({ model: idle(model) }),
       ClickedPaletteItem: ({ kind }) =>
         propose(model, addNodeAt(doc, kind, freeSpot(doc, kind))),
-      PressedPickKey: () => ({ model }),
+      PressedPickKey: ({ id }) =>
+        Gesture.match(model.gesture, {
+          ChoosingEnd: edge => proposeReconnect(model, edge, Option.some(id)),
+          Idle: () => ({ model }),
+          DraggingNode: () => ({ model }),
+          Connecting: () => ({ model }),
+          Reconnecting: () => ({ model }),
+          Placing: () => ({ model }),
+        }),
+      PressedEdgeKey: ({ from, to }) => ({
+        model: modifyFields(model, {
+          gesture: () => Gesture.Idle(),
+          maybeSelection: () => Option.some(Selection.Edge({ from, to })),
+        }),
+      }),
+      PressedEdgeEndKey: ({ from, to, end }) => ({
+        model: modifyFields(model, {
+          gesture: () => Gesture.ChoosingEnd({ from, to, end }),
+        }),
+      }),
     })
   }
 
@@ -399,5 +489,7 @@ export const previewDoc = (doc: BoardDoc, gesture: Gesture): BoardDoc =>
         : doc,
     Idle: () => doc,
     Connecting: () => doc,
+    Reconnecting: () => doc,
+    ChoosingEnd: () => doc,
     Placing: () => doc,
   })

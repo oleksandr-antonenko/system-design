@@ -13,7 +13,7 @@ import { describe, expect, test } from 'vitest'
 
 import * as Board from '../board/board'
 import loadBalancer from '../courses/system-design/lessons/03-load-balancer/lesson'
-import { type BoardOp, findNode } from '../domain/board'
+import { BoardOp, findNode } from '../domain/board'
 import { Goal as FlowGoal } from '../domain/goals'
 import { simulate } from '../domain/simulate'
 import * as FlowBoard from '../kinds/flow/board'
@@ -284,6 +284,51 @@ describe('board editing', () => {
       model(next => {
         expect(taskOf(next).log).toEqual([disconnect('users', 'app1')])
         expect(flowBoardOf(next).editor.maybeSelection).toEqual(Option.none())
+      }),
+    )
+  })
+
+  test('moving the end of a connection is one entry: one undo puts it back', () => {
+    const placeLb = addNode('lb-1', 'lb', 300, 280, { locked: false })
+    const reconnect = BoardOp.Reconnect({
+      from: 'users',
+      to: 'app1',
+      nextFrom: 'users',
+      nextTo: 'lb-1',
+    })
+    story(
+      Player.update,
+      given(atTask([placeLb])),
+      board(
+        Board.Message.PressedPointer({
+          target: Board.PointerTarget.Edge({ from: 'users', to: 'app1' }),
+          point: point(300, 280),
+        }),
+      ),
+      board(
+        Board.Message.PressedPointer({
+          target: Board.PointerTarget.EdgeEnd({
+            from: 'users',
+            to: 'app1',
+            end: 'to',
+          }),
+          point: point(443, 280),
+        }),
+      ),
+      board(
+        Board.Message.ReleasedPointer({
+          target: Board.PointerTarget.Node({ id: 'lb-1' }),
+          point: point(300, 280),
+          isOverBoard: true,
+        }),
+      ),
+      model(next => {
+        expect(taskOf(next).log).toEqual([placeLb, reconnect])
+      }),
+      message(Player.Message.ClickedUndo()),
+      model(next => {
+        expect(taskOf(next).log).toEqual([placeLb])
+        expect(taskOf(next).redo).toEqual([reconnect])
       }),
     )
   })

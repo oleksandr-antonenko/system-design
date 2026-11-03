@@ -64,6 +64,13 @@ export type UiStrings = Readonly<{
     flowName: Readonly<Record<FlowKind, string>>
     /** The cache block's mode tag (English pattern name) explained natively:
         its tooltip and part of the block's accessible description. */
+    edgeName: (from: string, to: string) => string
+    /** The handle at one end of a selected connection (keyboard and screen
+        readers). */
+    moveEdgeEnd: (end: 'from' | 'to', from: string, to: string) => string
+    dragEdgeEnd: string
+    /** Mode chip while the student picks a block for a connection's end. */
+    reconnectHint: string
     cacheModeHint: Readonly<Record<CacheMode, string>>
     /** A cache → database connection that carries nothing in cache-aside. */
     idleCacheEdge: string

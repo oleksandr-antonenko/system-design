@@ -1170,6 +1170,31 @@ h3 {
 .board-svg .delete {
   cursor: pointer;
 }
+.board-svg .board-edge.moving {
+  stroke-opacity: 0.35;
+}
+.board-svg .board-edge-hit:focus-visible,
+.board-svg .edge-end:focus-visible {
+  outline: none;
+}
+.board-svg .board-edge-hit:focus-visible {
+  stroke: var(--accent-soft);
+}
+.board-svg .edge-end {
+  cursor: grab;
+}
+.board-svg .edge-end-hit {
+  fill: transparent;
+}
+.board-svg .edge-end-dot {
+  fill: var(--page);
+  stroke: var(--accent);
+  stroke-width: 2.4;
+}
+.board-svg .edge-end:hover .edge-end-dot,
+.board-svg .edge-end:focus-visible .edge-end-dot {
+  fill: var(--accent);
+}
 .board-svg .delete circle {
   fill: var(--bad);
 }

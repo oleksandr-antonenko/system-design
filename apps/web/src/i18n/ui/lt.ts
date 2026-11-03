@@ -110,6 +110,11 @@ export const lt = {
     rejecting: rps => `atmesta ${n(rps)}/s`,
     zoneDown: region => `${regionName[region]} · regionas neveikia`,
     edgeFlow: rps => `${n(rps)} rps`,
+    edgeName: (from, to) => `Ryšys ${from} → ${to}`,
+    moveEdgeEnd: (end, from, to) =>
+      `${end === 'from' ? 'Perkelti ryšio pradžią' : 'Perkelti ryšio galą'} ${from} → ${to}`,
+    dragEdgeEnd: 'Nuvilkite ant kito bloko, kad perkeltumėte ryšį',
+    reconnectHint: 'Pasirinkite bloką ryšio galui · Esc – atšaukti',
     cacheModeHint: {
       'read-through': 'per miss cache pats skaito database',
       'cache-aside':
@@ -209,7 +214,7 @@ export const lt = {
     solvedWithHint: 'Išspręsta su užuomina',
     attempts: count => `bandymų: ${n(count)}`,
     howTo:
-      'Nuvilkite bloką iš paletės į lentą. Ryšys tempiamas nuo apskritimo dešiniajame bloko krašte. Norėdami ištrinti ryšį, spustelėkite jį, tada raudoną kryželį.',
+      'Nuvilkite bloką iš paletės į lentą. Ryšys tempiamas nuo apskritimo dešiniajame bloko krašte. Norėdami ištrinti ryšį, spustelėkite jį, tada raudoną kryželį; norėdami perkelti, nuvilkite vieną jo galą ant kito bloko.',
     hiddenGoal: 'Dar vienas kriterijus tikrinamas paleidus apkrovą',
     metricGoal: load => `Atlaiko ${n(load)} rps, kai klaidų mažiau nei 1 %`,
     metricGoalPassed: (load, errorRate) =>
@@ -270,6 +275,7 @@ export const lt = {
     NodeIsPartOfTask: ({ id }) =>
       `Blokas ${id} yra užduoties sąlygos dalis, jo ištrinti negalima.`,
     UnknownNode: ({ id }) => `Bloko ${id} lentoje nėra.`,
+    UnknownEdge: ({ from, to }) => `Ryšio ${from} → ${to} lentoje nėra.`,
     DuplicateNodeId: ({ id }) => `Blokas pavadinimu ${id} jau yra.`,
     GoalMissingKind: ({ kind }) =>
       `Lentoje dar nėra bloko „${componentName[kind]}“. Jis yra paletėje kairėje.`,

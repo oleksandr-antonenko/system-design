@@ -42,7 +42,15 @@ import { formatNumber } from '../i18n/format'
 import type { Locale } from '../i18n/locale'
 import { type UiStrings, uiFor } from '../i18n/ui'
 import type { Tone } from '../kinds/contract'
-import { Gesture, Message, type Model, Selection, previewDoc } from './board'
+import {
+  type EdgeEnd,
+  Gesture,
+  Message,
+  type Model,
+  Selection,
+  previewDoc,
+  reconnectOp,
+} from './board'
 import { BoardPointer } from './pointer'
 
 export type BoardFlows = Readonly<{
@@ -236,19 +244,25 @@ const nodeView = (
     }),
   )
   const isHovered = Option.exists(inputs.maybeHoveredRef, id => id === node.id)
+  const dropState = (maybeOp: Option.Option<BoardOp>): string =>
+    Option.match(maybeOp, {
+      onNone: () => '',
+      onSome: op =>
+        Result.isSuccess(applyOp(inputs.doc, op)) ? ' drop-ok' : ' drop-no',
+    })
   const connectState = Gesture.match(model.gesture, {
     Connecting: ({ from }) =>
       from === node.id
         ? ''
-        : Result.isSuccess(
-              applyOp(inputs.doc, BoardOp.Connect({ from, to: node.id })),
-            )
-          ? ' drop-ok'
-          : ' drop-no',
+        : dropState(Option.some(BoardOp.Connect({ from, to: node.id }))),
+    Reconnecting: edge => dropState(reconnectOp(edge, node.id)),
+    ChoosingEnd: edge => dropState(reconnectOp(edge, node.id)),
     Idle: () => '',
     DraggingNode: () => '',
     Placing: () => '',
   })
+  const isEndCandidate =
+    model.gesture._tag === 'ChoosingEnd' && connectState === ' drop-ok'
   const isHiddenLoad = isLoadHidden(inputs, node.id)
   const hasCapacity = hasFiniteCapacity(node.kind) && !isHiddenLoad
   const flow = inputs.sim.nodes[node.id]
@@ -283,7 +297,7 @@ const nodeView = (
       h.Transform(
         `translate(${node.x - NODE_WIDTH / 2},${node.y - NODE_HEIGHT / 2})`,
       ),
-      ...(isPickable(inputs, node.id)
+      ...(isPickable(inputs, node.id) || isEndCandidate
         ? [
             h.Role('button'),
             h.Tabindex(0),
@@ -503,7 +517,11 @@ export const edgeLabel = (
     Array.findFirst(({ text, at }) =>
       blocks.every(block => !overlaps(at, labelWidth(text), block)),
     ),
-    Option.map(({ text, at }) => ({ text, kind, at })),
+    Option.map(({ text, at }) => ({
+      text,
+      kind: text === ui.board.edgeFlow(flow) ? Option.none() : kind,
+      at,
+    })),
   )
 }
 
@@ -527,6 +545,15 @@ const edgeView = (
   const isFocused =
     Array.contains(inputs.focusEdges, key) || Array.contains(removeEdges, key)
   const isIdle = isIdleCacheEdge(inputs.doc, { from: from.id, to: to.id })
+  const isMoving = Gesture.match(model.gesture, {
+    Reconnecting: edge => edge.from === from.id && edge.to === to.id,
+    ChoosingEnd: edge => edge.from === from.id && edge.to === to.id,
+    Idle: () => false,
+    DraggingNode: () => false,
+    Connecting: () => false,
+    Placing: () => false,
+  })
+  const ui = uiFor(inputs.locale)
   const flow = inputs.flows.edgeFlow[key] ?? 0
   const label =
     model.gesture._tag !== 'Idle' ||
@@ -539,7 +566,7 @@ const edgeView = (
           curve,
           inputs.doc.nodes,
           inputs.locale,
-          uiFor(inputs.locale),
+          ui,
         )
 
   return [
@@ -547,7 +574,7 @@ const edgeView = (
       `edge-${key}`,
       [
         h.Class(
-          `board-edge${isSelected ? ' selected' : ''}${isFocused ? ' focus' : ''}${isIdle ? ' idle' : ''}`,
+          `board-edge${isSelected ? ' selected' : ''}${isFocused ? ' focus' : ''}${isIdle ? ' idle' : ''}${isMoving ? ' moving' : ''}`,
         ),
         h.Attribute('d', path),
         ...(isIdle ? [h.DataAttribute('idle', 'true')] : []),
@@ -556,7 +583,7 @@ const edgeView = (
           `url(#${isSelected ? 'arrow-accent' : 'arrow'})`,
         ),
       ],
-      isIdle ? [h.title([], [uiFor(inputs.locale).board.idleCacheEdge])] : [],
+      isIdle ? [h.title([], [ui.board.idleCacheEdge])] : [],
     ),
     ...(inputs.mode === 'Edit'
       ? [
@@ -565,6 +592,23 @@ const edgeView = (
             h.Attribute('d', path),
             h.DataAttribute('edge-from', from.id),
             h.DataAttribute('edge-to', to.id),
+            h.Role('button'),
+            h.Tabindex(0),
+            h.AriaPressed(isSelected ? 'true' : 'false'),
+            h.AriaLabel(
+              [
+                ui.board.edgeName(from.id, to.id),
+                ...Option.toArray(Option.map(label, ({ text }) => text)),
+                ...(isIdle ? [ui.board.idleCacheEdge] : []),
+              ].join(', '),
+            ),
+            h.OnKeyDownPreventDefault(pressed =>
+              pressed === 'Enter' || pressed === ' '
+                ? Option.some(
+                    Message.PressedEdgeKey({ from: from.id, to: to.id }),
+                  )
+                : Option.none(),
+            ),
           ]),
         ]
       : []),
@@ -773,6 +817,38 @@ const deleteButton = (
     ],
   )
 
+const endHandle = (
+  point: Point,
+  end: EdgeEnd,
+  from: string,
+  to: string,
+  ui: UiStrings,
+  h: HtmlBuilder<Message>,
+): Html =>
+  h.keyed('g')(
+    `end-${end}`,
+    [
+      h.Class(`edge-end ${end}`),
+      h.Transform(`translate(${point.x},${point.y})`),
+      h.DataAttribute('edge-end', end),
+      h.DataAttribute('end-from', from),
+      h.DataAttribute('end-to', to),
+      h.Role('button'),
+      h.Tabindex(0),
+      h.AriaLabel(ui.board.moveEdgeEnd(end, from, to)),
+      h.OnKeyDownPreventDefault(pressed =>
+        pressed === 'Enter' || pressed === ' '
+          ? Option.some(Message.PressedEdgeEndKey({ from, to, end }))
+          : Option.none(),
+      ),
+    ],
+    [
+      h.title([], [ui.board.dragEdgeEnd]),
+      h.circle([h.Class('edge-end-hit'), h.Attribute('r', '16')]),
+      h.circle([h.Class('edge-end-dot'), h.Attribute('r', '6.5')]),
+    ],
+  )
+
 const selectionControls = (
   doc: BoardDoc,
   model: Model,
@@ -796,6 +872,7 @@ const selectionControls = (
                   curveBetween(doc.nodes, fromNode, toNode),
                   0.5,
                 )
+                const curve = curveBetween(doc.nodes, fromNode, toNode)
                 return [
                   deleteButton(
                     { x: middle.x, y: middle.y - 22 },
@@ -806,6 +883,12 @@ const selectionControls = (
                     ui.board.deleteEdge,
                     h,
                   ),
+                  ...(model.gesture._tag === 'Idle'
+                    ? [
+                        endHandle(curve.start, 'from', from, to, ui, h),
+                        endHandle(curve.end, 'to', from, to, ui, h),
+                      ]
+                    : []),
                 ]
               },
             }),
@@ -858,6 +941,33 @@ const gestureOverlay = (
           },
         }),
       ),
+    Reconnecting: ({ from, to, end, pointer }) =>
+      pipe(
+        Array.findFirst(
+          doc.nodes,
+          node => node.id === (end === 'to' ? from : to),
+        ),
+        Option.match({
+          onNone: () => [],
+          onSome: node => {
+            const [start, finish] =
+              end === 'to'
+                ? [{ x: node.x + NODE_WIDTH / 2, y: node.y }, pointer]
+                : [pointer, { x: node.x - NODE_WIDTH / 2, y: node.y }]
+            const bend = Math.max(30, Math.abs(finish.x - start.x) * 0.5)
+            return [
+              h.path([
+                h.Class('rubber'),
+                h.Attribute(
+                  'd',
+                  `M${start.x},${start.y} C${start.x + bend},${start.y} ${finish.x - bend},${finish.y} ${finish.x},${finish.y}`,
+                ),
+              ]),
+            ]
+          },
+        }),
+      ),
+    ChoosingEnd: () => [],
     Placing: ({ kind, pointer, hasMoved, isOverBoard }) =>
       hasMoved && isOverBoard
         ? ghostView(
@@ -1200,13 +1310,15 @@ export const view = Submodel.defineView<Model, Message, BoardViewInputs>(
       onSome: plan => plan.removeEdges,
     })
     const modeLabel =
-      inputs.mode === 'Edit'
-        ? ui.board.modeEdit
-        : inputs.mode === 'Replay'
-          ? ui.board.modeReplay
-          : inputs.mode === 'Pick'
-            ? ui.board.modePick
-            : ui.board.modeView
+      model.gesture._tag === 'ChoosingEnd' && inputs.mode === 'Edit'
+        ? ui.board.reconnectHint
+        : inputs.mode === 'Edit'
+          ? ui.board.modeEdit
+          : inputs.mode === 'Replay'
+            ? ui.board.modeReplay
+            : inputs.mode === 'Pick'
+              ? ui.board.modePick
+              : ui.board.modeView
 
     return h.div(
       [h.Class('board-wrap'), h.OnMount(BoardPointer())],

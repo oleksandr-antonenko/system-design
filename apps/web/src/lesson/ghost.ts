@@ -15,6 +15,7 @@ const addedNodes = (solution: ReadonlyArray<BoardOp>) =>
         MoveNode: () => Option.none(),
         Connect: () => Option.none(),
         Disconnect: () => Option.none(),
+        Reconnect: () => Option.none(),
         SetLoad: () => Option.none(),
         FailNode: () => Option.none(),
         RecoverNode: () => Option.none(),
