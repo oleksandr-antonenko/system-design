@@ -12,7 +12,7 @@ export default {
   summary:
     'Event bus доставляет каждое изменение в search index и в аналитику: publish/subscribe, lag subscriber и eventual consistency.',
   preview: {
-    alt: 'Схема: server публикует изменения в event bus, а подписчики — search index, аналитика и database — получают каждое событие с небольшим lag.',
+    alt: 'Схема: server публикует изменения в event bus, а подписчики — search index и аналитика — получают каждое событие с небольшим lag.',
   },
   steps: {
     catalog: {
@@ -69,7 +69,9 @@ Database — **source of truth** (источник истины): если чт�
 
 Servers публикуют по одному событию на изменение, а [[events-1|event bus]] раздаёт копию каждому subscriber: [[search|search index]] и [[worker-1|worker]] аналитики. Отличие от урока 7 — в одном слове. **Queue** делит задачи между workers, и каждая задача выполняется один раз. **Event bus** копирует каждое событие всем subscribers, и каждый consumer видит каждое изменение. Subscribers живут независимо: если один отстал или упал, остальных и продавцов это не касается.
 
-Запись идёт в database, а поиск читает из отдельной модели, собранной из событий. Разделение модели для записи и моделей для чтения называют **CQRS** (Command Query Responsibility Segregation, разделение команд и запросов). Его цена — eventual consistency: модели для чтения немного отстают от source of truth.`,
+Запись идёт в database, а поиск читает из отдельной модели, собранной из событий. Разделение модели для записи и моделей для чтения называют **CQRS** (Command Query Responsibility Segregation, разделение команд и запросов). Его цена — eventual consistency: модели для чтения немного отстают от source of truth.
+
+**На доске упрощено:** server пишет в database и публикует событие двумя отдельными шагами. Если он упадёт между ними, событие пропадёт, и search index разойдётся с database навсегда. На практике событие пишут в ту же транзакцию, что и изменение (**transactional outbox**), или читают изменения прямо из журнала database (**change data capture**, например Debezium).`,
     },
   },
   annotations: {

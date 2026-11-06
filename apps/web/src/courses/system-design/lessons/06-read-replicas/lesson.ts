@@ -105,6 +105,7 @@ export default defineLesson(flow, {
         annotate('replica-1', 'promoted', sim =>
           sim.errorRate > 0.01 ? 'bad' : 'ok',
         ),
+        annotate('replica-2', 'follower', 'info'),
       ],
     },
     {

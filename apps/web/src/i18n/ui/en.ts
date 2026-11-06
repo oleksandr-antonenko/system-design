@@ -150,6 +150,7 @@ export const en = {
       cacheHitShare: value => `hit ${share(value)}`,
       cdnStaticShare: value => `CDN static ${share(value)}`,
       jobsPerRequest: value => `jobs per request ×${count(value)}`,
+      eventsPerRequest: value => `events per request ×${count(value)}`,
       writesPerJob: value => `writes per job ×${count(value)}`,
     },
     pause: 'Pause',
@@ -288,6 +289,8 @@ export const en = {
       `There is no connection from “${componentName[from]}” to the “${componentName[via]}” block, so requests have nowhere to go.`,
     GoalTooManyErrors: ({ load, errorRate, overloaded }) =>
       `At ${n(load)} rps, ${percent(errorRate)} of requests are lost. Losing requests: ${overloaded.join(', ')}.`,
+    GoalTooManyRejected: ({ load, rejectedRate, max, limiters }) =>
+      `At ${n(load)} rps, the rate limiter rejects ${percent(rejectedRate)} of requests (429); at most ${percent(max)} is allowed. Rejecting: ${limiters.join(', ')}.`,
     ConnectCacheAside: () =>
       'In cache-aside the cache never reads the database itself: on a miss the server reads it and puts the answer into the cache. Connect the server to the database instead.',
     ConnectFromSink: ({ from }) =>

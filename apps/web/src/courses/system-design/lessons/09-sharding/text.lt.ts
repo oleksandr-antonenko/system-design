@@ -54,7 +54,7 @@ Galingesnė database duos šiek tiek laiko, bet jos lubos arti, o galingiausios 
       title: 'Užduotis: shards',
       body: `**Sharding** (lietuviškai – skaidymas į šardus) padalija duomenis tarp nepriklausomų databases – **shards** (šardų). Kiekvienas shard saugo tik savo duomenų dalį, pavyzdžiui, pusę naudotojų su visais jų užsakymais, krepšeliais ir atsiliepimais, ir gauna skaitymo bei rašymo užklausas tik tai daliai.
 
-Kuris shard saugo įrašą, lemia **shard key** (skaidymo raktas), pavyzdžiui, naudotojo id. Servers grupės ir cache pagal raktą apskaičiuoja, kur siųsti kiekvieną užklausą, todėl kiekvienam iš jų reikia ryšio su kiekvienu shard. Lentoje blokas, sujungtas su keliais „Database“ blokais, savo rašymą arba cache misses dalija joms po lygiai, tarsi raktas naudotojus padalytų po lygiai.
+Kuris shard saugo įrašą, lemia **shard key** (skaidymo raktas), pavyzdžiui, naudotojo id. Servers grupės pagal raktą apskaičiuoja, kur siųsti kiekvieną užklausą, todėl joms reikia ryšio su kiekvienu shard. **Lentoje supaprastinta:** cache čia veikia read-through režimu iš 4 pamokos ir pats skaito nepataikymus, todėl ir jam reikia ryšio su kiekvienu shard. Tikras cache rakto nežino: taikant cache-aside, per miss server pats eina į reikiamą shard. Lentoje blokas, sujungtas su keliais „Database“ blokais, savo rašymą arba cache misses dalija joms po lygiai, tarsi raktas naudotojus padalytų po lygiai.
 
 Paletėje yra database: ji taps antruoju shard.`,
     },

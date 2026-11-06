@@ -49,12 +49,14 @@ The way out sounds odd: it is better to turn away some requests on purpose than 
 
 A **rate limiter** stands at the entrance and counts requests. It lets through no more than its limit and answers the rest right away with **429 Too Many Requests**. Such a refusal costs almost nothing: no server, no database, an answer within a millisecond. Dropping excess load on purpose is called **load shedding**.
 
-Our rate limiter lets through 1,000 rps. That is less than the 1,200 the servers can take, so they keep some headroom and stay fast. It is already in the palette: place it between the users and the [[lb-1|load balancer]].`,
+Our rate limiter lets through 1,000 rps. That is less than the 1,200 the servers can take, so they keep some headroom and stay fast. It is already in the palette: place it between the users and the [[lb-1|load balancer]].
+
+The board counts 429s apart from errors. The Rejected instrument shows how many requests the rate limiter turned away on purpose, and Errors shows only requests that broke inside the system: a 503 from an overloaded server, a request lost by the database. Behind the rate limiter, half of the spike gets a 429, yet there are no errors: the refusal is instant, and the requests let through are answered quickly.`,
     },
     bots: {
       title: 'Who gets turned away',
       body: ({ sim }) =>
-        `More bots join in, and load reaches **3,000 rps**. Compare this with the spike before the rate limiter: the servers still get ${n(incoming(sim, 'app2'))} rps each and are ${percent(utilization(sim, 'app2'))} busy, and p95 is still ${p95(sim)}. The extra traffic only added refusals: the Rejected instrument shows ${n(sim.rejected)} rps. Behind a rate limiter, the system behaves the same however large the spike. The rate limiter's own bar is full: of ${n(sim.load)} rps it lets through exactly its limit of ${n(1000)}. That is not a breakdown: turning away the excess is its job.
+        `More bots join in, and load reaches **3,000 rps**. Compare this with the spike before the rate limiter: the servers still get ${n(incoming(sim, 'app2'))} rps each and are ${percent(utilization(sim, 'app2'))} busy, and p95 is still ${p95(sim)}. The extra traffic only added refusals: the Rejected instrument shows ${n(sim.rejected)} rps, while Errors stays at ${percent(sim.errorRate)}. Behind a rate limiter, the system behaves the same however large the spike. The rate limiter's own bar is full: of ${n(sim.load)} rps it lets through exactly its limit of ${n(1000)}. That is not a breakdown: turning away the excess is its job.
 
 But one limit for everyone is a blunt tool. The rate limiter does not care whom it turns away, so a bot hitting the shop a thousand times a second takes the place of real buyers. That is why real rate limiters count requests **per client**: per IP address, account or API key. Each client gets its own budget, say 10 requests per second with short bursts of up to 20 (the **token bucket** algorithm). A buyer never notices the limit, while a bot gets a 429 for everything above its 10.
 
@@ -66,7 +68,7 @@ Our board has a single overall limit, and it protects the servers. A per-client 
 
 A well-behaved client does not retry right away. After each refusal it waits longer (1 s, 2 s, 4 s and so on, an **exponential backoff**) and adds a random spread, **jitter**, so that thousands of clients do not come back in the same second. This is **backpressure**: the “slow down” signal travels back to whoever creates the load, and the sender listens.
 
-On the board, the bots have run into their per-client limits and the buyers' apps are backing off. Load at the entrance has dropped to 1,500 rps, and the rate limiter turns away only 500. Without backoff, every refusal would come back as a new request, and the spike would only grow.`,
+On the board, the well-behaved bots got their 429s and are waiting too, and the buyers' apps are backing off. Load at the entrance has dropped to 1,500 rps. Our single shared limit still turns away 500, without telling anyone apart, buyers included; a per-client limit would turn away only the bots. Without backoff, every refusal would come back as a new request, and the spike would only grow.`,
     },
     summary: {
       title: 'Summary',
@@ -100,6 +102,8 @@ In practice the rate limiter lives in the **API gateway** or in the load balance
         'limiter-exists': 'There is a rate limiter on the board',
         'only-through-limiter':
           'Users reach the load balancer only through the rate limiter',
+        'lb-in-path': 'Requests let through go via the load balancer',
+        'no-failures': 'At 2,000 rps, errors stay under 1% (429s do not count)',
         'fast-answers': 'At 2,000 rps, p95 is at most 250 ms',
         'servers-headroom': 'At 2,000 rps, servers are at most 90% busy',
       },

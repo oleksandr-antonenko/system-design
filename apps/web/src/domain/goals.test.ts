@@ -406,3 +406,48 @@ describe('carries', () => {
     })
   })
 })
+
+describe('rejected requests (fix-simulator-routing D2)', () => {
+  const limited = build([
+    addNode('users', 'client', 100, 280),
+    addNode('limiter', 'limiter', 260, 280),
+    addNode('lb-1', 'lb', 420, 280),
+    addNode('db', 'db', 790, 280),
+    connect('users', 'limiter'),
+    connect('limiter', 'lb-1'),
+    ...Array.flatMap(appServers, id => [
+      addNode(id, 'server', 600, 280),
+      connect('lb-1', id),
+      connect(id, 'db'),
+    ]),
+  ])
+
+  test('429s do not fail MaxErrorRate', () => {
+    expect(
+      checkGoal(limited, Goal.MaxErrorRate({ max: 0.01, load: 2000 })).met,
+    ).toBe(true)
+  })
+
+  test('MaxRejectedRate names the share and highlights the limiter', () => {
+    const check = checkGoal(
+      limited,
+      Goal.MaxRejectedRate({ max: 0.2, load: 2000 }),
+    )
+    const failure = failureOf(check)
+
+    expect(check.met).toBe(false)
+    expect(check.focusNodes).toEqual(['limiter'])
+    expect(failure._tag).toBe('GoalTooManyRejected')
+    expect(
+      checkGoal(limited, Goal.MaxRejectedRate({ max: 0.5, load: 2000 })).met,
+    ).toBe(true)
+    expect(isHiddenGoal(Goal.MaxRejectedRate({ max: 0.5, load: 2000 }))).toBe(
+      true,
+    )
+    locales.forEach(locale => {
+      const text = renderDomainMessage(uiFor(locale).domain, failure)
+      expect(text, locale).toContain('50')
+      expect(text, locale).toContain('limiter')
+    })
+  })
+})

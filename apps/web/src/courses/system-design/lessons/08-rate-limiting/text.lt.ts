@@ -49,12 +49,14 @@ Išeitis skamba keistai: geriau sąmoningai atsisakyti dalies užklausų, nei ba
 
 **Rate limiter** (lietuviškai – užklausų dažnio ribotuvas) – blokas prie įėjimo, kuris skaičiuoja užklausas. Jis praleidžia ne daugiau nei savo limitą, **rate limit**, o likusioms iš karto atsako **429 Too Many Requests** („per daug užklausų“). Toks atsisakymas beveik nieko nekainuoja: nereikia nei server, nei database, atsakymas per milisekundę. Sąmoningas perteklinės apkrovos numetimas vadinamas **load shedding**.
 
-Mūsų rate limiter praleidžia 1000 rps. Tai mažiau nei 1200, kuriuos atlaiko servers, todėl jiems lieka atsarga ir jie atsako greitai. Rate limiter jau paletėje: pastatykite jį tarp [[users|Users]] ir [[lb-1|load balancer]].`,
+Mūsų rate limiter praleidžia 1000 rps. Tai mažiau nei 1200, kuriuos atlaiko servers, todėl jiems lieka atsarga ir jie atsako greitai. Rate limiter jau paletėje: pastatykite jį tarp [[users|Users]] ir [[lb-1|load balancer]].
+
+Atsakymus 429 lenta skaičiuoja atskirai nuo klaidų. Prietaisas „Atmesta“ rodo, kiek užklausų rate limiter atmetė tyčia, o „Klaidos“ – tik užklausas, kurios sugedo sistemos viduje: 503 iš perkrauto server, database prarastas užklausas. Už rate limiter pusė šuolio gaus 429, bet klaidų nebus: atsisakymas akimirksniu, o praleistos užklausos atsakomos greitai.`,
     },
     bots: {
       title: 'Kam atsakyti „ne“',
       body: ({ sim }) =>
-        `Prisijungia daugiau robotų, apkrova pasiekia **3000 rps**. Palyginkite su šuoliu be rate limiter: servers kaip ir anksčiau gauna po ${n(incoming(sim, 'app2'))} rps ir yra apkrauti ${percent(utilization(sim, 'app2'))}, o p95 vis dar ${p95(sim)}. Papildomas srautas pridėjo tik atsisakymų: atmestų užklausų prietaisas rodo ${n(sim.rejected)} rps. Už rate limiter sistema elgiasi vienodai, kad ir koks didelis būtų šuolis. Bloko „Rate limiter“ juosta pilna: iš ${n(sim.load)} rps jis praleidžia lygiai savo limitą – ${n(1000)}. Tai ne gedimas: atmesti perteklių – jo darbas.
+        `Prisijungia daugiau robotų, apkrova pasiekia **3000 rps**. Palyginkite su šuoliu be rate limiter: servers kaip ir anksčiau gauna po ${n(incoming(sim, 'app2'))} rps ir yra apkrauti ${percent(utilization(sim, 'app2'))}, o p95 vis dar ${p95(sim)}. Papildomas srautas pridėjo tik atsisakymų: prietaisas „Atmesta“ rodo ${n(sim.rejected)} rps, o „Klaidos“ kaip ir anksčiau ${percent(sim.errorRate)}. Už rate limiter sistema elgiasi vienodai, kad ir koks didelis būtų šuolis. Bloko „Rate limiter“ juosta pilna: iš ${n(sim.load)} rps jis praleidžia lygiai savo limitą – ${n(1000)}. Tai ne gedimas: atmesti perteklių – jo darbas.
 
 Bet vienas limitas visiems – grubus įrankis. Rate limiter nesirenka, kam atsakyti „ne“, todėl robotas, tūkstantį kartų per sekundę besibeldžiantis į parduotuvę, užima tikrų pirkėjų vietas. Todėl tikri rate limiters skaičiuoja užklausas **kiekvienam klientui atskirai** (per client): pagal IP adresą, paskyrą ar API raktą. Kiekvienas klientas gauna savo biudžetą, pavyzdžiui, 10 užklausų per sekundę su trumpais šuoliais iki 20 (algoritmas **token bucket**, „žetonų kibiras“). Pirkėjas limito nepastebi, o robotas gauna 429 viskam, kas viršija jo 10.
 
@@ -66,7 +68,7 @@ Mūsų lentoje yra vienas bendras limitas, ir jis saugo servers. Limitas kiekvie
 
 Mandagus klientas nedaro retry iš karto. Po kiekvieno atsisakymo jis laukia vis ilgiau (1 s, 2 s, 4 s ir taip toliau – **exponential backoff**, eksponentinis atidėjimas) ir prideda atsitiktinę sklaidą, **jitter**, kad tūkstančiai klientų negrįžtų tą pačią sekundę. Tai **backpressure** (atgalinis slėgis): signalas „lėčiau“ keliauja atgal tam, kas kuria apkrovą, ir tas jo paklauso.
 
-Lentoje robotai atsirėmė į savo limitus, o pirkėjų programėlės sulėtino tempą. Apkrova prie įėjimo nukrito iki 1500 rps, ir rate limiter atmeta tik 500. Be backoff kiekvienas atsisakymas sugrįžtų nauja užklausa, ir šuolis tik augtų.`,
+Lentoje mandagūs robotai gavo 429 ir irgi laukia, o pirkėjų programėlės sulėtino tempą. Apkrova prie įėjimo nukrito iki 1500 rps. Mūsų bendras limitas vis dar atmeta 500 – be atrankos, taip pat ir pirkėjus; limitas klientui atmestų tik robotus. Be backoff kiekvienas atsisakymas sugrįžtų nauja užklausa, ir šuolis tik augtų.`,
     },
     summary: {
       title: 'Santrauka',
@@ -100,6 +102,9 @@ Praktikoje rate limiter būna **API gateway** (API šliuzo) dalis arba jį turi 
         'limiter-exists': 'Lentoje yra rate limiter',
         'only-through-limiter':
           'Users pasiekia load balancer tik per rate limiter',
+        'lb-in-path': 'Praleistos užklausos eina per load balancer',
+        'no-failures':
+          'Esant 2000 rps, klaidų mažiau nei 1 % (429 neskaičiuojami)',
         'fast-answers': 'Esant 2000 rps, p95 ne didesnis nei 250 ms',
         'servers-headroom':
           'Esant 2000 rps, servers apkrauti ne daugiau nei 90 %',

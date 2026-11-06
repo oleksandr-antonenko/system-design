@@ -72,6 +72,7 @@ describe('the default profile', () => {
       cacheHitShare: simulationRules.cacheHitShare,
       cdnStaticShare: simulationRules.cdnStaticShare,
       jobsPerRequest: 1,
+      eventsPerRequest: 1,
       writesPerJob: 1,
     })
     expect(readShareOf(defaultTraffic)).toBe(1 - simulationRules.writeShare)
@@ -206,7 +207,7 @@ describe('deferred writes', () => {
 })
 
 describe('jobs and rows', () => {
-  test('two jobs per request double the queue and the event bus', () => {
+  test('jobs per request feed the queue, events per request the event bus', () => {
     const doc = withQueue([
       addNode('events-1', 'events', 600, 130),
       connect('app1', 'events-1'),
@@ -214,7 +215,13 @@ describe('jobs and rows', () => {
     ])
 
     expect(incoming(doc, 100, 'queue-1')).toBe(200)
-    expect(incoming(doc, 100, 'events-1')).toBe(200)
+    expect(incoming(doc, 100, 'events-1')).toBe(100)
+
+    const rare = foldOps(doc, [
+      setTraffic({ jobsPerRequest: 0.01, eventsPerRequest: 0.5 }),
+    ])
+    expect(incoming(rare, 100, 'queue-1')).toBeCloseTo(1)
+    expect(incoming(rare, 100, 'events-1')).toBe(50)
   })
 
   test('fan-out writes several rows per job, batching fewer than one', () => {

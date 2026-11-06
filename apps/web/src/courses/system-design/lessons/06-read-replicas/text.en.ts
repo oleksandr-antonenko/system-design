@@ -53,6 +53,8 @@ Writes go **only to the primary**. If two copies accepted writes independently, 
       title: 'Task: read replicas',
       body: `A **read replica** is now in the palette. A server connected to the database and to replicas sends writes only to the database and splits reads evenly between the database and its replicas.
 
+**Simplified on the board:** there is no primary → replica connection, because the replication log travels over its own service channel. A replica on the board shows only reads; the board does not count the work of replaying every write of the primary.
+
 A replica is a server too, and it can fail. If your only replica fails, all of its reads fall back on the primary, and the primary overloads again. Remember the **N+1** rule from lesson 3.`,
     },
     'replication-lag': {
@@ -75,6 +77,8 @@ But the replicas hold a complete copy. The system notices that the primary is no
             ? `Not every server could switch, though: errors are at ${percent(sim.errorRate)}. A server that is not connected to any replica has nowhere to write and loses its requests.`
             : `Errors are at ${percent(sim.errorRate)}: the replicas carry all ${n(sim.load)} rps.`
         }
+
+On the board the first replica, [[replica-1|replica-1]], becomes the new primary: all writes, ${n(writes(sim))} rps, go to it alone. [[replica-2|replica-2]] takes no writes: it follows the new primary and still answers only reads.
 
 Failover has a price. With asynchronous replication, the last writes that had not reached the replica before the failure are lost. And two nodes must never both decide that they are the primary, a situation called **split brain**. To prevent it, the new primary is chosen by a vote of several nodes.`,
     },
@@ -101,6 +105,8 @@ Replicas do not help with **writes**. All ${n(writes(sim))} writes per second st
       `reads ${n(incoming(sim, 'replica-1'))} rps · slightly behind`,
     primaryDown: sim => `primary down · errors ${percent(sim.errorRate)}`,
     promoted: sim => `new primary · ${n(incoming(sim, 'replica-1'))} rps`,
+    follower: sim =>
+      `follows the new primary · reads ${n(incoming(sim, 'replica-2'))} rps`,
     writesStayHere: sim => `all ${n(writes(sim))} writes/s · only here`,
   },
   tasks: {

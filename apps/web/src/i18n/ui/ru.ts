@@ -153,6 +153,7 @@ export const ru = {
       cacheHitShare: value => `cache hit ${share(value)}`,
       cdnStaticShare: value => `статика CDN ${share(value)}`,
       jobsPerRequest: value => `задач на запрос ×${count(value)}`,
+      eventsPerRequest: value => `событий на запрос ×${count(value)}`,
       writesPerJob: value => `записей на задачу ×${count(value)}`,
     },
     pause: 'Пауза',
@@ -286,6 +287,8 @@ export const ru = {
       `Нет связи от «${componentName[from]}» к блоку «${componentName[via]}»: запросам некуда идти.`,
     GoalTooManyErrors: ({ load, errorRate, overloaded }) =>
       `При ${n(load)} rps теряется ${percent(errorRate)} запросов. Теряют запросы: ${overloaded.join(', ')}.`,
+    GoalTooManyRejected: ({ load, rejectedRate, max, limiters }) =>
+      `При ${n(load)} rps rate limiter отклоняет ${percent(rejectedRate)} запросов (429), а можно не больше ${percent(max)}. Отклоняют: ${limiters.join(', ')}.`,
     ConnectCacheAside: () =>
       'В cache-aside cache сам в database не ходит: при miss её читает «Server» и кладёт ответ в cache. Подключите к «Database» блок «Server».',
     ConnectFromSink: ({ from }) =>

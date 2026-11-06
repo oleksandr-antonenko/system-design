@@ -54,7 +54,7 @@ A bigger database buys a little time, but its ceiling is near, and the most powe
       title: 'Task: shards',
       body: `**Sharding** splits the data across several independent databases called **shards**. Each shard stores only its part of the data, say half of the users with all their orders, carts and reviews, and receives the reads and writes for that part only.
 
-Which shard holds a record is decided by the **shard key**, for example the user id. The server groups and the cache use the key to work out where each request should go, so each of them needs a connection to every shard. On the board, a block connected to several databases splits its writes or misses evenly between them, as if the key divided the users evenly.
+Which shard holds a record is decided by the **shard key**, for example the user id. The server groups use the key to work out where each request should go, so they need a connection to every shard. **Simplified on the board:** the cache here works in the read-through mode from lesson 4 and fetches its misses itself, so it needs a connection to every shard too. A real cache knows nothing about the key: in cache-aside the server goes to the right shard itself on a miss. On the board, a block connected to several databases splits its writes or misses evenly between them, as if the key divided the users evenly.
 
 The palette has a database: it will become the second shard.`,
     },

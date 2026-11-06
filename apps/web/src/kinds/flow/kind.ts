@@ -52,7 +52,7 @@ export const outcomeOf = (doc: BoardDoc): Outcome => {
 }
 
 // «Было → стало» красится по направлению: меньше ошибок и быстрее ответ —
-// зелёным, хуже — красным. Ограничитель, например, честно добавляет отказов.
+// зелёным, хуже — красным. Отказы ограничителя (429) в ошибки не входят.
 const trend = (before: number, after: number): 'better' | 'worse' | 'same' =>
   after < before - 1e-9 ? 'better' : after > before + 1e-9 ? 'worse' : 'same'
 

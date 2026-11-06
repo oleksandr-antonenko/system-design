@@ -12,7 +12,7 @@ export default {
   summary:
     'An event bus delivers every change to the search index and to analytics: publish/subscribe, subscriber lag and eventual consistency.',
   preview: {
-    alt: 'Diagram: a server publishes changes to an event bus, and subscribers such as the search index, analytics and a database get each event with a small lag.',
+    alt: 'Diagram: a server publishes changes to an event bus, and subscribers such as the search index and analytics get each event with a small lag.',
   },
   steps: {
     catalog: {
@@ -67,7 +67,9 @@ All this time the search index and the database disagree: search shows old price
 
 The servers publish one event per change, and the [[events-1|event bus]] hands a copy to every subscriber: the [[search|search index]] and the analytics [[worker-1|worker]]. The difference from lesson 7 is a single word. A **queue** divides jobs between workers, so each job is done once. An **event bus** copies every event to each subscriber, so every consumer sees every change. Subscribers live independently: when one falls behind or goes down, the others and the sellers are not affected.
 
-Writes go to the database, while search reads from a separate model built from events. Separating the model you write from the models you read is called **CQRS** (Command Query Responsibility Segregation). Its price is eventual consistency: the read models lag slightly behind the source of truth.`,
+Writes go to the database, while search reads from a separate model built from events. Separating the model you write from the models you read is called **CQRS** (Command Query Responsibility Segregation). Its price is eventual consistency: the read models lag slightly behind the source of truth.
+
+**Simplified on the board:** a server writes to the database and publishes the event as two separate steps. If it crashes in between, the event is lost and the search index drifts from the database for good. In practice the event is written in the same transaction as the change (**transactional outbox**), or the changes are read straight from the database log (**change data capture**, for example Debezium).`,
     },
   },
   annotations: {

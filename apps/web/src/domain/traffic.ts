@@ -15,8 +15,13 @@ export const TrafficProfile = Schema.Struct({
   cacheHitShare: Schema.Number,
   /** Доля запросов, которые CDN отдаёт сам (статика). */
   cdnStaticShare: Schema.Number,
-  /** Сообщений в каждую очередь и шину сервера на обслуженный запрос. */
+  /** Задач в каждую очередь сервера на обслуженный запрос. */
   jobsPerRequest: Schema.Number,
+  /** Событий в каждую шину сервера на обслуженный запрос
+      (fix-simulator-routing D4): поток шины задаётся отдельно от задач
+      очереди, поэтому сервер может класть в шину координаты, а в очередь —
+      редкие заказы. */
+  eventsPerRequest: Schema.Number,
   /** Записей в базу на задачу worker: больше 1 — fan-out, меньше 1 — пачки. */
   writesPerJob: Schema.Number,
 })
@@ -28,6 +33,7 @@ export const TrafficKnob = Schema.Literals([
   'cacheHitShare',
   'cdnStaticShare',
   'jobsPerRequest',
+  'eventsPerRequest',
   'writesPerJob',
 ])
 export type TrafficKnob = typeof TrafficKnob.Type
@@ -40,6 +46,7 @@ export const defaultTraffic: TrafficProfile = {
   cacheHitShare: 0.8,
   cdnStaticShare: 0.6,
   jobsPerRequest: 1,
+  eventsPerRequest: 1,
   writesPerJob: 1,
 }
 
@@ -50,6 +57,7 @@ export const TrafficPatch = Schema.Struct({
   cacheHitShare: Schema.optionalKey(Schema.Number),
   cdnStaticShare: Schema.optionalKey(Schema.Number),
   jobsPerRequest: Schema.optionalKey(Schema.Number),
+  eventsPerRequest: Schema.optionalKey(Schema.Number),
   writesPerJob: Schema.optionalKey(Schema.Number),
 })
 export type TrafficPatch = typeof TrafficPatch.Type

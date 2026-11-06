@@ -12,7 +12,7 @@ export default {
   summary:
     'Event bus доставляє кожну зміну в search index і в аналітику: publish/subscribe, lag subscriber і eventual consistency.',
   preview: {
-    alt: 'Схема: server публікує зміни в event bus, а підписники — search index, аналітика й database — отримують кожну подію з невеликим lag.',
+    alt: 'Схема: server публікує зміни в event bus, а підписники — search index і аналітика — отримують кожну подію з невеликим lag.',
   },
   steps: {
     catalog: {
@@ -69,7 +69,9 @@ Database — **source of truth** (джерело істини): якщо щос�
 
 Servers публікують по одній події на зміну, а [[events-1|event bus]] роздає копію кожному subscriber: [[search|search index]] та [[worker-1|worker]] аналітики. Відмінність від уроку 7 — в одному слові. **Queue** ділить завдання між workers, і кожне завдання виконується один раз. **Event bus** копіює кожну подію всім subscribers, і кожен consumer бачить кожну зміну. Subscribers живуть незалежно: якщо один відстав чи впав, решти й продавців це не зачіпає.
 
-Запис іде в database, а пошук читає з окремої моделі, зібраної з подій. Розділення моделі для запису й моделей для читання називають **CQRS** (Command Query Responsibility Segregation, розділення команд і запитів). Його ціна — eventual consistency: моделі для читання трохи відстають від source of truth.`,
+Запис іде в database, а пошук читає з окремої моделі, зібраної з подій. Розділення моделі для запису й моделей для читання називають **CQRS** (Command Query Responsibility Segregation, розділення команд і запитів). Його ціна — eventual consistency: моделі для читання трохи відстають від source of truth.
+
+**На дошці спрощено:** server пише в database і публікує подію двома окремими кроками. Якщо він упаде між ними, подія зникне, і search index розійдеться з database назавжди. На практиці подію записують у ту саму транзакцію, що й зміну (**transactional outbox**), або читають зміни просто з журналу database (**change data capture**, наприклад Debezium).`,
     },
   },
   annotations: {

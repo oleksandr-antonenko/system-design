@@ -113,7 +113,8 @@ export const reset = (): BoardOp => BoardOp.Reset()
       шине и отвечает через 2 мс; без них пишет её синхронно;
     - `cacheHitShare` (0.8) — доля чтений, на которые отвечает кеш;
     - `cdnStaticShare` (0.6) — доля запросов, которые CDN отдаёт сам;
-    - `jobsPerRequest` (1) — сообщений в каждую очередь и шину на запрос;
+    - `jobsPerRequest` (1) — задач в каждую очередь на запрос;
+    - `eventsPerRequest` (1) — событий в каждую шину на запрос;
     - `writesPerJob` (1) — записей в базу на задачу worker.
 
     Чтение — `1 − writeShare − deferredShare`. Например, сервис коротких

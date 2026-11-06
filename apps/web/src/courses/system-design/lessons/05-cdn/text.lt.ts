@@ -36,13 +36,13 @@ Kiekvienas [[app2|server]] gauna 800 rps – dvigubai daugiau, nei pajėgia. Pus
       title: 'Kuo užsiėmę server blokai',
       body: `Atidarykite bet kurį puslapį ir pažiūrėkite, ką atsisiunčia naršyklė. Viena užklausa grąžina HTML su preke ir kaina. Po jos – dar dešimtys: nuotraukos, šriftai, skriptai, stiliai. Tai **statiniai failai** (static content): jie vienodi visiems lankytojams ir retai keičiasi. Puslapis su jūsų krepšeliu, jūsų kaina ir dabartiniu likučiu yra **dinaminis** (dynamic content): jis sudaromas iš naujo kiekvienai užklausai.
 
-Šiame kurse ${percent(cdnStaticShare)} užklausų – statiniai failai. Vadinasi, iš 800 rps, kuriuos gauna kiekvienas [[app2|server]], 480 tik dalija paruoštus failus. Didžiąją dalį jėgų server blokai eikvoja veikdami kaip failų saugykla.
+Šiame kurse ${percent(cdnStaticShare)} užklausų – statiniai failai. Vadinasi, iš 800 rps, kuriuos gauna kiekvienas [[app2|server]], 480 tik dalija paruoštus failus. Didžiąją dalį jėgų server blokai eikvoja veikdami kaip failų saugykla. **Lentoje supaprastinta:** kaip ir 2 pamokoje, kiekviena užklausa į server – vienas kreipimasis į database, net dėl paruošto failo. Todėl prietaisas „Database apkrova“ dabar skaičiuoja ir statinius failus; realybėje failai database neliečia.
 
 Statiniams failams programos visai nereikia. Juos gali pateikti **CDN** (Content Delivery Network, lietuviškai – turinio pristatymo tinklas) – šimtuose miestų išdėstytas tinklas, kurio server laiko failų kopijas, kaip cache. CDN stovi prieš jūsų sistemą, statinius failus atiduoda iš savo kopijų, o toliau praleidžia tik dinamines užklausas.`,
     },
     'place-cdn': {
       title: 'Užduotis: CDN',
-      body: 'CDN statomas pačiame įėjime, prieš [[lb|load balancer]]. „Users“ kreipiasi tik į CDN, o jis toliau perduoda tai, į ką negali atsakyti pats. Blokas „CDN“ jau yra paletėje kairėje nuo lentos.',
+      body: 'CDN statomas pačiame įėjime, prieš [[lb|load balancer]]. „Users“ kreipiasi tik į CDN, o jis toliau perduoda tai, į ką negali atsakyti pats. Blokas „CDN“ jau yra paletėje kairėje nuo lentos. Taip CDN jungiamas ne visada: dažnai statiniai failai atiduodami iš atskiro CDN adreso, pavyzdžiui, static.shop.com, o dinaminės užklausos eina tiesiai į load balancer. Lentoje – kitas paplitęs variantas (taip veikia Cloudflare ir CloudFront): per CDN eina visa svetainė, statinius failus jis atiduoda pats, o likusias užklausas praleidžia.',
     },
     'edge-locations': {
       title: 'Arčiau naudotojo',
