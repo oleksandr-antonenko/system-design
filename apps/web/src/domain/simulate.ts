@@ -54,7 +54,12 @@ export type SimResult = Readonly<{
   edges: Readonly<Record<string, number>>
   /** Те же связи, что `edges`, но по видам потока: сумма видов равна `edges`. */
   edgeKinds: Readonly<Record<string, EdgeKinds>>
+  /** Доля потерянных пользовательских запросов: настоящие сбои. Отказы
+      ограничителя (429) сюда не входят, их считает `rejectedRate`
+      (fix-simulator-routing D2). */
   errorRate: number
+  /** Доля запросов, которые ограничитель отклонил нарочно (429). */
+  rejectedRate: number
   p95: Option.Option<number>
   databaseLoad: number
   costPerHour: number
@@ -234,6 +239,31 @@ const alive = (
 ): ReadonlyArray<BoardNode> =>
   Array.filter(nodes, node => !isDown(context, node.id))
 
+/** Блоки в порядке доски: так все серверы выбирают одну и ту же реплику. */
+const inBoardOrder = (
+  context: Context,
+  nodes: ReadonlyArray<BoardNode>,
+): ReadonlyArray<BoardNode> =>
+  Array.filter(context.doc.nodes, node =>
+    Array.some(nodes, candidate => candidate.id === node.id),
+  )
+
+/** Хранилища для чтения: если среди них есть блоки региона читающего, он
+    читает только из них (fix-simulator-routing D3), иначе из всех. */
+const nearby = (
+  from: BoardNode,
+  stores: ReadonlyArray<BoardNode>,
+): ReadonlyArray<BoardNode> => {
+  const local = Option.match(from.maybeRegion, {
+    onNone: () => [],
+    onSome: region =>
+      Array.filter(stores, store =>
+        Option.exists(store.maybeRegion, storeRegion => storeRegion === region),
+      ),
+  })
+  return Array.isReadonlyArrayNonEmpty(local) ? local : stores
+}
+
 /** Связь между блоками разных регионов. Блок без региона — общий. */
 const crossings = (from: BoardNode, to: BoardNode): number =>
   Option.exists(
@@ -279,34 +309,6 @@ const spread = (
 
 const roomOf = (flow: Flow, node: BoardNode): number =>
   Math.max(0, capacityOf(node) - (flow.arrivals[node.id]?.total ?? 0))
-
-/** Делит `amount` поровну, но не больше места у каждого получателя. */
-const waterFill = (
-  amount: number,
-  rooms: ReadonlyArray<number>,
-): ReadonlyArray<number> => {
-  const start: Readonly<{
-    left: number
-    remaining: number
-    given: Readonly<Record<number, number>>
-  }> = { left: amount, remaining: rooms.length, given: {} }
-  const filled = Array.reduce(
-    Array.sort(
-      Array.map(rooms, (room, index) => ({ room, index })),
-      Order.mapInput(Order.Number, (entry: { room: number }) => entry.room),
-    ),
-    start,
-    (state, { room, index }) => {
-      const share = Math.min(room, state.left / state.remaining)
-      return {
-        left: state.left - share,
-        remaining: state.remaining - 1,
-        given: { ...state.given, [index]: share },
-      }
-    },
-  )
-  return Array.map(rooms, (_room, index) => filled.given[index] ?? 0)
-}
 
 // HANDLERS
 
@@ -445,7 +447,10 @@ const cacheStores = (
   context: Context,
   cache: BoardNode,
 ): ReadonlyArray<BoardNode> =>
-  alive(context, ofKinds(targetNodes(context, cache), cacheStoreKinds))
+  nearby(
+    cache,
+    alive(context, ofKinds(targetNodes(context, cache), cacheStoreKinds)),
+  )
 
 /** Промахи одного кеша: в read-through их читает кеш из своих хранилищ, в
     cache-aside — сервер из своих, после похода в кеш. */
@@ -502,12 +507,14 @@ const readBranches = (
 }
 
 // Сервер (D2): запись (`writeShare`, по умолчанию 20 %) в свои живые базы,
-// чтение — в кеши или поровну в базы и реплики, `jobsPerRequest` сообщений в
-// каждую очередь и шину. Отложенную запись (`deferredShare`) сервер отдаёт
+// чтение — в кеши или поровну в базы и реплики своего региона (если таких
+// нет — во все), `jobsPerRequest` задач в каждую очередь и `eventsPerRequest`
+// событий в каждую шину. Отложенную запись (`deferredShare`) сервер отдаёт
 // своей очереди или шине и отвечает через `deferredMs`; без них пишет её в
 // базы синхронно (add-flow-traffic-profile). Если все его базы упали, запись
-// принимает живая реплика (D5). Если на доске есть база, а писать некуда,
-// сервер теряет все запросы.
+// принимает одна повышенная реплика — первая живая в порядке доски, а не все
+// сразу: два primary были бы split brain (fix-simulator-routing D1). Если на
+// доске есть база, а писать некуда, сервер теряет все запросы.
 const handleServer: Handler = (context, node, arrival) => {
   const traffic = context.doc.traffic
   const targets = targetNodes(context, node)
@@ -519,9 +526,9 @@ const handleServer: Handler = (context, node, arrival) => {
   const writeTargets = Array.isReadonlyArrayNonEmpty(liveDatabases)
     ? liveDatabases
     : Array.isReadonlyArrayNonEmpty(databases)
-      ? liveReplicas
+      ? Array.take(inBoardOrder(context, liveReplicas), 1)
       : []
-  const readTargets = [...liveDatabases, ...liveReplicas]
+  const readTargets = nearby(node, [...liveDatabases, ...liveReplicas])
   const canAnswer =
     !context.hasDatabase || Array.isReadonlyArrayNonEmpty(writeTargets)
   const served = canAnswer ? Math.min(arrival.total, capacityOf(node)) : 0
@@ -550,7 +557,11 @@ const handleServer: Handler = (context, node, arrival) => {
     : spread(reads, readTargets, true, 'reads')
   const taskSends = Array.map(handoffs, (target): Send => ({
     to: target.id,
-    amount: served * traffic.jobsPerRequest,
+    amount:
+      served *
+      (target.kind === 'queue'
+        ? traffic.jobsPerRequest
+        : traffic.eventsPerRequest),
     isUser: false,
     kind: target.kind === 'queue' ? 'jobs' : 'events',
     parcels: [],
@@ -609,14 +620,17 @@ const handleCache: Handler = (context, node, arrival) => {
       })
 }
 
-// Очередь (D3): отдаёт обработчикам не больше, чем у них есть места;
-// остальное — рост очереди, не ошибка.
+// Очередь (D3, fix-simulator-routing D4): сообщения разложены по ключу
+// (заказ, получатель, пользователь) на равные части, по одной на каждого
+// живого обработчика, как partitions. Обработчик берёт свою часть, сколько
+// успевает; остальное ждёт его же — рост очереди, не ошибка. Свободный
+// сосед чужую часть не забирает. Упавший обработчик выпадает из раздела, и
+// его часть делят живые.
 const handleQueue: Handler = (context, node, arrival, flow) => {
   const accepted = Math.min(arrival.total, capacityOf(node))
   const workers = alive(context, targetNodes(context, node))
-  const delivered = waterFill(
-    accepted,
-    Array.map(workers, worker => roomOf(flow, worker)),
+  const delivered = Array.map(workers, worker =>
+    Math.min(accepted / workers.length, roomOf(flow, worker)),
   )
   return handled({
     served: accepted,
@@ -906,7 +920,9 @@ export const simulate = (doc: BoardDoc, load: number): SimResult => {
     }),
   )
   // Ошибка — потерянный пользовательский запрос. Задачи, события и запись
-  // обработчиков к ошибкам пользователей не относятся (D3).
+  // обработчиков к ошибкам пользователей не относятся (D3). Отказ
+  // ограничителя — не сбой, а его работа: он считается отдельно
+  // (fix-simulator-routing D2).
   const userLost = Number.sumAll(
     Array.map(
       doc.nodes,
@@ -924,7 +940,8 @@ export const simulate = (doc: BoardDoc, load: number): SimResult => {
     nodes,
     edges: flow.edges,
     edgeKinds: flow.edgeKinds,
-    errorRate: load > 0 ? (userLost + rejected) / load : 0,
+    errorRate: ratio(userLost, load),
+    rejectedRate: ratio(rejected, load),
     p95: weightedP95(
       latencySamples(flow.plans, id => nodes[id]?.utilization ?? 0),
     ),

@@ -47,7 +47,7 @@ Kol kas lentoje tik [[users|Users]] ir tuščia [[db|database]]. Nėra kam atsak
 
 **POST /api/links** su long URL užklausos turinyje, taip pat nebūtinu pseudonimu ir galiojimo terminu, sukuria nuorodą ir atsako 201 su kodu ir visu short URL.
 
-**GET /{code}** grąžina redirect: būsena 301 arba 302 ir long URL antraštėje Location. Nežinomas kodas – 404, pasibaigęs – 410. Atsakymą 301 (moved permanently) naršyklės ir CDN įsimena: apkrovos mažiau, bet prarandate paspaudimų skaičiavimą ir nebegalite pakeisti adreso. Su 302 (found) kiekvienas paspaudimas ateina pas jus. URL shorteners dažniausiai renkasi 302 arba 301 su trumpu TTL.
+**GET /{code}** grąžina redirect: būsena 301 arba 302 ir long URL antraštėje Location. Nežinomas kodas – 404, pasibaigęs – 410. Atsakymą 301 (moved permanently) naršyklės ir CDN įsimena: apkrovos mažiau, bet prarandate paspaudimų skaičiavimą ir nebegalite pakeisti adreso. Su 302 (found) kiekvienas paspaudimas ateina pas jus. URL shorteners dažniausiai renkasi 302 arba 301 su trumpu TTL. 302 irgi galima kešuoti CDN, jei atsakymas turi antraštę Cache-Control: max-age kelioms minutėms: tada į populiarias nuorodas atsako CDN, o paspaudimai skaičiuojami pagal jo žurnalus.
 
 Duomenys telpa į vieną lentelę **links**: code (**primary key**, pirminis raktas), long_url, owner_id, created_at, expires_at. Kiekviena paieška vyksta pagal kodą, tai prieiga **key-value** („raktas–reikšmė“): tiks ir reliacinė [[db|database]] su primary key, ir key-value saugykla.`,
     },
@@ -63,7 +63,7 @@ Reikalavimai tapo tikslais po lenta. Biudžetas skaičiuojamas iš karto, o visa
         const review = reviewOf(sim, doc)
         const entry =
           review.edge > 0
-            ? `CDN pats atsako į ${n(review.edge)} rps per 12 ms, ir iki servers ateina tik ${n(review.serverLoad)} rps.`
+            ? `CDN pats atsako į ${n(review.edge)} rps per 12 ms, ir iki servers ateina tik ${n(review.serverLoad)} rps. **Lentoje supaprastinta:** CDN nupjauna 60 % visų užklausų, įskaitant nuorodų kūrimą, todėl iki [[db|database]] ateina ${n(review.serverLoad * sim.traffic.writeShare)} įrašų per sekundę, o ne 400. Realybėje POST visada pasiekia servers, ir 400 įrašų database irgi atlaikytų. Be to, CDN lentoje yra vienas blokas, o realybėje tai šimtų buvimo taškų tinklas, todėl jo gedimo netikriname.`
             : `Kiekviena užklausa pasiekia servers: ${n(review.serverLoad)} rps.`
         const failover = Option.match(review.perServerAfterFailure, {
           onNone: () => '',
@@ -139,7 +139,7 @@ Toliau – 4 modulis, 14 pamoka: public API. Pirmoji iš 10 sudėtingų užduoč
       },
       hints: [
         'Pirmiausia suskaičiuokite. Jei kiekviena užklausa pasiektų servers, 2000 rps reikėtų penkių „Server“ blokų ir atsarginio. Tai 2,40 $, o kartu su database, read replica ir dviem „Load balancer“ blokais biudžetas jau viršytas. Didžiąją srauto dalį reikia atsakyti dar jai nepasiekus servers.',
-        'Pastatykite prie įėjimo CDN: jis pats atsako į populiarius nukreipimus, tai 60 % užklausų, ir iki servers ateina tik 800 rps. Už jo – du „Load balancer“ blokai, trys „Server“ blokai (du neša apkrovą, trečias atsarginis) ir read replica. Sujunkite kiekvieną server ir su database, ir su read replica, kad read replica galėtų perimti rašymą.',
+        'Pastatykite prie įėjimo CDN: jis pats atsako į populiarius nukreipimus, tai 60 % užklausų, ir iki servers ateina tik 800 rps. Už jo – du „Load balancer“ blokai, keturi „Server“ blokai ir read replica. Dviejų servers užtektų 800 rps, bet atsarga reikalinga gedimui: su trimis, praradus vieną, kiekvienas gautų 400 iš 400 rps, ir p95 šoktų aukštyn, o su keturiais – 267, du trečdalius galios. Sujunkite kiekvieną server ir su database, ir su read replica, kad read replica galėtų perimti rašymą.',
         'Lentoje atsirado punktyrinis kontūras. Pastatykite blokus ten ir nutieskite pažymėtus ryšius.',
       ],
       solvedNote:

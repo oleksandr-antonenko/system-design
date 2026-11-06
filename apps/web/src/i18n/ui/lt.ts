@@ -155,6 +155,7 @@ export const lt = {
       cacheHitShare: value => `cache hit ${share(value)}`,
       cdnStaticShare: value => `CDN statika ${share(value)}`,
       jobsPerRequest: value => `užduočių užklausai ×${count(value)}`,
+      eventsPerRequest: value => `įvykių užklausai ×${count(value)}`,
       writesPerJob: value => `įrašų užduočiai ×${count(value)}`,
     },
     pause: 'Pauzė',
@@ -289,6 +290,8 @@ export const lt = {
       `Nėra ryšio nuo „${componentName[from]}“ iki bloko „${componentName[via]}“: užklausoms nėra kur eiti.`,
     GoalTooManyErrors: ({ load, errorRate, overloaded }) =>
       `Esant ${n(load)} rps prarandama ${percent(errorRate)} užklausų. Užklausas praranda: ${overloaded.join(', ')}.`,
+    GoalTooManyRejected: ({ load, rejectedRate, max, limiters }) =>
+      `Esant ${n(load)} rps, rate limiter atmeta ${percent(rejectedRate)} užklausų (429), o galima ne daugiau kaip ${percent(max)}. Atmeta: ${limiters.join(', ')}.`,
     ConnectCacheAside: () =>
       'Taikant cache-aside, cache pats į database nesikreipia: per miss ją skaito „Server“ ir įdeda atsakymą į cache. Prie „Database“ junkite bloką „Server“.',
     ConnectFromSink: ({ from }) =>

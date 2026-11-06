@@ -19,7 +19,12 @@ export const Goal = defineTaggedUnion({
   OnlyThrough: { from: ComponentKind, to: ComponentKind, via: ComponentKind },
   /** На доске нет ни одной связи от блока вида `from` к блоку вида `to`. */
   NoLink: { from: ComponentKind, to: ComponentKind },
+  /** Доля потерянных запросов ниже `max`. Отказы ограничителя (429) сюда
+      не входят. */
   MaxErrorRate: { max: Schema.Number, load: Schema.Number },
+  /** Доля запросов, которые ограничитель отклонил нарочно (429), не выше
+      `max` (fix-simulator-routing D2). */
+  MaxRejectedRate: { max: Schema.Number, load: Schema.Number },
   MaxP95: { max: Schema.Number, load: Schema.Number },
   /** Загрузка блоков вида не выше `max`; с `nodes` — только перечисленных. */
   MaxUtilization: {
@@ -100,6 +105,7 @@ export const isHiddenGoal = (goal: Goal): boolean =>
     NoLink: () => false,
     MaxCost: () => false,
     MaxErrorRate: () => true,
+    MaxRejectedRate: () => true,
     MaxP95: () => true,
     MaxUtilization: () => true,
     MaxBacklog: () => true,
@@ -150,6 +156,15 @@ const hottestNode = (doc: BoardDoc, result: SimResult): ReadonlyArray<string> =>
         }),
     ),
     Option.match({ onNone: () => [], onSome: ({ id }) => [id] }),
+  )
+
+/** Блоки, которые теряют запросы. Ограничитель, который только отклоняет
+    лишнее, сюда не входит: 429 — не потеря. */
+const losingNodes = (result: SimResult): ReadonlyArray<string> =>
+  pipe(
+    Object.entries(result.nodes),
+    Array.filter(([, node]) => node.dropped > 1),
+    Array.map(([id]) => id),
   )
 
 const simulateWith = (
@@ -242,7 +257,7 @@ export const checkGoal = (doc: BoardDoc, goal: Goal): GoalCheck =>
 
     MaxErrorRate: ({ max, load }) => {
       const result = simulate(doc, load)
-      const overloaded = overloadedNodes(result)
+      const overloaded = losingNodes(result)
       return result.errorRate < max
         ? met
         : failed(
@@ -252,6 +267,26 @@ export const checkGoal = (doc: BoardDoc, goal: Goal): GoalCheck =>
               overloaded,
             }),
             { focusNodes: overloaded },
+          )
+    },
+
+    MaxRejectedRate: ({ max, load }) => {
+      const result = simulate(doc, load)
+      const limiters = pipe(
+        nodesOfKind(doc, 'limiter'),
+        Array.filter(node => (result.nodes[node.id]?.rejected ?? 0) >= 1),
+        Array.map(node => node.id),
+      )
+      return isWithin(result.rejectedRate, max)
+        ? met
+        : failed(
+            DomainMessage.GoalTooManyRejected({
+              load,
+              rejectedRate: result.rejectedRate,
+              max,
+              limiters,
+            }),
+            { focusNodes: limiters },
           )
     },
 

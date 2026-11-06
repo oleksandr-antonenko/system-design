@@ -36,13 +36,13 @@ Each [[app2|server]] gets 800 rps, twice its capacity. Half of the requests are 
       title: 'What keeps the servers busy',
       body: `Open any page and look at what the browser downloads. One request returns the HTML with the product and its price. Dozens more follow: photos, fonts, scripts, styles. These are **static** files: the same for every visitor, and they rarely change. The page with your cart, your price and the current stock is **dynamic**: it is built anew for every request.
 
-In this course ${percent(cdnStaticShare)} of requests are for static files. So out of 800 rps on [[app2|each server]], 480 do nothing but hand out ready-made files. Most of the servers’ effort goes into working as a file store.
+In this course ${percent(cdnStaticShare)} of requests are for static files. So out of 800 rps on [[app2|each server]], 480 do nothing but hand out ready-made files. Most of the servers’ effort goes into working as a file store. **Simplified on the board:** as in lesson 2, every request to a server is one database query, even for a ready-made file. So the Database load instrument counts static files too; in real life files never touch the database.
 
 Static files don’t need the application at all. They can be served by a **CDN** (content delivery network): a network of caching servers in hundreds of cities. A CDN stands in front of your system, serves static files from its own copies and passes only the dynamic requests on.`,
     },
     'place-cdn': {
       title: 'Task: a CDN',
-      body: 'A CDN goes at the very entrance, in front of the [[lb|load balancer]]. Users talk only to the CDN, and it passes on whatever it cannot answer by itself. The CDN is already in the palette to the left of the board.',
+      body: 'A CDN goes at the very entrance, in front of the [[lb|load balancer]]. Users talk only to the CDN, and it passes on whatever it cannot answer by itself. The CDN is already in the palette to the left of the board. This is not the only way: often static files come from a separate CDN address such as static.shop.com, while dynamic requests go straight to the load balancer. The board shows the other common setup (the way Cloudflare and CloudFront work): the whole site goes through the CDN, which serves static files itself and passes the rest on.',
     },
     'edge-locations': {
       title: 'Close to the user',

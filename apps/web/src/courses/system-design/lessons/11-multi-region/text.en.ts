@@ -40,13 +40,13 @@ Now all of Europe is down: the [[lb-1|load balancer]], both servers and the [[db
       title: 'A second region',
       body: `The way out is to run the service in two regions. Users get the address of the nearest live region from **DNS** with health checks: Americans go to the USA, Europeans to Europe, and if a region stops answering, DNS sends everyone to the other one.
 
-Servers are easy to add in the USA: they keep no state. Data is harder. We have set up a [[replica-1|read replica]] of the database there. The [[db|database]] in Europe stays the **primary**: it accepts every write and streams the changes to the replica. There has to be one place that decides the order of writes, so writes from America will still cross the ocean. On the board, a server linked to the database and the read replica sends writes only to the primary and splits reads evenly between the two.
+Servers are easy to add in the USA: they keep no state. Data is harder. We have set up a [[replica-1|read replica]] of the database there. The [[db|database]] in Europe stays the **primary**: it accepts every write and streams the changes to the replica. There has to be one place that decides the order of writes, so writes from America will still cross the ocean. On the board, a server linked to the database and the read replica sends writes only to the primary and reads from the copy in its own region: the US servers read only from the nearby replica, and only writes cross the ocean. A server with no copy in its region splits reads evenly between all of them.
 
 Replication is **asynchronous**: the primary confirms a write to the user first and passes it to the replica a moment later. The replica lags behind, usually by milliseconds, sometimes by seconds.`,
     },
     'build-us': {
       title: 'Task: the US region',
-      body: `Build a copy of the system in the USA: a load balancer and servers that work with the read replica. Drop the blocks inside the USA zone: a block gets its region from the zone you release it in.
+      body: `Build a copy of the system in the USA: a load balancer and servers that work with the read replica. Link each server both to the [[db|database]] in Europe (writes go there) and to the read replica (reads come from it). Drop the blocks inside the USA zone: a block gets its region from the zone you release it in.
 
 Then tell the users about the new entrance. Americans will pick it because it is closer. Europeans need it as a way out for the day Europe goes down.`,
     },
@@ -55,7 +55,7 @@ Then tell the users about the new entrance. Americans will pick it because it is
       body: ({ sim }) =>
         `Europe is down again. This time DNS has sent [[users-eu|Europeans]] to the USA. They are served, but each of their requests now pays the ${crossing} ms crossing: p95 is ${p95(sim)}, errors are at ${percent(sim.errorRate)}.
 
-All the database work has moved to the [[replica-1|read replica]]. The US servers found the primary dead and the replica was **promoted**: it now accepts writes as well as reads. On the board this is instant. In real life it takes seconds or minutes: something has to notice the failure, and someone has to decide that Europe is really gone.
+All the database work has moved to the [[replica-1|read replica]]. Observers (or the engineer on call) confirmed that Europe was lost, and the replica was **promoted**: it now accepts writes as well as reads. On the board this is instant. In real life it takes seconds or minutes: something has to notice the failure, and someone has to decide that Europe is really gone.
 
 Not everything survived. Replication was asynchronous, so the last writes before the outage had been confirmed to users but never reached America. They are lost, or at best stuck in Europe until it comes back. How much data you may lose in a failure is called the **RPO** (recovery point objective). With asynchronous replication it is above zero.`,
     },
@@ -72,7 +72,7 @@ That is why automatic promotion is dangerous. If America mistakes a partition fo
     summary: {
       title: 'Summary',
       body: ({ sim }) =>
-        `A second region gave you two things: distant users are served close to home, and the service survives the loss of a whole region. p95 went down to ${p95(sim)}. The slowest requests now are American writes that travel to the [[db|primary]], plus the reads the US servers send to it.
+        `A second region gave you two things: distant users are served close to home, and the service survives the loss of a whole region. p95 went down to ${p95(sim)}. The slowest requests now are American writes that travel to the [[db|primary]] in Europe. Reads in the USA stay close, in the read replica.
 
 The price: the system costs ${usd(sim.costPerHour)} an hour instead of $1.90, writes still cross the ocean, and every copy of the data brings a choice between consistency and availability. To make writes local too, you need a primary in every region with conflict resolution, or you split the data by geography: European accounts live in Europe, American ones in the USA. That is sharding (lesson 9) applied to geography.
 

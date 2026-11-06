@@ -47,7 +47,7 @@ For now the board holds only [[users|users]] and an empty [[db|database]]. Nobod
 
 **POST /api/links** with the long URL in the body, plus an optional alias and expiry date, creates a link and answers 201 with the code and the full short URL.
 
-**GET /{code}** answers with a redirect: status 301 or 302 and the long URL in the Location header. An unknown code gets 404, an expired one 410. Browsers and CDNs remember a 301 (moved permanently): less load, but you lose click counts and can no longer change the target. With a 302 (found) every click comes back to you. Shorteners usually choose 302, or 301 with a short cache lifetime.
+**GET /{code}** answers with a redirect: status 301 or 302 and the long URL in the Location header. An unknown code gets 404, an expired one 410. Browsers and CDNs remember a 301 (moved permanently): less load, but you lose click counts and can no longer change the target. With a 302 (found) every click comes back to you. Shorteners usually choose 302, or 301 with a short cache lifetime. A 302 can be cached on a CDN too, with a Cache-Control: max-age of a few minutes: then the CDN answers popular links, and clicks are counted from its logs.
 
 The data fits one table, **links**: code (the primary key), long_url, owner_id, created_at, expires_at. Every lookup goes by code, which is a key-value access pattern: a relational [[db|database]] with a primary key will do, and so will a key-value store.`,
     },
@@ -63,7 +63,7 @@ The requirements have become the goals under the board. The budget is counted li
         const review = reviewOf(sim, doc)
         const entry =
           review.edge > 0
-            ? `The CDN answers ${n(review.edge)} rps at the edge in 12 ms, and only ${n(review.serverLoad)} rps reach your servers.`
+            ? `The CDN answers ${n(review.edge)} rps at the edge in 12 ms, and only ${n(review.serverLoad)} rps reach your servers. **Simplified on the board:** the CDN cuts 60% of all requests, link creation included, so ${n(review.serverLoad * sim.traffic.writeShare)} writes per second reach the [[db|database]] instead of 400. In real life a POST always goes through to the servers, and the database would take 400 writes as well. Also, the CDN is one block on the board, but in real life it is a network of hundreds of points of presence, so we do not test its failure.`
             : `Every request reaches your servers: ${n(review.serverLoad)} rps.`
         const failover = Option.match(review.perServerAfterFailure, {
           onNone: () => '',
@@ -139,7 +139,7 @@ Next, module 4, lesson 14: a public API. The first of 10 hard tasks where you de
       },
       hints: [
         'Do the sums first. If every request reached the servers, 2,000 rps would need five servers plus a spare. That is $2.40, and with the database, a read replica and two load balancers you are already over budget. Most of the traffic has to be answered before it reaches the servers.',
-        'Put a CDN at the entrance: it answers popular redirects at the edge, 60% of requests, so only 800 rps reach the servers. Behind it: two load balancers, three servers (two carry the load, the third is the spare) and a read replica. Link every server to both the database and the read replica, so the read replica can take over the writes.',
+        'Put a CDN at the entrance: it answers popular redirects at the edge, 60% of requests, so only 800 rps reach the servers. Behind it: two load balancers, four servers and a read replica. Two servers would carry 800 rps, but you need headroom for a failure: with three, losing one leaves each survivor at 400 of 400 rps and p95 shoots up; with four, each gets 267, two thirds of its capacity. Link every server to both the database and the read replica, so the read replica can take over the writes.',
         'A dashed outline appeared on the board. Place the blocks there and draw the marked connections.',
       ],
       solvedNote:

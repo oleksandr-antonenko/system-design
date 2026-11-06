@@ -26,7 +26,7 @@ export default {
       title: 'Everything inside the request',
       body: `The online shop has grown. [[users|Users]] send requests to two application servers, [[app1|app1]] and [[app2|app2]], and the data lives in the [[db|database]]. The load balancer from lesson 3 is left off the board to save room: the Users block spreads requests evenly across the servers itself, just as a load balancer would.
 
-When a customer places an order, the server saves it, sends a confirmation email, renders a PDF invoice and only then answers. The mail service takes about a second to reply, the PDF eats CPU time, and the customer watches a spinner all along. Photo uploads, sign-ups and password resets hide the same kind of work. In this lesson's model every request the server handles leaves one such **job**.
+When a customer places an order, the server saves it, sends a confirmation email, renders a PDF invoice and only then answers. The mail service takes about a second to reply, the PDF eats CPU time, and the customer watches a spinner all along. Photo uploads, sign-ups and password resets hide the same kind of work. The board in this lesson shows only the checkout service: each of its requests is an order, and each leaves one such **job**. An order both reads the database (cart, prices, stock) and writes to it, so the database still gets reads and writes, as everywhere in the course.
 
 While a request is busy with it, the server cannot take others, so it manages about **150 rps** instead of the usual 400. Right now 240 rps arrive, and the servers are already 80% busy.`,
     },

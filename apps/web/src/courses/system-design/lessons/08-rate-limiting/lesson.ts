@@ -76,6 +76,14 @@ export default defineLesson(flow, {
             }),
           },
           {
+            id: 'lb-in-path',
+            goal: Goal.Carries({ node: 'lb-1', min: 900, load: 2000 }),
+          },
+          {
+            id: 'no-failures',
+            goal: Goal.MaxErrorRate({ max: 0.01, load: 2000 }),
+          },
+          {
             id: 'fast-answers',
             goal: Goal.MaxP95({ max: 250, load: 2000 }),
           },

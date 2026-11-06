@@ -53,6 +53,8 @@ Rašoma **tik į primary**. Jei dvi kopijos priimtų įrašus nepriklausomai, jo
       title: 'Užduotis: read replicas',
       body: `Paletėje atsirado blokas „Read replica“. **Read replica** (lietuviškai – skaitymo replika) – replica, kuri atsako tik į skaitymo užklausas. Server, prijungtas ir prie database, ir prie read replica blokų, įrašus siunčia tik į database, o skaitymą po lygiai dalija tarp database ir visų savo „Read replica“ blokų.
 
+**Lentoje supaprastinta:** ryšio primary → replica nėra, replication log keliauja savo tarnybiniu kanalu. Replica lentoje rodo tik skaitymą, o to, kad ji dar pakartoja visus primary įrašus, lenta neskaičiuoja.
+
 Replica – irgi server, ir ji gali sugesti. Jei vienintelė replica sugenda, visas jos skaitymas grįžta į primary, ir ji vėl perkraunama. Prisiminkite **N+1** taisyklę iš 3 pamokos.`,
     },
     'replication-lag': {
@@ -75,6 +77,8 @@ Tačiau kiekviena replica turi visą kopiją. Sistema pastebi, kad primary neats
             ? `Tiesa, persijungti pavyko ne visiems „Server“ blokams: klaidų ${percent(sim.errorRate)}. Server, neprijungtas nė prie vienos replica, neturi kur rašyti ir praranda savo užklausas.`
             : `Klaidų ${percent(sim.errorRate)}: replica blokai atlaiko visus ${n(sim.load)} rps.`
         }
+
+Lentoje nauja primary tampa pirmoji replica, [[replica-1|replica-1]]: visi įrašai, ${n(writes(sim))} rps, eina tik į ją. [[replica-2|replica-2]] įrašų nepriima: ji seka naują primary ir, kaip ir anksčiau, atsako tik į skaitymą.
 
 Failover turi kainą. Esant asinchroninei replikacijai, paskutiniai įrašai, kurie nespėjo pasiekti replica, prarandami. Be to, du mazgai jokiu būdu neturi vienu metu laikyti savęs primary: tai vadinama **split brain** (lietuviškai – „suskilusios smegenys“). Kad taip nenutiktų, nauja primary renkama kelių mazgų balsavimu.`,
     },
@@ -101,6 +105,8 @@ Read replicas **plečia skaitymą**: kiekviena perima savo dalį, ir jų galima 
       `skaitymas ${n(incoming(sim, 'replica-1'))} rps · šiek tiek atsilieka`,
     primaryDown: sim => `primary neveikia · klaidos ${percent(sim.errorRate)}`,
     promoted: sim => `nauja primary · ${n(incoming(sim, 'replica-1'))} rps`,
+    follower: sim =>
+      `seka naują primary · skaitymas ${n(incoming(sim, 'replica-2'))} rps`,
     writesStayHere: sim => `visas rašymas, ${n(writes(sim))} rps · tik čia`,
   },
   tasks: {

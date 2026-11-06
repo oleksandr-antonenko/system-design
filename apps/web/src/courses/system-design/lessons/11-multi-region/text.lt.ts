@@ -40,13 +40,13 @@ Dabar neveikia visa Europa: [[lb-1|load balancer]], [[app1|app1]], [[app2|app2]]
       title: 'Antrasis regionas',
       body: `Išeitis – paleisti paslaugą dviejuose regionuose. Tokia schema vadinama **multi-region** (daugiaregione). Artimiausio veikiančio regiono adresą naudotojai gauna iš **DNS** su **health check** (sveikatos patikra): amerikiečiai keliauja į JAV, europiečiai – į Europą, o jei regionas nustoja atsakyti, DNS visus nukreipia į kitą.
 
-Servers JAV pridėti lengva: jie **stateless** (neturi savo būsenos). Su duomenimis sudėtingiau. Ten sukūrėme [[replica-1|read replica]]. [[db|Database]] Europoje lieka **primary** (pagrindinė kopija, kaip 10 pamokoje; dokumentacijoje dar vadinama leader): ji priima visus įrašus ir siunčia pakeitimus į read replica. Įrašų tvarka turi būti nustatoma vienoje vietoje, todėl įrašai iš Amerikos vis tiek keliaus per vandenyną. Lentoje server, sujungtas su database ir read replica, rašo tik į primary, o skaitymą dalija tarp jų po lygiai.
+Servers JAV pridėti lengva: jie **stateless** (neturi savo būsenos). Su duomenimis sudėtingiau. Ten sukūrėme [[replica-1|read replica]]. [[db|Database]] Europoje lieka **primary** (pagrindinė kopija, kaip 10 pamokoje; dokumentacijoje dar vadinama leader): ji priima visus įrašus ir siunčia pakeitimus į read replica. Įrašų tvarka turi būti nustatoma vienoje vietoje, todėl įrašai iš Amerikos vis tiek keliaus per vandenyną. Lentoje server, sujungtas su database ir read replica, rašo tik į primary, o skaito iš savo regiono kopijos: JAV servers skaito tik iš šalia esančios read replica, per vandenyną keliauja tik įrašai. Jei server regione nėra nė vienos kopijos, skaitymą jis dalija po lygiai tarp visų.
 
 Replikacija **asinchroninė** (asynchronous): primary pirmiausia patvirtina įrašą naudotojui, o į read replica jį perduoda šiek tiek vėliau. Read replica atsilieka, dažniausiai milisekundėmis, kartais sekundėmis: tai **replication lag** (replikos atsilikimas).`,
     },
     'build-us': {
       title: 'Užduotis: JAV regionas',
-      body: `Sukurkite sistemos kopiją JAV: load balancer ir servers, kurie dirba su read replica. Statykite blokus zonos „JAV“ viduje: blokas gauna tos zonos regioną, kurioje jį atleidžiate.
+      body: `Sukurkite sistemos kopiją JAV: load balancer ir servers, kurie dirba su read replica. Kiekvieną server sujunkite ir su [[db|database]] Europoje (ten eina įrašai), ir su read replica (iš jos skaitoma). Statykite blokus zonos „JAV“ viduje: blokas gauna tos zonos regioną, kurioje jį atleidžiate.
 
 Tada praneškite naudotojams apie naują įėjimą. Amerikiečiai jį rinksis, nes jis arčiau. Europiečiams jis reikalingas kaip atsarginis išėjimas tai dienai, kai Europa suges.`,
     },
@@ -55,7 +55,7 @@ Tada praneškite naudotojams apie naują įėjimą. Amerikiečiai jį rinksis, n
       body: ({ sim }) =>
         `Europa vėl neveikia. Šįkart DNS nukreipė europiečius ([[users-eu|users-eu]]) į JAV. Jie aptarnaujami, bet kiekviena jų užklausa dabar sumoka ${crossing} ms už vandenyną: p95 ${p95(sim)}, klaidos ${percent(sim.errorRate)}.
 
-Visą database darbą perėmė [[replica-1|read replica]]. JAV servers aptiko, kad primary nebeveikia, ir read replica buvo **paaukštinta** (promote): dabar ji priima ir įrašus, ir skaitymą. Tai ir yra **failover** (perjungimas į rezervą). Lentoje tai įvyksta akimirksniu. Realybėje tai trunka sekundes ar minutes: kažkas turi pastebėti gedimą ir nuspręsti, kad Europa tikrai prarasta.
+Visą database darbą perėmė [[replica-1|read replica]]. Stebėtojai (arba budintis inžinierius) įsitikino, kad Europa prarasta, ir read replica buvo **paaukštinta** (promote): dabar ji priima ir įrašus, ir skaitymą. Tai ir yra **failover** (perjungimas į rezervą). Lentoje tai įvyksta akimirksniu. Realybėje tai trunka sekundes ar minutes: kažkas turi pastebėti gedimą ir nuspręsti, kad Europa tikrai prarasta.
 
 Išliko ne viskas. Replikacija buvo asinchroninė, todėl paskutiniai įrašai prieš gedimą naudotojams buvo patvirtinti, bet Amerikos nepasiekė. Jie prarasti arba geriausiu atveju įstrigo Europoje, kol ji sugrįš. Kiek duomenų leidžiama prarasti per gedimą, vadinama **RPO** (recovery point objective). Esant asinchroninei replikacijai jis didesnis už nulį.`,
     },
@@ -72,7 +72,7 @@ Todėl automatiškai paaukštinti read replica pavojinga. Jei Amerika partition 
     summary: {
       title: 'Santrauka',
       body: ({ sim }) =>
-        `Antrasis regionas davė du dalykus: tolimi naudotojai aptarnaujami arti jų, o paslauga išgyvena viso regiono praradimą. p95 sumažėjo iki ${p95(sim)}. Lėčiausios užklausos dabar – įrašai iš Amerikos, keliaujantys pas primary, į [[db|database]] Europoje, ir ta skaitymo dalis, kurią JAV servers siunčia ten pat.
+        `Antrasis regionas davė du dalykus: tolimi naudotojai aptarnaujami arti jų, o paslauga išgyvena viso regiono praradimą. p95 sumažėjo iki ${p95(sim)}. Lėčiausios užklausos dabar – įrašai iš Amerikos, keliaujantys pas primary, į [[db|database]] Europoje. Skaitymas JAV lieka arti, read replica.
 
 Kaina: sistema kainuoja ${usd(sim.costPerHour)} per valandą vietoj 1,90 $, įrašai vis dar kerta vandenyną, o kiekviena duomenų kopija atneša pasirinkimą tarp consistency ir availability. Kad ir įrašai taptų vietiniai, reikia primary kiekviename regione ir konfliktų sprendimo (conflict resolution) arba duomenis reikia padalyti pagal geografiją: europiečių paskyros gyvena Europoje, amerikiečių – JAV. Tai sharding (9 pamoka), pritaikytas geografijai.
 

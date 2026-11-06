@@ -53,6 +53,8 @@ export default {
       title: 'Задача: read replicas',
       body: `У палітрі з’явився блок «Read replica». **Read replica** (українською — репліка для читання) — копія database, яка відповідає лише на читання. Server, підключений до database і до read replica, надсилає запис лише в database, а читання ділить порівну між database та всіма своїми read replica.
 
+**На дошці спрощено:** зв’язку primary → replica немає, replication log іде своїм службовим каналом. Replica на дошці показує лише читання, а те, що вона ще повторює весь запис primary, дошка не рахує.
+
 Read replica — теж server, і вона може відмовити. Якщо єдина read replica впаде, усе її читання повернеться на primary, і та знову перевантажиться. Згадайте правило **N+1** з уроку 3.`,
     },
     'replication-lag': {
@@ -75,6 +77,8 @@ Read replica — теж server, і вона може відмовити. Якщ�
             ? `Щоправда, перемкнутися змогли не всі блоки «Server»: помилок ${percent(sim.errorRate)}. Блоку «Server» без зв’язку з жодною replica нікуди записувати, і він втрачає свої запити.`
             : `Помилок ${percent(sim.errorRate)}: блоки «Read replica» витримують усі ${n(sim.load)} rps.`
         }
+
+На дошці новою primary стає перша replica, [[replica-1|replica-1]]: увесь запис, ${n(writes(sim))} rps, іде лише в неї. [[replica-2|replica-2]] запис не приймає: вона йде за новою primary і, як і раніше, відповідає лише на читання.
 
 Failover має ціну. За асинхронної реплікації останні записи, які не встигли дійти до replica, губляться. А ще два вузли за жодних умов не повинні одночасно вважати себе primary: це називається **split brain** («розщеплення мозку»). Щоб цього не сталося, нову primary обирають голосуванням кількох вузлів.`,
     },
@@ -101,6 +105,8 @@ Failover має ціну. За асинхронної реплікації ос�
       `читання ${n(incoming(sim, 'replica-1'))} rps · трохи відстає`,
     primaryDown: sim => `primary упала · помилки ${percent(sim.errorRate)}`,
     promoted: sim => `нова primary · ${n(incoming(sim, 'replica-1'))} rps`,
+    follower: sim =>
+      `іде за новою primary · читання ${n(incoming(sim, 'replica-2'))} rps`,
     writesStayHere: sim => `увесь запис, ${n(writes(sim))} rps · лише тут`,
   },
   tasks: {

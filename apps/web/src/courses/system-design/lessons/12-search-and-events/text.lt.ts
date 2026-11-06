@@ -12,7 +12,7 @@ export default {
   summary:
     'Event bus pristato kiekvieną pakeitimą į search index ir į analitiką: publish/subscribe, subscriber lag ir eventual consistency.',
   preview: {
-    alt: 'Schema: server skelbia pakeitimus į event bus, o prenumeratoriai – search index, analitika ir database – gauna kiekvieną įvykį su nedideliu lag.',
+    alt: 'Schema: server skelbia pakeitimus į event bus, o prenumeratoriai – search index ir analitika – gauna kiekvieną įvykį su nedideliu lag.',
   },
   steps: {
     catalog: {
@@ -69,7 +69,9 @@ Visą tą laiką search index ir database nesutampa: paieška rodo senas kainas.
 
 Servers publikuoja po vieną įvykį kiekvienam pakeitimui, o [[events-1|event bus]] išdalija kopiją kiekvienam subscriber: [[search|search index]] ir analitikos [[worker-1|worker]]. Skirtumas nuo 7 pamokos – vienas žodis. **Queue** padalija darbus tarp workers, ir kiekvienas darbas atliekamas vieną kartą. **Event bus** kiekvieną įvykį nukopijuoja visiems subscribers, ir kiekvienas consumer mato kiekvieną pakeitimą. Subscribers gyvena nepriklausomai: jei vienas atsiliko ar sugedo, kitiems ir pardavėjams tai nerūpi.
 
-Įrašai keliauja į database, o paieška skaito iš atskiro modelio, surinkto iš įvykių. Rašymo modelio atskyrimas nuo skaitymo modelių vadinamas **CQRS** (Command Query Responsibility Segregation, komandų ir užklausų atskyrimas). Jo kaina – eventual consistency: skaitymo modeliai šiek tiek atsilieka nuo source of truth.`,
+Įrašai keliauja į database, o paieška skaito iš atskiro modelio, surinkto iš įvykių. Rašymo modelio atskyrimas nuo skaitymo modelių vadinamas **CQRS** (Command Query Responsibility Segregation, komandų ir užklausų atskyrimas). Jo kaina – eventual consistency: skaitymo modeliai šiek tiek atsilieka nuo source of truth.
+
+**Lentoje supaprastinta:** server rašo į database ir publikuoja įvykį dviem atskirais žingsniais. Jei jis sugenda tarp jų, įvykis dingsta, ir search index visam laikui išsiskiria su database. Praktikoje įvykis įrašomas toje pačioje transakcijoje kaip ir pakeitimas (**transactional outbox**) arba pakeitimai skaitomi tiesiai iš database žurnalo (**change data capture**, pavyzdžiui, Debezium).`,
     },
   },
   annotations: {

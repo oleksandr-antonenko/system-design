@@ -355,7 +355,7 @@ describe('queues, event buses and workers (D3)', () => {
     expect(simulate(queueBoard(3), 600).backlog).toBeCloseTo(0)
   })
 
-  test('a queue fills its workers evenly but never above their capacity', () => {
+  test('a queue gives each worker its equal partition: what a slow worker cannot take waits for it', () => {
     const result = simulate(
       build([
         block('users', 'client'),
@@ -372,7 +372,33 @@ describe('queues, event buses and workers (D3)', () => {
     )
 
     expect(result.edges['queue>small']).toBeCloseTo(100)
-    expect(result.edges['queue>big']).toBeCloseTo(200)
+    expect(result.edges['queue>big']).toBeCloseTo(150)
+    expect(result.backlog).toBeCloseTo(50)
+    expect(result.nodes['queue']?.backlog).toBeCloseTo(50)
+  })
+
+  test('a failed worker leaves the partition, the live ones share its messages', () => {
+    const result = simulate(
+      build([
+        block('users', 'client'),
+        block('app1', 'server'),
+        block('queue', 'queue'),
+        block('w1', 'worker'),
+        block('w2', 'worker'),
+        block('w3', 'worker'),
+        connect('users', 'app1'),
+        connect('app1', 'queue'),
+        connect('queue', 'w1'),
+        connect('queue', 'w2'),
+        connect('queue', 'w3'),
+        failNode('w2'),
+      ]),
+      300,
+    )
+
+    expect(result.edges['queue>w1']).toBeCloseTo(150)
+    expect(result.edges['queue>w2']).toBeCloseTo(0)
+    expect(result.edges['queue>w3']).toBeCloseTo(150)
     expect(result.backlog).toBeCloseTo(0)
   })
 
@@ -506,10 +532,27 @@ describe('CDN and rate limiter (D1, D4)', () => {
     expect(result.rejected).toBeCloseTo(900)
     expect(result.nodes['limiter']?.rejected).toBeCloseTo(900)
     expect(result.nodes['limiter']?.dropped).toBe(0)
-    expect(result.errorRate).toBeCloseTo(900 / 2000)
+    expect(result.rejectedRate).toBeCloseTo(900 / 2000)
+    expect(result.errorRate).toBe(0)
   })
 
-  test('rejected requests are errors but take no part in p95', () => {
+  test('requests dropped behind the limiter are errors, its 429s are not', () => {
+    const overloaded = simulate(
+      build([
+        block('users', 'client'),
+        block('limiter', 'limiter'),
+        block('app1', 'server'),
+        connect('users', 'limiter'),
+        connect('limiter', 'app1'),
+      ]),
+      2000,
+    )
+
+    expect(overloaded.rejectedRate).toBeCloseTo(1000 / 2000)
+    expect(overloaded.errorRate).toBeCloseTo(600 / 2000)
+  })
+
+  test('rejected requests take no part in p95', () => {
     expect(p95Of(limited, 2000)).toBeCloseTo(p95Of(plain, 1100))
   })
 
@@ -575,6 +618,40 @@ describe('failures (D5)', () => {
     expect(result.errorRate).toBe(0)
     expect(result.nodes['app1']?.served).toBe(300)
     expect(result.nodes['replica-1']?.incoming).toBeCloseTo(300)
+  })
+
+  test('when the primary fails, exactly one replica takes the writes (no split brain)', () => {
+    const twoReplicas = build([
+      block('users', 'client'),
+      block('lb', 'lb'),
+      block('db', 'db'),
+      block('replica-1', 'replica'),
+      block('replica-2', 'replica'),
+      connect('users', 'lb'),
+      ...Array.flatMap(servers(2), id => [
+        block(id, 'server'),
+        connect('lb', id),
+        connect(id, 'db'),
+        // Связи в обратном порядке: выбор зависит от порядка доски.
+        connect(id, 'replica-2'),
+        connect(id, 'replica-1'),
+      ]),
+      failNode('db'),
+    ])
+    const result = simulate(twoReplicas, 500)
+
+    expect(result.errorRate).toBe(0)
+    expect(result.edgeKinds['app1>replica-1']?.writes).toBeCloseTo(50)
+    expect(result.edgeKinds['app2>replica-1']?.writes).toBeCloseTo(50)
+    expect(result.edgeKinds['app1>replica-2']?.writes).toBeUndefined()
+    expect(result.nodes['replica-1']?.incoming).toBeCloseTo(100 + 200)
+    expect(result.nodes['replica-2']?.incoming).toBeCloseTo(200)
+
+    const promotedDown = simulate(
+      foldOps(twoReplicas, [failNode('replica-1')]),
+      500,
+    )
+    expect(promotedDown.nodes['replica-2']?.incoming).toBeCloseTo(500)
   })
 
   test('without a live database or a replica, the server loses all requests', () => {
@@ -645,6 +722,47 @@ describe('regions (D6)', () => {
     const local = foldOps(twoRegions, [failNode('lb-eu')])
 
     expect(p95Of(remoteData, 300)).toBeCloseTo(p95Of(local, 300) + 70)
+  })
+
+  test('a server reads from the stores of its own region when it has any', () => {
+    const replicaNearby = build([
+      addNode('users-us', 'client', 100, 420, { region: 'us' }),
+      addNode('app-us', 'server', 520, 420, { region: 'us' }),
+      addNode('db', 'db', 760, 170, { region: 'eu' }),
+      addNode('replica-us', 'replica', 760, 420, { region: 'us' }),
+      connect('users-us', 'app-us'),
+      connect('app-us', 'db'),
+      connect('app-us', 'replica-us'),
+    ])
+    const result = simulate(replicaNearby, 300)
+
+    expect(result.edgeKinds['app-us>db']).toEqual({ writes: 60 })
+    expect(result.edgeKinds['app-us>replica-us']).toEqual({ reads: 240 })
+
+    const nearbyDown = simulate(
+      foldOps(replicaNearby, [failNode('replica-us')]),
+      300,
+    )
+    expect(nearbyDown.edgeKinds['app-us>db']).toEqual({
+      writes: 60,
+      reads: 240,
+    })
+  })
+
+  test('without regional stores a server still splits reads evenly', () => {
+    const sameRegion = build([
+      addNode('users', 'client', 100, 170, { region: 'eu' }),
+      addNode('app1', 'server', 520, 170, { region: 'eu' }),
+      addNode('db', 'db', 760, 170, { region: 'eu' }),
+      addNode('replica-1', 'replica', 760, 300, { region: 'eu' }),
+      connect('users', 'app1'),
+      connect('app1', 'db'),
+      connect('app1', 'replica-1'),
+    ])
+    const result = simulate(sameRegion, 300)
+
+    expect(result.edgeKinds['app1>db']?.reads).toBeCloseTo(120)
+    expect(result.edgeKinds['app1>replica-1']?.reads).toBeCloseTo(120)
   })
 
   test('blocks without a region never pay for crossing', () => {

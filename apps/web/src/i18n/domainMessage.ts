@@ -58,6 +58,12 @@ export const DomainMessage = defineTaggedUnion({
     errorRate: Schema.Number,
     overloaded: Schema.Array(Schema.String),
   },
+  GoalTooManyRejected: {
+    load: Schema.Number,
+    rejectedRate: Schema.Number,
+    max: Schema.Number,
+    limiters: Schema.Array(Schema.String),
+  },
   GoalSlowResponse: {
     load: Schema.Number,
     p95: Schema.Number,
@@ -145,6 +151,7 @@ export const renderDomainMessage = (
     GoalNotConnected: params => texts.GoalNotConnected(params),
     GoalUnwantedLink: params => texts.GoalUnwantedLink(params),
     GoalTooManyErrors: params => texts.GoalTooManyErrors(params),
+    GoalTooManyRejected: params => texts.GoalTooManyRejected(params),
     GoalSlowResponse: params => texts.GoalSlowResponse(params),
     GoalOverUtilized: params => texts.GoalOverUtilized(params),
     GoalBacklogGrowing: params => texts.GoalBacklogGrowing(params),

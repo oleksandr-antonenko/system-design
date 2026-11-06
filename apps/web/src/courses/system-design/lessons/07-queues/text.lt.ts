@@ -26,7 +26,7 @@ export default {
       title: 'Viskas užklausos viduje',
       body: `Internetinė parduotuvė paaugo. Užklausas iš [[users|Users]] priima du „Server“ blokai, [[app1|app1]] ir [[app2|app2]], o duomenis saugo [[db|database]]. Load balancer iš 3 pamokos lentoje nenupieštas, kad užtektų vietos: blokas „Users“ pats po lygiai paskirsto užklausas tarp servers, kaip tai darytų load balancer.
 
-Kai pirkėjas pateikia užsakymą, server jį išsaugo, išsiunčia patvirtinimo laišką, sugeneruoja PDF sąskaitą ir tik tada atsako. Pašto paslauga atsako maždaug per sekundę, PDF generavimas apkrauna procesorių, o pirkėjas visą tą laiką žiūri į besisukantį ratuką. Toks pat darbas slepiasi nuotraukų įkėlime, registracijoje, slaptažodžio atkūrime. Šios pamokos modelyje kiekviena užklausa, kurią apdoroja server, palieka vieną tokį foninį **darbą** (job).
+Kai pirkėjas pateikia užsakymą, server jį išsaugo, išsiunčia patvirtinimo laišką, sugeneruoja PDF sąskaitą ir tik tada atsako. Pašto paslauga atsako maždaug per sekundę, PDF generavimas apkrauna procesorių, o pirkėjas visą tą laiką žiūri į besisukantį ratuką. Toks pat darbas slepiasi nuotraukų įkėlime, registracijoje, slaptažodžio atkūrime. Šios pamokos lentoje – tik užsakymų pateikimo paslauga: kiekviena jos užklausa yra užsakymas, ir kiekviena palieka vieną tokį foninį **darbą** (job). Užsakymas ir skaito database (krepšelį, kainas, likučius), ir rašo į ją, todėl į database, kaip ir visame kurse, eina skaitymas ir rašymas.
 
 Kol užklausa juo užsiėmusi, server negali imti kitų, todėl spėja apie **150 rps** vietoj įprastų 400. Dabar ateina 240 rps, ir servers jau apkrauti 80 %.`,
     },
